@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Dict
 
 import aiomysql
 import aiomysql.log
@@ -87,11 +87,16 @@ class SafeCursor:
 
 
 class SafeExecutor:
-    def __init__(self, event: str, sql: str, parameters=None, commit=False, fetch=None, **params):
+    def __init__(self, event: str, sql: str,
+                 parameters: Dict = None, commit=False, fetch=None, fetch_last_inserted_ids=False, **params):
         """
         Bind named parameters with `sql=r'%(key)s', key=value`
 
+        :param parameters: named parameters to be bind in given sql, can also be given through **params;
+                           parameters should be bounded in sql with syntax "%(key)s"
         :param fetch: 'one', 1, 'all', an integer (maxsize for many), or None (don't fetch)
+        :param fetch_last_inserted_ids: to fetch LAST_INSERTED_IDs or not; only effective if fetch is not None;
+                                        should only be set to True when executing an INSERT sql.
         """
         # self._start_time = datetime.now()
         self._event = event
@@ -103,7 +108,10 @@ class SafeExecutor:
         self._sql = sql
         self._parameters = parameters or {}
         self._fetch = fetch
+        self._fetch_last_inserted_ids = fetch_last_inserted_ids
         if params:
+            if not isinstance(self._parameters, dict):
+                raise ValueError('Cannot combine list-params and keyword-params')
             self._parameters.update(params)
 
     async def __aenter__(self) -> Any:
@@ -117,27 +125,55 @@ class SafeExecutor:
         # log.info(f"Starting {self.__class__.__name__}: {self._event}, sql: {self._sql}, params: {self._parameters}")
         self._conn = await self._pool.acquire()
         self._cursor = await self._conn.cursor()
+
         try:
             await self._cursor.execute(self._sql, self._parameters)
+
         except Exception as e:
             raise e
+
         else:
             # log.info(f"Executed {self.__class__.__name__}: {self._event} after {datetime.now() - self._start_time}, "
             #          f"sql: {self._sql}")
-            if self._fetch == 'one' or self._fetch == 1:
-                return await self._cursor.fetchone()
+            if self._fetch_last_inserted_ids:
+                return await self._fetch_inserted_ids()
+            else:
+                return await self._fetch()
 
-            if self._fetch == 'all':
-                return await self._cursor.fetchall()
+        finally:
+            await self._cursor.close()
+            if self._commit:
+                await self._conn.commit()
+            self._pool.release(self._conn)
+            # log.info(f"Ended {self.__class__.__name__}: {self._event} after {datetime.now() - self._start_time}")
 
-            if isinstance(self._fetch, int) and self._fetch > 0:
-                return await self._cursor.fetchmany(self._fetch)
+    async def _fetch(self):
+        if self._fetch == 'one' or self._fetch == 1:
+            return await self._cursor.fetchone()
 
-            return None  # got strange things or None for fetch
+        if self._fetch == 'all':
+            return await self._cursor.fetchall()
+
+        if isinstance(self._fetch, int) and self._fetch > 0:
+            return await self._cursor.fetchmany(self._fetch)
+
+        return None  # got strange things or None for fetch
+
+    async def _fetch_inserted_ids(self):
+        await self._cursor.execute('SELECT LAST_INSERT_ID(), ROW_COUNT();')
+        first_id, row_count = await self._cursor.fetchone()
+
+        if self._fetch == 'one' or self._fetch == 1:
+            return first_id,  # return as tuple
+
+        if self._fetch == 'all':
+            return [(first_id+i,) for i in range(row_count)]  # return as list of tuples
+
+        if isinstance(self._fetch, int) and self._fetch > 0:
+            return_rows = min(row_count, self._fetch)
+            return [(first_id+i,) for i in range(return_rows)]  # return as list of tuples
+
+        return None  # got strange things or None for fetch
 
     async def __aexit__(self, exc_type, exc_value, traceback):
-        await self._cursor.close()
-        if self._commit:
-            await self._conn.commit()
-        self._pool.release(self._conn)
-        # log.info(f"Ended {self.__class__.__name__}: {self._event} after {datetime.now() - self._start_time}")
+        pass

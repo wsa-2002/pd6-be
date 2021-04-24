@@ -68,9 +68,9 @@ def add_institute(request: auth.AuthedRequest):
         raise exc.rbac.NoPermission
 
     data = await request.json()
-    data['']
-    ...  # TODO
-    return {'id': 1}
+    name, email_domain = data['name'], data['email-domain']
+    institute_id = await db.institute.add_institute(name=name, email_domain=email_domain)
+    return {'id': institute_id}
 
 
 ntu = {
