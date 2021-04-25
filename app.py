@@ -16,7 +16,7 @@ async def app_startup():
 @app.on_event('shutdown')
 async def app_shutdown():
     from persistence import database
-    database.close()
+    await database.close()
 
 
 # Register custom exception handler

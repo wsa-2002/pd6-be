@@ -36,7 +36,6 @@ async def set_info(account_id: int,
                 fr'   SET {set_sql}',
             account_id=account_id,
             **to_updates,
-            commit=True,
     ):
         return
 
@@ -61,6 +60,5 @@ async def set_enabled(account_id: int, is_enabled: bool):
                 fr'   SET account.is_enabled = %(is_enabled)s',
             account_id=account_id,
             is_enabled=is_enabled,
-            commit=True,
     ):
         return
