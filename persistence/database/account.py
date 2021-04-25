@@ -4,7 +4,7 @@ from . import do
 from .base import SafeExecutor
 
 
-async def get_info(account_id: int) -> do.Account:
+async def get_by_id(account_id: int) -> do.Account:
     async with SafeExecutor(
             event='get account info',
             sql=r'SELECT id, name, nickname, real_name, role_id, is_enabled, alternative_email'
@@ -18,8 +18,8 @@ async def get_info(account_id: int) -> do.Account:
 
 
 # Uses ellipsis (...) as default value for values that can be set to None
-async def set_info(account_id: int,
-                   nickname: Optional[str] = ...):
+async def set_by_id(account_id: int,
+                    nickname: Optional[str] = ...):
     to_updates = {}
     if nickname is not ...:
         to_updates['nickname'] = nickname

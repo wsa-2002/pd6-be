@@ -39,11 +39,11 @@ class DataclassBase(metaclass=DataclassMeta):
     def as_dict(self) -> Dict:
         return _dc.asdict(self)
 
-
-class IntEnum(enum.IntEnum):
-    @property
-    def int(self) -> int:
-        return self.value
+    def as_resp_dict(self) -> Dict:
+        """
+        Escapes underscore to hyphen
+        """
+        return {k.replace('_', '-'): v for k, v in self.as_dict().items()}
 
 
 class StrEnum(str, enum.Enum):
@@ -67,3 +67,35 @@ class StrEnum(str, enum.Enum):
                     return item
             else:  # cannot find
                 raise e
+
+
+class OrderedMixin:
+    """
+    Mixin for Enum
+    Order is retrieved by the definition-order of Enum values, with SMALLER VALUES FIRST!
+    """
+
+    def __gt__(self: T, other: T):
+        items = tuple(self.__class__)
+        return items.index(self).__gt__(items.index(other))
+
+    def __lt__(self: T, other: T):
+        return self != other and not self.__gt__(other)
+
+    def __ge__(self: T, other: T):
+        return self == other or self.__gt__(other)
+
+    def __le__(self: T, other: T):
+        return self == other or not self.__gt__(other)
+
+    @property
+    def smaller(self: T) -> T:
+        items = tuple(self.__class__)
+        self_index = items.index(self)
+        return items[self_index-1] if self_index else items[0]
+
+    @property
+    def larger(self: T) -> T:
+        items = tuple(reversed(self.__class__))
+        self_index = items.index(self)
+        return items[self_index-1] if self_index else items[0]

@@ -2,4 +2,9 @@ class PdogsException:
     pass
 
 
-from . import rbac
+class NoPermission(PdogsException):
+    pass
+
+
+class NotFound(PdogsException):
+    pass

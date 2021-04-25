@@ -27,5 +27,6 @@ async def close():
 from . import (
     account,
     institute,
+    student_card,
     rbac,
 )

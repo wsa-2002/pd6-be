@@ -28,6 +28,8 @@ from typing import Dict
 
 import asyncpg
 
+import exceptions as exc
+
 from . import _pool
 
 
@@ -86,18 +88,20 @@ class SafeExecutor:
             conn: asyncpg.connection.Connection
 
             if self._fetch == 'all':
-                return await conn.fetch(self._sql, *self._parameters)
-
+                results = await conn.fetch(self._sql, *self._parameters)
             elif self._fetch == 'one' or self._fetch == 1:
-                return await conn.fetchrow(self._sql, *self._parameters)
-
+                results = await conn.fetchrow(self._sql, *self._parameters)
             elif isinstance(self._fetch, int) and self._fetch > 0:
                 cur = await conn.cursor(self._sql, *self._parameters)
-                return await cur.fetch(self._fetch)
+                results = await cur.fetch(self._fetch)
 
             else:
                 await conn.execute(self._sql, *self._parameters)
                 return None
+
+            if not results:
+                raise exc.NotFound
+            return results
 
             # log.info(f"Ended {self.__class__.__name__}: {self._event} after {datetime.now() - self._start_time}")
 

@@ -1,7 +1,15 @@
-from .cls import IntEnum
+from .cls import OrderedMixin, StrEnum
 
 
-class Role(IntEnum):
-    manager = 1
-    normal = 2
-    guest = 3
+class Role(OrderedMixin, StrEnum):
+    guest = 'GUEST'
+    normal = 'NORMAL'
+    manager = 'MANAGER'
+
+    @property
+    def is_manager(self):
+        return self is self.manager
+
+    @property
+    def not_manager(self):
+        return self is not self.manager
