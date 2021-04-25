@@ -6,9 +6,10 @@ import fastapi
 from fastapi import routing
 import jwt
 
+import exceptions as exc
 from base.cls import DataclassBase
 from base.enum import RoleType
-from persistence.database.rbac import get_system_role_by_account_id
+from persistence import database as db
 
 
 SECRET = 'aaa'  # TODO
@@ -21,15 +22,32 @@ class AuthedAccount(DataclassBase):
     role: RoleType
 
 
+def gen_jwt(account_id: int, expire: timedelta = DEFAULT_VALID) -> str:
+    return jwt.encode({
+        'account-id': account_id,
+        'expire': (datetime.now() + expire).isoformat(),
+    }, key=SECRET)
+
+
+def validate_jwt(encoded: str) -> AuthedAccount:
+    decoded = jwt.decode(encoded, key=SECRET)
+    expire = datetime.fromisoformat(decoded['expire'])
+    if expire > datetime.now():
+        raise exc.LoginExpired
+    account_id = decoded['account-id']
+    return AuthedAccount(id=account_id, role=await db.rbac.get_system_role_by_account_id(account_id))
+
+
 class AuthedRequest(fastapi.Request):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # TODO
-        encoded_jwt = self.headers.get('auth-token')
+
         try:
-            self._account = decode_jwt(encoded_jwt)
-        except:
-            ...  # TODO
+            encoded_jwt = self.headers['auth-token']
+        except KeyError:
+            raise exc.NoPermission
+
+        self._account = validate_jwt(encoded_jwt)
 
     @property
     def account(self) -> AuthedAccount:
@@ -49,19 +67,3 @@ class LoginRequiredRouter(routing.APIRoute):
             return await original_route_handler(request)
 
         return custom_route_handler
-
-
-def gen_jwt(account_id: int, expire: timedelta = DEFAULT_VALID) -> str:
-    return jwt.encode({
-        'account-id': account_id,
-        'expire': (datetime.now() + expire).isoformat(),
-    }, key=SECRET)
-
-
-def decode_jwt(encoded: str) -> AuthedAccount:
-    decoded = jwt.decode(encoded, key=SECRET)
-    expire = datetime.fromisoformat(decoded['expire'])
-    if expire > datetime.now():
-        ...  # TODO
-    account_id = decoded['account-id']
-    return AuthedAccount(id=account_id, role=await get_system_role_by_account_id(account_id))
