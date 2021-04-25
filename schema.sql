@@ -1,342 +1,246 @@
-CREATE DATABASE pdogs;
+-- account control
 
-USE pdogs;
-
--- RBAC
-
-CREATE TABLE role (
-  id    INT         UNSIGNED  NOT NULL  AUTO_INCREMENT,
-  name  VARCHAR(32) NOT NULL,
-
-  PRIMARY KEY (id),
-  UNIQUE (name)
-);
-
-CREATE TABLE permission (
-  id    INT         UNSIGNED  NOT NULL  AUTO_INCREMENT,
-  name  VARCHAR(32) NOT NULL,
-
-  PRIMARY KEY (id),
-  UNIQUE (name)
-);
-
-CREATE TABLE role_permission (
-  role_id       INT     UNSIGNED  NOT NULL,
-  permission_id INT     UNSIGNED  NOT NULL,
-  is_active     BOOLEAN NOT NULL  DEFAULT false,
-
-  PRIMARY KEY (role_id, permission_id),
-  FOREIGN KEY (role_id) REFERENCES role(id),
-  FOREIGN KEY (permission_id) REFERENCES permission(id)
-);
-
-
--- Account
+CREATE TYPE role_type AS ENUM (
+  'GUEST',
+  'NORMAL',
+  'MANAGER'
+);  -- 'MANAGER' > 'NORMAL'
 
 CREATE TABLE institute (
-  id            INT           UNSIGNED  NOT NULL  AUTO_INCREMENT,
-  name          VARCHAR(32)   NOT NULL,
-  email_domain  VARCHAR(255)  NOT NULL,
-
-  PRIMARY KEY (id),
-  UNIQUE (name),
-  UNIQUE (email_domain)
+  id            SERIAL  PRIMARY KEY,
+  "name"        VARCHAR UNIQUE  NOT NULL,
+  email_domain  VARCHAR UNIQUE  NOT NULL
 );
 
 CREATE TABLE student_card (
-  id            INT           UNSIGNED  NOT NULL  AUTO_INCREMENT,
-  institute_id  INT           NOT NULL,
-  department    VARCHAR(32)   NOT NULL,
-  student_id    VARCHAR(32)   NOT NULL,
-  email         VARCHAR(255)  NOT NULL,
-  is_enabled    BOOLEAN       NOT NULL  DEFAULT false,
+  id            SERIAL  PRIMARY KEY,
+  institute_id  INTEGER NOT NULL  REFERENCES institute(id),
+  department    VARCHAR NOT NULL,
+  student_id    VARCHAR NOT NULL  UNIQUE,  -- UNIQUE for functional safety
+  email         VARCHAR NOT NULL,
+  is_enabled    BOOLEAN NOT NULL  DEFAULT false,
 
-  PRIMARY KEY (id),
-  FOREIGN KEY (account_id) REFERENCES account(id),
-  FOREIGN KEY (institute_id) REFERENCES institute(id),
-
-  UNIQUE (institute_id, student_id),
-  UNIQUE (student_id)  -- for functional safety
+  UNIQUE (institute_id, student_id)
 );
 
 CREATE TABLE account (
-  id                INT             UNSIGNED  NOT NULL  AUTO_INCREMENT,
-  name              VARCHAR(32)     NOT NULL,
-  pass_salt         VARBINARY(128)  NOT NULL,
-  pass_hash         VARBINARY(128)  NOT NULL,
-  nickname          VARCHAR(255)    NOT NULL,
-  real_name         VARCHAR(32)     NOT NULL,
-  role_id           INT             UNSIGNED  NOT NULL,  -- global role
-  alternative_email VARCHAR(255)    ,
-  is_enabled        BOOLEAN         NOT NULL  DEFAULT false,
---  is_hidden     BOOLEAN         NOT NULL  DEFAULT false,
+  id                SERIAL    PRIMARY KEY,
+  "name"            VARCHAR   NOT NULL,
+  pass_salt         BYTEA     NOT NULL,
+  pass_hash         BYTEA     NOT NULL,
+  nickname          VARCHAR   NOT NULL,
+  real_name         VARCHAR   NOT NULL,
+  "role"            role_type NOT NULL,  -- global role
+  alternative_email VARCHAR,
+  is_enabled        BOOLEAN   NOT NULL  DEFAULT false,
+);
 
-  PRIMARY KEY (id),
-  FOREIGN KEY (role_id) REFERENCES role(id),
-  UNIQUE (name),
-  UNIQUE (email)
+CREATE TABLE account_student_card (
+  account_id      INTEGER NOT NULL  REFERENCES account(id),
+  student_card_id INTEGER NOT NULL  REFERENCES student_card(id),
+
+  PRIMARY KEY (account_id, student_card_id)
 );
 
 
 -- Course management
 
 CREATE TABLE course_type (
-  id    INT         UNSIGNED  NOT NULL  AUTO_INCREMENT,
-  name  VARCHAR(32) NOT NULL,
-
-  PRIMARY KEY (id),
-  UNIQUE (name)
+  id      SERIAL  PRIMARY KEY,
+  "name"  VARCHAR NOT NULL  UNIQUE
 );
 
 CREATE TABLE course (
-  id          INT         UNSIGNED  NOT NULL  AUTO_INCREMENT,
-  name        VARCHAR(32) NOT NULL,
-  type_id     INT         UNSIGNED  NOT NULL,
-  is_enabled  BOOLEAN     NOT NULL  DEFAULT false,
-  is_hidden   BOOLEAN     NOT NULL  DEFAULT true,
-
-  PRIMARY KEY (id),
-  FOREIGN KEY (type_id) REFERENCES course_type(id),
-  UNIQUE (name)
+  id          SERIAL  PRIMARY KEY,
+  "name"      VARCHAR NOT NULL  UNIQUE,
+  type_id     INTEGER NOT NULL  REFERENCES course_type(id),
+  is_enabled  BOOLEAN NOT NULL  DEFAULT false,
+  is_hidden   BOOLEAN NOT NULL  DEFAULT true
 );
 
 CREATE TABLE course_member (
-  course_id   INT     UNSIGNED  NOT NULL,
-  account_id  INT     UNSIGNED  NOT NULL,
-  role_id     INT     UNSIGNED  NOT NULL,
-  is_enabled  BOOLEAN NOT NULL  DEFAULT false,
+  course_id   INTEGER   NOT NULL  REFERENCES course(id),
+  account_id  INTEGER   NOT NULL  REFERENCES account(id),
+  "role"      role_type NOT NULL,
 
-  PRIMARY KEY (course_id, account_id),
-  FOREIGN KEY (course_id) REFERENCES course(id),
-  FOREIGN KEY (account_id) REFERENCES account(id),
-  FOREIGN KEY (role_id) REFERENCES role(id)
+  PRIMARY KEY (course_id, account_id)
 );
 
 CREATE TABLE class (
-  id          INT         UNSIGNED  NOT NULL  AUTO_INCREMENT,
-  course_id   INT         UNSIGNED  NOT NULL,
-  name        VARCHAR(32) NOT NULL,
-  is_enabled  BOOLEAN     NOT NULL  DEFAULT false,
-  is_hidden   BOOLEAN     NOT NULL  DEFAULT true,
-  
-  PRIMARY KEY (id),
-  FOREIGN KEY (course_id) REFERENCES course(id),
-  UNIQUE (course_id, name)
+  id          SERIAL  PRIMARY KEY,
+  course_id   INTEGER NOT NULL  REFERENCES course(id),
+  "name"      VARCHAR NOT NULL,
+  is_enabled  BOOLEAN NOT NULL  DEFAULT false,
+  is_hidden   BOOLEAN NOT NULL  DEFAULT true,
+
+  UNIQUE (course_id, "name")
 );
 
 CREATE TABLE class_member (
-  class_id    INT     UNSIGNED  NOT NULL,
-  account_id  INT     UNSIGNED  NOT NULL,
-  role_id     INT     UNSIGNED  NOT NULL,
-  is_enabled  BOOLEAN NOT NULL  DEFAULT false,
+  class_id    INTEGER   NOT NULL  REFERENCES class(id),
+  account_id  INTEGER   NOT NULL  REFERENCES account(id),
+  "role"      role_type NOT NULL,
+  is_enabled  BOOLEAN   NOT NULL  DEFAULT false,
 
-  PRIMARY KEY (class_id, account_id),
-  FOREIGN KEY (class_id) REFERENCES class(id),
-  FOREIGN KEY (account_id) REFERENCES account(id),
-  FOREIGN KEY (role_id) REFERENCES role(id)
+  PRIMARY KEY (class_id, account_id)
 );
 
 CREATE TABLE team (
-  id          INT         UNSIGNED  NOT NULL  AUTO_INCREMENT,
-  class_id    INT         UNSIGNED  NOT NULL,
-  name        VARCHAR(32) NOT NULL,
-  is_enabled  BOOLEAN     NOT NULL  DEFAULT false,
-  is_hidden   BOOLEAN     NOT NULL  DEFAULT true,
+  id          SERIAL  PRIMARY KEY,
+  class_id    INTEGER NOT NULL  REFERENCES class(id),
+  "name"      VARCHAR NOT NULL,
+  is_enabled  BOOLEAN NOT NULL  DEFAULT false,
+  is_hidden   BOOLEAN NOT NULL  DEFAULT true,
 
-  PRIMARY KEY (id),
-  FOREIGN KEY (class_id) REFERENCES class(id),
-  UNIQUE (class_id, name)
+  UNIQUE (class_id, "name")
 );
 
 CREATE TABLE team_member (
-  team_id     INT     UNSIGNED  NOT NULL,
-  account_id  INT     UNSIGNED  NOT NULL,
-  role_id     INT     UNSIGNED  NOT NULL,
+  team_id     INTEGER NOT NULL  REFERENCES team(id),
+  account_id  INTEGER NOT NULL  REFERENCES account(id),
+  "role"      INTEGER NOT NULL  REFERENCES role(id),
   is_enabled  BOOLEAN NOT NULL  DEFAULT false,
 
-  PRIMARY KEY (team_id, account_id),
-  FOREIGN KEY (team_id) REFERENCES team(id),
-  FOREIGN KEY (account_id) REFERENCES account(id),
-  FOREIGN KEY (role_id) REFERENCES role(id)
+  PRIMARY KEY (team_id, account_id)
 );
 
 
 -- Challenge-problem management
 
 CREATE TABLE challenge_type (
-  id    INT         UNSIGNED  NOT NULL  AUTO_INCREMENT,
-  name  VARCHAR(32) NOT NULL,
-  
-  PRIMARY KEY (id),
-  UNIQUE (name)
+  id      SERIAL  PRIMARY KEY,
+  "name"  VARCHAR NOT NULL  UNIQUE
 );
 
 CREATE TABLE challenge (
-  id          INT         UNSIGNED  NOT NULL  AUTO_INCREMENT,
-  class_id    INT         UNSIGNED  NOT NULL,
-  type_id     INT         UNSIGNED  NOT NULL,
-  name        VARCHAR(32) NOT NULL,
-  setter_id   INT         UNSIGNED  NOT NULL,
+  id          SERIAL  PRIMARY KEY,
+  class_id    INTEGER NOT NULL  REFERENCES class(id),
+  type_id     INTEGER NOT NULL  REFERENCES challenge_type(id),
+  "name"      VARCHAR NOT NULL,
+  setter_id   INTEGER NOT NULL  REFERENCES account(id),
   description TEXT,
   start_time  DATETIME    NOT NULL,
   end_time    DATETIME    NOT NULL,
   is_enabled  BOOLEAN     NOT NULL  DEFAULT false,
   is_hidden   BOOLEAN     NOT NULL  DEFAULT true,
 
-  PRIMARY KEY (id),
-  FOREIGN KEY (class_id) REFERENCES class(id),
-  FOREIGN KEY (type_id) REFERENCES challenge_type(id),
-  FOREIGN KEY (setter_id) REFERENCES account(id),
-  UNIQUE (class_id, name)
+  UNIQUE (class_id, "name")
 );
 
--- 'judge',
--- 'options',
--- 'file',
--- 'peer',
--- 'project'
--- 'special'
-
-CREATE TABLE problem_type (
-  id    INT         UNSIGNED  NOT NULL  AUTO_INCREMENT,
-  name  VARCHAR(32) NOT NULL,
-  
-  PRIMARY KEY (id),
-  UNIQUE (name)
+CREATE TYPE problem_type AS ENUM (
+  'JUDGE',
+  'OPTIONS',
+  'FILE',
+  'PEER',
+  'PROJECT',
+  'SPECIAL'
 );
 
 CREATE TABLE problem (
-  id          INT         UNSIGNED  NOT NULL  AUTO_INCREMENT,
-  type_id     INT         UNSIGNED  NOT NULL,
-  name        VARCHAR(32) NOT NULL,
-  setter_id   INT         UNSIGNED  NOT NULL,
-  full_score  INT         UNSIGNED  NOT NULL,
+  id          SERIAL        PRIMARY KEY,
+  type_id     problem_type  NOT NULL,
+  "name"      VARCHAR       NOT NULL  UNIQUE,
+  setter_id   INTEGER       NOT NULL  REFERENCES account(id),
+  full_score  INTEGER       NOT NULL,
   description TEXT,
   source      TEXT,
   hint        TEXT,
-  is_enabled  BOOLEAN     NOT NULL  DEFAULT false,
-  is_hidden   BOOLEAN     NOT NULL  DEFAULT true,
-
-  PRIMARY KEY (id),
-  FOREIGN KEY (type_id) REFERENCES problem_type(id),
-  FOREIGN KEY (setter_id) REFERENCES account(id),
-  UNIQUE (name)
+  is_enabled  BOOLEAN       NOT NULL  DEFAULT false,
+  is_hidden   BOOLEAN       NOT NULL  DEFAULT true
 );
 
 CREATE TABLE testdata (
-  id            INT     UNSIGNED  NOT NULL  AUTO_INCREMENT,
-  problem_id    INT     UNSIGNED  NOT NULL,
+  id            SERIAL  PRIMARY KEY,
+  problem_id    INTEGER NOT NULL  REFERENCES problem(id),
   is_sample     BOOLEAN NOT NULL,
-  score         INT     NOT NULL, -- 保留設定扣分測資的空間
-  input_file    TEXT,
-  ouptut_file   TEXT,
-  time_limit    INT     UNSIGNED, -- ms
-  memory_limit  INT     UNSIGNED, -- kb
+  score         INTEGER NOT NULL, -- 保留設定扣分測資的空間
+  input_file    VARCHAR,
+  ouptut_file   VARCHAR,
+  time_limit    INTEGER, -- ms
+  memory_limit  INTEGER, -- kb
   is_enabled    BOOLEAN NOT NULL  DEFAULT false,
-  is_hidden     BOOLEAN NOT NULL  DEFAULT true,
-
-  PRIMARY KEY (id),
-  FOREIGN KEY (problem_id) REFERENCES problem(id)
+  is_hidden     BOOLEAN NOT NULL  DEFAULT true
 );
 
 CREATE TABLE challenge_problem (
-  challenge_id  INT UNSIGNED  NOT NULL,
-  problem_id    INT UNSIGNED  NOT NULL,
+  challenge_id  INTEGER NOT NULL  REFERENCES challenge(id),
+  problem_id    INTEGER NOT NULL  REFERENCES problem(id),
 
-  PRIMARY KEY (challenge_id, problem_id),
-  FOREIGN KEY (challenge_id) REFERENCES challenge(id),
-  FOREIGN KEY (problem_id) REFERENCES problem(id)
+  PRIMARY KEY (challenge_id, problem_id)
 );
 
 
 -- submission management
 
 CREATE TABLE submission_language (
-  id      INT         UNSIGNED  NOT NULL  AUTO_INCREMENT,
-  name    VARCHAR(32) NOT NULL,
-  version VARCHAR(32) NOT NULL,
+  id        SERIAL  PRIMARY KEY,
+  "name"    VARCHAR NOT NULL,
+  "version" VARCHAR NOT NULL,
 
-  PRIMARY KEY (id),
-  UNIQUE (name, version)
+  UNIQUE ("name", "version")
 );
 
 CREATE TABLE submission (
-  id              INT       UNSIGNED  NOT NULL  AUTO_INCREMENT,
-  account_id      INT       UNSIGNED  NOT NULL,
-  problem_id      INT       UNSIGNED  NOT NULL,
-  challenge_id    INT       UNSIGNED,
-  language_id     INT       UNSIGNED  NOT NULL,
-  content_file    TEXT      NOT NULL,
-  content_length  SMALLINT  UNSIGNED  NOT NULL, -- 因為 TEXT 也只能存到 65535
-  submit_time     DATETIME  NOT NULL,
-
-  PRIMARY KEY (id),
-  FOREIGN KEY (account_id) REFERENCES account(id),
-  FOREIGN KEY (problem_id) REFERENCES problem(id),
-  FOREIGN KEY (challenge_id) REFERENCES challenge(id),
-  FOREIGN KEY (language_id) REFERENCES submission_language(id)
+  id              SERIAL    PRIMARY KEY,
+  account_id      INTEGER   NOT NULL  REFERENCES account(id),
+  problem_id      INTEGER   NOT NULL  REFERENCES problem(id),
+  challenge_id    INTEGER             REFERENCES challenge(id),
+  language_id     INTEGER   NOT NULL  REFERENCES submission_language(id),
+  content_file    VARCHAR   NOT NULL,
+  content_length  INTEGER   NOT NULL,
+  submit_time     TIMESTAMP NOT NULL
 );
 
--- AC
--- WA
--- TLE
-CREATE TABLE judgment_result (
-  id        INT         UNSIGNED  NOT NULL  AUTO_INCREMENT,
-  priority  TINYINT     UNSIGNED  NOT NULL,
-  name      VARCHAR(32) NOT NULL,
-
-  PRIMARY KEY (id),
-  UNIQUE (priority),
-  UNIQUE (name)
-);
+CREATE TYPE judgment_status_type AS ENUM (
+  'WAITING FOR JUDGE',
+  'JUDGING',
+  'ACCEPTED',
+  'WRONG ANSWER',
+  'MEMORY LIMIT EXCEED',
+  'TIME LIMIT EXCEED',
+  'RUNTIME ERROR',
+  'COMPILE ERROR',
+  'OTHER - CONTACT STAFF',
+  'RESTRICTED FUNCTION',
+  'SYSTEM ERROR'
+);  -- 'ACCEPTED' < 'WRONG ANSWER'
 
 -- rejudge => one submission many judgement
 
 CREATE TABLE judgment (
-  id            INT UNSIGNED  NOT NULL  AUTO_INCREMENT,
-  submission_id INT UNSIGNED  NOT NULL,
-  result_id     INT UNSIGNED  NOT NULL,
-  total_time    INT UNSIGNED,
-  max_memory    INT UNSIGNED,
-  score         INT, -- 保留設定扣分測資的空間
-  judge_time    DATETIME      NOT NULL,
-
-  PRIMARY KEY (id),
-  FOREIGN KEY (submission_id) REFERENCES submission(id),
-  FOREIGN KEY (result_id) REFERENCES judgment_result(id)
+  id            SERIAL                PRIMARY KEY,
+  submission_id INTEGER               NOT NULL  REFERENCES submission(id),
+  status        judgment_status_type  NOT NULL,
+  total_time    INTEGER,
+  max_memory    INTEGER,
+  score         INTEGER,  -- 保留設定扣分測資的空間
+  judge_time    TIMESTAMP             NOT NULL
 );
 
 CREATE TABLE judgment_testdata_result (
-  judgment_id INT UNSIGNED  NOT NULL,
-  testdata_id INT UNSIGNED  NOT NULL,
-  result_id   INT UNSIGNED  NOT NULL,
-  time_lapse  INT UNSIGNED,
-  peak_memory INT UNSIGNED,
-  score       INT, -- 保留設定扣分測資的空間
+  judgment_id INTEGER               NOT NULL REFERENCES judgment(id),
+  testdata_id INTEGER               NOT NULL REFERENCES testdata(id),
+  status      judgment_status_type  NOT NULL,
+  time_lapse  INTEGER,
+  peak_memory INTEGER,
+  score       INTEGER,  -- 保留設定扣分測資的空間
 
-  PRIMARY KEY (judgment_id, testdata_id),
-  FOREIGN KEY (judgment_id) REFERENCES judgment(id),
-  FOREIGN KEY (testdata_id) REFERENCES testdata(id),
-  FOREIGN KEY (result_id) REFERENCES judgment_result(id)
+  PRIMARY KEY (judgment_id, testdata_id)
 );
 
 
 -- Score
 
 CREATE TABLE grade (
-  id          INT           UNSIGNED  NOT NULL  AUTO_INCREMENT,
-  receiver_id INT           UNSIGNED  NOT NULL,
-  grader_id   INT           UNSIGNED  NOT NULL,
-  class_id    INT           UNSIGNED,
-  item_name   VARCHAR(255)  NOT NULL,
-  score       INT,
-  comment     TEXT,
-  update_time DATETIME      NOT NULL,
+  id          SERIAL    PRIMARY KEY,
+  receiver_id INTEGER   NOT NULL  REFERENCES account(id),
+  grader_id   INTEGER   NOT NULL  REFERENCES account(id),
+  class_id    INTEGER   REFERENCES class(id),
+  item_name   VARCHAR   NOT NULL,
+  score       INTEGER,
+  "comment"   TEXT,
+  update_time TIMESTAMP NOT NULL,
 
-  PRIMARY KEY (id),
-  FOREIGN KEY (receiver_id) REFERENCES account(id),
-  FOREIGN KEY (grader_id) REFERENCES account(id),
-  FOREIGN KEY (class_id) REFERENCES class(id),
   UNIQUE (receiver_id, item_name)
 );
 
@@ -344,43 +248,34 @@ CREATE TABLE grade (
 -- Peer management
 
 CREATE TABLE peer_review (
-  id                  INT       UNSIGNED  NOT NULL  AUTO_INCREMENT,
-  target_challenge_id INT       UNSIGNED  NOT NULL,
-  target_problem_id   INT       UNSIGNED  NOT NULL,
+  id                  SERIAL    PRIMARY KEY,
+  target_challenge_id INTEGER   NOT NULL  REFERENCES challenge(id),
+  target_problem_id   INTEGER   NOT NULL  REFERENCES problem(id),
   description         TEXT,
-  min_score           TINYINT   UNSIGNED  NOT NULL,
-  max_score           TINYINT   UNSIGNED  NOT NULL,
-  max_review_count    TINYINT   UNSIGNED  NOT NULL,  -- 一個人最多改幾份
-  start_time          DATETIME  NOT NULL,
-  end_time            DATETIME  NOT NULL,
+  min_score           INTEGER   NOT NULL,
+  max_score           INTEGER   NOT NULL,
+  max_review_count    INTEGER   NOT NULL,  -- 一個人最多改幾份
+  start_time          TIMESTAMP NOT NULL,
+  end_time            TIMESTAMP NOT NULL,
   is_enabled          BOOLEAN   NOT NULL  DEFAULT false,
-  is_hidden           BOOLEAN   NOT NULL  DEFAULT true,
-
-  PRIMARY KEY (id),
-  FOREIGN KEY (target_challenge_id) REFERENCES challenge(id),
-  FOREIGN KEY (target_problem_id) REFERENCES problem(id)
+  is_hidden           BOOLEAN   NOT NULL  DEFAULT true
 );
 
 /* every receiver one record -> 要改的時候 edit record, add grader -> 改完 edit record, add comment
    when every receiver one record all reviewed -> every receiver add one new record */
 
 CREATE TABLE peer_review_record (
-  id                  INT       UNSIGNED  NOT NULL  AUTO_INCREMENT,
-  peer_review_id      INT       UNSIGNED  NOT NULL,
-  grader_id           INT       UNSIGNED  NOT NULL,
-  receiver_id         INT       UNSIGNED  NOT NULL,
-  submission_id       INT       UNSIGNED,
-  score               TINYINT   UNSIGNED,
-  comment             TEXT,
-  submit_time         DATETIME  NOT NULL,
+  id                  SERIAL    PRIMARY KEY,
+  peer_review_id      INTEGER   NOT NULL  REFERENCES peer_review(id),
+  grader_id           INTEGER   NOT NULL  REFERENCES account(id),
+  receiver_id         INTEGER   NOT NULL  REFERENCES account(id),
+  submission_id       INTEGER             REFERENCES submission(id),
+  score               INTEGER,
+  "comment"           TEXT,
+  submit_time         TIMESTAMP  NOT NULL,
   disagreement        TEXT,
-  disagreement_time   DATETIME,
+  disagreement_time   TIMESTAMP,
 
-  PRIMARY KEY (id),
-  FOREIGN KEY (peer_review_id) REFERENCES peer_review(id),
-  FOREIGN KEY (grader_id) REFERENCES account(id),
-  FOREIGN KEY (receiver_id) REFERENCES account(id),
-  FOREIGN KEY (submission_id) REFERENCES submission(id),
   UNIQUE (peer_review_id, grader_id, submission_id)
 );
 
@@ -388,25 +283,19 @@ CREATE TABLE peer_review_record (
 -- System
 
 CREATE TABLE announcement (
-  id          INT           UNSIGNED  NOT NULL  AUTO_INCREMENT,
-  title       VARCHAR(255)  NOT NULL,
-  content     TEXT          NOT NULL,
-  author_id   INT           NOT NULL,
-  post_time   DATETIME      NOT NULL,  -- 排程貼文
-  expire_time DATETIME      NOT NULL,  -- 自動下架
-
-  PRIMARY KEY (id),
-  FOREIGN KEY (author_id) REFERENCES account(id)
+  id          SERIAL    PRIMARY KEY,
+  title       VARCHAR   NOT NULL,
+  "content"   TEXT      NOT NULL,
+  author_id   INTEGER   NOT NULL  REFERENCES account(id),
+  post_time   TIMESTAMP NOT NULL,  -- 排程貼文
+  expire_time TIMESTAMP NOT NULL   -- 自動下架
 );
 
 CREATE TABLE access_log (
-  id              BIGINT        UNSIGNED  NOT NULL  AUTO_INCREMENT,
-  access_time     DATETIME      NOT NULL,
-  request_method  VARCHAR(7)    NOT NULL, -- Longest is `CONNECT` -> 7
-  resource_path   VARCHAR(255)  NOT NULL,
-  ip              VARCHAR(47)   NOT NULL, -- Linux `INET6_ADDRSTRLEN = 48` -> 47 + terminating NULL
-  account_id      INT           UNSIGNED,
-
-  PRIMARY KEY (id),
-  FOREIGN KEY (account_id) REFERENCES account(id)
+  id              BIGSERIAL PRIMARY KEY,
+  access_time     TIMESTAMP NOT NULL,
+  request_method  VARCHAR   NOT NULL, -- Longest is `CONNECT` -> 7
+  resource_path   VARCHAR   NOT NULL,
+  ip              VARCHAR   NOT NULL, -- Linux `INET6_ADDRSTRLEN = 48` -> 47 + terminating NULL
+  account_id      INTEGER   REFERENCES account(id)
 );
