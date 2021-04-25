@@ -8,8 +8,9 @@ CREATE TYPE role_type AS ENUM (
 
 CREATE TABLE institute (
   id            SERIAL  PRIMARY KEY,
-  "name"        VARCHAR UNIQUE  NOT NULL,
-  email_domain  VARCHAR UNIQUE  NOT NULL
+  "name"        VARCHAR NOT NULL  UNIQUE,
+  email_domain  VARCHAR NOT NULL  UNIQUE,
+  is_enabled    BOOLEAN NOT NULL  DEFAULT false
 );
 
 CREATE TABLE student_card (
@@ -113,16 +114,16 @@ CREATE TABLE challenge_type (
 );
 
 CREATE TABLE challenge (
-  id          SERIAL  PRIMARY KEY,
-  class_id    INTEGER NOT NULL  REFERENCES class(id),
-  type_id     INTEGER NOT NULL  REFERENCES challenge_type(id),
-  "name"      VARCHAR NOT NULL,
-  setter_id   INTEGER NOT NULL  REFERENCES account(id),
+  id          SERIAL    PRIMARY KEY,
+  class_id    INTEGER   NOT NULL  REFERENCES class(id),
+  type_id     INTEGER   NOT NULL  REFERENCES challenge_type(id),
+  "name"      VARCHAR   NOT NULL,
+  setter_id   INTEGER   NOT NULL  REFERENCES account(id),
   description TEXT,
-  start_time  DATETIME    NOT NULL,
-  end_time    DATETIME    NOT NULL,
-  is_enabled  BOOLEAN     NOT NULL  DEFAULT false,
-  is_hidden   BOOLEAN     NOT NULL  DEFAULT true,
+  start_time  DATETIME  NOT NULL,
+  end_time    DATETIME  NOT NULL,
+  is_enabled  BOOLEAN   NOT NULL  DEFAULT false,
+  is_hidden   BOOLEAN   NOT NULL  DEFAULT true,
 
   UNIQUE (class_id, "name")
 );
@@ -235,7 +236,7 @@ CREATE TABLE grade (
   id          SERIAL    PRIMARY KEY,
   receiver_id INTEGER   NOT NULL  REFERENCES account(id),
   grader_id   INTEGER   NOT NULL  REFERENCES account(id),
-  class_id    INTEGER   REFERENCES class(id),
+  class_id    INTEGER             REFERENCES class(id),
   item_name   VARCHAR   NOT NULL,
   score       INTEGER,
   "comment"   TEXT,
@@ -272,7 +273,7 @@ CREATE TABLE peer_review_record (
   submission_id       INTEGER             REFERENCES submission(id),
   score               INTEGER,
   "comment"           TEXT,
-  submit_time         TIMESTAMP  NOT NULL,
+  submit_time         TIMESTAMP NOT NULL,
   disagreement        TEXT,
   disagreement_time   TIMESTAMP,
 
