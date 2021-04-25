@@ -46,17 +46,19 @@ CREATE TABLE account_student_card (
 
 -- Course management
 
-CREATE TABLE course_type (
-  id      SERIAL  PRIMARY KEY,
-  "name"  VARCHAR NOT NULL  UNIQUE
+
+CREATE TYPE course_type AS ENUM (
+  'LESSON',
+  'CONTEST'
 );
 
+
 CREATE TABLE course (
-  id          SERIAL  PRIMARY KEY,
-  "name"      VARCHAR NOT NULL  UNIQUE,
-  type_id     INTEGER NOT NULL  REFERENCES course_type(id),
-  is_enabled  BOOLEAN NOT NULL  DEFAULT false,
-  is_hidden   BOOLEAN NOT NULL  DEFAULT true
+  id          SERIAL      PRIMARY KEY,
+  "name"      VARCHAR     NOT NULL  UNIQUE,
+  type        course_type NOT NULL,
+  is_enabled  BOOLEAN     NOT NULL  DEFAULT false,
+  is_hidden   BOOLEAN     NOT NULL  DEFAULT true
 );
 
 CREATE TABLE course_member (

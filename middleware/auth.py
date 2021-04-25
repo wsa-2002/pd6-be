@@ -7,7 +7,7 @@ from fastapi import routing
 import jwt
 
 from base.cls import DataclassBase
-from base.enum import Role
+from base.enum import RoleType
 from persistence.database.rbac import get_system_role_by_account_id
 
 
@@ -18,7 +18,7 @@ DEFAULT_VALID = timedelta(days=7)  # TODO
 @dataclass
 class AuthedAccount(DataclassBase):
     id: int
-    role: Role
+    role: RoleType
 
 
 class AuthedRequest(fastapi.Request):

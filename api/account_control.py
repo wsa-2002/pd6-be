@@ -1,7 +1,7 @@
-from base.enum import Role
 import exceptions as exc
 from middleware import APIRouter, envelope, auth
 import persistence.database as db
+
 
 router = APIRouter(
     tags=['Account-Control'],
@@ -13,7 +13,7 @@ router = APIRouter(
 @router.get('/account/{account_id}')
 def get_account(account_id: int, request: auth.AuthedRequest):
     ask_for_self = request.account.id == account_id
-    if request.account.role is Role.guest and not ask_for_self:
+    if request.account.role.is_guest and not ask_for_self:
         raise exc.NoPermission
 
     target_account = await db.account.get_by_id(account_id)
@@ -24,7 +24,7 @@ def get_account(account_id: int, request: auth.AuthedRequest):
         'role': target_account.role,
     }
 
-    show_personal = ask_for_self or request.account.role is Role.manager
+    show_personal = ask_for_self or request.account.role.is_manager
     if show_personal:
         result.update({
             'real-name': target_account.real_name,
@@ -55,7 +55,7 @@ def remove_account(account_id: int, request: auth.AuthedRequest):
 
 @router.post('/institute')
 def add_institute(request: auth.AuthedRequest):
-    if request.account.role is not Role.manager:
+    if not request.account.role.is_manager:
         raise exc.NoPermission
 
     data = await request.json()
