@@ -1,7 +1,7 @@
-from base.enum import Role
 import exceptions as exc
 from middleware import APIRouter, envelope, auth
 import persistence.database as db
+
 
 router = APIRouter(
     tags=['Account-Control'],
@@ -11,9 +11,9 @@ router = APIRouter(
 
 
 @router.get('/account/{account_id}')
-def get_account(account_id: int, request: auth.AuthedRequest):
+async def get_account(account_id: int, request: auth.AuthedRequest):
     ask_for_self = request.account.id == account_id
-    if request.account.role is Role.guest and not ask_for_self:
+    if request.account.role.is_guest and not ask_for_self:
         raise exc.NoPermission
 
     target_account = await db.account.get_by_id(account_id)
@@ -24,7 +24,7 @@ def get_account(account_id: int, request: auth.AuthedRequest):
         'role': target_account.role,
     }
 
-    show_personal = ask_for_self or request.account.role is Role.manager
+    show_personal = ask_for_self or request.account.role.is_manager
     if show_personal:
         result.update({
             'real-name': target_account.real_name,
@@ -36,7 +36,7 @@ def get_account(account_id: int, request: auth.AuthedRequest):
 
 
 @router.patch('/account/{account_id}')
-def patch_account(account_id: int, request: auth.AuthedRequest):
+async def patch_account(account_id: int, request: auth.AuthedRequest):
     if request.account.role.not_manager and request.account.id != account_id:
         raise exc.NoPermission
 
@@ -46,7 +46,7 @@ def patch_account(account_id: int, request: auth.AuthedRequest):
 
 
 @router.delete('/account/{account_id}')
-def remove_account(account_id: int, request: auth.AuthedRequest):
+async def remove_account(account_id: int, request: auth.AuthedRequest):
     if request.account.role.not_manager and request.account.id != account_id:
         raise exc.NoPermission
 
@@ -54,8 +54,8 @@ def remove_account(account_id: int, request: auth.AuthedRequest):
 
 
 @router.post('/institute')
-def add_institute(request: auth.AuthedRequest):
-    if request.account.role is not Role.manager:
+async def add_institute(request: auth.AuthedRequest):
+    if not request.account.role.is_manager:
         raise exc.NoPermission
 
     data = await request.json()
@@ -65,19 +65,19 @@ def add_institute(request: auth.AuthedRequest):
 
 
 @router.get('/institute')
-def get_institutes(request: auth.AuthedRequest):
+async def get_institutes(request: auth.AuthedRequest):
     return [inst.as_resp_dict()
             for inst in await db.institute.get_all(only_enabled=request.account.role.not_manager)]
 
 
 @router.get('/institute/{institute_id}')
-def get_institute(institute_id: int, request: auth.AuthedRequest):
+async def get_institute(institute_id: int, request: auth.AuthedRequest):
     inst = await db.institute.get_by_id(institute_id, only_enabled=request.account.role.not_manager)
     return inst.as_resp_dict()
 
 
 @router.patch('/institute/{institute_id}')
-def update_institute(institute_id: int, request: auth.AuthedRequest):
+async def update_institute(institute_id: int, request: auth.AuthedRequest):
     if not request.account.role.is_manager:
         raise exc.NoPermission
 
@@ -89,7 +89,7 @@ def update_institute(institute_id: int, request: auth.AuthedRequest):
 
 
 @router.post('/account/{account_id}/student-card')
-def add_student_card_to_account(account_id: int, request: auth.AuthedRequest):
+async def add_student_card_to_account(account_id: int, request: auth.AuthedRequest):
     if request.account.role.not_manager and request.account.id != account_id:
         raise exc.NoPermission
 
@@ -105,7 +105,7 @@ def add_student_card_to_account(account_id: int, request: auth.AuthedRequest):
 
 
 @router.get('/account/{account_id}/student-card')
-def get_account_student_card(account_id: int, request: auth.AuthedRequest):
+async def get_account_student_card(account_id: int, request: auth.AuthedRequest):
     if request.account.role.not_manager and request.account.id != account_id:
         raise exc.NoPermission
 
@@ -114,7 +114,7 @@ def get_account_student_card(account_id: int, request: auth.AuthedRequest):
 
 
 @router.get('/student-card/{student_card_id}')
-def get_student_card(student_card_id: int, request: auth.AuthedRequest):
+async def get_student_card(student_card_id: int, request: auth.AuthedRequest):
     owner_id = await db.student_card.get_owner_id(student_card_id=student_card_id)
     if request.account.role.not_manager and request.account.id != owner_id:
         raise exc.NoPermission
@@ -123,7 +123,7 @@ def get_student_card(student_card_id: int, request: auth.AuthedRequest):
 
 
 @router.patch('/student-card/{student_card_id}')
-def update_student_card(student_card_id: int, request: auth.AuthedRequest):
+async def update_student_card(student_card_id: int, request: auth.AuthedRequest):
     # 暫時只開給 manager
     if not request.account.role.is_manager:
         raise exc.NoPermission
@@ -140,7 +140,7 @@ def update_student_card(student_card_id: int, request: auth.AuthedRequest):
 
 
 @router.delete('/student-card/{student_card_id}')
-def remove_student_card(student_card_id: int, request: auth.AuthedRequest):
+async def remove_student_card(student_card_id: int, request: auth.AuthedRequest):
     owner_id = await db.student_card.get_owner_id(student_card_id=student_card_id)
     if request.account.role.not_manager and request.account.id != owner_id:
         raise exc.NoPermission

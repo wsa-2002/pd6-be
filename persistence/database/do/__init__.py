@@ -4,8 +4,8 @@ Data Objects
 from dataclasses import dataclass
 from typing import Optional
 
+from base import enum
 from base.cls import DataclassBase
-from base.enum import Role
 
 
 @dataclass  # for PyCharm
@@ -14,7 +14,7 @@ class Account(DataclassBase):
     name: str
     nickname: str
     real_name: str
-    role: Role
+    role: enum.RoleType
     is_enabled: bool
     alternative_email: Optional[str] = None
 
@@ -35,3 +35,12 @@ class StudentCard(DataclassBase):
     student_id: str
     email: str
     is_enabled: bool
+
+
+@dataclass  # for PyCharm
+class Course(DataclassBase):
+    id: int
+    name: str
+    type: enum.CourseType
+    is_enabled: bool
+    is_hidden: bool

@@ -46,31 +46,33 @@ CREATE TABLE account_student_card (
 
 -- Course management
 
-CREATE TABLE course_type (
-  id      SERIAL  PRIMARY KEY,
-  "name"  VARCHAR NOT NULL  UNIQUE
+
+CREATE TYPE course_type AS ENUM (
+  'LESSON',
+  'CONTEST'
 );
 
+
 CREATE TABLE course (
-  id          SERIAL  PRIMARY KEY,
-  "name"      VARCHAR NOT NULL  UNIQUE,
-  type_id     INTEGER NOT NULL  REFERENCES course_type(id),
-  is_enabled  BOOLEAN NOT NULL  DEFAULT false,
-  is_hidden   BOOLEAN NOT NULL  DEFAULT true
+  id          SERIAL      PRIMARY KEY,
+  "name"      VARCHAR     NOT NULL  UNIQUE,
+  type        course_type NOT NULL,
+  is_enabled  BOOLEAN     NOT NULL  DEFAULT false,
+  is_hidden   BOOLEAN     NOT NULL  DEFAULT true
 );
 
 CREATE TABLE course_member (
-  course_id   INTEGER   NOT NULL  REFERENCES course(id),
-  account_id  INTEGER   NOT NULL  REFERENCES account(id),
-  "role"      role_type NOT NULL,
+  course_id INTEGER   NOT NULL  REFERENCES course(id),
+  member_id INTEGER   NOT NULL  REFERENCES account(id),
+  "role"    role_type NOT NULL,
 
-  PRIMARY KEY (course_id, account_id)
+  PRIMARY KEY (course_id, member_id)
 );
 
 CREATE TABLE class (
   id          SERIAL  PRIMARY KEY,
-  course_id   INTEGER NOT NULL  REFERENCES course(id),
   "name"      VARCHAR NOT NULL,
+  course_id   INTEGER NOT NULL  REFERENCES course(id),
   is_enabled  BOOLEAN NOT NULL  DEFAULT false,
   is_hidden   BOOLEAN NOT NULL  DEFAULT true,
 
@@ -78,18 +80,17 @@ CREATE TABLE class (
 );
 
 CREATE TABLE class_member (
-  class_id    INTEGER   NOT NULL  REFERENCES class(id),
-  account_id  INTEGER   NOT NULL  REFERENCES account(id),
-  "role"      role_type NOT NULL,
-  is_enabled  BOOLEAN   NOT NULL  DEFAULT false,
+  class_id  INTEGER   NOT NULL  REFERENCES class(id),
+  member_id INTEGER   NOT NULL  REFERENCES account(id),
+  "role"    role_type NOT NULL,
 
-  PRIMARY KEY (class_id, account_id)
+  PRIMARY KEY (class_id, member_id)
 );
 
 CREATE TABLE team (
   id          SERIAL  PRIMARY KEY,
-  class_id    INTEGER NOT NULL  REFERENCES class(id),
   "name"      VARCHAR NOT NULL,
+  class_id    INTEGER NOT NULL  REFERENCES class(id),
   is_enabled  BOOLEAN NOT NULL  DEFAULT false,
   is_hidden   BOOLEAN NOT NULL  DEFAULT true,
 
@@ -97,12 +98,11 @@ CREATE TABLE team (
 );
 
 CREATE TABLE team_member (
-  team_id     INTEGER NOT NULL  REFERENCES team(id),
-  account_id  INTEGER NOT NULL  REFERENCES account(id),
-  "role"      INTEGER NOT NULL  REFERENCES role(id),
-  is_enabled  BOOLEAN NOT NULL  DEFAULT false,
+  team_id   INTEGER NOT NULL  REFERENCES team(id),
+  member_id INTEGER NOT NULL  REFERENCES account(id),
+  "role"    INTEGER NOT NULL  REFERENCES role(id),
 
-  PRIMARY KEY (team_id, account_id)
+  PRIMARY KEY (team_id, member_id)
 );
 
 
