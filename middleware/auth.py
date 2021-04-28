@@ -1,3 +1,6 @@
+from functools import wraps
+from itertools import chain
+
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Callable
@@ -67,3 +70,33 @@ class LoginRequiredRouter(routing.APIRoute):
             return await original_route_handler(request)
 
         return custom_route_handler
+
+
+def require_normal(func):
+    @wraps(func)
+    def wrapped(*args, **kwargs):
+        # find authed request
+        for arg in chain(args, kwargs.values()):
+            if isinstance(arg, AuthedRequest):
+                if arg.account.role < RoleType.normal:
+                    raise exc.NoPermission
+                break
+        else:
+            raise ValueError("Unable to find authed request in function's arguments")
+
+        return func(*args, **kwargs)
+
+
+def require_manager(func):
+    @wraps(func)
+    def wrapped(*args, **kwargs):
+        # find authed request
+        for arg in chain(args, kwargs.values()):
+            if isinstance(arg, AuthedRequest):
+                if arg.account.role < RoleType.manager:
+                    raise exc.NoPermission
+                break
+        else:
+            raise ValueError("Unable to find authed request in function's arguments")
+
+        return func(*args, **kwargs)

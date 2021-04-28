@@ -28,5 +28,7 @@ from . import (
     account,
     institute,
     student_card,
+    course,
+    class_,
     rbac,
 )
