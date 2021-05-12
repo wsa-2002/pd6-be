@@ -13,6 +13,18 @@ CREATE TABLE institute (
   is_enabled    BOOLEAN NOT NULL  DEFAULT false
 );
 
+CREATE TABLE account (
+  id                SERIAL    PRIMARY KEY,
+  name              VARCHAR   NOT NULL,
+  pass_salt         BYTEA     NOT NULL,
+  pass_hash         BYTEA     NOT NULL,
+  nickname          VARCHAR   NOT NULL,
+  real_name         VARCHAR   NOT NULL,
+  role              role_type NOT NULL,  -- global role
+  alternative_email VARCHAR,
+  is_enabled        BOOLEAN   NOT NULL  DEFAULT false
+);
+
 CREATE TABLE student_card (
   id            SERIAL  PRIMARY KEY,
   account_id    INTEGER NOT NULL  REFERENCES account(id),
@@ -23,18 +35,6 @@ CREATE TABLE student_card (
   is_enabled    BOOLEAN NOT NULL  DEFAULT false,
 
   UNIQUE (institute_id, student_id)
-);
-
-CREATE TABLE account (
-  id                SERIAL    PRIMARY KEY,
-  "name"            VARCHAR   NOT NULL,
-  pass_salt         BYTEA     NOT NULL,
-  pass_hash         BYTEA     NOT NULL,
-  nickname          VARCHAR   NOT NULL,
-  real_name         VARCHAR   NOT NULL,
-  "role"            role_type NOT NULL,  -- global role
-  alternative_email VARCHAR,
-  is_enabled        BOOLEAN   NOT NULL  DEFAULT false,
 );
 
 
@@ -60,7 +60,7 @@ CREATE TABLE course (
 CREATE TABLE course_member (
   course_id INTEGER   NOT NULL  REFERENCES course(id),
   member_id INTEGER   NOT NULL  REFERENCES account(id),
-  "role"    role_type NOT NULL,
+  role      role_type NOT NULL,
 
   PRIMARY KEY (course_id, member_id)
 );
@@ -94,9 +94,9 @@ CREATE TABLE team (
 );
 
 CREATE TABLE team_member (
-  team_id   INTEGER NOT NULL  REFERENCES team(id),
-  member_id INTEGER NOT NULL  REFERENCES account(id),
-  role      INTEGER NOT NULL  REFERENCES role(id),
+  team_id   INTEGER   NOT NULL  REFERENCES team(id),
+  member_id INTEGER   NOT NULL  REFERENCES account(id),
+  role      role_type NOT NULL,
 
   PRIMARY KEY (team_id, member_id)
 );
@@ -116,8 +116,8 @@ CREATE TABLE challenge (
   name        VARCHAR   NOT NULL,
   setter_id   INTEGER   NOT NULL  REFERENCES account(id),
   description TEXT,
-  start_time  DATETIME  NOT NULL,
-  end_time    DATETIME  NOT NULL,
+  start_time  TIMESTAMP NOT NULL,
+  end_time    TIMESTAMP NOT NULL,
   is_enabled  BOOLEAN   NOT NULL  DEFAULT false,
   is_hidden   BOOLEAN   NOT NULL  DEFAULT true,
 
