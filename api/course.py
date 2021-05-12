@@ -141,7 +141,6 @@ async def modify_course_member(course_id: int, member_id: int, request: auth.Aut
 
 
 @router.delete('/course/{course_id}/member/{member_id}')
-@util.enveloped
 async def remove_course_member(course_id: int, member_id: int, request: auth.AuthedRequest):
     # Check with system role
     if not request.account.role.is_manager:
@@ -155,7 +154,6 @@ async def remove_course_member(course_id: int, member_id: int, request: auth.Aut
 
 
 @router.post('/course/{course_id}/class')
-@util.enveloped
 async def create_class_under_course(course_id: int, request: auth.AuthedRequest):
     # Check with system role
     if not request.account.role.is_manager:
@@ -179,7 +177,6 @@ async def create_class_under_course(course_id: int, request: auth.AuthedRequest)
 
 
 @router.get('/course/{course_id}/class')
-@util.enveloped
 async def get_classes_under_course(course_id: int, request: auth.AuthedRequest):
     try:
         await db.course.get_member_role(course_id=course_id, member_id=request.account.id)
@@ -191,31 +188,26 @@ async def get_classes_under_course(course_id: int, request: auth.AuthedRequest):
 
 
 @router.get('/class')
-@util.enveloped
 async def get_classes():
     return [model.pbc109]
 
 
 @router.get('/class/{class_id}')
-@util.enveloped
 async def get_class(class_id: int):
     return model.pbc109
 
 
 @router.patch('/class/{class_id}')
-@util.enveloped
 async def modify_class(class_id: int):
     pass
 
 
 @router.delete('/class/{class_id}')
-@util.enveloped
 async def remove_class(class_id: int):
     pass
 
 
 @router.get('/class/{class_id}/member')
-@util.enveloped
 async def get_class_members(class_id: int):
     return [{
         'account': model.account_simple,
@@ -224,72 +216,131 @@ async def get_class_members(class_id: int):
 
 
 @router.patch('/class/{class_id}/member')
-@util.enveloped
 async def modify_class_member(class_id: int):
     pass
 
 
 @router.delete('/class/{class_id}/member')
-@util.enveloped
 async def remove_class_member(class_id: int):
     pass
 
 
 @router.post('/class/{class_id}/team')
-@util.enveloped
 async def create_team_under_class(class_id: int):
     return {'id': 1}
 
 
 @router.get('/class/{class_id}/team')
-@util.enveloped
 async def get_teams_under_class(class_id: int):
     return [model.team_1]
 
 
 @router.get('/team')
-@util.enveloped
-async def get_teams():
-    return [model.team_1]
+@auth.require_normal
+async def get_teams(request: auth.AuthedRequest):
+    show_limited = request.account.role.not_manager
+    teams = await db.team.get_all(only_enabled=show_limited, exclude_hidden=show_limited)
+    return [team.as_resp_dict() for team in teams]
 
 
 @router.get('/team/{team_id}')
-@util.enveloped
-async def get_team(team_id: int):
-    return model.team_1
+@auth.require_normal
+async def get_team(team_id: int, request: auth.AuthedRequest):
+    show_limited = request.account.role.not_manager
+    team = await db.team.get_by_id(team_id, only_enabled=show_limited, exclude_hidden=show_limited)
+    return team.as_resp_dict()
+
+async def is_team_manager(team_id, account_id):
+    # Check with team role
+    try:
+        req_account_role = await db.team.get_member_role(team_id=team_id, member_id=account_id)
+    except exc.NotFound:  # Not even in team
+        return False
+    else:
+        return req_account_role.is_manager
 
 
 @router.patch('/team/{team_id}')
-@util.enveloped
-async def modify_team(team_id: int):
-    pass
+@auth.require_normal
+async def modify_team(team_id: int, request: auth.AuthedRequest):
+    # Check with system role
+    if not request.account.role.is_manager:
+        raise exc.NoPermission
+
+    # Check with team role
+    if not await is_team_manager(team_id, request.account.id):
+        raise exc.NoPermission
+
+    data = await request.json()
+
+    await db.team.set_by_id(
+        team_id=team_id,
+        name=data.get('name', None),
+        class_id=data.get('class-id', None),
+        is_enabled=data.get('is-enabled', None),
+        is_hidden=data.get('is-hidden', None),
+    )
 
 
 @router.delete('/team/{team_id}')
-@util.enveloped
-async def remove_team(team_id: int):
-    pass
+@auth.require_normal
+async def remove_team(team_id: int, request: auth.AuthedRequest):
+    # Check with system role
+    if not request.account.role.is_manager:
+        raise exc.NoPermission
+
+    # Check with team role
+    if not await is_team_manager(team_id, request.account.id):
+        raise exc.NoPermission
+
+    await db.team.set_by_id(
+        team_id=team_id,
+        is_enabled=False,
+    )
 
 
 @router.get('/team/{team_id}/member')
-@util.enveloped
-async def get_team_members(team_id: int):
+@auth.require_normal
+async def get_team_members(team_id: int, request: auth.AuthedRequest):
+    try:
+        await db.team.get_member_role(team_id=team_id, member_id=request.account.id)
+    except exc.NotFound:  # Not even in course
+        if not request.account.role.is_manager:  # and is not manager
+            raise exc.NoPermission
+
+    member_roles = await db.team.get_member_ids(team_id=team_id)
+    
     return [{
-        'account': model.account_simple,
-        'role': {
-            'name': 'Leader',
-            'level': 'ADMIN',
-        },
-    }]
+        'account-id': acc_id,
+        'role': role,
+    } for acc_id, role in member_roles]
 
 
 @router.patch('/team/{team_id}/member')
-@util.enveloped
-async def modify_team_member(team_id: int):
-    pass
+@auth.require_normal
+async def modify_team_member(team_id: int, member_id: int, request: auth.AuthedRequest):
+    # Check with system role
+    if not request.account.role.is_manager:
+        raise exc.NoPermission
+
+    # Check with team role
+    if not await is_team_manager(team_id, request.account.id):
+        raise exc.NoPermission
+
+    data = await request.json()
+    await db.team.set_member(team_id=team_id, member_id=member_id,
+                               role=RoleType(data['role']))
 
 
-@router.delete('/team/{team_id}/member')
-@util.enveloped
-async def remove_team_member(team_id: int):
-    pass
+@router.delete('/team/{team_id}/member/{member_id}')
+@auth.require_normal
+async def remove_team_member(team_id: int, member_id: int, request: auth.AuthedRequest):
+    # Check with system role
+    if not request.account.role.is_manager:
+        raise exc.NoPermission
+
+    # Check with course role
+    if not await is_course_manager(team_id, request.account.id):
+        raise exc.NoPermission
+
+    await db.team.delete_member(team_id=team_id, member_id=member_id)
