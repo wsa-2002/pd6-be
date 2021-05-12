@@ -1,8 +1,10 @@
 from fastapi import FastAPI
 
+from config import app_config
+
 
 app = FastAPI(
-    title='PDOGS-6 async',
+    title=app_config.title,
 )
 
 

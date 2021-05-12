@@ -1,4 +1,4 @@
-from distutils.util import strtobool
+# from distutils.util import strtobool
 import os
 
 from dotenv import dotenv_values
@@ -14,6 +14,10 @@ class Config:
     ...
 
 
+class AppConfig:
+    title = env_values.get('APP_TITLE')
+
+
 class DBConfig:
     host = env_values.get('PG_HOST')
     port = env_values.get('PG_PORT')
@@ -24,4 +28,5 @@ class DBConfig:
 
 # default config objects
 config = Config()
+app_config = AppConfig()
 db_config = DBConfig()
