@@ -141,7 +141,6 @@ async def modify_course_member(course_id: int, member_id: int, request: auth.Aut
 
 
 @router.delete('/course/{course_id}/member/{member_id}')
-@util.enveloped
 async def remove_course_member(course_id: int, member_id: int, request: auth.AuthedRequest):
     # Check with system role
     if not request.account.role.is_manager:
@@ -155,7 +154,6 @@ async def remove_course_member(course_id: int, member_id: int, request: auth.Aut
 
 
 @router.post('/course/{course_id}/class')
-@util.enveloped
 async def create_class_under_course(course_id: int, request: auth.AuthedRequest):
     # Check with system role
     if not request.account.role.is_manager:
@@ -179,7 +177,6 @@ async def create_class_under_course(course_id: int, request: auth.AuthedRequest)
 
 
 @router.get('/course/{course_id}/class')
-@util.enveloped
 async def get_classes_under_course(course_id: int, request: auth.AuthedRequest):
     try:
         await db.course.get_member_role(course_id=course_id, member_id=request.account.id)
@@ -191,31 +188,26 @@ async def get_classes_under_course(course_id: int, request: auth.AuthedRequest):
 
 
 @router.get('/class')
-@util.enveloped
 async def get_classes():
     return [model.pbc109]
 
 
 @router.get('/class/{class_id}')
-@util.enveloped
 async def get_class(class_id: int):
     return model.pbc109
 
 
 @router.patch('/class/{class_id}')
-@util.enveloped
 async def modify_class(class_id: int):
     pass
 
 
 @router.delete('/class/{class_id}')
-@util.enveloped
 async def remove_class(class_id: int):
     pass
 
 
 @router.get('/class/{class_id}/member')
-@util.enveloped
 async def get_class_members(class_id: int):
     return [{
         'account': model.account_simple,
@@ -224,55 +216,46 @@ async def get_class_members(class_id: int):
 
 
 @router.patch('/class/{class_id}/member')
-@util.enveloped
 async def modify_class_member(class_id: int):
     pass
 
 
 @router.delete('/class/{class_id}/member')
-@util.enveloped
 async def remove_class_member(class_id: int):
     pass
 
 
 @router.post('/class/{class_id}/team')
-@util.enveloped
 async def create_team_under_class(class_id: int):
     return {'id': 1}
 
 
 @router.get('/class/{class_id}/team')
-@util.enveloped
 async def get_teams_under_class(class_id: int):
     return [model.team_1]
 
 
 @router.get('/team')
-@util.enveloped
 async def get_teams():
     return [model.team_1]
 
 
 @router.get('/team/{team_id}')
-@util.enveloped
 async def get_team(team_id: int):
     return model.team_1
 
 
 @router.patch('/team/{team_id}')
-@util.enveloped
 async def modify_team(team_id: int):
     pass
 
 
 @router.delete('/team/{team_id}')
-@util.enveloped
 async def remove_team(team_id: int):
     pass
 
 
 @router.get('/team/{team_id}/member')
-@util.enveloped
 async def get_team_members(team_id: int):
     return [{
         'account': model.account_simple,
@@ -284,12 +267,10 @@ async def get_team_members(team_id: int):
 
 
 @router.patch('/team/{team_id}/member')
-@util.enveloped
 async def modify_team_member(team_id: int):
     pass
 
 
 @router.delete('/team/{team_id}/member')
-@util.enveloped
 async def remove_team_member(team_id: int):
     pass
