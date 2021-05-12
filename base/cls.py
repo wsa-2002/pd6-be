@@ -47,26 +47,10 @@ class DataclassBase(metaclass=DataclassMeta):
 
 
 class StrEnum(str, enum.Enum):
-    def __str__(self):
-        return self.value
-
-    @property
-    def str(self) -> str:
-        return self.value
-
-    @classmethod
-    def from_str(cls: Type[T], keyword: str) -> T:
-        if keyword in cls.__members__:  # by name
-            return cls.__members__[keyword]
-
-        try:  # by value
-            return cls.__new__(cls, keyword)  # 要把 cls 傳進去
-        except ValueError as e:  # by caps-ignored value
-            for item in cls.__members__.values():
-                if item.lower() == keyword.lower():
-                    return item
-            else:  # cannot find
-                raise e
+    """
+    A class like enum.IntEnum -- a string version
+    """
+    pass
 
 
 class OrderedMixin:
