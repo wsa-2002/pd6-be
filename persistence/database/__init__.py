@@ -31,4 +31,5 @@ from . import (
     course,
     class_,
     rbac,
+    team,
 )

@@ -276,7 +276,7 @@ async def modify_team(team_id: int, request: auth.AuthedRequest):
     await db.team.set_by_id(
         team_id=team_id,
         name=data.get('name', None),
-        class_id=data.get('class_id', None),
+        class_id=data.get('class-id', None),
         is_enabled=data.get('is-enabled', None),
         is_hidden=data.get('is-hidden', None),
     )

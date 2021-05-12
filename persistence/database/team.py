@@ -63,7 +63,7 @@ async def get_by_id(team_id: int, only_enabled=True, exclude_hidden=True) -> do.
                          is_enabled=is_enabled, is_hidden=is_hidden)
 
 
-async def set_by_id(team_id: int, name: str = None, class_id: int = None, \
+async def set_by_id(team_id: int, name: str = None, class_id: int = None, 
                     is_enabled: bool = None, is_hidden: bool = None):
     to_updates = {}
 
