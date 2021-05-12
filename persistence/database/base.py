@@ -106,4 +106,5 @@ class SafeExecutor:
             # log.info(f"Ended {self.__class__.__name__}: {self._event} after {datetime.now() - self._start_time}")
 
     async def __aexit__(self, exc_type, exc_value, traceback):
-        pass
+        if self._fetch == 'one' or self._fetch == 1 and exc_type is TypeError:  # Handles TypeError: value unpack
+            raise exc.NotFound

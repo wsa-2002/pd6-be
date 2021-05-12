@@ -1,9 +1,9 @@
 from typing import Sequence, Collection
 
-from base.enum import CourseType, RoleType
+from base.enum import RoleType
 
 from . import do
-from .base import SafeExecutor, SafeConnection
+from .base import SafeExecutor
 
 
 async def create(name: str, class_id: int, is_enabled: bool, is_hidden: bool) -> int:
@@ -39,8 +39,9 @@ async def get_all(only_enabled=True, exclude_hidden=True) -> Sequence[do.Team]:
             fetch='all',
     ) as records:
         return [do.Team(id=id_, name=name, class_id=c_id,
-                          is_enabled=is_enabled, is_hidden=is_hidden)
+                        is_enabled=is_enabled, is_hidden=is_hidden)
                 for (id_, name, c_id, is_enabled, is_hidden) in records]
+
 
 async def get_by_id(team_id: int, only_enabled=True, exclude_hidden=True) -> do.Team:
     conditions = []
@@ -60,7 +61,7 @@ async def get_by_id(team_id: int, only_enabled=True, exclude_hidden=True) -> do.
             fetch=1,
     ) as (id_, name, c_id, is_enabled, is_hidden):
         return do.Team(id=id_, name=name, class_id=c_id,
-                         is_enabled=is_enabled, is_hidden=is_hidden)
+                       is_enabled=is_enabled, is_hidden=is_hidden)
 
 
 async def set_by_id(team_id: int, name: str = None, class_id: int = None, 
@@ -140,3 +141,15 @@ async def delete_member(team_id: int, member_id: int):
             member_id=member_id,
     ):
         pass
+
+
+async def get_class_id(team_id: int) -> int:
+    async with SafeExecutor(
+            event='get class id by team id',
+            sql=r'SELECT class_id'
+                r'  FROM team'
+                r' WHERE team.id = %(team_id)s',
+            team_id=team_id,
+            fetch=1,
+    ) as (class_id,):
+        return class_id
