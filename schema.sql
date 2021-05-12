@@ -15,6 +15,7 @@ CREATE TABLE institute (
 
 CREATE TABLE student_card (
   id            SERIAL  PRIMARY KEY,
+  account_id    INTEGER NOT NULL  REFERENCES account(id),
   institute_id  INTEGER NOT NULL  REFERENCES institute(id),
   department    VARCHAR NOT NULL,
   student_id    VARCHAR NOT NULL  UNIQUE,  -- UNIQUE for functional safety
@@ -36,13 +37,6 @@ CREATE TABLE account (
   is_enabled        BOOLEAN   NOT NULL  DEFAULT false,
 );
 
-CREATE TABLE account_student_card (
-  account_id      INTEGER NOT NULL  REFERENCES account(id),
-  student_card_id INTEGER NOT NULL  REFERENCES student_card(id),
-
-  PRIMARY KEY (account_id, student_card_id)
-);
-
 
 -- Course management
 
@@ -60,6 +54,8 @@ CREATE TABLE course (
   is_enabled  BOOLEAN     NOT NULL  DEFAULT false,
   is_hidden   BOOLEAN     NOT NULL  DEFAULT true
 );
+
+-- 好像沒屁用
 
 CREATE TABLE course_member (
   course_id INTEGER   NOT NULL  REFERENCES course(id),
