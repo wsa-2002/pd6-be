@@ -38,7 +38,7 @@ async def get_all(only_enabled=True, exclude_hidden=True) -> Sequence[do.Course]
                 fr' ORDER BY id',
             fetch='all',
     ) as records:
-        return [do.Course(id=id_, name=name, type=CourseType.from_str(c_type),
+        return [do.Course(id=id_, name=name, type=CourseType(c_type),
                           is_enabled=is_enabled, is_hidden=is_hidden)
                 for (id_, name, c_type, is_enabled, is_hidden) in records]
 
@@ -60,7 +60,7 @@ async def get_by_id(course_id: int, only_enabled=True, exclude_hidden=True) -> d
             course_id=course_id,
             fetch=1,
     ) as (id_, name, c_type, is_enabled, is_hidden):
-        return do.Course(id=id_, name=name, type=CourseType.from_str(c_type),
+        return do.Course(id=id_, name=name, type=CourseType(c_type),
                          is_enabled=is_enabled, is_hidden=is_hidden)
 
 
@@ -120,14 +120,14 @@ async def add_members(course_id: int, member_roles: Collection[Sequence[int, Rol
 async def get_member_ids(course_id: int) -> Collection[Sequence[int, RoleType]]:
     async with SafeExecutor(
             event='get course members id',
-            sql='SELECT account.id, course_member.role'
-                '  FROM course_member, account'
-                ' WHERE course_member.member_id = account.id'
-                '   AND course_member.course_id = %(course_id)s',
+            sql=r'SELECT account.id, course_member.role'
+                r'  FROM course_member, account'
+                r' WHERE course_member.member_id = account.id'
+                r'   AND course_member.course_id = %(course_id)s',
             course_id=course_id,
             fetch='all',
     ) as results:
-        return [(id_, RoleType.from_str(role_str)) for id_, role_str in results]
+        return [(id_, RoleType(role_str)) for id_, role_str in results]
 
 
 async def get_member_role(course_id: int, member_id: int) -> RoleType:
@@ -140,7 +140,7 @@ async def get_member_role(course_id: int, member_id: int) -> RoleType:
             member_id=member_id,
             fetch=1,
     ) as (role,):
-        return RoleType.from_str(role)
+        return RoleType(role)
 
 
 async def set_member(course_id: int, member_id: int, role: RoleType):

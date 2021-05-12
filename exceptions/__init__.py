@@ -1,4 +1,4 @@
-class PdogsException:
+class PdogsException(Exception):
     pass
 
 

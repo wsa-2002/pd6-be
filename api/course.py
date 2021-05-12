@@ -65,7 +65,7 @@ async def edit_course(course_id: int, request: auth.AuthedRequest):
 
     course_type = data.get('type', None)
     if course_type is not None:
-        course_type = CourseType.from_str(course_type)
+        course_type = CourseType(course_type)
 
     await db.course.set_by_id(
         course_id=course_id,
@@ -103,7 +103,7 @@ async def add_course_members(course_id: int, request: auth.AuthedRequest):
         raise exc.NoPermission
 
     data = await request.json()
-    member_roles = [(record['account-id'], RoleType.from_str(record['role']))
+    member_roles = [(record['account-id'], RoleType(record['role']))
                     for record in data]
 
     await db.course.add_members(course_id=course_id, member_roles=member_roles)
@@ -137,7 +137,7 @@ async def modify_course_member(course_id: int, member_id: int, request: auth.Aut
 
     data = await request.json()
     await db.course.set_member(course_id=course_id, member_id=member_id,
-                               role=RoleType.from_str(data['role']))
+                               role=RoleType(data['role']))
 
 
 @router.delete('/course/{course_id}/member/{member_id}')
