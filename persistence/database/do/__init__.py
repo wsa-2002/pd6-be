@@ -44,3 +44,11 @@ class Course(DataclassBase):
     type: enum.CourseType
     is_enabled: bool
     is_hidden: bool
+
+@dataclass # for PyCharm
+class Team(DataclassBase):
+    id: int
+    name: str
+    class_id: int
+    is_enabled: bool
+    is_hidden: bool
