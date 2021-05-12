@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Callable
 
 import fastapi
 
@@ -42,3 +43,18 @@ class Request(fastapi.Request):
             return self.scope['authed_account']
         except KeyError:
             raise exc.NoPermission
+
+
+class APIRoute(fastapi.routing.APIRoute):
+    """
+    An `APIRoute` class that swaps the request class to auth.Request,
+    providing client login status auto-verification with `Request.account` property.
+    """
+    def get_route_handler(self) -> Callable:
+        original_route_handler = super().get_route_handler()
+
+        async def custom_route_handler(request: fastapi.Request) -> fastapi.Response:
+            request = Request(request.scope, request.receive)
+            return await original_route_handler(request)
+
+        return custom_route_handler

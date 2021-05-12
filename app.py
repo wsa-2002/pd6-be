@@ -32,8 +32,8 @@ from middleware import envelope
 from exceptions import PdogsException
 app.add_exception_handler(RequestValidationError, envelope.exception_handler)
 app.add_exception_handler(HTTPException, envelope.exception_handler)
+app.add_exception_handler(PdogsException, envelope.exception_handler)
 app.add_exception_handler(Exception, envelope.exception_handler)  # General fallback
-app.add_exception_handler(PdogsException, envelope.exception_handler)  # General fallback
 
 
 # Register routers

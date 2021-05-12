@@ -1,1 +1,1 @@
-from .router import APIRouter
+from .router import APIRouter  # Shortcut

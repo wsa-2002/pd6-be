@@ -13,7 +13,7 @@ class JSONResponse(fastapi.routing.JSONResponse):
         return super().render({
             'success': self._success,
             'data': content,
-            'error': str(self._error) if self._error else None,
+            'error': self._error.__class__.__name__ if self._error else None,
         })
 
 
