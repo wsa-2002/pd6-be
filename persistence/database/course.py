@@ -1,4 +1,4 @@
-from typing import Sequence, Collection
+from typing import Sequence, Collection, Tuple
 
 from base.enum import CourseType, RoleType
 
@@ -106,7 +106,7 @@ async def add_member(course_id: int, member_id: int, role: RoleType):
         pass
 
 
-async def add_members(course_id: int, member_roles: Collection[Sequence[int, RoleType]]):
+async def add_members(course_id: int, member_roles: Collection[Tuple[int, RoleType]]):
     async with SafeConnection(event='add members to course') as conn:
         await conn.executemany(
             command=r'INSERT INTO course_member'
@@ -117,7 +117,7 @@ async def add_members(course_id: int, member_roles: Collection[Sequence[int, Rol
         )
 
 
-async def get_member_ids(course_id: int) -> Collection[Sequence[int, RoleType]]:
+async def get_member_ids(course_id: int) -> Collection[Tuple[int, RoleType]]:
     async with SafeExecutor(
             event='get course members id',
             sql=r'SELECT account.id, course_member.role'

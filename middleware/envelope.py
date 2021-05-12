@@ -5,9 +5,9 @@ import fastapi.routing
 
 class JSONResponse(fastapi.routing.JSONResponse):
     def __init__(self, *args, success=True, error: Exception = None, **kwargs):
-        super().__init__(*args, **kwargs)
         self._success = success
         self._error = error
+        super().__init__(*args, **kwargs)
 
     def render(self, content: typing.Any) -> bytes:
         return super().render({
