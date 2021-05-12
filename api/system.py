@@ -1,15 +1,14 @@
-from middleware import APIRouter, auth, EnvelopedJSONResponse
+from middleware import APIRouter, auth, envelope
 
 
 router = APIRouter(
     tags=['System'],
-    route_class=auth.LoginRequiredRouter,
-    default_response_class=EnvelopedJSONResponse,
+    default_response_class=envelope.JSONResponse,
 )
 
 
 @router.get('/access-log')
-def get_access_logs(req: auth.AuthedRequest):
+def get_access_logs(req: auth.Request):
     """
     會做分頁功能，格式再說
     """
