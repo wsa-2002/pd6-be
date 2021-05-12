@@ -120,10 +120,10 @@ async def add_members(course_id: int, member_roles: Collection[Sequence[int, Rol
 async def get_member_ids(course_id: int) -> Collection[Sequence[int, RoleType]]:
     async with SafeExecutor(
             event='get course members id',
-            sql='SELECT account.id, course_member.role'
-                '  FROM course_member, account'
-                ' WHERE course_member.member_id = account.id'
-                '   AND course_member.course_id = %(course_id)s',
+            sql=r'SELECT account.id, course_member.role'
+                r'  FROM course_member, account'
+                r' WHERE course_member.member_id = account.id'
+                r'   AND course_member.course_id = %(course_id)s',
             course_id=course_id,
             fetch='all',
     ) as results:
