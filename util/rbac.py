@@ -13,7 +13,7 @@ async def validate(account_id: int, min_role: RoleType,
             # try class role, get class id
             class_id = db.team.get_class_id(team_id=team_id)
         else:
-            return
+            return True
 
     if class_id is not None:
         try:
@@ -23,12 +23,12 @@ async def validate(account_id: int, min_role: RoleType,
             # try global role
             pass
         else:
-            return
+            return True
 
     try:
         global_role = await db.rbac.get_global_role_by_account_id(account_id=account_id)
         assert global_role >= min_role
     except (exc.NotFound, AssertionError):
-        raise exc.NoPermission
+        return False
     else:
-        return
+        return True
