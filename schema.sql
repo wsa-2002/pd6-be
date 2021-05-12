@@ -8,7 +8,7 @@ CREATE TYPE role_type AS ENUM (
 
 CREATE TABLE institute (
   id            SERIAL  PRIMARY KEY,
-  "name"        VARCHAR NOT NULL  UNIQUE,
+  name          VARCHAR NOT NULL  UNIQUE,
   email_domain  VARCHAR NOT NULL  UNIQUE,
   is_enabled    BOOLEAN NOT NULL  DEFAULT false
 );
@@ -49,7 +49,7 @@ CREATE TYPE course_type AS ENUM (
 
 CREATE TABLE course (
   id          SERIAL      PRIMARY KEY,
-  "name"      VARCHAR     NOT NULL  UNIQUE,
+  name        VARCHAR     NOT NULL  UNIQUE,
   type        course_type NOT NULL,
   is_enabled  BOOLEAN     NOT NULL  DEFAULT false,
   is_hidden   BOOLEAN     NOT NULL  DEFAULT true
@@ -67,36 +67,36 @@ CREATE TABLE course_member (
 
 CREATE TABLE class (
   id          SERIAL  PRIMARY KEY,
-  "name"      VARCHAR NOT NULL,
+  name        VARCHAR NOT NULL,
   course_id   INTEGER NOT NULL  REFERENCES course(id),
   is_enabled  BOOLEAN NOT NULL  DEFAULT false,
   is_hidden   BOOLEAN NOT NULL  DEFAULT true,
 
-  UNIQUE (course_id, "name")
+  UNIQUE (course_id, name)
 );
 
 CREATE TABLE class_member (
   class_id  INTEGER   NOT NULL  REFERENCES class(id),
   member_id INTEGER   NOT NULL  REFERENCES account(id),
-  "role"    role_type NOT NULL,
+  role      role_type NOT NULL,
 
   PRIMARY KEY (class_id, member_id)
 );
 
 CREATE TABLE team (
   id          SERIAL  PRIMARY KEY,
-  "name"      VARCHAR NOT NULL,
+  name        VARCHAR NOT NULL,
   class_id    INTEGER NOT NULL  REFERENCES class(id),
   is_enabled  BOOLEAN NOT NULL  DEFAULT false,
   is_hidden   BOOLEAN NOT NULL  DEFAULT true,
 
-  UNIQUE (class_id, "name")
+  UNIQUE (class_id, name)
 );
 
 CREATE TABLE team_member (
   team_id   INTEGER NOT NULL  REFERENCES team(id),
   member_id INTEGER NOT NULL  REFERENCES account(id),
-  "role"    INTEGER NOT NULL  REFERENCES role(id),
+  role      INTEGER NOT NULL  REFERENCES role(id),
 
   PRIMARY KEY (team_id, member_id)
 );
@@ -105,15 +105,15 @@ CREATE TABLE team_member (
 -- Challenge-problem management
 
 CREATE TABLE challenge_type (
-  id      SERIAL  PRIMARY KEY,
-  "name"  VARCHAR NOT NULL  UNIQUE
+  id    SERIAL  PRIMARY KEY,
+  name  VARCHAR NOT NULL  UNIQUE
 );
 
 CREATE TABLE challenge (
   id          SERIAL    PRIMARY KEY,
   class_id    INTEGER   NOT NULL  REFERENCES class(id),
   type_id     INTEGER   NOT NULL  REFERENCES challenge_type(id),
-  "name"      VARCHAR   NOT NULL,
+  name        VARCHAR   NOT NULL,
   setter_id   INTEGER   NOT NULL  REFERENCES account(id),
   description TEXT,
   start_time  DATETIME  NOT NULL,
@@ -121,7 +121,7 @@ CREATE TABLE challenge (
   is_enabled  BOOLEAN   NOT NULL  DEFAULT false,
   is_hidden   BOOLEAN   NOT NULL  DEFAULT true,
 
-  UNIQUE (class_id, "name")
+  UNIQUE (class_id, name)
 );
 
 CREATE TYPE problem_type AS ENUM (
@@ -136,7 +136,7 @@ CREATE TYPE problem_type AS ENUM (
 CREATE TABLE problem (
   id          SERIAL        PRIMARY KEY,
   type_id     problem_type  NOT NULL,
-  "name"      VARCHAR       NOT NULL  UNIQUE,
+  name        VARCHAR       NOT NULL  UNIQUE,
   setter_id   INTEGER       NOT NULL  REFERENCES account(id),
   full_score  INTEGER       NOT NULL,
   description TEXT,
@@ -170,11 +170,11 @@ CREATE TABLE challenge_problem (
 -- submission management
 
 CREATE TABLE submission_language (
-  id        SERIAL  PRIMARY KEY,
-  "name"    VARCHAR NOT NULL,
-  "version" VARCHAR NOT NULL,
+  id      SERIAL  PRIMARY KEY,
+  name    VARCHAR NOT NULL,
+  version VARCHAR NOT NULL,
 
-  UNIQUE ("name", "version")
+  UNIQUE (name, version)
 );
 
 CREATE TABLE submission (
@@ -235,7 +235,7 @@ CREATE TABLE grade (
   class_id    INTEGER             REFERENCES class(id),
   item_name   VARCHAR   NOT NULL,
   score       INTEGER,
-  "comment"   TEXT,
+  comment     TEXT,
   update_time TIMESTAMP NOT NULL,
 
   UNIQUE (receiver_id, item_name)
@@ -262,16 +262,16 @@ CREATE TABLE peer_review (
    when every receiver one record all reviewed -> every receiver add one new record */
 
 CREATE TABLE peer_review_record (
-  id                  SERIAL    PRIMARY KEY,
-  peer_review_id      INTEGER   NOT NULL  REFERENCES peer_review(id),
-  grader_id           INTEGER   NOT NULL  REFERENCES account(id),
-  receiver_id         INTEGER   NOT NULL  REFERENCES account(id),
-  submission_id       INTEGER             REFERENCES submission(id),
-  score               INTEGER,
-  "comment"           TEXT,
-  submit_time         TIMESTAMP NOT NULL,
-  disagreement        TEXT,
-  disagreement_time   TIMESTAMP,
+  id                SERIAL    PRIMARY KEY,
+  peer_review_id    INTEGER   NOT NULL  REFERENCES peer_review(id),
+  grader_id         INTEGER   NOT NULL  REFERENCES account(id),
+  receiver_id       INTEGER   NOT NULL  REFERENCES account(id),
+  submission_id     INTEGER             REFERENCES submission(id),
+  score             INTEGER,
+  comment           TEXT,
+  submit_time       TIMESTAMP NOT NULL,
+  disagreement      TEXT,
+  disagreement_time TIMESTAMP,
 
   UNIQUE (peer_review_id, grader_id, submission_id)
 );
@@ -282,7 +282,7 @@ CREATE TABLE peer_review_record (
 CREATE TABLE announcement (
   id          SERIAL    PRIMARY KEY,
   title       VARCHAR   NOT NULL,
-  "content"   TEXT      NOT NULL,
+  content     TEXT      NOT NULL,
   author_id   INTEGER   NOT NULL  REFERENCES account(id),
   post_time   TIMESTAMP NOT NULL,  -- 排程貼文
   expire_time TIMESTAMP NOT NULL   -- 自動下架
