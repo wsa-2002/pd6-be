@@ -3,7 +3,6 @@ from typing import Callable
 
 import fastapi
 
-from base.cls import DataclassBase
 from base.enum import RoleType
 import exceptions as exc
 from persistence import database as db
@@ -11,7 +10,7 @@ from util import jwt
 
 
 @dataclass
-class Account(DataclassBase):
+class Account:
     id: int
     role: RoleType
 
@@ -45,11 +44,21 @@ class Request(fastapi.Request):
             raise exc.NoPermission
 
 
+async def auth_header_placeholder(auth_token: str = fastapi.Header(None, convert_underscores=True)):
+    """
+    For injecting fastapi's documentation
+    """
+
+
 class APIRoute(fastapi.routing.APIRoute):
     """
     An `APIRoute` class that swaps the request class to auth.Request,
     providing client login status auto-verification with `Request.account` property.
     """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.dependencies.append(fastapi.Depends(auth_header_placeholder))
+
     def get_route_handler(self) -> Callable:
         original_route_handler = super().get_route_handler()
 

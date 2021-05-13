@@ -169,7 +169,7 @@ async def delete_member(course_id: int, member_id: int):
 
 # === course -> class
 
-async def get_classes_id(course_id: int) -> Collection[int]:
+async def get_classes_id(course_id: int) -> Sequence[int]:
     async with SafeExecutor(
             event='get course classes',
             sql=r'SELECT class.id'

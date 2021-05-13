@@ -5,11 +5,10 @@ from dataclasses import dataclass
 from typing import Optional
 
 from base import enum
-from base.cls import DataclassBase
 
 
-@dataclass  # for PyCharm
-class Account(DataclassBase):
+@dataclass
+class Account:
     id: int
     name: str
     nickname: str
@@ -19,16 +18,16 @@ class Account(DataclassBase):
     alternative_email: Optional[str] = None
 
 
-@dataclass  # for PyCharm
-class Institute(DataclassBase):
+@dataclass
+class Institute:
     id: int
     name: str
     email_domain: str
     is_enabled: bool
 
 
-@dataclass  # for PyCharm
-class StudentCard(DataclassBase):
+@dataclass
+class StudentCard:
     id: int
     institute_id: int
     department: str
@@ -37,16 +36,17 @@ class StudentCard(DataclassBase):
     is_enabled: bool
 
 
-@dataclass  # for PyCharm
-class Course(DataclassBase):
+@dataclass
+class Course:
     id: int
     name: str
     type: enum.CourseType
     is_enabled: bool
     is_hidden: bool
 
-@dataclass # for PyCharm
-class Team(DataclassBase):
+
+@dataclass
+class Team:
     id: int
     name: str
     class_id: int
