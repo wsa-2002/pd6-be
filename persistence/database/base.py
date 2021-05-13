@@ -30,7 +30,7 @@ import asyncpg
 
 import exceptions as exc
 
-from . import _pool
+from . import pool_handler
 
 
 # Context managers for safe execution
@@ -40,16 +40,15 @@ class SafeConnection:
     def __init__(self, event: str):
         # self._start_time = datetime.now()
         self._event = event
-        self._pool: asyncpg.pool.Pool = _pool
         self._conn: asyncpg.connection.Connection = None  # acquire in __aenter__
 
     async def __aenter__(self) -> asyncpg.connection.Connection:
-        self._conn: asyncpg.connection.Connection = await self._pool.acquire()
+        self._conn: asyncpg.connection.Connection = await pool_handler.pool.acquire()
         # log.info(f"Starting {self.__class__.__name__}: {self._event}")
         return self._conn
 
     async def __aexit__(self, exc_type, exc_value, traceback):
-        await self._pool.release(self._conn)
+        await pool_handler.pool.release(self._conn)
         # log.info(f"Ended {self.__class__.__name__}: {self._event} after {datetime.now() - self._start_time}")
 
 
@@ -64,7 +63,6 @@ class SafeExecutor:
         """
         # self._start_time = datetime.now()
         self._event = event
-        self._pool: asyncpg.pool.Pool = _pool
         self._fetch = fetch
 
         # Handle keyword arguments
@@ -84,7 +82,7 @@ class SafeExecutor:
         """
         # log.info(f"Starting {self.__class__.__name__}: {self._event}, sql: {self._sql}, params: {self._parameters}")
 
-        async with self._pool.acquire() as conn:
+        async with pool_handler.pool.acquire() as conn:
             conn: asyncpg.connection.Connection
 
             if self._fetch == 'all':
