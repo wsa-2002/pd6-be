@@ -19,7 +19,12 @@ async def app_shutdown():
     await database.close()
 
 
-# Register custom exception handler
+# Add middlewares
+from middleware import auth
+app.add_middleware(auth.Middleware)
+
+
+# Register custom exception handlers
 from fastapi.exceptions import RequestValidationError, HTTPException
 from middleware import envelope
 app.add_exception_handler(RequestValidationError, envelope.exception_handler)

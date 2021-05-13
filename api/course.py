@@ -2,18 +2,20 @@ from base.enum import CourseType, RoleType
 import exceptions as exc
 from middleware import APIRouter, envelope, auth
 import persistence.database as db
+from util import rbac
 
 
 router = APIRouter(
     tags=['Course'],
     default_response_class=envelope.JSONResponse,
-    route_class=auth.LoginRequiredRouter,
 )
 
 
 @router.post('/course')
-@auth.require_manager
-async def create_course(request: auth.AuthedRequest):
+async def create_course(request: auth.Request):
+    if not await rbac.validate(request.account.id, RoleType.manager):
+        raise exc.NoPermission
+
     data = await request.json()
     course_id = await db.course.create(
         name=data['name'],
@@ -25,40 +27,28 @@ async def create_course(request: auth.AuthedRequest):
 
 
 @router.get('/course')
-@auth.require_normal
-async def get_courses(request: auth.AuthedRequest):
+async def get_courses(request: auth.Request):
+    if not await rbac.validate(request.account.id, RoleType.normal):
+        raise exc.NoPermission
+
     show_limited = request.account.role.not_manager
     courses = await db.course.get_all(only_enabled=show_limited, exclude_hidden=show_limited)
     return [course.as_resp_dict() for course in courses]
 
 
 @router.get('/course/{course_id}')
-@auth.require_normal
-async def get_course(course_id: int, request: auth.AuthedRequest):
+async def get_course(course_id: int, request: auth.Request):
+    if not await rbac.validate(request.account.id, RoleType.normal):
+        raise exc.NoPermission
+
     show_limited = request.account.role.not_manager
     course = await db.course.get_by_id(course_id, only_enabled=show_limited, exclude_hidden=show_limited)
     return course.as_resp_dict()
 
 
-async def is_course_manager(course_id, account_id):
-    # Check with course role
-    try:
-        req_account_role = await db.course.get_member_role(course_id=course_id, member_id=account_id)
-    except exc.NotFound:  # Not even in course
-        return False
-    else:
-        return req_account_role.is_manager
-
-
 @router.patch('/course/{course_id}')
-@auth.require_normal
-async def edit_course(course_id: int, request: auth.AuthedRequest):
-    # Check with system role
-    if not request.account.role.is_manager:
-        raise exc.NoPermission
-
-    # Check with course role
-    if not await is_course_manager(course_id, request.account.id):
+async def edit_course(course_id: int, request: auth.Request):
+    if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
     data = await request.json()
@@ -77,13 +67,8 @@ async def edit_course(course_id: int, request: auth.AuthedRequest):
 
 
 @router.delete('/course/{course_id}')
-async def remove_course(course_id: int, request: auth.AuthedRequest):
-    # Check with system role
-    if not request.account.role.is_manager:
-        raise exc.NoPermission
-
-    # Check with course role
-    if not await is_course_manager(course_id, request.account.id):
+async def remove_course(course_id: int, request: auth.Request):
+    if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
     await db.course.set_by_id(
@@ -92,75 +77,9 @@ async def remove_course(course_id: int, request: auth.AuthedRequest):
     )
 
 
-@router.post('/course/{course_id}/member')
-async def add_course_members(course_id: int, request: auth.AuthedRequest):
-    # Check with system role
-    if not request.account.role.is_manager:
-        raise exc.NoPermission
-
-    # Check with course role
-    if not await is_course_manager(course_id, request.account.id):
-        raise exc.NoPermission
-
-    data = await request.json()
-    member_roles = [(record['account-id'], RoleType(record['role']))
-                    for record in data]
-
-    await db.course.add_members(course_id=course_id, member_roles=member_roles)
-
-
-@router.get('/course/{course_id}/member')
-async def get_course_members(course_id: int, request: auth.AuthedRequest):
-    try:
-        await db.course.get_member_role(course_id=course_id, member_id=request.account.id)
-    except exc.NotFound:  # Not even in course
-        if not request.account.role.is_manager:  # and is not manager
-            raise exc.NoPermission
-
-    member_roles = await db.course.get_member_ids(course_id=course_id)
-
-    return [{
-        'account-id': acc_id,
-        'role': role,
-    } for acc_id, role in member_roles]
-
-
-@router.patch('/course/{course_id}/member/{member_id}')
-async def modify_course_member(course_id: int, member_id: int, request: auth.AuthedRequest):
-    # Check with system role
-    if not request.account.role.is_manager:
-        raise exc.NoPermission
-
-    # Check with course role
-    if not await is_course_manager(course_id, request.account.id):
-        raise exc.NoPermission
-
-    data = await request.json()
-    await db.course.set_member(course_id=course_id, member_id=member_id,
-                               role=RoleType(data['role']))
-
-
-@router.delete('/course/{course_id}/member/{member_id}')
-async def remove_course_member(course_id: int, member_id: int, request: auth.AuthedRequest):
-    # Check with system role
-    if not request.account.role.is_manager:
-        raise exc.NoPermission
-
-    # Check with course role
-    if not await is_course_manager(course_id, request.account.id):
-        raise exc.NoPermission
-
-    await db.course.delete_member(course_id=course_id, member_id=member_id)
-
-
 @router.post('/course/{course_id}/class')
-async def create_class_under_course(course_id: int, request: auth.AuthedRequest):
-    # Check with system role
-    if not request.account.role.is_manager:
-        raise exc.NoPermission
-
-    # Check with course role
-    if not await is_course_manager(course_id, request.account.id):
+async def create_class_under_course(course_id: int, request: auth.Request):
+    if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
     data = await request.json()
@@ -177,12 +96,9 @@ async def create_class_under_course(course_id: int, request: auth.AuthedRequest)
 
 
 @router.get('/course/{course_id}/class')
-async def get_classes_under_course(course_id: int, request: auth.AuthedRequest):
-    try:
-        await db.course.get_member_role(course_id=course_id, member_id=request.account.id)
-    except exc.NotFound:  # Not even in course
-        if not request.account.role.is_manager:  # and is not manager
-            raise exc.NoPermission
+async def get_classes_under_course(course_id: int, request: auth.Request):
+    if not await rbac.validate(request.account.id, RoleType.manager):
+        raise exc.NoPermission
 
     return await db.course.get_classes_id(course_id=course_id)
 
@@ -236,19 +152,24 @@ async def get_teams_under_class(class_id: int):
 
 
 @router.get('/team')
-@auth.require_normal
-async def get_teams(request: auth.AuthedRequest):
+async def get_teams(request: auth.Request):
+    if not await rbac.validate(request.account.id, RoleType.normal):
+        raise exc.NoPermission
+
     show_limited = request.account.role.not_manager
     teams = await db.team.get_all(only_enabled=show_limited, exclude_hidden=show_limited)
     return [team.as_resp_dict() for team in teams]
 
 
 @router.get('/team/{team_id}')
-@auth.require_normal
-async def get_team(team_id: int, request: auth.AuthedRequest):
+async def get_team(team_id: int, request: auth.Request):
+    if not await rbac.validate(request.account.id, RoleType.normal):
+        raise exc.NoPermission
+
     show_limited = request.account.role.not_manager
     team = await db.team.get_by_id(team_id, only_enabled=show_limited, exclude_hidden=show_limited)
     return team.as_resp_dict()
+
 
 async def is_team_manager(team_id, account_id):
     # Check with team role
@@ -261,8 +182,10 @@ async def is_team_manager(team_id, account_id):
 
 
 @router.patch('/team/{team_id}')
-@auth.require_normal
-async def modify_team(team_id: int, request: auth.AuthedRequest):
+async def modify_team(team_id: int, request: auth.Request):
+    if not await rbac.validate(request.account.id, RoleType.normal):
+        raise exc.NoPermission
+
     # Check with system role
     if not request.account.role.is_manager:
         raise exc.NoPermission
@@ -283,8 +206,10 @@ async def modify_team(team_id: int, request: auth.AuthedRequest):
 
 
 @router.delete('/team/{team_id}')
-@auth.require_normal
-async def remove_team(team_id: int, request: auth.AuthedRequest):
+async def remove_team(team_id: int, request: auth.Request):
+    if not await rbac.validate(request.account.id, RoleType.normal):
+        raise exc.NoPermission
+
     # Check with system role
     if not request.account.role.is_manager:
         raise exc.NoPermission
@@ -300,8 +225,10 @@ async def remove_team(team_id: int, request: auth.AuthedRequest):
 
 
 @router.get('/team/{team_id}/member')
-@auth.require_normal
-async def get_team_members(team_id: int, request: auth.AuthedRequest):
+async def get_team_members(team_id: int, request: auth.Request):
+    if not await rbac.validate(request.account.id, RoleType.normal):
+        raise exc.NoPermission
+
     try:
         await db.team.get_member_role(team_id=team_id, member_id=request.account.id)
     except exc.NotFound:  # Not even in course
@@ -317,8 +244,10 @@ async def get_team_members(team_id: int, request: auth.AuthedRequest):
 
 
 @router.patch('/team/{team_id}/member')
-@auth.require_normal
-async def modify_team_member(team_id: int, member_id: int, request: auth.AuthedRequest):
+async def modify_team_member(team_id: int, member_id: int, request: auth.Request):
+    if not await rbac.validate(request.account.id, RoleType.normal):
+        raise exc.NoPermission
+
     # Check with system role
     if not request.account.role.is_manager:
         raise exc.NoPermission
@@ -333,8 +262,10 @@ async def modify_team_member(team_id: int, member_id: int, request: auth.AuthedR
 
 
 @router.delete('/team/{team_id}/member/{member_id}')
-@auth.require_normal
-async def remove_team_member(team_id: int, member_id: int, request: auth.AuthedRequest):
+async def remove_team_member(team_id: int, member_id: int, request: auth.Request):
+    if not await rbac.validate(request.account.id, RoleType.normal):
+        raise exc.NoPermission
+
     # Check with system role
     if not request.account.role.is_manager:
         raise exc.NoPermission
