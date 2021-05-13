@@ -2,25 +2,38 @@ import asyncpg
 from config import DBConfig
 
 
-_pool: asyncpg.pool.Pool = None  # Need to be init/closed manually
+class PoolHandler:
+    def __init__(self):
+        self._pool: asyncpg.pool.Pool = None  # Need to be init/closed manually
+
+    async def initialize(self, db_config: DBConfig):
+        if self._pool is None:
+            self._pool = await asyncpg.create_pool(
+                host=db_config.host,
+                port=db_config.port,
+                user=db_config.username,
+                password=db_config.password,
+                database=db_config.db_name,
+            )
+
+    async def close(self):
+        if self._pool is not None:
+            await self._pool.close()
+
+    @property
+    def pool(self):
+        return self._pool
+
+
+pool_handler = PoolHandler()
 
 
 async def initialize(db_config: DBConfig):
-    global _pool
-    if _pool is None:
-        _pool = asyncpg.create_pool(
-            host=db_config.host,
-            port=db_config.port,
-            user=db_config.username,
-            password=db_config.password,
-            database=db_config.db_name,
-        )
+    return await pool_handler.initialize(db_config=db_config)
 
 
 async def close():
-    global _pool
-    if _pool is not None:
-        await _pool.close()
+    return await pool_handler.close()
 
 
 # For import usage
