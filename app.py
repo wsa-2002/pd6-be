@@ -5,6 +5,8 @@ from config import app_config
 
 app = FastAPI(
     title=app_config.title,
+    docs_url=app_config.docs_url,
+    redoc_url=app_config.redoc_url,
 )
 
 

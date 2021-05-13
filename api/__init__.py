@@ -3,7 +3,7 @@ from fastapi import FastAPI
 
 def register_routers(app: FastAPI):
     from . import (
-        # public,
+        public,
         account_control,
         # administrative,
         # challenge_problem,
@@ -11,7 +11,7 @@ def register_routers(app: FastAPI):
         # submission,
         # system,
     )
-    # app.include_router(public.router)
+    app.include_router(public.router)
     app.include_router(account_control.router)
     # app.include_router(administrative.router)
     # app.include_router(challenge_problem.router)
