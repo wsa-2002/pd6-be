@@ -4,7 +4,7 @@ from . import do
 from .base import SafeExecutor
 
 
-async def add(institute_id: int, department: str, student_id: int, email: str, is_enabled: bool) -> int:
+async def add(institute_id: int, department: str, student_id: str, email: str, is_enabled: bool) -> int:
     async with SafeExecutor(
             event='Add student card',
             sql=r'INSERT INTO student_card'
@@ -62,7 +62,7 @@ async def get_owner_id(student_card_id: int) -> int:
 
 
 async def set_by_id(student_card_id: int,
-                    institute_id: int = None, department: str = None, student_id: int = None, email: str = None,
+                    institute_id: int = None, department: str = None, student_id: str = None, email: str = None,
                     is_enabled: bool = None):
     to_updates = {}
 
