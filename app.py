@@ -1,8 +1,12 @@
 from fastapi import FastAPI
 
+from config import app_config
+
 
 app = FastAPI(
-    title='PDOGS-6 async',
+    title=app_config.title,
+    docs_url=app_config.docs_url,
+    redoc_url=app_config.redoc_url,
 )
 
 
@@ -27,8 +31,10 @@ app.add_middleware(auth.Middleware)
 # Register custom exception handlers
 from fastapi.exceptions import RequestValidationError, HTTPException
 from middleware import envelope
+from exceptions import PdogsException
 app.add_exception_handler(RequestValidationError, envelope.exception_handler)
 app.add_exception_handler(HTTPException, envelope.exception_handler)
+app.add_exception_handler(PdogsException, envelope.exception_handler)
 app.add_exception_handler(Exception, envelope.exception_handler)  # General fallback
 
 

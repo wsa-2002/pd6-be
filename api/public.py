@@ -9,9 +9,12 @@ router = APIRouter(tags=['Public'])
 
 @router.get("/", status_code=418, response_class=HTMLResponse)
 async def default_page():
-    return r"""PDOGS-6 async
+    return r"""
+<a href="/docs">/docs</a> or <a href="/redoc">/redoc</a>
 <br>
-<a href="/docs">/docs</a> or <a href="/redoc">/redoc</a>"""
+<br>
+<img src="https://i.imgur.com/dBUZ3Ig.png" alt="I am not PDOGS">
+"""
 
 
 @router.post('/account', tags=['Account-Control'], response_class=envelope.JSONResponse)

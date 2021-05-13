@@ -1,4 +1,4 @@
-from typing import Sequence, Collection
+from typing import Tuple, Collection
 
 from base.enum import RoleType
 
@@ -22,7 +22,7 @@ async def create(name: str, class_id: int, is_enabled: bool, is_hidden: bool) ->
         return class_id
         
 
-async def get_all(only_enabled=True, exclude_hidden=True) -> Sequence[do.Team]:
+async def get_all(only_enabled=True, exclude_hidden=True) -> Tuple[do.Team]:
     conditions = []
     if only_enabled:
         conditions.append('is_enabled = TRUE')
@@ -93,7 +93,7 @@ async def set_by_id(team_id: int, name: str = None, class_id: int = None,
 # === member control
 
 
-async def get_member_ids(team_id: int) -> Collection[Sequence[int, RoleType]]:
+async def get_member_ids(team_id: int) -> Collection[Tuple[int, RoleType]]:
     async with SafeExecutor(
             event='get team members id',
             sql=r'SELECT account.id, team_member.role'

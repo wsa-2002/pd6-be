@@ -17,12 +17,41 @@ from fastapi import params
 from fastapi.datastructures import Default
 from fastapi.encoders import DictIntStrAny, SetIntStr
 from fastapi.types import DecoratedCallable
-# Followings are originally imported from starlette in fastapi.routing
+# Followings are originally imported from starlette
+from fastapi.applications import ASGIApp
 from fastapi.routing import JSONResponse, Response
-from fastapi.routing import BaseRoute
+from fastapi.routing import APIRoute, BaseRoute
+
+
+from . import auth
 
 
 class APIRouter(fastapi.routing.APIRouter):
+    def __init__(
+        self,
+        *,
+        prefix: str = "",
+        tags: Optional[List[str]] = None,
+        dependencies: Optional[Sequence[params.Depends]] = None,
+        default_response_class: Type[Response] = Default(JSONResponse),
+        responses: Optional[Dict[Union[int, str], Dict[str, Any]]] = None,
+        callbacks: Optional[List[BaseRoute]] = None,
+        routes: Optional[List[BaseRoute]] = None,
+        redirect_slashes: bool = True,
+        default: Optional[ASGIApp] = None,
+        dependency_overrides_provider: Optional[Any] = None,
+        route_class: Type[APIRoute] = auth.APIRoute,  # Changed!
+        on_startup: Optional[Sequence[Callable[[], Any]]] = None,
+        on_shutdown: Optional[Sequence[Callable[[], Any]]] = None,
+        deprecated: Optional[bool] = None,
+        include_in_schema: bool = True,
+    ) -> None:
+        super().__init__(prefix=prefix, tags=tags, dependencies=dependencies,
+                         default_response_class=default_response_class, responses=responses, callbacks=callbacks,
+                         routes=routes, redirect_slashes=redirect_slashes, default=default,
+                         dependency_overrides_provider=dependency_overrides_provider, route_class=route_class,
+                         on_startup=on_startup, on_shutdown=on_shutdown, deprecated=deprecated,
+                         include_in_schema=include_in_schema)
 
     def api_route(
         self,
