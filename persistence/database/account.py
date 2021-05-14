@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Tuple
 
 from . import do
 from .base import SafeExecutor
@@ -62,3 +62,17 @@ async def set_enabled(account_id: int, is_enabled: bool):
             is_enabled=is_enabled,
     ):
         return
+
+
+async def get_login_by_name(name: str, is_enabled: bool = True) -> Tuple[int, str]:
+    async with SafeExecutor(
+            event='get account login by name',
+            sql=r'SELECT id, pass_hash'
+                r'  FROM account'
+                r' WHERE name = %(name)s'
+                r'   AND is_enabled = %(is_enabled)s',
+            name=name,
+            is_enabled=is_enabled,
+            fetch=1,
+    ) as (id_, pass_hash):
+        return id_, pass_hash

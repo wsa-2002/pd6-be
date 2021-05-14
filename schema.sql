@@ -16,8 +16,7 @@ CREATE TABLE institute (
 CREATE TABLE account (
   id                SERIAL    PRIMARY KEY,
   name              VARCHAR   NOT NULL,
-  pass_salt         BYTEA     NOT NULL,
-  pass_hash         BYTEA     NOT NULL,
+  pass_hash         VARCHAR   NOT NULL,
   nickname          VARCHAR   NOT NULL,
   real_name         VARCHAR   NOT NULL,
   role              role_type NOT NULL,  -- global role
