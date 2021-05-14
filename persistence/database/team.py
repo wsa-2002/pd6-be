@@ -1,4 +1,4 @@
-from typing import Tuple, Collection
+from typing import Tuple, Collection, Sequence
 
 from base.enum import RoleType
 
@@ -22,7 +22,7 @@ async def create(name: str, class_id: int, is_enabled: bool, is_hidden: bool) ->
         return class_id
         
 
-async def get_all(only_enabled=True, exclude_hidden=True) -> Tuple[do.Team]:
+async def get_all(only_enabled=True, exclude_hidden=True) -> Sequence[do.Team]:
     conditions = []
     if only_enabled:
         conditions.append('is_enabled = TRUE')
