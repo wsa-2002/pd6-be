@@ -24,8 +24,16 @@ async def default_page():
 """
 
 
+@validated_dataclass
+class CreateAccountInput:
+    name: str
+    password: str
+    nickname: str
+    real_name: str
+
+
 @router.post('/account', tags=['Account-Control'], response_class=envelope.JSONResponse)
-async def create_account():
+async def create_account(data: CreateAccountInput) -> None:
     ...  # TODO
 
 
