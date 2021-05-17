@@ -1,6 +1,7 @@
 """
 複製貼上這麼多 code 只是為了把 route_class_override 掛上去而已 = =
 """
+import typing
 from typing import (
     Any,
     Callable,
@@ -20,7 +21,7 @@ from fastapi.types import DecoratedCallable
 # Followings are originally imported from starlette
 from fastapi.applications import ASGIApp
 from fastapi.routing import JSONResponse, Response
-from fastapi.routing import APIRoute, BaseRoute
+from fastapi.routing import BaseRoute
 
 
 from . import auth
@@ -40,7 +41,7 @@ class APIRouter(fastapi.routing.APIRouter):
         redirect_slashes: bool = True,
         default: Optional[ASGIApp] = None,
         dependency_overrides_provider: Optional[Any] = None,
-        route_class: Type[APIRoute] = auth.APIRoute,  # Changed!
+        route_class: Type[fastapi.routing.APIRoute] = auth.APIRoute,  # Changed!
         on_startup: Optional[Sequence[Callable[[], Any]]] = None,
         on_shutdown: Optional[Sequence[Callable[[], Any]]] = None,
         deprecated: Optional[bool] = None,
@@ -81,10 +82,20 @@ class APIRouter(fastapi.routing.APIRouter):
         route_class_override: Optional[Type[fastapi.routing.APIRoute]] = None,
     ) -> Callable[[DecoratedCallable], DecoratedCallable]:
         def decorator(func: DecoratedCallable) -> DecoratedCallable:
+
+            # Auto get response model from function's return type hint
+            model = response_model
+            if not model:
+                try:
+                    model = typing.get_type_hints(func)['return']
+                except KeyError:
+                    # raise SyntaxError("No return type type-hint is given!")
+                    pass
+
             self.add_api_route(
                 path,
                 func,
-                response_model=response_model,
+                response_model=model,
                 status_code=status_code,
                 tags=tags,
                 dependencies=dependencies,

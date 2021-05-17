@@ -1,3 +1,7 @@
+from dataclasses import dataclass
+from typing import Optional, Sequence
+
+from base.deco import validated_dataclass
 import exceptions as exc
 from middleware import APIRouter, envelope, auth
 import persistence.database as db
@@ -9,137 +13,185 @@ router = APIRouter(
 )
 
 
+@dataclass
+class GetAccountOutput:
+    id: int
+    name: str
+    nickname: str
+    role: str
+    real_name: Optional[str] = None
+    is_enabled: Optional[str] = None
+    alternative_email: Optional[str] = None
+
+
 @router.get('/account/{account_id}')
-async def get_account(account_id: int, request: auth.Request):
+async def get_account(account_id: int, request: auth.Request) -> GetAccountOutput:
     ask_for_self = request.account.id == account_id
     if request.account.role.is_guest and not ask_for_self:
         raise exc.NoPermission
 
     target_account = await db.account.get_by_id(account_id)
-    result = {
-        'id': target_account.id,
-        'name': target_account.name,
-        'nickname': target_account.nickname,
-        'role': target_account.role,
-    }
+    result = GetAccountOutput(
+        id=target_account.id,
+        name=target_account.name,
+        nickname=target_account.nickname,
+        role=target_account.role,
+    )
 
     show_personal = ask_for_self or request.account.role.is_manager
     if show_personal:
-        result.update({
-            'real-name': target_account.real_name,
-            'is-enabled': target_account.is_enabled,
-            'alternative-email': target_account.alternative_email,
-        })
+        result.real_name = target_account.real_name
+        result.is_enabled = target_account.is_enabled
+        result.alternative_email = target_account.alternative_email
 
     return result
 
 
+@validated_dataclass
+class PatchAccountInput:
+    nickname: Optional[str]
+
+
 @router.patch('/account/{account_id}')
-async def patch_account(account_id: int, request: auth.Request):
+async def patch_account(account_id: int, data: PatchAccountInput, request: auth.Request) -> None:
     if request.account.role.not_manager and request.account.id != account_id:
         raise exc.NoPermission
 
-    data = await request.json()
-    if nickname := data.get('nickname', ''):
-        await db.account.set_by_id(account_id=account_id, nickname=nickname)
+    await db.account.set_by_id(account_id=account_id, nickname=data.nickname)
 
 
 @router.delete('/account/{account_id}')
-async def remove_account(account_id: int, request: auth.Request):
+async def remove_account(account_id: int, request: auth.Request) -> None:
     if request.account.role.not_manager and request.account.id != account_id:
         raise exc.NoPermission
 
     await db.account.set_enabled(account_id=account_id, is_enabled=False)
 
 
+@validated_dataclass
+class PostInstituteInput:
+    name: str
+    email_domain: str
+
+
+@dataclass
+class PostInstituteOutput:
+    id: int
+
+
 @router.post('/institute')
-async def add_institute(request: auth.Request):
+async def add_institute(data: PostInstituteInput, request: auth.Request) -> PostInstituteOutput:
     if not request.account.role.is_manager:
         raise exc.NoPermission
 
-    data = await request.json()
-    name, email_domain = data['name'], data['email-domain']
-    institute_id = await db.institute.add(name=name, email_domain=email_domain)
-    return {'id': institute_id}
+    institute_id = await db.institute.add(name=data.name, email_domain=data.email_domain)
+    return PostInstituteOutput(id=institute_id)
 
 
 @router.get('/institute')
-async def get_institutes(request: auth.Request):
-    return [inst.as_resp_dict()
-            for inst in await db.institute.get_all(only_enabled=request.account.role.not_manager)]
+async def get_institutes(request: auth.Request) -> Sequence[db.institute.do.Institute]:
+    return await db.institute.get_all(only_enabled=request.account.role.not_manager)
 
 
 @router.get('/institute/{institute_id}')
-async def get_institute(institute_id: int, request: auth.Request):
-    inst = await db.institute.get_by_id(institute_id, only_enabled=request.account.role.not_manager)
-    return inst.as_resp_dict()
+async def get_institute(institute_id: int, request: auth.Request) -> db.institute.do.Institute:
+    return await db.institute.get_by_id(institute_id, only_enabled=request.account.role.not_manager)
+
+
+@validated_dataclass
+class UpdateInstituteInput:
+    name: Optional[str]
+    email_domain: Optional[str]
+    is_enabled: Optional[bool]
 
 
 @router.patch('/institute/{institute_id}')
-async def update_institute(institute_id: int, request: auth.Request):
+async def update_institute(institute_id: int, data: UpdateInstituteInput, request: auth.Request) -> None:
     if not request.account.role.is_manager:
         raise exc.NoPermission
 
-    data = await request.json()
-    await db.institute.set_by_id(institute_id=institute_id,
-                                 name=data.get('name', None),
-                                 email_domain=data.get('email-domain', None),
-                                 is_enabled=data.get('is-enabled', None))
+    await db.institute.set_by_id(
+        institute_id=institute_id,
+        name=data.name,
+        email_domain=data.email_domain,
+        is_enabled=data.is_enabled,
+    )
+
+
+@validated_dataclass
+class PostStudentCardInput:
+    institute_id: int
+    department: str
+    student_id: str
+    email: str
+    is_enabled: bool
+
+
+@dataclass
+class PostStudentCardOutput:
+    id: int
 
 
 @router.post('/account/{account_id}/student-card')
-async def add_student_card_to_account(account_id: int, request: auth.Request):
+async def add_student_card_to_account(account_id: int, data: PostStudentCardInput, request: auth.Request) \
+        -> PostStudentCardOutput:
     if request.account.role.not_manager and request.account.id != account_id:
         raise exc.NoPermission
 
-    data = await request.json()
     student_card_id = await db.student_card.add(
-        institute_id=data['institute-id'],
-        department=data['department'],
-        student_id=data['student-id'],
-        email=data['email'],
-        is_enabled=data['is-enabled'],
+        institute_id=data.institute_id,
+        department=data.department,
+        student_id=data.student_id,
+        email=data.email,
+        is_enabled=data.is_enabled,
     )
-    return {'id': student_card_id}
+    return PostStudentCardOutput(id=student_card_id)
 
 
 @router.get('/account/{account_id}/student-card')
-async def get_account_student_card(account_id: int, request: auth.Request):
+async def get_account_student_card(account_id: int, request: auth.Request) -> Sequence[db.student_card.do.StudentCard]:
     if request.account.role.not_manager and request.account.id != account_id:
         raise exc.NoPermission
 
-    student_cards = await db.student_card.get_by_account_id(account_id)
-    return [card.as_resp_dict() for card in student_cards]
+    return await db.student_card.get_by_account_id(account_id)
 
 
 @router.get('/student-card/{student_card_id}')
-async def get_student_card(student_card_id: int, request: auth.Request):
+async def get_student_card(student_card_id: int, request: auth.Request) -> db.student_card.do.StudentCard:
     owner_id = await db.student_card.get_owner_id(student_card_id=student_card_id)
     if request.account.role.not_manager and request.account.id != owner_id:
         raise exc.NoPermission
 
-    return (await db.student_card.get_by_id(student_card_id=student_card_id)).as_resp_dict()
+    return await db.student_card.get_by_id(student_card_id=student_card_id)
+
+
+@validated_dataclass
+class PatchStudentCardInput:
+    institute_id: int
+    department: str
+    student_id: str
+    email: str
+    is_enabled: bool
 
 
 @router.patch('/student-card/{student_card_id}')
-async def update_student_card(student_card_id: int, request: auth.Request):
+async def update_student_card(student_card_id: int, data: PatchStudentCardInput, request: auth.Request) -> None:
     # 暫時只開給 manager
     if not request.account.role.is_manager:
         raise exc.NoPermission
 
-    data = await request.json()
     await db.student_card.set_by_id(
         student_card_id=student_card_id,
-        institute_id=data.get('institute-id', None),
-        department=data.get('department-id', None),
-        student_id=data.get('student-id', None),
-        email=data.get('email', None),
-        is_enabled=data.get('is-enabled', None),
+        institute_id=data.institute_id,
+        department=data.department,
+        student_id=data.student_id,
+        email=data.email,
+        is_enabled=data.is_enabled,
     )
 
 
 @router.delete('/student-card/{student_card_id}')
-async def remove_student_card(student_card_id: int, request: auth.Request):
+async def remove_student_card(student_card_id: int, request: auth.Request) -> None:
     owner_id = await db.student_card.get_owner_id(student_card_id=student_card_id)
     if request.account.role.not_manager and request.account.id != owner_id:
         raise exc.NoPermission
