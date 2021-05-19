@@ -36,6 +36,14 @@ CREATE TABLE student_card (
   UNIQUE (institute_id, student_id)
 );
 
+CREATE TABLE email_verification (
+  code            UUID    PRIMARY KEY DEFAULT uuid_generate_v4(),
+  email           VARCHAR NOT NULL,
+  account_id      INTEGER NOT NULL  REFERENCES account(id),
+  student_card_id INTEGER           REFERENCES student_card(id),
+  is_consumed     BOOLEAN NOT NULL  DEFAULT false
+);
+
 
 -- Course management
 
