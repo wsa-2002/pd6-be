@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 from typing import Optional, Sequence
 
-from base.deco import validated_dataclass
+from pydantic import BaseModel
+
 import exceptions as exc
 from middleware import APIRouter, envelope, auth
 import persistence.database as db
@@ -48,8 +49,7 @@ async def get_account(account_id: int, request: auth.Request) -> GetAccountOutpu
     return result
 
 
-@validated_dataclass
-class PatchAccountInput:
+class PatchAccountInput(BaseModel):
     nickname: Optional[str]
     alternative_email: Optional[str]
 
@@ -77,8 +77,7 @@ async def remove_account(account_id: int, request: auth.Request) -> None:
     await db.account.set_enabled(account_id=account_id, is_enabled=False)
 
 
-@validated_dataclass
-class PostInstituteInput:
+class PostInstituteInput(BaseModel):
     name: str
     email_domain: str
 
@@ -112,8 +111,7 @@ async def get_institute(institute_id: int, request: auth.Request) -> db.institut
     return await db.institute.get_by_id(institute_id, only_enabled=request.account.role.not_manager)
 
 
-@validated_dataclass
-class UpdateInstituteInput:
+class UpdateInstituteInput(BaseModel):
     name: Optional[str]
     email_domain: Optional[str]
     is_enabled: Optional[bool]
@@ -132,8 +130,7 @@ async def update_institute(institute_id: int, data: UpdateInstituteInput, reques
     )
 
 
-@validated_dataclass
-class PostStudentCardInput:
+class PostStudentCardInput(BaseModel):
     institute_id: int
     department: str
     student_id: str
@@ -153,6 +150,7 @@ async def add_student_card_to_account(account_id: int, data: PostStudentCardInpu
         raise exc.NoPermission
 
     student_card_id = await db.student_card.add(
+        account_id=account_id,
         institute_id=data.institute_id,
         department=data.department,
         student_id=data.student_id,
@@ -179,8 +177,7 @@ async def get_student_card(student_card_id: int, request: auth.Request) -> db.st
     return await db.student_card.get_by_id(student_card_id=student_card_id)
 
 
-@validated_dataclass
-class PatchStudentCardInput:
+class PatchStudentCardInput(BaseModel):
     institute_id: int
     department: str
     student_id: str

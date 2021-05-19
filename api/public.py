@@ -4,7 +4,6 @@ from fastapi import APIRouter
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
-from base.deco import validated_dataclass
 from base.enum import RoleType
 from config import config, app_config
 import exceptions as exc
