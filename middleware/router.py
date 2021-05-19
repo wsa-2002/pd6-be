@@ -21,7 +21,7 @@ from fastapi.types import DecoratedCallable
 # Followings are originally imported from starlette
 from fastapi.applications import ASGIApp
 from fastapi.routing import JSONResponse, Response
-from fastapi.routing import APIRoute, BaseRoute
+from fastapi.routing import BaseRoute
 
 
 from . import auth
@@ -41,7 +41,7 @@ class APIRouter(fastapi.routing.APIRouter):
         redirect_slashes: bool = True,
         default: Optional[ASGIApp] = None,
         dependency_overrides_provider: Optional[Any] = None,
-        route_class: Type[APIRoute] = auth.APIRoute,  # Changed!
+        route_class: Type[fastapi.routing.APIRoute] = auth.APIRoute,  # Changed!
         on_startup: Optional[Sequence[Callable[[], Any]]] = None,
         on_shutdown: Optional[Sequence[Callable[[], Any]]] = None,
         deprecated: Optional[bool] = None,

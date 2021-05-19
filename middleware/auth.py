@@ -8,6 +8,8 @@ import exceptions as exc
 from persistence import database as db
 from util import security
 
+from . import routing
+
 
 @dataclass
 class Account:
@@ -50,7 +52,7 @@ async def auth_header_placeholder(auth_token: str = fastapi.Header(None, convert
     """
 
 
-class APIRoute(fastapi.routing.APIRoute):
+class APIRoute(routing.APIRoute):
     """
     An `APIRoute` class that swaps the request class to auth.Request,
     providing client login status auto-verification with `Request.account` property.
