@@ -46,8 +46,9 @@ class DBConfig:
 class SMTPConfig:
     host = env_values.get('SMTP_HOST')
     port = env_values.get('SMTP_PORT')
-    account = env_values.get('SMTP_ACCOUNT')
+    username = env_values.get('SMTP_USERNAME')
     password = env_values.get('SMTP_PASSWORD')
+    use_tls = strtobool(env_values.get('SMTP_USE_TLS'))
 
 
 # default config objects

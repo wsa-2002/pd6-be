@@ -16,7 +16,7 @@ async def add(name: str, pass_hash: str, nickname: str, real_name: str, role: Ro
                 r'  RETURNING id',
             name=name, pass_hash=pass_hash, nickname=nickname, real_name=real_name, role=role, is_enabled=is_enabled,
             fetch=1,
-    ) as (account_id):
+    ) as (account_id,):
         return account_id
 
 
@@ -130,9 +130,9 @@ async def verify_email(code: str):
                     r'   SET is_consumed = $1'
                     r' WHERE code = $2'
                     r'   AND is_consumed = $3'
-                    r' RETURNING (email, account_id, student_card_id)',
+                    r' RETURNING email, account_id, student_card_id',
                     True, code, False)
-            except TypeError:  # 因為有 returning，所以找不到 row 就會 return None 就會 unpack error
+            except TypeError:
                 raise exceptions.NotFound
 
             if student_card_id:  # student card email
@@ -142,8 +142,13 @@ async def verify_email(code: str):
                                    True, student_card_id)
                 await conn.execute(r'UPDATE account'
                                    r'   SET is_enabled = $1'
-                                   r' WEHRE id = $2',
+                                   r' WHERE id = $2',
                                    True, account_id)
+                await conn.execute(r'UPDATE account'
+                                   r'   SET role = $1'
+                                   r' WHERE id = $2'
+                                   r'   AND role = $3',
+                                   RoleType.normal, account_id, RoleType.guest)
             else:  # alternative email
                 await conn.execute(r'UPDATE account'
                                    r'   SET alternative_email = $1'

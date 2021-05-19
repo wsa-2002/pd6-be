@@ -2,6 +2,7 @@ from typing import Optional
 
 from fastapi import APIRouter
 from fastapi.responses import HTMLResponse
+from pydantic import BaseModel
 
 from base.deco import validated_dataclass
 from base.enum import RoleType
@@ -30,8 +31,8 @@ async def default_page():
 """
 
 
-@validated_dataclass
-class CreateAccountInput:
+# @validated_dataclass
+class CreateAccountInput(BaseModel):
     # Account
     name: str
     password: str
@@ -70,6 +71,8 @@ async def create_account(data: CreateAccountInput) -> None:
 
 
 # Warning: this location is statically used in email string
+# Use "get" for convenience (access from browser)
+@router.get('/email-verification', tags=['Account-Control'], response_class=HTMLResponse)
 @router.post('/email-verification', tags=['Account-Control'], response_class=HTMLResponse)
 async def email_verification(code: str):
     try:
@@ -80,8 +83,8 @@ async def email_verification(code: str):
         return 'Your email has been verified.'
 
 
-@validated_dataclass
-class LoginInput:
+# @validated_dataclass
+class LoginInput(BaseModel):
     name: str
     password: str
 

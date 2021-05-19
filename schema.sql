@@ -37,7 +37,7 @@ CREATE TABLE student_card (
 );
 
 CREATE TABLE email_verification (
-  code            UUID    PRIMARY KEY DEFAULT uuid_generate_v4(),
+  code            UUID    PRIMARY KEY DEFAULT gen_random_uuid(),
   email           VARCHAR NOT NULL,
   account_id      INTEGER NOT NULL  REFERENCES account(id),
   student_card_id INTEGER           REFERENCES student_card(id),
@@ -303,3 +303,9 @@ CREATE TABLE access_log (
   ip              VARCHAR   NOT NULL, -- Linux `INET6_ADDRSTRLEN = 48` -> 47 + terminating NULL
   account_id      INTEGER   REFERENCES account(id)
 );
+
+
+-- Data
+
+INSERT INTO institute (id, name, email_domain, is_enabled)
+VALUES (1, 'NTU', 'ntu.edu.tw', true);

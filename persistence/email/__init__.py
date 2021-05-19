@@ -1,15 +1,30 @@
-from email.message import EmailMessage
-
 import aiosmtplib
 
-from config import smtp_config
+from base import mcs
+from config import SMTPConfig
 
 
-async def send(to: str, subject: str, content: str):
-    message = EmailMessage()
-    message["From"] = f"{smtp_config.account}@{smtp_config.host}"
-    message["To"] = to
-    message["Subject"] = subject
-    message.set_content(content)
+class SMTPHandler(metaclass=mcs.Singleton):
+    def __init__(self):
+        self._client: aiosmtplib.SMTP = None  # Need to be init/closed manually
 
-    await aiosmtplib.send(message=message, hostname=smtp_config.host, port=smtp_config.port)
+    async def initialize(self, smtp_config: SMTPConfig):
+        if self._client is None:
+            self._client = aiosmtplib.SMTP(
+                hostname=smtp_config.host,
+                port=smtp_config.port,
+                username=smtp_config.username,
+                password=smtp_config.password,
+                use_tls=smtp_config.use_tls,
+            )
+
+    async def close(self):
+        if self._client is not None:
+            self._client.close()
+
+    @property
+    def client(self):
+        return self._client
+
+
+smtp_handler = SMTPHandler()

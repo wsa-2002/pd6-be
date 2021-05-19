@@ -85,6 +85,10 @@ class SafeExecutor:
         async with pool_handler.pool.acquire() as conn:
             conn: asyncpg.connection.Connection
 
+            if not self._fetch:
+                await conn.execute(self._sql, *self._parameters)
+                return
+
             if self._fetch == 'all':
                 results = await conn.fetch(self._sql, *self._parameters)
             elif self._fetch == 'one' or self._fetch == 1:
@@ -92,13 +96,12 @@ class SafeExecutor:
             elif isinstance(self._fetch, int) and self._fetch > 0:
                 cur = await conn.cursor(self._sql, *self._parameters)
                 results = await cur.fetch(self._fetch)
-
             else:
-                await conn.execute(self._sql, *self._parameters)
-                return None
+                raise ValueError
 
             if not results:
                 raise exc.NotFound
+
             return results
 
             # log.info(f"Ended {self.__class__.__name__}: {self._event} after {datetime.now() - self._start_time}")
