@@ -1,9 +1,11 @@
 from dataclasses import dataclass
+from typing import Optional
 
 from fastapi import APIRouter
 from fastapi.responses import HTMLResponse
 
 from base.deco import validated_dataclass
+from base.enum import RoleType
 from config import config
 import exceptions as exc
 from middleware import envelope
@@ -26,15 +28,34 @@ async def default_page():
 
 @validated_dataclass
 class CreateAccountInput:
+    # Account
     name: str
     password: str
     nickname: str
     real_name: str
+    alternative_email: Optional[str]
+    # Student card
+    institute_id: int
+    department: str
+    student_id: str
+    institute_email: str
 
 
 @router.post('/account', tags=['Account-Control'], response_class=envelope.JSONResponse)
 async def create_account(data: CreateAccountInput) -> None:
-    ...  # TODO
+    account_id = await db.account.add(name=data.name, pass_hash=security.hash_password(data.password),
+                                      nickname=data.nickname, real_name=data.real_name, role=RoleType.guest,
+                                      alternative_email=data.alternative_email, is_enabled=True)
+    await db.student_card.add(
+        account_id=account_id,
+        institute_id=data.institute_id,
+        department=data.department,
+        student_id=data.student_id,
+        email=data.institute_email,
+        is_enabled=False,  # Not yet verified => disabled
+    )
+
+    # TODO: email validation
 
 
 @validated_dataclass

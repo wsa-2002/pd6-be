@@ -1,7 +1,25 @@
 from typing import Optional, Tuple
 
+from base.enum import RoleType
+
 from . import do
 from .base import SafeExecutor
+
+
+async def add(name: str, pass_hash: str, nickname: str, real_name: str, role: RoleType,
+              alternative_email: Optional[str], is_enabled: bool) -> int:
+    async with SafeExecutor(
+            event='add account',
+            sql=r'INSERT INTO account'
+                r'            (name, pass_hash, nickname, real_name, role, alternative_email, is_enabled)'
+                r'     VALUES (%(name)s, %(pass_hash)s, %(nickname)s, %(real_name)s, %(role)s, %(alternative_email)s,'
+                r'             %(is_enabled)s)'
+                r'  RETURNING id',
+            name=name, pass_hash=pass_hash, nickname=nickname, real_name=real_name, role=role,
+            alternative_email=alternative_email, is_enabled=is_enabled,
+            fetch=1,
+    ) as (account_id):
+        return account_id
 
 
 async def get_by_id(account_id: int) -> do.Account:
