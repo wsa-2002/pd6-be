@@ -88,9 +88,14 @@ async def add_institute(data: PostInstituteInput, request: auth.Request) -> Post
     return PostInstituteOutput(id=institute_id)
 
 
-@router.get('/institute')
+@router.get('/institute', tags=['Public'])
 async def get_institutes(request: auth.Request) -> Sequence[db.institute.do.Institute]:
-    return await db.institute.get_all(only_enabled=request.account.role.not_manager)
+    try:
+        only_enabled = request.account.role.not_manager
+    except exc.NoPermission:
+        only_enabled = True
+
+    return await db.institute.get_all(only_enabled=only_enabled)
 
 
 @router.get('/institute/{institute_id}')

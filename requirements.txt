@@ -2,3 +2,5 @@ fastapi==0.63.0  # version fixed due to complete re-overriding `fastapi.APIRoute
 asyncpg
 pyjwt
 python-dotenv
+passlib
+argon2-cffi  # required for passlib.hash.argon2

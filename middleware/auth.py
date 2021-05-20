@@ -6,7 +6,7 @@ import fastapi
 from base.enum import RoleType
 import exceptions as exc
 from persistence import database as db
-from util import jwt
+from util import security
 
 from . import routing
 
@@ -31,7 +31,7 @@ class Middleware:
 
         request = fastapi.Request(scope)
         auth_token = request.headers.get('auth-token', None)
-        if auth_token and (account_id := await jwt.decode(auth_token)):
+        if auth_token and (account_id := security.decode_jwt(auth_token)):
             scope['authed_account'] = Account(id=account_id,
                                               role=await db.rbac.get_global_role_by_account_id(account_id))
         await self.app(scope, receive, send)
