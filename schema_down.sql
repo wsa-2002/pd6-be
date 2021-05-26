@@ -64,6 +64,8 @@ DROP TYPE IF EXISTS course_type;
 
 -- account control
 
+DROP TABLE IF EXISTS email_verification;
+
 DROP TABLE IF EXISTS student_card;
 
 DROP TABLE IF EXISTS account;

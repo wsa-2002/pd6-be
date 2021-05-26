@@ -1,7 +1,23 @@
 from typing import Optional, Tuple
 
+import exceptions
+from base.enum import RoleType
+
 from . import do
-from .base import SafeExecutor
+from .base import SafeExecutor, SafeConnection
+
+
+async def add(name: str, pass_hash: str, nickname: str, real_name: str, role: RoleType, is_enabled: bool) -> int:
+    async with SafeExecutor(
+            event='add account',
+            sql=r'INSERT INTO account'
+                r'            (name, pass_hash, nickname, real_name, role, is_enabled)'
+                r'     VALUES (%(name)s, %(pass_hash)s, %(nickname)s, %(real_name)s, %(role)s, %(is_enabled)s)'
+                r'  RETURNING id',
+            name=name, pass_hash=pass_hash, nickname=nickname, real_name=real_name, role=role, is_enabled=is_enabled,
+            fetch=1,
+    ) as (account_id,):
+        return account_id
 
 
 async def get_by_id(account_id: int) -> do.Account:
@@ -36,6 +52,18 @@ async def set_by_id(account_id: int,
                 fr'   SET {set_sql}',
             account_id=account_id,
             **to_updates,
+    ):
+        return
+
+
+async def delete_alternative_email_by_id(account_id: int):
+    async with SafeExecutor(
+            event='set account delete alternative email',
+            sql=fr'UPDATE account'
+                fr' WHERE account.id = %(account_id)s'
+                fr'   SET alternative_email = %(alternative_email)s',
+            account_id=account_id,
+            alternative_email=None,
     ):
         return
 
@@ -76,3 +104,53 @@ async def get_login_by_name(name: str, is_enabled: bool = True) -> Tuple[int, st
             fetch=1,
     ) as (id_, pass_hash):
         return id_, pass_hash
+
+
+async def add_email_verification(email: str, account_id: int, student_card_id: int = None) -> str:
+    async with SafeExecutor(
+            event='add email verification',
+            sql=r'INSERT INTO email_verification'
+                r'            (email, account_id, student_card_id)'
+                r'     VALUES (%(email)s, %(account_id)s, %(student_card_id)s)'
+                r'  RETURNING code',
+            email=email,
+            account_id=account_id,
+            student_card_id=student_card_id,
+            fetch=1,
+    ) as (code,):
+        return code
+
+
+async def verify_email(code: str):
+    async with SafeConnection(event='Verify email') as conn:
+        async with conn.transaction():
+            try:
+                email, account_id, student_card_id = await conn.fetchrow(
+                    r'UPDATE email_verification'
+                    r'   SET is_consumed = $1'
+                    r' WHERE code = $2'
+                    r'   AND is_consumed = $3'
+                    r' RETURNING email, account_id, student_card_id',
+                    True, code, False)
+            except TypeError:
+                raise exceptions.NotFound
+
+            if student_card_id:  # student card email
+                await conn.execute(r'UPDATE student_card'
+                                   r'   SET is_enabled = $1'
+                                   r' WHERE id = $2',
+                                   True, student_card_id)
+                await conn.execute(r'UPDATE account'
+                                   r'   SET is_enabled = $1'
+                                   r' WHERE id = $2',
+                                   True, account_id)
+                await conn.execute(r'UPDATE account'
+                                   r'   SET role = $1'
+                                   r' WHERE id = $2'
+                                   r'   AND role = $3',
+                                   RoleType.normal, account_id, RoleType.guest)
+            else:  # alternative email
+                await conn.execute(r'UPDATE account'
+                                   r'   SET alternative_email = $1'
+                                   r' WHERE id = $2',
+                                   email, account_id)

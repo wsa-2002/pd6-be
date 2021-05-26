@@ -4,13 +4,16 @@ from . import do
 from .base import SafeExecutor
 
 
-async def add(institute_id: int, department: str, student_id: str, email: str, is_enabled: bool) -> int:
+async def add(account_id: int, institute_id: int, department: str, student_id: str, email: str, is_enabled: bool) \
+        -> int:
     async with SafeExecutor(
             event='Add student card',
             sql=r'INSERT INTO student_card'
-                r'            (institute_id, department, student_id, email, is_enabled)'
-                r'     VALUES (%(institute_id)s, %(department)s, %(student_id)s, %(email)s, %(is_enabled)s)'
+                r'            (account_id, institute_id, department, student_id, email, is_enabled)'
+                r'     VALUES (%(account_id)s, %(institute_id)s, %(department)s, %(student_id)s, %(email)s,'
+                r'             %(is_enabled)s)'
                 r'  RETURNING id',
+            account_id=account_id,
             institute_id=institute_id,
             department=department,
             student_id=student_id,

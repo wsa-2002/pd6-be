@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 from typing import Optional, Sequence
 
-from base.deco import validated_dataclass
+from pydantic import BaseModel
+
 from base.enum import CourseType, RoleType
 import exceptions as exc
 from middleware import APIRouter, envelope, auth
@@ -15,8 +16,7 @@ router = APIRouter(
 )
 
 
-@validated_dataclass
-class CreateCourseInput:
+class CreateCourseInput(BaseModel):
     name: str
     type: CourseType
     is_enabled: bool
@@ -62,8 +62,7 @@ async def get_course(course_id: int, request: auth.Request) -> db.course.do.Cour
     return course
 
 
-@validated_dataclass
-class EditCourseInput:
+class EditCourseInput(BaseModel):
     name: Optional[str]
     type: Optional[CourseType]
     is_enabled: Optional[bool]
@@ -95,8 +94,7 @@ async def remove_course(course_id: int, request: auth.Request) -> None:
     )
 
 
-@validated_dataclass
-class CreateClassInput:
+class CreateClassInput(BaseModel):
     name: str
     is_enabled: bool
     is_hidden: bool
@@ -217,8 +215,7 @@ async def is_team_manager(team_id, account_id):
         return req_account_role.is_manager
 
 
-@validated_dataclass
-class ModifyTeamInput:
+class ModifyTeamInput(BaseModel):
     name: str
     class_id: int
     is_enabled: bool
@@ -291,8 +288,7 @@ async def get_team_members(team_id: int, request: auth.Request) -> Sequence[Team
     ) for acc_id, role in member_roles]
 
 
-@validated_dataclass
-class TeamMemberInput:
+class TeamMemberInput(BaseModel):
     member_id: int
     role: RoleType
 

@@ -1,8 +1,10 @@
 import asyncpg
+
+from base import mcs
 from config import DBConfig
 
 
-class PoolHandler:
+class PoolHandler(metaclass=mcs.Singleton):
     def __init__(self):
         self._pool: asyncpg.pool.Pool = None  # Need to be init/closed manually
 
@@ -26,14 +28,6 @@ class PoolHandler:
 
 
 pool_handler = PoolHandler()
-
-
-async def initialize(db_config: DBConfig):
-    return await pool_handler.initialize(db_config=db_config)
-
-
-async def close():
-    return await pool_handler.close()
 
 
 # For import usage
