@@ -188,8 +188,8 @@ class ClassMemberOutput:
 
 @router.get('/class/{class_id}/member')
 async def get_class_members(class_id: int, request: auth.Request) -> Sequence[ClassMemberOutput]:
-    if not await rbac.validate(request.account.id, RoleType.normal, class_id=class_id, inherit=False) \
-            or not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id):
+    if not (await rbac.validate(request.account.id, RoleType.normal, class_id=class_id, inherit=False)
+            or await rbac.validate(request.account.id, RoleType.manager, class_id=class_id)):
         raise exc.NoPermission
 
     member_roles = await db.class_.get_member_ids(class_id=class_id)

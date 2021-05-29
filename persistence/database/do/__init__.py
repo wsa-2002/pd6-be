@@ -2,6 +2,7 @@
 Data Objects
 """
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Optional
 
 from base import enum
@@ -59,5 +60,32 @@ class Team:
     id: int
     name: str
     class_id: int
+    is_enabled: bool
+    is_hidden: bool
+
+
+@dataclass
+class Challenge:
+    id: int
+    class_id: int
+    type: enum.ChallengeType
+    name: str
+    setter_id: int
+    description: Optional[str]
+    start_time: datetime
+    end_time: datetime
+    is_enabled: bool
+    is_hidden: bool
+
+
+@dataclass
+class Problem:
+    id: int
+    type: enum.ChallengeType
+    name: str
+    setter_id: int
+    description: Optional[str]
+    start_time: datetime
+    end_time: datetime
     is_enabled: bool
     is_hidden: bool
