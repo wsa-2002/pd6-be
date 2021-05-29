@@ -1,6 +1,6 @@
 from typing import Sequence, Collection, Tuple
 
-from base.enum import CourseType, RoleType
+from base.enum import RoleType
 
 from . import do
 from .base import SafeExecutor, SafeConnection
@@ -117,7 +117,7 @@ async def add_members(class_id: int, member_roles: Collection[Tuple[int, RoleTyp
         await conn.executemany(
             command=r'INSERT INTO class_member'
                     r'            (class_id, member_id, role)'
-                    r'     VALUES ($1, $2, $3)',
+                    r'     VALUES ($1, $2, $3)',  # TODO: what is this
             args=[(class_id, member_id, role)
                   for member_id, role in member_roles],
         )
