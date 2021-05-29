@@ -46,6 +46,15 @@ class Course:
 
 
 @dataclass
+class Class:
+    id: int
+    name: str
+    course_id: int
+    is_enabled: bool
+    is_hidden: bool
+
+
+@dataclass
 class Team:
     id: int
     name: str
