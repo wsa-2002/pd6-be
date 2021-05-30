@@ -1,3 +1,9 @@
+"""
+Controls the connection / driver of database.
+Use safe-execution classes to access database in-code.
+"""
+
+
 import asyncpg
 
 from base import mcs

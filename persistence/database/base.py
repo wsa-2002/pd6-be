@@ -37,6 +37,12 @@ from . import pool_handler
 
 
 class SafeConnection:
+    """
+    This class returns the RAW connection of used database package.
+    Usage should follow the database package's documentations.
+
+    Note that asyncpg does not support keyword-bounded arguments; only positional arguments are allowed.
+    """
     def __init__(self, event: str):
         # self._start_time = datetime.now()
         self._event = event
@@ -55,7 +61,8 @@ class SafeConnection:
 class SafeExecutor:
     def __init__(self, event: str, sql: str, parameters: Dict = None, fetch=None, **kwparams):
         """
-        Bind named parameters with `sql=r'%(key)s', key=value`
+        A safe execution context manager to open, execute, fetch, and close connections automatically.
+        It also binds named parameters with `sql=r'%(key)s', key=value` since asyncpg does not support that.
 
         :param parameters: named parameters to be bind in given sql, can also be given through **params;
                            parameters should be bounded in sql with syntax "%(key)s"
@@ -69,16 +76,16 @@ class SafeExecutor:
         if parameters is None:
             parameters = {}
         parameters.update(kwparams)
-        # Convert to asyncpg position-based arguments
+        # Convert to asyncpg position-based arguments because asyncpg does not support that
         self._sql, self._parameters = pyformat2psql(sql, parameters)
 
     async def __aenter__(self) -> Optional[Union[asyncpg.Record, List[asyncpg.Record]]]:
         """
-        If fetch 1 / one: return a tuple (= row)
+        If fetch is 1 / "one": return a tuple (= row)
 
-        If fetch many or all: return a list of tuples (= rows)
+        If fetch is "many" or "all": return a list of tuples (= rows)
 
-        If fetch `None` or strange value: return `None`
+        If fetch is `None` or strange value: return `None`
         """
         # log.info(f"Starting {self.__class__.__name__}: {self._event}, sql: {self._sql}, params: {self._parameters}")
 

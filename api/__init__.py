@@ -1,7 +1,10 @@
-from fastapi import FastAPI
+import fastapi
 
 
-def register_routers(app: FastAPI):
+def register_routers(app: fastapi.FastAPI):
+    """
+    A function to register routers without possibility of cyclic import.
+    """
     from . import (
         public,
         account_control,
