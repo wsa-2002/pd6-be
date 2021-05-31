@@ -32,7 +32,7 @@ async def get_account(account_id: int, request: auth.Request) -> GetAccountOutpu
     if request.account.role.is_guest and not ask_for_self:
         raise exc.NoPermission
 
-    target_account = await db.account.get_by_id(account_id)
+    target_account = await db.account.read(account_id)
     result = GetAccountOutput(
         id=target_account.id,
         name=target_account.name,
@@ -60,7 +60,7 @@ async def patch_account(account_id: int, data: PatchAccountInput, request: auth.
         raise exc.NoPermission
 
     # 不檢查 if data.nickname，因為 nickname 可以被刪掉 (設成 None)
-    await db.account.set_by_id(account_id=account_id, nickname=data.nickname)
+    await db.account.edit(account_id=account_id, nickname=data.nickname)
 
     if data.alternative_email:  # 加或改 alternative email
         code = await db.account.add_email_verification(email=data.alternative_email, account_id=account_id)
@@ -103,12 +103,12 @@ async def get_institutes(request: auth.Request) -> Sequence[db.institute.do.Inst
     except exc.NoPermission:
         only_enabled = True
 
-    return await db.institute.get_all(only_enabled=only_enabled)
+    return await db.institute.browse(only_enabled=only_enabled)
 
 
 @router.get('/institute/{institute_id}')
 async def get_institute(institute_id: int, request: auth.Request) -> db.institute.do.Institute:
-    return await db.institute.get_by_id(institute_id, only_enabled=request.account.role.not_manager)
+    return await db.institute.read(institute_id, only_enabled=request.account.role.not_manager)
 
 
 class UpdateInstituteInput(BaseModel):
@@ -122,7 +122,7 @@ async def update_institute(institute_id: int, data: UpdateInstituteInput, reques
     if not request.account.role.is_manager:
         raise exc.NoPermission
 
-    await db.institute.set_by_id(
+    await db.institute.edit(
         institute_id=institute_id,
         name=data.name,
         email_domain=data.email_domain,
@@ -165,16 +165,16 @@ async def get_account_student_card(account_id: int, request: auth.Request) -> Se
     if request.account.role.not_manager and request.account.id != account_id:
         raise exc.NoPermission
 
-    return await db.student_card.get_by_account_id(account_id)
+    return await db.student_card.read_by_account_id(account_id)
 
 
 @router.get('/student-card/{student_card_id}')
 async def get_student_card(student_card_id: int, request: auth.Request) -> db.student_card.do.StudentCard:
-    owner_id = await db.student_card.get_owner_id(student_card_id=student_card_id)
+    owner_id = await db.student_card.read_owner_id(student_card_id=student_card_id)
     if request.account.role.not_manager and request.account.id != owner_id:
         raise exc.NoPermission
 
-    return await db.student_card.get_by_id(student_card_id=student_card_id)
+    return await db.student_card.read(student_card_id=student_card_id)
 
 
 class PatchStudentCardInput(BaseModel):
@@ -191,7 +191,7 @@ async def update_student_card(student_card_id: int, data: PatchStudentCardInput,
     if not request.account.role.is_manager:
         raise exc.NoPermission
 
-    await db.student_card.set_by_id(
+    await db.student_card.edit(
         student_card_id=student_card_id,
         institute_id=data.institute_id,
         department=data.department,
@@ -203,8 +203,8 @@ async def update_student_card(student_card_id: int, data: PatchStudentCardInput,
 
 @router.delete('/student-card/{student_card_id}')
 async def remove_student_card(student_card_id: int, request: auth.Request) -> None:
-    owner_id = await db.student_card.get_owner_id(student_card_id=student_card_id)
+    owner_id = await db.student_card.read_owner_id(student_card_id=student_card_id)
     if request.account.role.not_manager and request.account.id != owner_id:
         raise exc.NoPermission
 
-    await db.student_card.set_by_id(student_card_id, is_enabled=False)
+    await db.student_card.edit(student_card_id, is_enabled=False)

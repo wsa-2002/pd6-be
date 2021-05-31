@@ -91,7 +91,7 @@ class LoginInput(BaseModel):
 @router.post('/account/jwt', tags=['Account-Control'], response_class=envelope.JSONResponse)
 async def login(data: LoginInput) -> str:
     try:
-        account_id, pass_hash = await db.account.get_login_by_name(name=data.name)
+        account_id, pass_hash = await db.account.read_login_by_name(name=data.name)
     except exc.NotFound:
         raise exc.LoginFailed  # Not to let user know why login failed
 

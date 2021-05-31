@@ -33,7 +33,7 @@ class Middleware:
         auth_token = request.headers.get('auth-token', None)
         if auth_token and (account_id := security.decode_jwt(auth_token)):
             scope['authed_account'] = Account(id=account_id,
-                                              role=await db.rbac.get_global_role_by_account_id(account_id))
+                                              role=await db.rbac.read_global_role_by_account_id(account_id))
         await self.app(scope, receive, send)
 
 

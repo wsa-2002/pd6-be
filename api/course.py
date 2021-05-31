@@ -33,7 +33,7 @@ async def create_course(data: CreateCourseInput, request: auth.Request) -> Creat
     if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
-    course_id = await db.course.create(
+    course_id = await db.course.add(
         name=data.name,
         course_type=data.type,
         is_enabled=data.is_enabled,
@@ -48,7 +48,7 @@ async def get_courses(request: auth.Request) -> Sequence[db.course.do.Course]:
         raise exc.NoPermission
 
     show_limited = request.account.role.not_manager
-    courses = await db.course.get_all(only_enabled=show_limited, exclude_hidden=show_limited)
+    courses = await db.course.browse(only_enabled=show_limited, exclude_hidden=show_limited)
     return courses
 
 
@@ -58,7 +58,7 @@ async def get_course(course_id: int, request: auth.Request) -> db.course.do.Cour
         raise exc.NoPermission
 
     show_limited = request.account.role.not_manager
-    course = await db.course.get_by_id(course_id, only_enabled=show_limited, exclude_hidden=show_limited)
+    course = await db.course.read(course_id, only_enabled=show_limited, exclude_hidden=show_limited)
     return course
 
 
@@ -74,7 +74,7 @@ async def edit_course(course_id: int, data: EditCourseInput, request: auth.Reque
     if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
-    await db.course.set_by_id(
+    await db.course.edit(
         course_id=course_id,
         name=data.name,
         course_type=data.type,
@@ -88,7 +88,7 @@ async def remove_course(course_id: int, request: auth.Request) -> None:
     if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
-    await db.course.set_by_id(
+    await db.course.edit(
         course_id=course_id,
         is_enabled=False,
     )
@@ -110,7 +110,7 @@ async def create_class_under_course(course_id: int, data: CreateClassInput, requ
     if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
-    class_id = await db.class_.create(
+    class_id = await db.class_.add(
         name=data.name,
         course_id=course_id,
         is_enabled=data.is_enabled,
@@ -125,4 +125,4 @@ async def get_classes_under_course(course_id: int, request: auth.Request) -> Seq
     if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
-    return await db.course.get_classes_id(course_id=course_id)
+    return await db.course.browse_classes(course_id=course_id)

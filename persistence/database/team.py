@@ -6,7 +6,7 @@ from . import do
 from .base import SafeExecutor
 
 
-async def create(name: str, class_id: int, is_enabled: bool, is_hidden: bool) -> int:
+async def add(name: str, class_id: int, is_enabled: bool, is_hidden: bool) -> int:
     async with SafeExecutor(
             event='create team',
             sql=r'INSERT INTO team'
@@ -22,7 +22,7 @@ async def create(name: str, class_id: int, is_enabled: bool, is_hidden: bool) ->
         return class_id
         
 
-async def get_all(only_enabled=True, exclude_hidden=True) -> Sequence[do.Team]:
+async def browse(only_enabled=True, exclude_hidden=True) -> Sequence[do.Team]:
     conditions = []
     if only_enabled:
         conditions.append('is_enabled = TRUE')
@@ -43,7 +43,7 @@ async def get_all(only_enabled=True, exclude_hidden=True) -> Sequence[do.Team]:
                 for (id_, name, c_id, is_enabled, is_hidden) in records]
 
 
-async def get_by_id(team_id: int, only_enabled=True, exclude_hidden=True) -> do.Team:
+async def read(team_id: int, only_enabled=True, exclude_hidden=True) -> do.Team:
     conditions = []
     if only_enabled:
         conditions.append('is_enabled = TRUE')
@@ -64,8 +64,8 @@ async def get_by_id(team_id: int, only_enabled=True, exclude_hidden=True) -> do.
                        is_enabled=is_enabled, is_hidden=is_hidden)
 
 
-async def set_by_id(team_id: int, name: str = None, class_id: int = None, 
-                    is_enabled: bool = None, is_hidden: bool = None):
+async def edit(team_id: int, name: str = None, class_id: int = None,
+               is_enabled: bool = None, is_hidden: bool = None):
     to_updates = {}
 
     if name is not None:
@@ -93,7 +93,7 @@ async def set_by_id(team_id: int, name: str = None, class_id: int = None,
 # === member control
 
 
-async def get_member_ids(team_id: int) -> Collection[Tuple[int, RoleType]]:
+async def browse_members(team_id: int) -> Collection[Tuple[int, RoleType]]:
     async with SafeExecutor(
             event='get team members id',
             sql=r'SELECT account.id, team_member.role'
@@ -106,7 +106,7 @@ async def get_member_ids(team_id: int) -> Collection[Tuple[int, RoleType]]:
         return [(id_, RoleType(role_str)) for id_, role_str in results]
 
 
-async def get_member_role(team_id: int, member_id: int) -> RoleType:
+async def read_member_role(team_id: int, member_id: int) -> RoleType:
     async with SafeExecutor(
             event='get team member role',
             sql=r'SELECT role'
@@ -119,7 +119,7 @@ async def get_member_role(team_id: int, member_id: int) -> RoleType:
         return RoleType(role)
 
 
-async def set_member(team_id: int, member_id: int, role: RoleType):
+async def edit_member(team_id: int, member_id: int, role: RoleType):
     async with SafeExecutor(
             event='set team member',
             sql=r'UPDATE team_member'
@@ -143,7 +143,7 @@ async def delete_member(team_id: int, member_id: int):
         pass
 
 
-async def get_class_id(team_id: int) -> int:
+async def read_class_id(team_id: int) -> int:
     async with SafeExecutor(
             event='get class id by team id',
             sql=r'SELECT class_id'

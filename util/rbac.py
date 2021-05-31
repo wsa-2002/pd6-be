@@ -26,23 +26,23 @@ async def validate(account_id: int, min_role: RoleType,
         challenge_id = ()  # TODO
 
     if challenge_id is not None:
-        class_id = (await db.challenge.get_by_id(challenge_id=challenge_id)).class_id
+        class_id = (await db.challenge.read(challenge_id=challenge_id)).class_id
 
     if team_id is not None:
         try:
-            team_role = await db.rbac.get_team_role_by_account_id(team_id=team_id, account_id=account_id)
+            team_role = await db.rbac.read_team_role_by_account_id(team_id=team_id, account_id=account_id)
             assert team_role >= min_role
         except (exc.NotFound, AssertionError):
             if not inherit:
                 return False  # no inherit -> only check for team-level
             # try class role, get class id
-            class_id = db.team.get_class_id(team_id=team_id)
+            class_id = db.team.read_class_id(team_id=team_id)
         else:
             return True
 
     if class_id is not None:
         try:
-            class_role = await db.rbac.get_class_role_by_account_id(class_id=class_id, account_id=account_id)
+            class_role = await db.rbac.read_class_role_by_account_id(class_id=class_id, account_id=account_id)
             assert class_role >= min_role
         except (exc.NotFound, AssertionError):
             if not inherit:
@@ -53,7 +53,7 @@ async def validate(account_id: int, min_role: RoleType,
             return True
 
     try:
-        global_role = await db.rbac.get_global_role_by_account_id(account_id=account_id)
+        global_role = await db.rbac.read_global_role_by_account_id(account_id=account_id)
         assert global_role >= min_role
     except (exc.NotFound, AssertionError):
         return False

@@ -21,7 +21,7 @@ async def get_classes(request: auth.Request) -> Sequence[db.class_.do.Class]:
         raise exc.NoPermission
 
     show_limited = request.account.role.not_manager
-    classes = await db.class_.get_all(only_enabled=show_limited, exclude_hidden=show_limited)
+    classes = await db.class_.browse(only_enabled=show_limited, exclude_hidden=show_limited)
     return classes
 
 
@@ -31,7 +31,7 @@ async def get_class(class_id: int, request: auth.Request) -> db.class_.do.Class:
         raise exc.NoPermission
 
     show_limited = request.account.role.not_manager
-    class_ = await db.class_.get_by_id(class_id=class_id, only_enabled=show_limited, exclude_hidden=show_limited)
+    class_ = await db.class_.read(class_id=class_id, only_enabled=show_limited, exclude_hidden=show_limited)
     return class_
 
 
@@ -47,7 +47,7 @@ async def modify_class(class_id: int, data: EditClassInput, request: auth.Reques
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
 
-    await db.class_.set_by_id(
+    await db.class_.edit(
         class_id=class_id,
         name=data.name,
         course_id=data.course_id,
@@ -61,7 +61,7 @@ async def remove_class(class_id: int, request: auth.Request) -> None:
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
 
-    await db.class_.set_by_id(
+    await db.class_.edit(
         class_id=class_id,
         is_enabled=False,
     )
@@ -79,7 +79,7 @@ async def get_class_members(class_id: int, request: auth.Request) -> Sequence[Cl
             or await rbac.validate(request.account.id, RoleType.manager, class_id=class_id)):
         raise exc.NoPermission
 
-    member_roles = await db.class_.get_member_ids(class_id=class_id)
+    member_roles = await db.class_.browse_members(class_id=class_id)
 
     return [ClassMemberOutput(
         member_id=acc_id,
@@ -98,7 +98,7 @@ async def modify_class_member(class_id: int, data: Sequence[ClassMemberInput], r
         raise exc.NoPermission
 
     for (member_id, role) in data:
-        await db.class_.set_member(class_id=class_id, member_id=member_id, role=role)
+        await db.class_.edit_member(class_id=class_id, member_id=member_id, role=role)
 
 
 @router.delete('/class/{class_id}/member/{member_id}')
@@ -125,7 +125,7 @@ async def create_team_under_class(class_id: int, data: CreateTeamInput, request:
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
 
-    team_id = await db.team.create(
+    team_id = await db.team.add(
         name=data.name,
         class_id=class_id,
         is_enabled=data.is_enabled,
@@ -140,4 +140,4 @@ async def get_teams_under_class(class_id: int, request: auth.Request) -> Sequenc
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
 
-    return await db.class_.get_teams_id(class_id=class_id)
+    return await db.class_.browse_teams(class_id=class_id)

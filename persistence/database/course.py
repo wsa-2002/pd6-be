@@ -6,7 +6,7 @@ from . import do
 from .base import SafeExecutor, SafeConnection
 
 
-async def create(name: str, course_type: CourseType, is_enabled: bool, is_hidden: bool) -> int:
+async def add(name: str, course_type: CourseType, is_enabled: bool, is_hidden: bool) -> int:
     async with SafeExecutor(
             event='create course',
             sql=r'INSERT INTO course'
@@ -22,7 +22,7 @@ async def create(name: str, course_type: CourseType, is_enabled: bool, is_hidden
         return course_id
 
 
-async def get_all(only_enabled=True, exclude_hidden=True) -> Sequence[do.Course]:
+async def browse(only_enabled=True, exclude_hidden=True) -> Sequence[do.Course]:
     conditions = []
     if only_enabled:
         conditions.append('is_enabled = TRUE')
@@ -43,7 +43,7 @@ async def get_all(only_enabled=True, exclude_hidden=True) -> Sequence[do.Course]
                 for (id_, name, c_type, is_enabled, is_hidden) in records]
 
 
-async def get_by_id(course_id: int, only_enabled=True, exclude_hidden=True) -> do.Course:
+async def read(course_id: int, only_enabled=True, exclude_hidden=True) -> do.Course:
     conditions = []
     if only_enabled:
         conditions.append('is_enabled = TRUE')
@@ -64,8 +64,8 @@ async def get_by_id(course_id: int, only_enabled=True, exclude_hidden=True) -> d
                          is_enabled=is_enabled, is_hidden=is_hidden)
 
 
-async def set_by_id(course_id: int,
-                    name: str = None, course_type: CourseType = None, is_enabled: bool = None, is_hidden: bool = None):
+async def edit(course_id: int,
+               name: str = None, course_type: CourseType = None, is_enabled: bool = None, is_hidden: bool = None):
     to_updates = {}
 
     if name is not None:
@@ -117,7 +117,7 @@ async def add_members(course_id: int, member_roles: Collection[Tuple[int, RoleTy
         )
 
 
-async def get_member_ids(course_id: int) -> Collection[Tuple[int, RoleType]]:
+async def browse_members(course_id: int) -> Collection[Tuple[int, RoleType]]:
     async with SafeExecutor(
             event='get course members id',
             sql=r'SELECT account.id, course_member.role'
@@ -143,7 +143,7 @@ async def get_member_role(course_id: int, member_id: int) -> RoleType:
         return RoleType(role)
 
 
-async def set_member(course_id: int, member_id: int, role: RoleType):
+async def edit_member(course_id: int, member_id: int, role: RoleType):
     async with SafeExecutor(
             event='set course member',
             sql=r'UPDATE course_member'
@@ -169,7 +169,7 @@ async def delete_member(course_id: int, member_id: int):
 
 # === course -> class
 
-async def get_classes_id(course_id: int) -> Sequence[int]:
+async def browse_classes(course_id: int) -> Sequence[int]:
     async with SafeExecutor(
             event='get course classes',
             sql=r'SELECT class.id'

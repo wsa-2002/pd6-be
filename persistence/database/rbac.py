@@ -3,7 +3,7 @@ from base.enum import RoleType
 from .base import SafeExecutor
 
 
-async def get_global_role_by_account_id(account_id: int) -> RoleType:
+async def read_global_role_by_account_id(account_id: int) -> RoleType:
     async with SafeExecutor(
             event='get global role by account id',
             sql=r'SELECT account.role'
@@ -15,7 +15,7 @@ async def get_global_role_by_account_id(account_id: int) -> RoleType:
         return RoleType(role)
 
 
-async def get_class_role_by_account_id(class_id: int, account_id: int) -> RoleType:
+async def read_class_role_by_account_id(class_id: int, account_id: int) -> RoleType:
     async with SafeExecutor(
             event='get class role by account id',
             sql=r'SELECT class_member.role'
@@ -29,7 +29,7 @@ async def get_class_role_by_account_id(class_id: int, account_id: int) -> RoleTy
         return RoleType(role)
 
 
-async def get_team_role_by_account_id(team_id: int, account_id: int) -> RoleType:
+async def read_team_role_by_account_id(team_id: int, account_id: int) -> RoleType:
     async with SafeExecutor(
             event='get team role by account id',
             sql=r'SELECT team_member.role'

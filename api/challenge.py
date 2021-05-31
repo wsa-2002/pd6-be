@@ -35,7 +35,7 @@ def create_challenge_under_class(class_id: int, data: CreateChallengeInput, requ
             or await rbac.validate(request.account.id, RoleType.manager, class_id=class_id)):
         raise exc.NoPermission
 
-    challenge_id = await db.challenge.create(
+    challenge_id = await db.challenge.add(
         class_id=class_id, type_=data.type, name=data.name, setter_id=request.account.id, description=data.description,
         start_time=data.start_time, end_time=data.end_time, is_enabled=data.is_enabled, is_hidden=data.is_hidden,
     )
@@ -47,7 +47,7 @@ def get_challenges_under_class(class_id: int, request: auth.Request) -> Sequence
     if not rbac.validate(request.account.id, RoleType.normal, class_id=class_id, inherit=False):
         raise exc.NoPermission
 
-    challenges = await db.class_.get_challenges(class_id=class_id)
+    challenges = await db.class_.browse_challenges(class_id=class_id)
     return challenges
 
 
@@ -56,7 +56,7 @@ def get_challenges(request: auth.Request) -> Sequence[db.challenge.do.Challenge]
     if not request.account.role.is_manager:
         raise exc.NoPermission
 
-    challenges = await db.challenge.get_all()
+    challenges = await db.challenge.browse()
     return challenges
 
 
@@ -66,7 +66,7 @@ def get_challenge(challenge_id: int, request: auth.Request) -> db.challenge.do.C
     if not request.account.role.is_manager:
         raise exc.NoPermission
 
-    challenge = await db.challenge.get_by_id(challenge_id=challenge_id)
+    challenge = await db.challenge.read(challenge_id=challenge_id)
     return challenge
 
 
@@ -86,9 +86,9 @@ def modify_challenge(challenge_id: int, data: ModifyChallengeInput, request: aut
     if not await rbac.validate(request.account.id, RoleType.manager, challenge_id=challenge_id):
         raise exc.NoPermission
 
-    await db.challenge.modify(challenge_id=challenge_id, type_=data.type, name=data.name,
-                              description=data.description, start_time=data.start_time, end_time=data.end_time,
-                              is_enabled=data.is_enabled, is_hidden=data.is_hidden)
+    await db.challenge.edit(challenge_id=challenge_id, type_=data.type, name=data.name,
+                            description=data.description, start_time=data.start_time, end_time=data.end_time,
+                            is_enabled=data.is_enabled, is_hidden=data.is_hidden)
 
 
 @router.delete('/challenge/{challenge_id}')
