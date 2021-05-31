@@ -16,7 +16,7 @@ router = APIRouter(
 
 
 @router.get('/team')
-async def get_teams(request: auth.Request) -> Sequence[db.team.do.Team]:
+async def browse_teams(request: auth.Request) -> Sequence[db.team.do.Team]:
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
@@ -26,7 +26,7 @@ async def get_teams(request: auth.Request) -> Sequence[db.team.do.Team]:
 
 
 @router.get('/team/{team_id}')
-async def get_team(team_id: int, request: auth.Request) -> db.team.do.Team:
+async def read_team(team_id: int, request: auth.Request) -> db.team.do.Team:
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
@@ -45,7 +45,7 @@ async def is_team_manager(team_id, account_id):
         return req_account_role.is_manager
 
 
-class ModifyTeamInput(BaseModel):
+class EditTeamInput(BaseModel):
     name: str
     class_id: int
     is_enabled: bool
@@ -53,7 +53,7 @@ class ModifyTeamInput(BaseModel):
 
 
 @router.patch('/team/{team_id}')
-async def modify_team(team_id: int, data: ModifyTeamInput, request: auth.Request) -> None:
+async def edit_team(team_id: int, data: EditTeamInput, request: auth.Request) -> None:
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
@@ -75,7 +75,7 @@ async def modify_team(team_id: int, data: ModifyTeamInput, request: auth.Request
 
 
 @router.delete('/team/{team_id}')
-async def remove_team(team_id: int, request: auth.Request) -> None:
+async def delete_team(team_id: int, request: auth.Request) -> None:
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
@@ -100,7 +100,7 @@ class TeamMemberOutput:
 
 
 @router.get('/team/{team_id}/member')
-async def get_team_members(team_id: int, request: auth.Request) -> Sequence[TeamMemberOutput]:
+async def browse_team_members(team_id: int, request: auth.Request) -> Sequence[TeamMemberOutput]:
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
@@ -118,13 +118,13 @@ async def get_team_members(team_id: int, request: auth.Request) -> Sequence[Team
     ) for acc_id, role in member_roles]
 
 
-class TeamMemberInput(BaseModel):
+class EditMemberInput(BaseModel):
     member_id: int
     role: RoleType
 
 
 @router.patch('/team/{team_id}/member')
-async def modify_team_member(team_id: int, data: Sequence[TeamMemberInput], request: auth.Request) -> None:
+async def edit_team_member(team_id: int, data: Sequence[EditMemberInput], request: auth.Request) -> None:
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
@@ -141,7 +141,7 @@ async def modify_team_member(team_id: int, data: Sequence[TeamMemberInput], requ
 
 
 @router.delete('/team/{team_id}/member/{member_id}')
-async def remove_team_member(team_id: int, member_id: int, request: auth.Request) -> None:
+async def delete_team_member(team_id: int, member_id: int, request: auth.Request) -> None:
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 

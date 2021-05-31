@@ -18,7 +18,7 @@ router = APIRouter(
 )
 
 
-class CreateChallengeInput(BaseModel):
+class AddChallengeInput(BaseModel):
     class_id: int
     type: enum.ChallengeType
     name: str
@@ -30,7 +30,7 @@ class CreateChallengeInput(BaseModel):
 
 
 @router.post('/class/{class_id}/challenge', tags=['Course'])
-def create_challenge_under_class(class_id: int, data: CreateChallengeInput, request: auth.Request) -> int:
+def add_challenge_under_class(class_id: int, data: AddChallengeInput, request: auth.Request) -> int:
     if not (await rbac.validate(request.account.id, RoleType.normal, class_id=class_id, inherit=False)
             or await rbac.validate(request.account.id, RoleType.manager, class_id=class_id)):
         raise exc.NoPermission
@@ -43,7 +43,7 @@ def create_challenge_under_class(class_id: int, data: CreateChallengeInput, requ
 
 
 @router.get('/class/{class_id}/challenge', tags=['Course'])
-def get_challenges_under_class(class_id: int, request: auth.Request) -> Sequence[db.challenge.do.Challenge]:
+def browse_challenges_under_class(class_id: int, request: auth.Request) -> Sequence[db.challenge.do.Challenge]:
     if not rbac.validate(request.account.id, RoleType.normal, class_id=class_id, inherit=False):
         raise exc.NoPermission
 
@@ -52,7 +52,7 @@ def get_challenges_under_class(class_id: int, request: auth.Request) -> Sequence
 
 
 @router.get('/challenge')
-def get_challenges(request: auth.Request) -> Sequence[db.challenge.do.Challenge]:
+def browse_challenges(request: auth.Request) -> Sequence[db.challenge.do.Challenge]:
     if not request.account.role.is_manager:
         raise exc.NoPermission
 
@@ -61,8 +61,7 @@ def get_challenges(request: auth.Request) -> Sequence[db.challenge.do.Challenge]
 
 
 @router.get('/challenge/{challenge_id}')
-@util.enveloped
-def get_challenge(challenge_id: int, request: auth.Request) -> db.challenge.do.Challenge:
+def read_challenge(challenge_id: int, request: auth.Request) -> db.challenge.do.Challenge:
     if not request.account.role.is_manager:
         raise exc.NoPermission
 
@@ -70,7 +69,7 @@ def get_challenge(challenge_id: int, request: auth.Request) -> db.challenge.do.C
     return challenge
 
 
-class ModifyChallengeInput(BaseModel):
+class EditChallengeInput(BaseModel):
     # class_id: int
     type: Optional[enum.ChallengeType]
     name: Optional[str]
@@ -82,7 +81,7 @@ class ModifyChallengeInput(BaseModel):
 
 
 @router.patch('/challenge/{challenge_id}')
-def modify_challenge(challenge_id: int, data: ModifyChallengeInput, request: auth.Request) -> None:
+def edit_challenge(challenge_id: int, data: EditChallengeInput, request: auth.Request) -> None:
     if not await rbac.validate(request.account.id, RoleType.manager, challenge_id=challenge_id):
         raise exc.NoPermission
 
@@ -92,7 +91,7 @@ def modify_challenge(challenge_id: int, data: ModifyChallengeInput, request: aut
 
 
 @router.delete('/challenge/{challenge_id}')
-def remove_challenge(challenge_id: int, request: auth.Request) -> None:
+def delete_challenge(challenge_id: int, request: auth.Request) -> None:
     if not await rbac.validate(request.account.id, RoleType.manager, challenge_id=challenge_id):
         raise exc.NoPermission
 
@@ -101,11 +100,11 @@ def remove_challenge(challenge_id: int, request: auth.Request) -> None:
 
 @router.post('/challenge/{challenge_id}/problem')
 @util.enveloped
-def create_problem_under_challenge(challenge_id: int):
+def add_problem_under_challenge(challenge_id: int):
     return {'id': 1}
 
 
 @router.get('/challenge/{challenge_id}/problem')
 @util.enveloped
-def get_problems_under_challenge(challenge_id: int):
+def browse_problems_under_challenge(challenge_id: int):
     return [model.problem]

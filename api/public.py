@@ -31,7 +31,7 @@ async def default_page():
 
 
 # @validated_dataclass
-class CreateAccountInput(BaseModel):
+class AddAccountInput(BaseModel):
     # Account
     name: str
     password: str
@@ -46,7 +46,7 @@ class CreateAccountInput(BaseModel):
 
 
 @router.post('/account', tags=['Account-Control'], response_class=envelope.JSONResponse)
-async def create_account(data: CreateAccountInput) -> None:
+async def add_account(data: AddAccountInput) -> None:
     account_id = await db.account.add(name=data.name, pass_hash=security.hash_password(data.password),
                                       nickname=data.nickname, real_name=data.real_name, role=RoleType.guest,
                                       is_enabled=True)

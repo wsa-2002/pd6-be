@@ -16,7 +16,7 @@ router = APIRouter(
 )
 
 
-class CreateCourseInput(BaseModel):
+class AddCourseInput(BaseModel):
     name: str
     type: CourseType
     is_enabled: bool
@@ -24,12 +24,12 @@ class CreateCourseInput(BaseModel):
 
 
 @dataclass
-class CreateCourseOutput:
+class AddCourseOutput:
     id: int
 
 
 @router.post('/course')
-async def create_course(data: CreateCourseInput, request: auth.Request) -> CreateCourseOutput:
+async def add_course(data: AddCourseInput, request: auth.Request) -> AddCourseOutput:
     if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
@@ -39,11 +39,11 @@ async def create_course(data: CreateCourseInput, request: auth.Request) -> Creat
         is_enabled=data.is_enabled,
         is_hidden=data.is_hidden,
     )
-    return CreateCourseOutput(id=course_id)
+    return AddCourseOutput(id=course_id)
 
 
 @router.get('/course')
-async def get_courses(request: auth.Request) -> Sequence[db.course.do.Course]:
+async def browse_courses(request: auth.Request) -> Sequence[db.course.do.Course]:
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
@@ -53,7 +53,7 @@ async def get_courses(request: auth.Request) -> Sequence[db.course.do.Course]:
 
 
 @router.get('/course/{course_id}')
-async def get_course(course_id: int, request: auth.Request) -> db.course.do.Course:
+async def read_course(course_id: int, request: auth.Request) -> db.course.do.Course:
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
@@ -84,7 +84,7 @@ async def edit_course(course_id: int, data: EditCourseInput, request: auth.Reque
 
 
 @router.delete('/course/{course_id}')
-async def remove_course(course_id: int, request: auth.Request) -> None:
+async def delete_course(course_id: int, request: auth.Request) -> None:
     if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
@@ -94,19 +94,19 @@ async def remove_course(course_id: int, request: auth.Request) -> None:
     )
 
 
-class CreateClassInput(BaseModel):
+class AddClassInput(BaseModel):
     name: str
     is_enabled: bool
     is_hidden: bool
 
 
 @dataclass
-class CreateClassOutput:
+class AddClassOutput:
     id: int
 
 
 @router.post('/course/{course_id}/class', tags=['Class'])
-async def create_class_under_course(course_id: int, data: CreateClassInput, request: auth.Request) -> CreateClassOutput:
+async def add_class_under_course(course_id: int, data: AddClassInput, request: auth.Request) -> AddClassOutput:
     if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
@@ -117,11 +117,11 @@ async def create_class_under_course(course_id: int, data: CreateClassInput, requ
         is_hidden=data.is_hidden,
     )
 
-    return CreateClassOutput(id=class_id)
+    return AddClassOutput(id=class_id)
 
 
 @router.get('/course/{course_id}/class', tags=['Class'])
-async def get_classes_under_course(course_id: int, request: auth.Request) -> Sequence[int]:
+async def browse_classes_under_course(course_id: int, request: auth.Request) -> Sequence[int]:
     if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 

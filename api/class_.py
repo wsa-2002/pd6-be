@@ -16,7 +16,7 @@ router = APIRouter(
 
 
 @router.get('/class')
-async def get_classes(request: auth.Request) -> Sequence[db.class_.do.Class]:
+async def browse_classes(request: auth.Request) -> Sequence[db.class_.do.Class]:
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
@@ -26,7 +26,7 @@ async def get_classes(request: auth.Request) -> Sequence[db.class_.do.Class]:
 
 
 @router.get('/class/{class_id}')
-async def get_class(class_id: int, request: auth.Request) -> db.class_.do.Class:
+async def read_class(class_id: int, request: auth.Request) -> db.class_.do.Class:
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
@@ -43,7 +43,7 @@ class EditClassInput(BaseModel):
 
 
 @router.patch('/class/{class_id}')
-async def modify_class(class_id: int, data: EditClassInput, request: auth.Request) -> None:
+async def edit_class(class_id: int, data: EditClassInput, request: auth.Request) -> None:
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
 
@@ -57,7 +57,7 @@ async def modify_class(class_id: int, data: EditClassInput, request: auth.Reques
 
 
 @router.delete('/class/{class_id}')
-async def remove_class(class_id: int, request: auth.Request) -> None:
+async def delete_class(class_id: int, request: auth.Request) -> None:
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
 
@@ -74,7 +74,7 @@ class ClassMemberOutput:
 
 
 @router.get('/class/{class_id}/member')
-async def get_class_members(class_id: int, request: auth.Request) -> Sequence[ClassMemberOutput]:
+async def browse_class_members(class_id: int, request: auth.Request) -> Sequence[ClassMemberOutput]:
     if not (await rbac.validate(request.account.id, RoleType.normal, class_id=class_id, inherit=False)
             or await rbac.validate(request.account.id, RoleType.manager, class_id=class_id)):
         raise exc.NoPermission
@@ -87,13 +87,13 @@ async def get_class_members(class_id: int, request: auth.Request) -> Sequence[Cl
     ) for acc_id, role in member_roles]
 
 
-class ClassMemberInput(BaseModel):
+class EditClassMemberInput(BaseModel):
     member_id: int
     role: RoleType
 
 
 @router.patch('/class/{class_id}/member')
-async def modify_class_member(class_id: int, data: Sequence[ClassMemberInput], request: auth.Request) -> None:
+async def edit_class_member(class_id: int, data: Sequence[EditClassMemberInput], request: auth.Request) -> None:
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
 
@@ -102,26 +102,26 @@ async def modify_class_member(class_id: int, data: Sequence[ClassMemberInput], r
 
 
 @router.delete('/class/{class_id}/member/{member_id}')
-async def remove_class_member(class_id: int, member_id: int, request: auth.Request) -> None:
+async def delete_class_member(class_id: int, member_id: int, request: auth.Request) -> None:
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
 
     await db.class_.delete_member(class_id=class_id, member_id=member_id)
 
 
-class CreateTeamInput(BaseModel):
+class AddTeamInput(BaseModel):
     name: str
     is_enabled: bool
     is_hidden: bool
 
 
 @dataclass
-class CreateTeamOutput:
+class AddTeamOutput:
     id: int
 
 
 @router.post('/class/{class_id}/team', tags=['Team'])
-async def create_team_under_class(class_id: int, data: CreateTeamInput, request: auth.Request) -> CreateTeamOutput:
+async def add_team_under_class(class_id: int, data: AddTeamInput, request: auth.Request) -> AddTeamOutput:
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
 
@@ -132,11 +132,11 @@ async def create_team_under_class(class_id: int, data: CreateTeamInput, request:
         is_hidden=data.is_hidden,
     )
 
-    return CreateTeamOutput(id=team_id)
+    return AddTeamOutput(id=team_id)
 
 
 @router.get('/class/{class_id}/team', tags=['Team'])
-async def get_teams_under_class(class_id: int, request: auth.Request) -> Sequence[int]:
+async def browse_teams_under_class(class_id: int, request: auth.Request) -> Sequence[int]:
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
 

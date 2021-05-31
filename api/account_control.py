@@ -16,7 +16,7 @@ router = APIRouter(
 
 
 @dataclass
-class GetAccountOutput:
+class ReadAccountOutput:
     id: int
     name: str
     nickname: str
@@ -27,13 +27,13 @@ class GetAccountOutput:
 
 
 @router.get('/account/{account_id}')
-async def get_account(account_id: int, request: auth.Request) -> GetAccountOutput:
+async def read_account(account_id: int, request: auth.Request) -> ReadAccountOutput:
     ask_for_self = request.account.id == account_id
     if request.account.role.is_guest and not ask_for_self:
         raise exc.NoPermission
 
     target_account = await db.account.read(account_id)
-    result = GetAccountOutput(
+    result = ReadAccountOutput(
         id=target_account.id,
         name=target_account.name,
         nickname=target_account.nickname,
@@ -49,13 +49,13 @@ async def get_account(account_id: int, request: auth.Request) -> GetAccountOutpu
     return result
 
 
-class PatchAccountInput(BaseModel):
+class EditAccountInput(BaseModel):
     nickname: Optional[str]
     alternative_email: Optional[str]
 
 
 @router.patch('/account/{account_id}')
-async def patch_account(account_id: int, data: PatchAccountInput, request: auth.Request) -> None:
+async def edit_account(account_id: int, data: EditAccountInput, request: auth.Request) -> None:
     if request.account.role.not_manager and request.account.id != account_id:
         raise exc.NoPermission
 
@@ -70,34 +70,34 @@ async def patch_account(account_id: int, data: PatchAccountInput, request: auth.
 
 
 @router.delete('/account/{account_id}')
-async def remove_account(account_id: int, request: auth.Request) -> None:
+async def delete_account(account_id: int, request: auth.Request) -> None:
     if request.account.role.not_manager and request.account.id != account_id:
         raise exc.NoPermission
 
     await db.account.set_enabled(account_id=account_id, is_enabled=False)
 
 
-class PostInstituteInput(BaseModel):
+class AddInstituteInput(BaseModel):
     name: str
     email_domain: str
 
 
 @dataclass
-class PostInstituteOutput:
+class AddInstituteOutput:
     id: int
 
 
 @router.post('/institute')
-async def add_institute(data: PostInstituteInput, request: auth.Request) -> PostInstituteOutput:
+async def add_institute(data: AddInstituteInput, request: auth.Request) -> AddInstituteOutput:
     if not request.account.role.is_manager:
         raise exc.NoPermission
 
     institute_id = await db.institute.add(name=data.name, email_domain=data.email_domain)
-    return PostInstituteOutput(id=institute_id)
+    return AddInstituteOutput(id=institute_id)
 
 
 @router.get('/institute', tags=['Public'])
-async def get_institutes(request: auth.Request) -> Sequence[db.institute.do.Institute]:
+async def browse_institutes(request: auth.Request) -> Sequence[db.institute.do.Institute]:
     try:
         only_enabled = request.account.role.not_manager
     except exc.NoPermission:
@@ -107,18 +107,18 @@ async def get_institutes(request: auth.Request) -> Sequence[db.institute.do.Inst
 
 
 @router.get('/institute/{institute_id}')
-async def get_institute(institute_id: int, request: auth.Request) -> db.institute.do.Institute:
+async def read_institute(institute_id: int, request: auth.Request) -> db.institute.do.Institute:
     return await db.institute.read(institute_id, only_enabled=request.account.role.not_manager)
 
 
-class UpdateInstituteInput(BaseModel):
+class EditInstituteInput(BaseModel):
     name: Optional[str]
     email_domain: Optional[str]
     is_enabled: Optional[bool]
 
 
 @router.patch('/institute/{institute_id}')
-async def update_institute(institute_id: int, data: UpdateInstituteInput, request: auth.Request) -> None:
+async def edit_institute(institute_id: int, data: EditInstituteInput, request: auth.Request) -> None:
     if not request.account.role.is_manager:
         raise exc.NoPermission
 
@@ -130,7 +130,7 @@ async def update_institute(institute_id: int, data: UpdateInstituteInput, reques
     )
 
 
-class PostStudentCardInput(BaseModel):
+class AddStudentCardInput(BaseModel):
     institute_id: int
     department: str
     student_id: str
@@ -139,13 +139,13 @@ class PostStudentCardInput(BaseModel):
 
 
 @dataclass
-class PostStudentCardOutput:
+class AddStudentCardOutput:
     id: int
 
 
 @router.post('/account/{account_id}/student-card')
-async def add_student_card_to_account(account_id: int, data: PostStudentCardInput, request: auth.Request) \
-        -> PostStudentCardOutput:
+async def add_student_card_to_account(account_id: int, data: AddStudentCardInput, request: auth.Request) \
+        -> AddStudentCardOutput:
     if request.account.role.not_manager and request.account.id != account_id:
         raise exc.NoPermission
 
@@ -157,11 +157,11 @@ async def add_student_card_to_account(account_id: int, data: PostStudentCardInpu
         email=data.email,
         is_enabled=data.is_enabled,
     )
-    return PostStudentCardOutput(id=student_card_id)
+    return AddStudentCardOutput(id=student_card_id)
 
 
 @router.get('/account/{account_id}/student-card')
-async def get_account_student_card(account_id: int, request: auth.Request) -> Sequence[db.student_card.do.StudentCard]:
+async def browse_account_student_cards(account_id: int, request: auth.Request) -> Sequence[db.student_card.do.StudentCard]:
     if request.account.role.not_manager and request.account.id != account_id:
         raise exc.NoPermission
 
@@ -169,7 +169,7 @@ async def get_account_student_card(account_id: int, request: auth.Request) -> Se
 
 
 @router.get('/student-card/{student_card_id}')
-async def get_student_card(student_card_id: int, request: auth.Request) -> db.student_card.do.StudentCard:
+async def read_student_card(student_card_id: int, request: auth.Request) -> db.student_card.do.StudentCard:
     owner_id = await db.student_card.read_owner_id(student_card_id=student_card_id)
     if request.account.role.not_manager and request.account.id != owner_id:
         raise exc.NoPermission
@@ -177,7 +177,7 @@ async def get_student_card(student_card_id: int, request: auth.Request) -> db.st
     return await db.student_card.read(student_card_id=student_card_id)
 
 
-class PatchStudentCardInput(BaseModel):
+class EditStudentCardInput(BaseModel):
     institute_id: int
     department: str
     student_id: str
@@ -186,7 +186,7 @@ class PatchStudentCardInput(BaseModel):
 
 
 @router.patch('/student-card/{student_card_id}')
-async def update_student_card(student_card_id: int, data: PatchStudentCardInput, request: auth.Request) -> None:
+async def edit_student_card(student_card_id: int, data: EditStudentCardInput, request: auth.Request) -> None:
     # 暫時只開給 manager
     if not request.account.role.is_manager:
         raise exc.NoPermission
@@ -202,7 +202,7 @@ async def update_student_card(student_card_id: int, data: PatchStudentCardInput,
 
 
 @router.delete('/student-card/{student_card_id}')
-async def remove_student_card(student_card_id: int, request: auth.Request) -> None:
+async def delete_student_card(student_card_id: int, request: auth.Request) -> None:
     owner_id = await db.student_card.read_owner_id(student_card_id=student_card_id)
     if request.account.role.not_manager and request.account.id != owner_id:
         raise exc.NoPermission
