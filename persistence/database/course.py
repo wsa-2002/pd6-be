@@ -1,8 +1,8 @@
 from typing import Sequence, Collection, Tuple
 
+from base import do
 from base.enum import CourseType, RoleType
 
-from . import do
 from .base import SafeExecutor, SafeConnection
 
 

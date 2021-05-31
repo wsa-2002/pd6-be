@@ -3,6 +3,7 @@ from typing import Optional, Sequence
 
 from pydantic import BaseModel
 
+from base import do
 import exceptions as exc
 from middleware import APIRouter, envelope, auth
 import persistence.database as db
@@ -97,7 +98,7 @@ async def add_institute(data: AddInstituteInput, request: auth.Request) -> AddIn
 
 
 @router.get('/institute', tags=['Public'])
-async def browse_institutes(request: auth.Request) -> Sequence[db.institute.do.Institute]:
+async def browse_institutes(request: auth.Request) -> Sequence[do.Institute]:
     try:
         only_enabled = request.account.role.not_manager
     except exc.NoPermission:
@@ -107,7 +108,7 @@ async def browse_institutes(request: auth.Request) -> Sequence[db.institute.do.I
 
 
 @router.get('/institute/{institute_id}')
-async def read_institute(institute_id: int, request: auth.Request) -> db.institute.do.Institute:
+async def read_institute(institute_id: int, request: auth.Request) -> do.Institute:
     return await db.institute.read(institute_id, only_enabled=request.account.role.not_manager)
 
 
@@ -161,7 +162,7 @@ async def add_student_card_to_account(account_id: int, data: AddStudentCardInput
 
 
 @router.get('/account/{account_id}/student-card')
-async def browse_account_student_cards(account_id: int, request: auth.Request) -> Sequence[db.student_card.do.StudentCard]:
+async def browse_account_student_cards(account_id: int, request: auth.Request) -> Sequence[do.StudentCard]:
     if request.account.role.not_manager and request.account.id != account_id:
         raise exc.NoPermission
 
@@ -169,7 +170,7 @@ async def browse_account_student_cards(account_id: int, request: auth.Request) -
 
 
 @router.get('/student-card/{student_card_id}')
-async def read_student_card(student_card_id: int, request: auth.Request) -> db.student_card.do.StudentCard:
+async def read_student_card(student_card_id: int, request: auth.Request) -> do.StudentCard:
     owner_id = await db.student_card.read_owner_id(student_card_id=student_card_id)
     if request.account.role.not_manager and request.account.id != owner_id:
         raise exc.NoPermission

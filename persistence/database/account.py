@@ -1,9 +1,9 @@
 from typing import Optional, Tuple
 
 import exceptions
+from base import do
 from base.enum import RoleType
 
-from . import do
 from .base import SafeExecutor, SafeConnection
 
 

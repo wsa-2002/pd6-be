@@ -3,6 +3,7 @@ from typing import Optional, Sequence
 
 from pydantic import BaseModel
 
+from base import do
 from base.enum import CourseType, RoleType
 import exceptions as exc
 from middleware import APIRouter, envelope, auth
@@ -43,7 +44,7 @@ async def add_course(data: AddCourseInput, request: auth.Request) -> AddCourseOu
 
 
 @router.get('/course')
-async def browse_courses(request: auth.Request) -> Sequence[db.course.do.Course]:
+async def browse_courses(request: auth.Request) -> Sequence[do.Course]:
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
@@ -53,7 +54,7 @@ async def browse_courses(request: auth.Request) -> Sequence[db.course.do.Course]
 
 
 @router.get('/course/{course_id}')
-async def read_course(course_id: int, request: auth.Request) -> db.course.do.Course:
+async def read_course(course_id: int, request: auth.Request) -> do.Course:
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 

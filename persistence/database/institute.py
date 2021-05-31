@@ -1,6 +1,7 @@
 from typing import Sequence
 
-from . import do
+from base import do
+
 from .base import SafeExecutor
 
 

@@ -3,11 +3,13 @@ from typing import Sequence
 
 from pydantic import BaseModel
 
+from base import do
 from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, envelope, auth
 import persistence.database as db
 from util import rbac
+
 
 router = APIRouter(
     tags=['Team'],
@@ -16,7 +18,7 @@ router = APIRouter(
 
 
 @router.get('/team')
-async def browse_teams(request: auth.Request) -> Sequence[db.team.do.Team]:
+async def browse_teams(request: auth.Request) -> Sequence[do.Team]:
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
@@ -26,7 +28,7 @@ async def browse_teams(request: auth.Request) -> Sequence[db.team.do.Team]:
 
 
 @router.get('/team/{team_id}')
-async def read_team(team_id: int, request: auth.Request) -> db.team.do.Team:
+async def read_team(team_id: int, request: auth.Request) -> do.Team:
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 

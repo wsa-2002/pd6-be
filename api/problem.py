@@ -4,7 +4,7 @@ from typing import Optional, Sequence
 
 from pydantic import BaseModel
 
-from base import enum
+from base import do, enum
 from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, envelope, auth
@@ -19,7 +19,7 @@ router = APIRouter(
 
 
 @router.get('/problem')
-def browse_problems() -> Sequence[db.problem.do.Problem]:
+def browse_problems() -> Sequence[do.Problem]:
     return await db.problem.browse()
 
 
