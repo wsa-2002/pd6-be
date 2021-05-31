@@ -46,4 +46,5 @@ from . import (
     class_,
     team,
     challenge,
+    problem,
 )

@@ -192,8 +192,7 @@ async def browse_teams(class_id: int) -> Sequence[int]:
 async def browse_challenges(class_id: int) -> Sequence[do.Challenge]:
     async with SafeExecutor(
             event='get challenges with class id',
-            sql='SELECT id, type, name, setter_id, full_score, description, '
-                '       start_time, end_time, is_enabled, is_hidden'
+            sql='SELECT id, type, name, setter_id, description, start_time, end_time, is_enabled, is_hidden'
                 '  FROM challenge'
                 ' WHERE class_id = %(class_id)s',
             class_id=class_id,
@@ -202,5 +201,5 @@ async def browse_challenges(class_id: int) -> Sequence[do.Challenge]:
         return [do.Challenge(id=id_, class_id=class_id, type=type_, name=name, setter_id=setter_id,
                              description=description, start_time=start_time, end_time=end_time,
                              is_enabled=is_enabled, is_hidden=is_hidden)
-                for id_, type_, name, setter_id, full_score, description, start_time, end_time, is_enabled, is_hidden
+                for id_, type_, name, setter_id, description, start_time, end_time, is_enabled, is_hidden
                 in results]
