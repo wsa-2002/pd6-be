@@ -39,7 +39,7 @@ async def browse(course_id: int = None, only_enabled=True, exclude_hidden=True) 
             sql=fr'SELECT id, name, course_id, is_enabled, is_hidden'
                 fr'  FROM class'
                 fr'{" WHERE " + cond_sql if cond_sql else ""}'
-                fr' ORDER BY id',
+                fr' ORDER BY course_id ASC, id ASC',
             **conditions,
             fetch='all',
     ) as records:
@@ -129,7 +129,8 @@ async def browse_members(class_id: int) -> Sequence[do.Member]:
             sql=r'SELECT account.id, class_member.role'
                 r'  FROM class_member, account'
                 r' WHERE class_member.member_id = account.id'
-                r'   AND class_member.class_id = %(class_id)s',
+                r'   AND class_member.class_id = %(class_id)s'
+                r' ORDER BY class_member.role DESC, account.id ASC',
             class_id=class_id,
             fetch='all',
     ) as results:
@@ -175,16 +176,18 @@ async def delete_member(class_id: int, member_id: int):
 
 # === class -> team
 
-async def browse_teams(class_id: int) -> Sequence[int]:
+async def browse_teams(class_id: int) -> Sequence[do.Team]:
     async with SafeExecutor(
             event='get class teams',
-            sql=r'SELECT team.id'
+            sql=r'SELECT id, name, class_id, is_enabled, is_hidden'
                 r'  FROM team'
-                r' WHERE team.class_id = %(class_id)s',
+                r' WHERE class_id = %(class_id)s'
+                r' ORDER BY id ASC',
             class_id=class_id,
             fetch='all',
-    ) as results:
-        return [id_ for id_, in results]
+    ) as records:
+        return [do.Team(id=id_, name=name, class_id=c_id, is_enabled=is_enabled, is_hidden=is_hidden)
+                for (id_, name, c_id, is_enabled, is_hidden) in records]
 
 
 # === class -> challenge
@@ -194,7 +197,8 @@ async def browse_challenges(class_id: int) -> Sequence[do.Challenge]:
             event='get challenges with class id',
             sql='SELECT id, type, name, setter_id, description, start_time, end_time, is_enabled, is_hidden'
                 '  FROM challenge'
-                ' WHERE class_id = %(class_id)s',
+                ' WHERE class_id = %(class_id)s'
+                ' ORDER BY id ASC',
             class_id=class_id,
             fetch='all',
     ) as results:

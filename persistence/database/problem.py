@@ -27,7 +27,8 @@ async def browse() -> Sequence[do.Problem]:
     async with SafeExecutor(
             event='browse problems',
             sql='SELECT id, type, name, setter_id, full_score, description, source, hint, is_enabled, is_hidden'
-                '  FROM problem',
+                '  FROM problem'
+                ' ORDER BY id ASC',
             fetch='all',
     ) as results:
         return [do.Problem(id=id_, type=type_, name=name, setter_id=setter_id,
@@ -120,7 +121,8 @@ async def browse_testcases(problem_id: int) -> Sequence[do.Testcase]:
             sql='SELECT id, is_sample, score, input_file, output_file, '
                 '       time_limit, memory_limit, is_enabled, is_hidden'
                 '  FROM testcase'
-                ' WHERE problem_id = %(problem_id)s',
+                ' WHERE problem_id = %(problem_id)s'
+                ' ORDER BY is_sample DESC, id ASC',
             problem_id=problem_id,
             fetch='all',
     ) as results:

@@ -1,6 +1,11 @@
 """
 Controls the connection / driver of database.
 Use safe-execution classes to access database in-code.
+
+------
+
+分類的邏輯：拿出來的東西是什麼，就放在哪個檔案
+e.g. 用 account_id 拿 submissions -> submission.browse(account_id=1)
 """
 
 

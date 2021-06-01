@@ -7,7 +7,7 @@ from .base import SafeExecutor
 
 async def read(testcase_id: int) -> do.Testcase:
     async with SafeExecutor(
-            event='browse testcases with problem id',
+            event='read testcases with problem id',
             sql='SELECT problem_id, is_sample, score, input_file, output_file, '
                 '       time_limit, memory_limit, is_enabled, is_hidden'
                 '  FROM testcase'

@@ -27,7 +27,8 @@ async def browse() -> Sequence[do.Challenge]:
     async with SafeExecutor(
             event='browse challenges',
             sql='SELECT id, class_id, type, name, setter_id, description, start_time, end_time, is_enabled, is_hidden'
-                '  FROM challenge',
+                '  FROM challenge'
+                ' ORDER BY id ASC',
             fetch='all',
     ) as results:
         return [do.Challenge(id=id_, class_id=class_id, type=type_, name=name, setter_id=setter_id,
@@ -102,16 +103,23 @@ async def add_problem_relation(challenge_id: int, problem_id: int) -> None:
         pass
 
 
-async def browse_problems(challenge_id: int) -> Sequence[int]:
+async def browse_problems(challenge_id: int) -> Sequence[do.Problem]:
     async with SafeExecutor(
             event='browse problems with challenge id',
-            sql='SELECT problem_id'
-                '  FROM challenge_problem'
-                ' WHERE challenge_id = %(challenge_id)s',
+            sql='SELECT id, type, name, setter_id, full_score, description, source, hint, is_enabled, is_hidden'
+                '  FROM problem'
+                '       LEFT JOIN challenge_problem'
+                '              ON problem.id = challenge_problem.problem_id'
+                ' WHERE challenge_id = %(challenge_id)s'
+                ' ORDER BY problem_id ASC',
             challenge_id=challenge_id,
             fetch='all',
     ) as results:
-        return [problem_id for (problem_id,) in results]
+        return [do.Problem(id=problem_id, type=type_, name=name, setter_id=setter_id,
+                           full_score=full_score, description=description, source=source, hint=hint,
+                           is_enabled=is_enabled, is_hidden=is_hidden)
+                for problem_id, type_, name, setter_id, full_score, description, source, hint, is_enabled, is_hidden
+                in results]
 
 
 async def delete_problem_relation(challenge_id: int, problem_id: int) -> None:
