@@ -129,3 +129,24 @@ class Submission:
     content_file: str
     content_length: str
     submit_time: datetime
+
+
+@dataclass
+class Judgment:
+    id: int
+    submission_id: int
+    status: enum.JudgmentStatusType
+    total_time: int
+    max_memory: int
+    score: int
+    judge_time: datetime
+
+
+@dataclass
+class JudgmentTestdataResult:
+    judgment_id: int
+    testdata_id: int
+    status: enum.JudgmentStatusType
+    time_lapse: int
+    peak_memory: int
+    score: int

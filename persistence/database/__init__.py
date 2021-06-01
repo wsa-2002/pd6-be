@@ -49,4 +49,5 @@ from . import (
     problem,
     testdata,
     submission,
+    judgment
 )
