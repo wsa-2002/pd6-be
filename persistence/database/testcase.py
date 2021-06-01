@@ -5,24 +5,24 @@ from base import do
 from .base import SafeExecutor
 
 
-async def read(testdata_id: int) -> do.Testdata:
+async def read(testcase_id: int) -> do.Testcase:
     async with SafeExecutor(
-            event='browse testdatas with problem id',
+            event='browse testcases with problem id',
             sql='SELECT problem_id, is_sample, score, input_file, output_file, '
                 '       time_limit, memory_limit, is_enabled, is_hidden'
-                '  FROM testdata'
-                ' WHERE id = %(testdata_id)s',
-            testdata_id=testdata_id,
+                '  FROM testcase'
+                ' WHERE id = %(testcase_id)s',
+            testcase_id=testcase_id,
             fetch='all',
     ) as (problem_id, is_sample, score, input_file, output_file,
           time_limit, memory_limit, is_enabled, is_hidden):
-        return do.Testdata(id=testdata_id, problem_id=problem_id, is_sample=is_sample, score=score,
+        return do.Testcase(id=testcase_id, problem_id=problem_id, is_sample=is_sample, score=score,
                            input_file=input_file, output_file=output_file,
                            time_limit=time_limit, memory_limit=memory_limit,
                            is_enabled=is_enabled, is_hidden=is_hidden)
 
 
-async def edit(testdata_id: int,
+async def edit(testcase_id: int,
                is_sample: Optional[bool] = None,
                score: Optional[int] = None,
                input_file: Optional[str] = None,
@@ -54,15 +54,15 @@ async def edit(testdata_id: int,
 
     if set_sql:
         async with SafeExecutor(
-                event='edit testdata',
-                sql=fr'UPDATE testdata'
-                    fr' WHERE id = %(testdata_id)s'
+                event='edit testcase',
+                sql=fr'UPDATE testcase'
+                    fr' WHERE id = %(testcase_id)s'
                     fr'   SET {set_sql}',
-                testdata_id=testdata_id,
+                testcase_id=testcase_id,
                 **to_updates,
         ):
             pass
 
 
-async def delete(testdata_id: int) -> None:
+async def delete(testcase_id: int) -> None:
     ...  # TODO

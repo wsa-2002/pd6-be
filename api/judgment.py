@@ -28,6 +28,6 @@ def read_judgment(judgment_id: int) -> do.Judgment:
     return await db.judgment.read(judgment_id=judgment_id)
 
 
-@router.get('/judgment/{judgment_id}/testdata-result')
-def browse_judgment_testdata_results(judgment_id: int):
-    return [model.judgment_testdata_result_1, model.judgment_testdata_result_2]
+@router.get('/judgment/{judgment_id}/testcase-result')
+def browse_judgment_testcase_results(judgment_id: int):
+    return [model.judgment_testcase_result_1, model.judgment_testcase_result_2]

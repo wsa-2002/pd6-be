@@ -13,17 +13,17 @@ from util import rbac
 
 
 router = APIRouter(
-    tags=['Testdata'],
+    tags=['Testcase'],
     default_response_class=envelope.JSONResponse,
 )
 
 
-@router.get('/testdata/{testdata_id}')
-def read_testdata(testdata_id: int) -> do.Testdata:
-    return await db.testdata.read(testdata_id=testdata_id)
+@router.get('/testcase/{testcase_id}')
+def read_testcase(testcase_id: int) -> do.Testcase:
+    return await db.testcase.read(testcase_id=testcase_id)
 
 
-class EditTestdataInput(BaseModel):
+class EditTestcaseInput(BaseModel):
     is_sample: bool
     score: int
     input_file: str  # TODO
@@ -34,14 +34,14 @@ class EditTestdataInput(BaseModel):
     is_hidden: bool
 
 
-@router.patch('/testdata/{testdata_id}')
-def edit_testdata(testdata_id: int, data: EditTestdataInput) -> None:
-    await db.testdata.edit(testdata_id=testdata_id, is_sample=data.is_sample, score=data.score,
+@router.patch('/testcase/{testcase_id}')
+def edit_testcase(testcase_id: int, data: EditTestcaseInput) -> None:
+    await db.testcase.edit(testcase_id=testcase_id, is_sample=data.is_sample, score=data.score,
                            input_file=data.input_file, output_file=data.output_file,
                            time_limit=data.time_limit, memory_limit=data.memory_limit,
                            is_enabled=data.is_enabled, is_hidden=data.is_hidden)
 
 
-@router.delete('/testdata/{testdata_id}')
-def delete_testdata(testdata_id: int) -> None:
-    await db.testdata.delete(testdata_id=testdata_id)
+@router.delete('/testcase/{testcase_id}')
+def delete_testcase(testcase_id: int) -> None:
+    await db.testcase.delete(testcase_id=testcase_id)

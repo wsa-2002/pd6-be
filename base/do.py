@@ -99,7 +99,7 @@ class Problem:
 
 
 @dataclass
-class Testdata:
+class Testcase:
     id: int
     problem_id: int
     is_sample: bool
@@ -143,9 +143,9 @@ class Judgment:
 
 
 @dataclass
-class JudgmentTestdataResult:
+class JudgmentTestcaseResult:
     judgment_id: int
-    testdata_id: int
+    testcase_id: int
     status: enum.JudgmentStatusType
     time_lapse: int
     peak_memory: int

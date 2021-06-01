@@ -47,7 +47,7 @@ from . import (
     team,
     challenge,
     problem,
-    testdata,
+    testcase,
     submission,
     judgment
 )
