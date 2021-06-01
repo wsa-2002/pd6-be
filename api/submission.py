@@ -43,14 +43,27 @@ def delete_submission_languages(language_id: int) -> None:
     return await db.submission.delete_language(language_id=language_id)
 
 
+class BrowseSubmissionInput(BaseModel):
+    # TODO: add more
+    account_id: int = None
+    problem_id: int = None
+    challenge_id: int = None
+    language_id: int = None
+
+
 @router.get('/submission')
-def browse_submissions():
-    return [model.submission]
+def browse_submissions(data: BrowseSubmissionInput) -> Sequence[do.Submission]:
+    return await db.submission.browse(
+        account_id=data.account_id,
+        problem_id=data.problem_id,
+        challenge_id=data.challenge_id,
+        language_id=data.language_id,
+    )
 
 
 @router.get('/submission/{submission_id}')
-def read_submission(submission_id: int):
-    return model.submission
+def read_submission(submission_id: int) -> do.Submission:
+    return await db.submission.read(submission_id=submission_id)
 
 
 @router.get('/submission/{submission_id}/judgment')
