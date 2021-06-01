@@ -49,14 +49,25 @@ def delete_problem(problem_id: int):
     return await db.problem.delete(problem_id=problem_id)
 
 
+class AddTestdataInput(BaseModel):
+    is_sample: bool
+    score: int
+    input_file: str  # TODO
+    output_file: str  # TODO
+    time_limit: int
+    memory_limit: int
+    is_enabled: bool
+    is_hidden: bool
+
+
 @router.post('/problem/{problem_id}/testdata', tags=['Testdata'])
-@util.enveloped
-def add_testdata_under_problem(problem_id: int):
-    return {'id': 1}
+def add_testdata_under_problem(problem_id: int, data: AddTestdataInput) -> int:
+    return await db.problem.add_testdata(problem_id=problem_id, is_sample=data.is_sample, score=data.score,
+                                         input_file=data.input_file, output_file=data.output_file,
+                                         time_limit=data.time_limit, memory_limit=data.memory_limit,
+                                         is_enabled=data.is_enabled, is_hidden=data.is_hidden)
 
 
 @router.get('/problem/{problem_id}/testdata', tags=['Testdata'])
-@util.enveloped
-def browse_testdata_under_problem(problem_id: int):
-    return [model.testdata_1, model.testdata_2]
-
+def browse_testdata_under_problem(problem_id: int) -> Sequence[do.Testdata]:
+    return await db.problem.browse_testdata(problem_id=problem_id)

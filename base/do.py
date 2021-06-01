@@ -96,3 +96,17 @@ class Problem:
     hint: Optional[str]
     is_enabled: bool
     is_hidden: bool
+
+
+@dataclass
+class Testdata:
+    id: int
+    problem_id: int
+    is_sample: bool
+    score: int
+    input_file: str
+    output_file: str
+    time_limit: int
+    memory_limit: int
+    is_enabled: bool
+    is_hidden: bool

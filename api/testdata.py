@@ -4,7 +4,7 @@ from typing import Optional, Sequence
 
 from pydantic import BaseModel
 
-from base import enum
+from base import do, enum
 from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, envelope, auth
@@ -19,23 +19,29 @@ router = APIRouter(
 
 
 @router.get('/testdata/{testdata_id}')
-@util.enveloped
-def read_testdata(testdata_id: int):
-    if testdata_id is 1:
-        return model.testdata_1
-    elif testdata_id is 2:
-        return model.testdata_2
-    else:
-        raise Exception
+def read_testdata(testdata_id: int) -> do.Testdata:
+    return await db.testdata.read(testdata_id=testdata_id)
+
+
+class EditTestdataInput(BaseModel):
+    is_sample: bool
+    score: int
+    input_file: str  # TODO
+    output_file: str  # TODO
+    time_limit: int
+    memory_limit: int
+    is_enabled: bool
+    is_hidden: bool
 
 
 @router.patch('/testdata/{testdata_id}')
-@util.enveloped
-def edit_testdata(testdata_id: int):
-    pass
+def edit_testdata(testdata_id: int, data: EditTestdataInput) -> None:
+    await db.testdata.edit(testdata_id=testdata_id, is_sample=data.is_sample, score=data.score,
+                           input_file=data.input_file, output_file=data.output_file,
+                           time_limit=data.time_limit, memory_limit=data.memory_limit,
+                           is_enabled=data.is_enabled, is_hidden=data.is_hidden)
 
 
 @router.delete('/testdata/{testdata_id}')
-@util.enveloped
-def delete_testdata(testdata_id: int):
-    pass
+def delete_testdata(testdata_id: int) -> None:
+    await db.testdata.delete(testdata_id=testdata_id)

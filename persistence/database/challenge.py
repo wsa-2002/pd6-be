@@ -82,7 +82,7 @@ async def edit(challenge_id: int,
         async with SafeExecutor(
                 event='edit challenge',
                 sql=fr'UPDATE challenge'
-                    fr' WHERE id = challenge_id'
+                    fr' WHERE id = %(challenge_id)s'
                     fr'   SET {set_sql}',
                 challenge_id=challenge_id,
                 **to_updates,
