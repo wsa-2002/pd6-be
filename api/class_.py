@@ -69,24 +69,13 @@ async def delete_class(class_id: int, request: auth.Request) -> None:
     )
 
 
-@dataclass
-class ClassMemberOutput:
-    member_id: int
-    role: RoleType
-
-
 @router.get('/class/{class_id}/member')
-async def browse_class_members(class_id: int, request: auth.Request) -> Sequence[ClassMemberOutput]:
+async def browse_class_members(class_id: int, request: auth.Request) -> Sequence[do.Member]:
     if not (await rbac.validate(request.account.id, RoleType.normal, class_id=class_id, inherit=False)
             or await rbac.validate(request.account.id, RoleType.manager, class_id=class_id)):
         raise exc.NoPermission
 
-    member_roles = await db.class_.browse_members(class_id=class_id)
-
-    return [ClassMemberOutput(
-        member_id=acc_id,
-        role=role,
-    ) for acc_id, role in member_roles]
+    return await db.class_.browse_members(class_id=class_id)
 
 
 class EditClassMemberInput(BaseModel):

@@ -95,14 +95,8 @@ async def delete_team(team_id: int, request: auth.Request) -> None:
     )
 
 
-@dataclass
-class TeamMemberOutput:
-    member_id: int
-    role: RoleType
-
-
 @router.get('/team/{team_id}/member')
-async def browse_team_members(team_id: int, request: auth.Request) -> Sequence[TeamMemberOutput]:
+async def browse_team_members(team_id: int, request: auth.Request) -> Sequence[do.Member]:
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
@@ -113,11 +107,7 @@ async def browse_team_members(team_id: int, request: auth.Request) -> Sequence[T
             raise exc.NoPermission
 
     member_roles = await db.team.browse_members(team_id=team_id)
-
-    return [TeamMemberOutput(
-        member_id=acc_id,
-        role=role,
-    ) for acc_id, role in member_roles]
+    return member_roles
 
 
 class EditMemberInput(BaseModel):
