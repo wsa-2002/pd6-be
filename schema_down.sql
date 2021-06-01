@@ -19,7 +19,7 @@ DROP TABLE IF EXISTS grade;
 
 -- submission management
 
-DROP TABLE IF EXISTS judgment_testcase_result;
+DROP TABLE IF EXISTS judge_case;
 
 DROP TABLE IF EXISTS judgment;
 

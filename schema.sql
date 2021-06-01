@@ -221,7 +221,7 @@ CREATE TABLE judgment (
   judge_time    TIMESTAMP             NOT NULL
 );
 
-CREATE TABLE judgment_testcase_result (
+CREATE TABLE judge_case (
   judgment_id INTEGER               NOT NULL REFERENCES judgment(id),
   testcase_id INTEGER               NOT NULL REFERENCES testcase(id),
   status      judgment_status_type  NOT NULL,

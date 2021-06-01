@@ -143,7 +143,7 @@ class Judgment:
 
 
 @dataclass
-class JudgmentTestcaseResult:
+class JudgeCase:
     judgment_id: int
     testcase_id: int
     status: enum.JudgmentStatusType
