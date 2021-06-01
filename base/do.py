@@ -110,3 +110,22 @@ class Testdata:
     memory_limit: int
     is_enabled: bool
     is_hidden: bool
+
+
+@dataclass
+class SubmissionLanguage:
+    id: int
+    name: str
+    version: str
+
+
+@dataclass
+class Submission:
+    id: int
+    account_id: int
+    problem_id: int
+    challenge_id: Optional[int]
+    language_id: int
+    content_file: str
+    content_length: str
+    submit_time: datetime

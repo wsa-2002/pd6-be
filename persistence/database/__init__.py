@@ -48,4 +48,5 @@ from . import (
     challenge,
     problem,
     testdata,
+    submission,
 )
