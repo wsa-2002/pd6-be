@@ -84,8 +84,9 @@ class Problem:
     type: enum.ChallengeType
     name: str
     setter_id: int
+    full_score: int
     description: Optional[str]
-    start_time: datetime
-    end_time: datetime
+    source: Optional[str]
+    hint: Optional[str]
     is_enabled: bool
     is_hidden: bool

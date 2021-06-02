@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional, Sequence
+from typing import Optional, Sequence, Collection
 
 from pydantic import BaseModel
 
@@ -98,13 +98,28 @@ def delete_challenge(challenge_id: int, request: auth.Request) -> None:
     # TODO
 
 
-@router.post('/challenge/{challenge_id}/problem')
-@util.enveloped
-def add_problem_under_challenge(challenge_id: int):
-    return {'id': 1}
+class CreateProblemInput(BaseModel):
+    type: enum.ProblemType
+    name: str
+    full_score: int
+    description: Optional[str]
+    source: Optional[str]
+    hint: Optional[str]
+    is_enabled: bool
+    is_hidden: bool
+
+
+@router.post('/challenge/{challenge_id}/problem', tags=['Problem'])
+def add_problem_under_challenge(challenge_id: int, data: CreateProblemInput, request: auth.Request) -> int:
+    # FIXME: not atomic operation...
+    problem_id = await db.problem.add(type_=data.type, name=data.name, setter_id=request.account.id,
+                                      full_score=data.full_score, description=data.description, source=data.source,
+                                      hint=data.hint, is_enabled=data.is_enabled, is_hidden=data.is_hidden)
+    await db.challenge.add_problem_relation(challenge_id=challenge_id, problem_id=problem_id)
+
+    return problem_id
 
 
 @router.get('/challenge/{challenge_id}/problem')
-@util.enveloped
-def browse_problems_under_challenge(challenge_id: int):
-    return [model.problem]
+def browse_problems_under_challenge(challenge_id: int) -> Collection[int]:
+    return await db.challenge.browse_problems(challenge_id=challenge_id)

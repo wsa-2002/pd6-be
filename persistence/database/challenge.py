@@ -1,10 +1,10 @@
 from datetime import datetime
-from typing import Optional, Tuple, Sequence
+from typing import Optional, Sequence, Collection
 
 from base import enum
 
 from . import do
-from .base import SafeExecutor, SafeConnection
+from .base import SafeExecutor
 
 
 async def add(class_id: int, type_: enum.ChallengeType, name: str, setter_id: int, description: Optional[str],
@@ -27,30 +27,26 @@ async def add(class_id: int, type_: enum.ChallengeType, name: str, setter_id: in
 async def browse() -> Sequence[do.Challenge]:
     async with SafeExecutor(
             event='browse challenges',
-            sql='SELECT id, class_id, type, name, setter_id, full_score, description, '
-                '       start_time, end_time, is_enabled, is_hidden'
+            sql='SELECT id, class_id, type, name, setter_id, description, start_time, end_time, is_enabled, is_hidden'
                 '  FROM challenge',
             fetch='all',
     ) as results:
         return [do.Challenge(id=id_, class_id=class_id, type=type_, name=name, setter_id=setter_id,
                              description=description, start_time=start_time, end_time=end_time,
                              is_enabled=is_enabled, is_hidden=is_hidden)
-                for (id_, class_id, type_, name, setter_id, full_score, description,
-                     start_time, end_time, is_enabled, is_hidden)
+                for id_, class_id, type_, name, setter_id, description, start_time, end_time, is_enabled, is_hidden
                 in results]
 
 
 async def read(challenge_id: int) -> do.Challenge:
     async with SafeExecutor(
             event='read challenge by id',
-            sql='SELECT id, class_id, type, name, setter_id, full_score, description, '
-                '       start_time, end_time, is_enabled, is_hidden'
+            sql='SELECT id, class_id, type, name, setter_id, description, start_time, end_time, is_enabled, is_hidden'
                 '  FROM challenge'
                 ' WHERE id = %(challenge_id)s',
             challenge_id=challenge_id,
             fetch='all',
-    ) as (id_, class_id, type_, name, setter_id, full_score, description,
-          start_time, end_time, is_enabled, is_hidden):
+    ) as (id_, class_id, type_, name, setter_id, description, start_time, end_time, is_enabled, is_hidden):
         return do.Challenge(id=id_, class_id=class_id, type=type_, name=name, setter_id=setter_id,
                             description=description, start_time=start_time, end_time=end_time,
                             is_enabled=is_enabled, is_hidden=is_hidden)
@@ -93,3 +89,39 @@ async def edit(challenge_id: int,
                 **to_updates,
         ):
             pass
+
+
+async def add_problem_relation(challenge_id: int, problem_id: int) -> None:
+    async with SafeExecutor(
+            event='add challenge_problem',
+            sql='INSERT INTO challenge_problem'
+                '            (challenge_id, problem_id)'
+                '     VALUES (%(challenge_id)s, %(problem_id)s)',
+            challenge_id=challenge_id,
+            problem_id=problem_id,
+    ):
+        pass
+
+
+async def browse_problems(challenge_id: int) -> Collection[int]:
+    async with SafeExecutor(
+            event='browse problems with challenge id',
+            sql='SELECT problem_id'
+                '  FROM challenge_problem'
+                ' WHERE challenge_id = %(challenge_id)s',
+            challenge_id=challenge_id,
+            fetch='all',
+    ) as results:
+        return [problem_id for (problem_id,) in results]
+
+
+async def delete_problem_relation(challenge_id: int, problem_id: int) -> None:
+    async with SafeExecutor(
+            event='delete challenge_problem',
+            sql='DELETE FROM challenge_problem'
+                '      WHERE challenge_id = %(challenge_id)s'
+                '        AND problem_id = %(problem_id)s',
+            challenge_id=challenge_id,
+            problem_id=problem_id,
+    ):
+        pass
