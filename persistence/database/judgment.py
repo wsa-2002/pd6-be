@@ -58,7 +58,7 @@ async def read_case(judgment_id: int, testcase_id: int) -> do.JudgeCase:
                 fr' WHERE judgment_id = %(judgment_id)s and testcase_id = %(testcase_id)s',
             judgment_id=judgment_id,
             testcase_id=testcase_id,
-            fetch='all',
+            fetch=1,
     ) as (judgment_id, testcase_id, status, time_lapse, peak_memory, score):
         return do.JudgeCase(judgment_id=judgment_id, testcase_id=testcase_id, status=enum.JudgmentStatusType(status),
                             time_lapse=time_lapse, peak_memory=peak_memory, score=score)

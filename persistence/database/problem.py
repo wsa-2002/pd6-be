@@ -64,7 +64,7 @@ async def read(problem_id: int) -> do.Problem:
                 '  FROM problem'
                 ' WHERE id = %(problem_id)s',
             problem_id=problem_id,
-            fetch='all',
+            fetch=1,
     ) as (id_, type_, name, setter_id, full_score, description, source, hint, is_enabled, is_hidden):
         return do.Problem(id=id_, type=type_, name=name, setter_id=setter_id,
                           full_score=full_score, description=description, source=source, hint=hint,

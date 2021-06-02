@@ -41,7 +41,7 @@ async def read_language(language_id: int) -> do.SubmissionLanguage:
                 "  FROM submission_language"
                 " WHERE id = %(id)s",
             id=language_id,
-            fetch='all',
+            fetch=1,
     ) as (name, version):
         return do.SubmissionLanguage(id=language_id, name=name, version=version)
 

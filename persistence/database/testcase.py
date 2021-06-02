@@ -30,7 +30,7 @@ async def read(testcase_id: int) -> do.Testcase:
                 '  FROM testcase'
                 ' WHERE id = %(testcase_id)s',
             testcase_id=testcase_id,
-            fetch='all',
+            fetch=1,
     ) as (problem_id, is_sample, score, input_file, output_file,
           time_limit, memory_limit, is_enabled, is_hidden):
         return do.Testcase(id=testcase_id, problem_id=problem_id, is_sample=is_sample, score=score,

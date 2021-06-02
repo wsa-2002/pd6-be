@@ -53,7 +53,7 @@ async def read(challenge_id: int) -> do.Challenge:
                 '  FROM challenge'
                 ' WHERE id = %(challenge_id)s',
             challenge_id=challenge_id,
-            fetch='all',
+            fetch=1,
     ) as (id_, class_id, type_, name, setter_id, description, start_time, end_time, is_enabled, is_hidden):
         return do.Challenge(id=id_, class_id=class_id, type=type_, name=name, setter_id=setter_id,
                             description=description, start_time=start_time, end_time=end_time,
