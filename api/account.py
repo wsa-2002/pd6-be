@@ -11,7 +11,7 @@ from util import email
 
 
 router = APIRouter(
-    tags=['Account-Control'],
+    tags=['Account'],
     default_response_class=envelope.JSONResponse,
 )
 
