@@ -150,3 +150,15 @@ class JudgeCase:
     time_lapse: int
     peak_memory: int
     score: int
+
+
+@dataclass
+class Grade:
+    id: int
+    receiver_id: int
+    grader_id: int
+    class_id: int
+    item_name: str
+    score: Optional[int]
+    comment: Optional[str]
+    update_time: datetime

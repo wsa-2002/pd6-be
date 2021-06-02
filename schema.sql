@@ -215,9 +215,9 @@ CREATE TABLE judgment (
   id            SERIAL                PRIMARY KEY,
   submission_id INTEGER               NOT NULL  REFERENCES submission(id),
   status        judgment_status_type  NOT NULL,
-  total_time    INTEGER,
-  max_memory    INTEGER,
-  score         INTEGER,  -- 保留設定扣分測資的空間
+  total_time    INTEGER               NOT NULL,
+  max_memory    INTEGER               NOT NULL,
+  score         INTEGER               NOT NULL,  -- 保留設定扣分測資的空間
   judge_time    TIMESTAMP             NOT NULL
 );
 
@@ -225,21 +225,21 @@ CREATE TABLE judge_case (
   judgment_id INTEGER               NOT NULL REFERENCES judgment(id),
   testcase_id INTEGER               NOT NULL REFERENCES testcase(id),
   status      judgment_status_type  NOT NULL,
-  time_lapse  INTEGER,
-  peak_memory INTEGER,
-  score       INTEGER,  -- 保留設定扣分測資的空間
+  time_lapse  INTEGER               NOT NULL,
+  peak_memory INTEGER               NOT NULL,
+  score       INTEGER               NOT NULL,  -- 保留設定扣分測資的空間
 
   PRIMARY KEY (judgment_id, testcase_id)
 );
 
 
--- Score
+-- Grade
 
 CREATE TABLE grade (
   id          SERIAL    PRIMARY KEY,
   receiver_id INTEGER   NOT NULL  REFERENCES account(id),
   grader_id   INTEGER   NOT NULL  REFERENCES account(id),
-  class_id    INTEGER             REFERENCES class(id),
+  class_id    INTEGER   NOT NULL  REFERENCES class(id),
   item_name   VARCHAR   NOT NULL,
   score       INTEGER,
   comment     TEXT,
