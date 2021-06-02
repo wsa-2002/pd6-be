@@ -93,7 +93,7 @@ async def edit(challenge_id: int,
 
 async def add_problem_relation(challenge_id: int, problem_id: int) -> None:
     async with SafeExecutor(
-            event='delete challenge_problem',
+            event='add challenge_problem',
             sql='INSERT INTO challenge_problem'
                 '            (challenge_id, problem_id)'
                 '     VALUES (%(challenge_id)s, %(problem_id)s)',
