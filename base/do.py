@@ -65,6 +65,12 @@ class Team:
 
 
 @dataclass
+class Member:
+    member_id: int
+    role: enum.RoleType
+
+
+@dataclass
 class Challenge:
     id: int
     class_id: int

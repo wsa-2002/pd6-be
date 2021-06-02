@@ -1,8 +1,7 @@
 from typing import Optional, Sequence
 
-from base import enum
+from base import do, enum
 
-from . import do
 from .base import SafeExecutor
 
 

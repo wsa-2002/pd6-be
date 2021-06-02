@@ -1,10 +1,9 @@
-from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional, Sequence, Collection
 
 from pydantic import BaseModel
 
-from base import enum
+from base import do, enum
 from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, envelope, auth
@@ -43,7 +42,7 @@ def add_challenge_under_class(class_id: int, data: AddChallengeInput, request: a
 
 
 @router.get('/class/{class_id}/challenge', tags=['Course'])
-def browse_challenges_under_class(class_id: int, request: auth.Request) -> Sequence[db.challenge.do.Challenge]:
+def browse_challenges_under_class(class_id: int, request: auth.Request) -> Sequence[do.Challenge]:
     if not rbac.validate(request.account.id, RoleType.normal, class_id=class_id, inherit=False):
         raise exc.NoPermission
 
@@ -52,7 +51,7 @@ def browse_challenges_under_class(class_id: int, request: auth.Request) -> Seque
 
 
 @router.get('/challenge')
-def browse_challenges(request: auth.Request) -> Sequence[db.challenge.do.Challenge]:
+def browse_challenges(request: auth.Request) -> Sequence[do.Challenge]:
     if not request.account.role.is_manager:
         raise exc.NoPermission
 
@@ -61,7 +60,7 @@ def browse_challenges(request: auth.Request) -> Sequence[db.challenge.do.Challen
 
 
 @router.get('/challenge/{challenge_id}')
-def read_challenge(challenge_id: int, request: auth.Request) -> db.challenge.do.Challenge:
+def read_challenge(challenge_id: int, request: auth.Request) -> do.Challenge:
     if not request.account.role.is_manager:
         raise exc.NoPermission
 

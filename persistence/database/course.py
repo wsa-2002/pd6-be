@@ -1,8 +1,8 @@
 from typing import Sequence, Collection, Tuple
 
+from base import do
 from base.enum import CourseType, RoleType
 
-from . import do
 from .base import SafeExecutor, SafeConnection
 
 
@@ -117,7 +117,7 @@ async def add_members(course_id: int, member_roles: Collection[Tuple[int, RoleTy
         )
 
 
-async def browse_members(course_id: int) -> Collection[Tuple[int, RoleType]]:
+async def browse_members(course_id: int) -> Sequence[do.Member]:
     async with SafeExecutor(
             event='get course members id',
             sql=r'SELECT account.id, course_member.role'
@@ -127,10 +127,10 @@ async def browse_members(course_id: int) -> Collection[Tuple[int, RoleType]]:
             course_id=course_id,
             fetch='all',
     ) as results:
-        return [(id_, RoleType(role_str)) for id_, role_str in results]
+        return [do.Member(member_id=id_, role=RoleType(role_str)) for id_, role_str in results]
 
 
-async def get_member_role(course_id: int, member_id: int) -> RoleType:
+async def read_member(course_id: int, member_id: int) -> do.Member:
     async with SafeExecutor(
             event='get course member role',
             sql=r'SELECT role'
@@ -140,7 +140,7 @@ async def get_member_role(course_id: int, member_id: int) -> RoleType:
             member_id=member_id,
             fetch=1,
     ) as (role,):
-        return RoleType(role)
+        return do.Member(member_id=member_id, role=RoleType(role))
 
 
 async def edit_member(course_id: int, member_id: int, role: RoleType):

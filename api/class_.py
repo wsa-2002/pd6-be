@@ -3,11 +3,13 @@ from typing import Optional, Sequence
 
 from pydantic import BaseModel
 
+from base import do
 from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, envelope, auth
 import persistence.database as db
 from util import rbac
+
 
 router = APIRouter(
     tags=['Class'],
@@ -16,7 +18,7 @@ router = APIRouter(
 
 
 @router.get('/class')
-async def browse_classes(request: auth.Request) -> Sequence[db.class_.do.Class]:
+async def browse_classes(request: auth.Request) -> Sequence[do.Class]:
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
@@ -26,7 +28,7 @@ async def browse_classes(request: auth.Request) -> Sequence[db.class_.do.Class]:
 
 
 @router.get('/class/{class_id}')
-async def read_class(class_id: int, request: auth.Request) -> db.class_.do.Class:
+async def read_class(class_id: int, request: auth.Request) -> do.Class:
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
@@ -67,24 +69,13 @@ async def delete_class(class_id: int, request: auth.Request) -> None:
     )
 
 
-@dataclass
-class ClassMemberOutput:
-    member_id: int
-    role: RoleType
-
-
 @router.get('/class/{class_id}/member')
-async def browse_class_members(class_id: int, request: auth.Request) -> Sequence[ClassMemberOutput]:
+async def browse_class_members(class_id: int, request: auth.Request) -> Sequence[do.Member]:
     if not (await rbac.validate(request.account.id, RoleType.normal, class_id=class_id, inherit=False)
             or await rbac.validate(request.account.id, RoleType.manager, class_id=class_id)):
         raise exc.NoPermission
 
-    member_roles = await db.class_.browse_members(class_id=class_id)
-
-    return [ClassMemberOutput(
-        member_id=acc_id,
-        role=role,
-    ) for acc_id, role in member_roles]
+    return await db.class_.browse_members(class_id=class_id)
 
 
 class EditClassMemberInput(BaseModel):

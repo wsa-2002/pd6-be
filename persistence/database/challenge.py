@@ -1,9 +1,8 @@
 from datetime import datetime
 from typing import Optional, Sequence, Collection
 
-from base import enum
+from base import do, enum
 
-from . import do
 from .base import SafeExecutor
 
 
@@ -103,7 +102,7 @@ async def add_problem_relation(challenge_id: int, problem_id: int) -> None:
         pass
 
 
-async def browse_problems(challenge_id: int) -> Collection[int]:
+async def browse_problems(challenge_id: int) -> Sequence[int]:
     async with SafeExecutor(
             event='browse problems with challenge id',
             sql='SELECT problem_id'

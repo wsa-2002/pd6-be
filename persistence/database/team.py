@@ -1,8 +1,8 @@
 from typing import Tuple, Collection, Sequence
 
+from base import do
 from base.enum import RoleType
 
-from . import do
 from .base import SafeExecutor
 
 
@@ -93,7 +93,7 @@ async def edit(team_id: int, name: str = None, class_id: int = None,
 # === member control
 
 
-async def browse_members(team_id: int) -> Collection[Tuple[int, RoleType]]:
+async def browse_members(team_id: int) -> Sequence[do.Member]:
     async with SafeExecutor(
             event='get team members id',
             sql=r'SELECT account.id, team_member.role'
@@ -103,10 +103,10 @@ async def browse_members(team_id: int) -> Collection[Tuple[int, RoleType]]:
             team_id=team_id,
             fetch='all',
     ) as results:
-        return [(id_, RoleType(role_str)) for id_, role_str in results]
+        return [do.Member(member_id=id_, role=RoleType(role_str)) for id_, role_str in results]
 
 
-async def read_member_role(team_id: int, member_id: int) -> RoleType:
+async def read_member(team_id: int, member_id: int) -> do.Member:
     async with SafeExecutor(
             event='get team member role',
             sql=r'SELECT role'
@@ -116,7 +116,7 @@ async def read_member_role(team_id: int, member_id: int) -> RoleType:
             member_id=member_id,
             fetch=1,
     ) as (role,):
-        return RoleType(role)
+        return do.Member(member_id=member_id, role=RoleType(role))
 
 
 async def edit_member(team_id: int, member_id: int, role: RoleType):
