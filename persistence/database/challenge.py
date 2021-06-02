@@ -7,10 +7,10 @@ from . import do
 from .base import SafeExecutor, SafeConnection
 
 
-async def create(class_id: int, type_: enum.ChallengeType, name: str, setter_id: int, description: Optional[str],
-                 start_time: datetime, end_time: datetime, is_enabled: bool, is_hidden: bool) -> int:
+async def add(class_id: int, type_: enum.ChallengeType, name: str, setter_id: int, description: Optional[str],
+              start_time: datetime, end_time: datetime, is_enabled: bool, is_hidden: bool) -> int:
     async with SafeExecutor(
-            event='Create challenge',
+            event='Add challenge',
             sql="INSERT INTO challenge"
                 "            (class_id, type, name, setter_id, description,"
                 "             start_time, end_time, is_enabled, is_hidden)"
@@ -24,9 +24,9 @@ async def create(class_id: int, type_: enum.ChallengeType, name: str, setter_id:
         return id_
 
 
-async def get_all() -> Sequence[do.Challenge]:
+async def browse() -> Sequence[do.Challenge]:
     async with SafeExecutor(
-            event='get challenges',
+            event='browse challenges',
             sql='SELECT id, class_id, type, name, setter_id, full_score, description, '
                 '       start_time, end_time, is_enabled, is_hidden'
                 '  FROM challenge',
@@ -40,9 +40,9 @@ async def get_all() -> Sequence[do.Challenge]:
                 in results]
 
 
-async def get_by_id(challenge_id: int) -> do.Challenge:
+async def read(challenge_id: int) -> do.Challenge:
     async with SafeExecutor(
-            event='get challenge by id',
+            event='read challenge by id',
             sql='SELECT id, class_id, type, name, setter_id, full_score, description, '
                 '       start_time, end_time, is_enabled, is_hidden'
                 '  FROM challenge'
@@ -56,14 +56,14 @@ async def get_by_id(challenge_id: int) -> do.Challenge:
                             is_enabled=is_enabled, is_hidden=is_hidden)
 
 
-async def modify(challenge_id: int,
-                 type_: Optional[enum.ChallengeType] = None,
-                 name: Optional[str] = None,
-                 description: Optional[str] = ...,
-                 start_time: Optional[datetime] = None,
-                 end_time: Optional[datetime] = None,
-                 is_enabled: Optional[bool] = None,
-                 is_hidden: Optional[bool] = None) -> None:
+async def edit(challenge_id: int,
+               type_: Optional[enum.ChallengeType] = None,
+               name: Optional[str] = None,
+               description: Optional[str] = ...,
+               start_time: Optional[datetime] = None,
+               end_time: Optional[datetime] = None,
+               is_enabled: Optional[bool] = None,
+               is_hidden: Optional[bool] = None) -> None:
     to_updates = {}
 
     if type_ is not None:
@@ -85,7 +85,7 @@ async def modify(challenge_id: int,
 
     if set_sql:
         async with SafeExecutor(
-                event='modify challenge',
+                event='edit challenge',
                 sql=fr'UPDATE challenge'
                     fr' WHERE id = challenge_id'
                     fr'   SET {set_sql}',

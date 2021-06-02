@@ -44,13 +44,13 @@ def import_class_score(class_id: int):
 
 @router.get('/class/{class_id}/score')
 @util.enveloped
-def get_class_scores(class_id: int):
+def browse_class_scores(class_id: int):
     return [score_1, score_2]
 
 
 @router.get('/account/{account_id}/score')
 @util.enveloped
-def get_account_scores(account_id: int):
+def browse_account_scores(account_id: int):
     return [score_1, score_2]
 
 
@@ -67,13 +67,13 @@ def get_score(score_id: int):
 
 @router.patch('/score/{score_id}')
 @util.enveloped
-def modify_score(score_id: int):
+def edit_score(score_id: int):
     pass
 
 
 @router.delete('/score/{score_id}')
 @util.enveloped
-def remove_score(score_id: int):
+def delete_score(score_id: int):
     pass
 
 
@@ -97,19 +97,19 @@ ann_2 = {
 
 @router.post('/announcement')
 @util.enveloped
-def create_announcement():
+def add_announcement():
     return {'id': 1}
 
 
 @router.get('/announcement')
 @util.enveloped
-def get_announcements():
+def browse_announcements():
     return [ann_1, ann_2]
 
 
 @router.get('/announcement/{announcement_id}')
 @util.enveloped
-def get_announcement(announcement_id: int):
+def read_announcement(announcement_id: int):
     if announcement_id is 1:
         return ann_1
     elif announcement_id is 2:
@@ -120,65 +120,65 @@ def get_announcement(announcement_id: int):
 
 @router.patch('/announcement/{announcement_id}')
 @util.enveloped
-def update_announcement(announcement_id: int):
+def edit_announcement(announcement_id: int):
     pass
 
 
 @router.delete('/announcement/{announcement_id}')
 @util.enveloped
-def remove_announcement(announcement_id: int):
+def delete_announcement(announcement_id: int):
     pass
 
 
 @router.get('/peer-review')
 @util.enveloped
-def get_peer_reviews():
+def browse_peer_reviews():
     return [model.peer_review]
 
 
 @router.post('/peer-review')
 @util.enveloped
-def create_peer_review():
+def add_peer_review():
     return {'id': 1}
 
 
 @router.post('/peer-review/{peer_review_id}')
 @util.enveloped
-def get_peer_review(peer_review_id: int):
+def read_peer_review(peer_review_id: int):
     return model.peer_review
 
 
 @router.patch('/peer-review/{peer_review_id}')
 @util.enveloped
-def modify_peer_review(peer_review_id: int):
+def edit_peer_review(peer_review_id: int):
     pass
 
 
 @router.delete('/peer-review/{peer_review_id}')
 @util.enveloped
-def remove_peer_review(peer_review_id: int):
+def delete_peer_review(peer_review_id: int):
     pass
 
 
 @router.get('/peer-review/{peer_review_id}/record')
 @util.enveloped
-def get_peer_review_records(peer_review_id: int):
+def browse_peer_review_records(peer_review_id: int):
     return [model.peer_review_record]
 
 
 @router.post('/peer-review/{peer_review_id}/record')
 @util.enveloped
-def submit_peer_review_records(peer_review_id: int):
+def add_peer_review_record(peer_review_id: int):
     return {'id': 1}
 
 
 @router.get('/peer-review-record/{peer_review_record_id}/record')
 @util.enveloped
-def get_peer_review_record(peer_review_record_id: int):
+def read_peer_review_record(peer_review_record_id: int):
     return model.peer_review_record
 
 
 @router.patch('/peer-review-record/{peer_review_record_id}/record')
 @util.enveloped
-def modify_peer_review_record(peer_review_record_id: int):
+def edit_peer_review_record(peer_review_record_id: int):
     pass

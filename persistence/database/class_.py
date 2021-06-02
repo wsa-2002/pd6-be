@@ -6,9 +6,9 @@ from . import do
 from .base import SafeExecutor, SafeConnection
 
 
-async def create(name: str, course_id: int, is_enabled: bool, is_hidden: bool) -> int:
+async def add(name: str, course_id: int, is_enabled: bool, is_hidden: bool) -> int:
     async with SafeExecutor(
-            event='create class',
+            event='add class',
             sql=r'INSERT INTO class'
                 r'            (name, course_id, is_enabled, is_hidden)'
                 r'     VALUES (%(name)s, %(course_id)s), %(is_enabled)s), %(is_hidden)s)'
@@ -22,7 +22,7 @@ async def create(name: str, course_id: int, is_enabled: bool, is_hidden: bool) -
         return course_id
 
 
-async def get_all(course_id: int = None, only_enabled=True, exclude_hidden=True) -> Sequence[do.Class]:
+async def browse(course_id: int = None, only_enabled=True, exclude_hidden=True) -> Sequence[do.Class]:
     conditions = {}
 
     if course_id is not None:
@@ -35,7 +35,7 @@ async def get_all(course_id: int = None, only_enabled=True, exclude_hidden=True)
     cond_sql = ' AND '.join(fr"{field_name} = %({field_name})s" for field_name in conditions)
 
     async with SafeExecutor(
-            event='get all classes',
+            event='browse classes',
             sql=fr'SELECT id, name, course_id, is_enabled, is_hidden'
                 fr'  FROM class'
                 fr'{" WHERE " + cond_sql if cond_sql else ""}'
@@ -47,7 +47,7 @@ async def get_all(course_id: int = None, only_enabled=True, exclude_hidden=True)
                 for (id_, name, course_id, is_enabled, is_hidden) in records]
 
 
-async def get_by_id(class_id: int, only_enabled=True, exclude_hidden=True) -> do.Class:
+async def read(class_id: int, only_enabled=True, exclude_hidden=True) -> do.Class:
     conditions = {}
 
     if only_enabled:
@@ -58,7 +58,7 @@ async def get_by_id(class_id: int, only_enabled=True, exclude_hidden=True) -> do
     cond_sql = ' AND '.join(fr"{field_name} = %({field_name})s" for field_name in conditions)
 
     async with SafeExecutor(
-            event='get class by id',
+            event='read class by id',
             sql=fr'SELECT id, name, course_id, is_enabled, is_hidden'
                 fr'  FROM class'
                 fr' WHERE id = %(class_id)s'
@@ -70,8 +70,8 @@ async def get_by_id(class_id: int, only_enabled=True, exclude_hidden=True) -> do
         return do.Class(id=id_, name=name, course_id=course_id, is_enabled=is_enabled, is_hidden=is_hidden)
 
 
-async def set_by_id(class_id: int,
-                    name: str = None, course_id: int = None, is_enabled: bool = None, is_hidden: bool = None):
+async def edit(class_id: int,
+               name: str = None, course_id: int = None, is_enabled: bool = None, is_hidden: bool = None):
     to_updates = {}
 
     if name is not None:
@@ -86,7 +86,7 @@ async def set_by_id(class_id: int,
     set_sql = ', '.join(fr"{field_name} = %({field_name})s" for field_name in to_updates)
 
     async with SafeExecutor(
-            event='update class by id',
+            event='edit class by id',
             sql=fr'UPDATE class'
                 fr' WHERE class.id = %(class_id)s'
                 fr'   SET {set_sql}',
@@ -123,9 +123,9 @@ async def add_members(class_id: int, member_roles: Collection[Tuple[int, RoleTyp
         )
 
 
-async def get_member_ids(class_id: int) -> Collection[Tuple[int, RoleType]]:
+async def browse_members(class_id: int) -> Collection[Tuple[int, RoleType]]:
     async with SafeExecutor(
-            event='get class members id',
+            event='browse class members',
             sql=r'SELECT account.id, class_member.role'
                 r'  FROM class_member, account'
                 r' WHERE class_member.member_id = account.id'
@@ -136,9 +136,9 @@ async def get_member_ids(class_id: int) -> Collection[Tuple[int, RoleType]]:
         return [(id_, RoleType(role_str)) for id_, role_str in results]
 
 
-async def get_member_role(class_id: int, member_id: int) -> RoleType:
+async def read_member_role(class_id: int, member_id: int) -> RoleType:
     async with SafeExecutor(
-            event='get class member role',
+            event='read class member role',
             sql=r'SELECT role'
                 r'  FROM class_member'
                 r' WHERE class_id = %(class_id)s and member_id = %(member_id)s',
@@ -149,7 +149,7 @@ async def get_member_role(class_id: int, member_id: int) -> RoleType:
         return RoleType(role)
 
 
-async def set_member(class_id: int, member_id: int, role: RoleType):
+async def edit_member(class_id: int, member_id: int, role: RoleType):
     async with SafeExecutor(
             event='set class member',
             sql=r'UPDATE class_member'
@@ -175,7 +175,7 @@ async def delete_member(class_id: int, member_id: int):
 
 # === class -> team
 
-async def get_teams_id(class_id: int) -> Sequence[int]:
+async def browse_teams(class_id: int) -> Sequence[int]:
     async with SafeExecutor(
             event='get class teams',
             sql=r'SELECT team.id'
@@ -189,7 +189,7 @@ async def get_teams_id(class_id: int) -> Sequence[int]:
 
 # === class -> challenge
 
-async def get_challenges(class_id: int) -> Sequence[do.Challenge]:
+async def browse_challenges(class_id: int) -> Sequence[do.Challenge]:
     async with SafeExecutor(
             event='get challenges with class id',
             sql='SELECT id, type, name, setter_id, full_score, description, '

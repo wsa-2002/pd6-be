@@ -18,7 +18,7 @@ async def add(name: str, email_domain: str) -> int:
         return institute_id
 
 
-async def get_all(only_enabled=True) -> Sequence[do.Institute]:
+async def browse(only_enabled=True) -> Sequence[do.Institute]:
     async with SafeExecutor(
             event='get all institutes',
             sql=fr'SELECT id, name, email_domain, is_enabled'
@@ -31,7 +31,7 @@ async def get_all(only_enabled=True) -> Sequence[do.Institute]:
                 for (id_, name, email_domain, is_enabled) in records]
 
 
-async def get_by_id(institute_id: int, only_enabled=True) -> do.Institute:
+async def read(institute_id: int, only_enabled=True) -> do.Institute:
     async with SafeExecutor(
             event='get all institutes',
             sql=fr'SELECT id, name, email_domain, is_enabled'
@@ -45,7 +45,7 @@ async def get_by_id(institute_id: int, only_enabled=True) -> do.Institute:
         return do.Institute(id=id_, name=name, email_domain=email_domain, is_enabled=is_enabled)
 
 
-async def set_by_id(institute_id: int, name: str = None, email_domain: str = None, is_enabled: bool = None):
+async def edit(institute_id: int, name: str = None, email_domain: str = None, is_enabled: bool = None):
     to_updates = {}
 
     if name:

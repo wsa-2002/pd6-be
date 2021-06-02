@@ -24,7 +24,7 @@ async def add(account_id: int, institute_id: int, department: str, student_id: s
         return id_
 
 
-async def get_by_id(student_card_id: int) -> do.StudentCard:
+async def read(student_card_id: int) -> do.StudentCard:
     async with SafeExecutor(
             event='get student card by id',
             sql=fr'SELECT id, institute_id, department, student_id, email, is_enabled'
@@ -37,7 +37,7 @@ async def get_by_id(student_card_id: int) -> do.StudentCard:
                               email=email, is_enabled=is_enabled)
 
 
-async def get_by_account_id(account_id) -> Sequence[do.StudentCard]:
+async def read_by_account_id(account_id) -> Sequence[do.StudentCard]:
     async with SafeExecutor(
             event='get student card by account id',
             sql='SELECT student_card.id, institute_id, department, student_id, email, is_enabled'
@@ -52,7 +52,7 @@ async def get_by_account_id(account_id) -> Sequence[do.StudentCard]:
                 for (id_, institute_id, department, student_id, email, is_enabled) in results]
 
 
-async def get_owner_id(student_card_id: int) -> int:
+async def read_owner_id(student_card_id: int) -> int:
     async with SafeExecutor(
             event='get student owner id by student card id',
             sql='SELECT account_id'
@@ -64,9 +64,9 @@ async def get_owner_id(student_card_id: int) -> int:
         return id_
 
 
-async def set_by_id(student_card_id: int,
-                    institute_id: int = None, department: str = None, student_id: str = None, email: str = None,
-                    is_enabled: bool = None):
+async def edit(student_card_id: int,
+               institute_id: int = None, department: str = None, student_id: str = None, email: str = None,
+               is_enabled: bool = None):
     to_updates = {}
 
     if institute_id is not None:
@@ -83,7 +83,7 @@ async def set_by_id(student_card_id: int,
     set_sql = ', '.join(fr"{field_name} = %({field_name})s" for field_name in to_updates)
 
     async with SafeExecutor(
-            event='update student_card by id',
+            event='edit student_card by id',
             sql=fr'UPDATE student_card'
                 fr' WHERE student_card.id = %(student_card_id)s'
                 fr'   SET {set_sql}',
