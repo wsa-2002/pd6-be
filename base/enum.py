@@ -26,3 +26,17 @@ class RoleType(OrderedMixin, StrEnum):
 class CourseType(StrEnum):
     lesson = 'LESSON'
     contest = 'CONTEST'
+
+
+class ChallengeType(StrEnum):
+    contest = 'CONTEST'
+    homework = 'HOMEWORK'
+
+
+class ProblemType(StrEnum):
+    judge = 'JUDGE'
+    options = 'OPTIONS'
+    file = 'FILE'
+    peer = 'PEER'
+    project = 'PROJECT'
+    special = 'SPECIAL'

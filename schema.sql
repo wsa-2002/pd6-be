@@ -111,22 +111,22 @@ CREATE TABLE team_member (
 
 -- Challenge-problem management
 
-CREATE TABLE challenge_type (
-  id    SERIAL  PRIMARY KEY,
-  name  VARCHAR NOT NULL  UNIQUE
+CREATE TYPE challenge_type AS ENUM (
+  'CONTEST',
+  'HOMEWORK'
 );
 
 CREATE TABLE challenge (
-  id          SERIAL    PRIMARY KEY,
-  class_id    INTEGER   NOT NULL  REFERENCES class(id),
-  type_id     INTEGER   NOT NULL  REFERENCES challenge_type(id),
-  name        VARCHAR   NOT NULL,
-  setter_id   INTEGER   NOT NULL  REFERENCES account(id),
+  id          SERIAL          PRIMARY KEY,
+  class_id    INTEGER         NOT NULL  REFERENCES class(id),
+  type        challenge_type  NOT NULL,
+  name        VARCHAR         NOT NULL,
+  setter_id   INTEGER         NOT NULL  REFERENCES account(id),
   description TEXT,
-  start_time  TIMESTAMP NOT NULL,
-  end_time    TIMESTAMP NOT NULL,
-  is_enabled  BOOLEAN   NOT NULL  DEFAULT false,
-  is_hidden   BOOLEAN   NOT NULL  DEFAULT true,
+  start_time  TIMESTAMP       NOT NULL,
+  end_time    TIMESTAMP       NOT NULL,
+  is_enabled  BOOLEAN         NOT NULL  DEFAULT false,
+  is_hidden   BOOLEAN         NOT NULL  DEFAULT true,
 
   UNIQUE (class_id, name)
 );
@@ -142,7 +142,7 @@ CREATE TYPE problem_type AS ENUM (
 
 CREATE TABLE problem (
   id          SERIAL        PRIMARY KEY,
-  type_id     problem_type  NOT NULL,
+  type        problem_type  NOT NULL,
   name        VARCHAR       NOT NULL  UNIQUE,
   setter_id   INTEGER       NOT NULL  REFERENCES account(id),
   full_score  INTEGER       NOT NULL,

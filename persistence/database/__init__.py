@@ -35,8 +35,9 @@ from . import (
     account,
     institute,
     student_card,
+    rbac,
     course,
     class_,
-    rbac,
     team,
+    challenge,
 )
