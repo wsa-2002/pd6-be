@@ -1,57 +1,86 @@
-from fastapi import APIRouter, Depends
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Optional, Sequence
 
-import model
-import util
+from pydantic import BaseModel
+
+from base import do, enum
+from base.enum import RoleType
+import exceptions as exc
+from middleware import APIRouter, envelope, auth
+import persistence.database as db
+from util import rbac
 
 
-router = APIRouter(tags=['Submission'], dependencies=[
-    Depends(util.verify_login),
-])
+router = APIRouter(
+    tags=['Submission'],
+    default_response_class=envelope.JSONResponse,
+)
 
 
-@router.post('/problem/{problem_id}/submission', tags=['Challenge-Problem'])
-@util.enveloped
+@router.post('/problem/{problem_id}/submission', tags=['Problem'])
 def submit(problem_id: int):
     return {'id': 1}
 
 
 @router.get('/submission/language', tags=['Administrative'])
-@util.enveloped
-def browse_submission_languages():
-    return [model.submission_lang]
+def browse_submission_languages() -> Sequence[do.SubmissionLanguage]:
+    return await db.submission.browse_language()
+
+
+class AddSubmissionLanguageInput(BaseModel):
+    name: str
+    version: str
+
+
+@router.post('/submission/language', tags=['Administrative'])
+def add_submission_language(data: AddSubmissionLanguageInput) -> int:
+    return await db.submission.add_language(name=data.name, version=data.version)
+
+
+@router.delete('/submission/language/{language_id}', tags=['Administrative'])
+def delete_submission_languages(language_id: int) -> None:
+    return await db.submission.delete_language(language_id=language_id)
+
+
+class BrowseSubmissionInput(BaseModel):
+    # TODO: add more
+    account_id: int = None
+    problem_id: int = None
+    challenge_id: int = None
+    language_id: int = None
 
 
 @router.get('/submission')
-@util.enveloped
-def browse_submissions():
-    return [model.submission]
+def browse_submissions(data: BrowseSubmissionInput) -> Sequence[do.Submission]:
+    return await db.submission.browse(
+        account_id=data.account_id,
+        problem_id=data.problem_id,
+        challenge_id=data.challenge_id,
+        language_id=data.language_id,
+    )
 
 
 @router.get('/submission/{submission_id}')
-@util.enveloped
-def read_submission(submission_id: int):
-    return model.submission
+def read_submission(submission_id: int) -> do.Submission:
+    return await db.submission.read(submission_id=submission_id)
 
 
 @router.get('/submission/{submission_id}/judgment')
-@util.enveloped
 def browse_submission_judgments(submission_id: int):
     return [model.judgment_1]
 
 
 @router.get('/judgment/result', tags=['Administrative'])
-@util.enveloped
 def browse_judgment_results():
     return [model.judgment_result]
 
 
 @router.get('/judgment/{judgment_id}')
-@util.enveloped
 def read_judgment(judgment_id: int):
     return model.judgment_result
 
 
 @router.get('/judgment/{judgment_id}/testdata-result')
-@util.enveloped
 def browse_judgment_testdata_results(judgment_id: int):
     return [model.judgment_testdata_result_1, model.judgment_testdata_result_2]
