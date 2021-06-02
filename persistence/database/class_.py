@@ -83,6 +83,9 @@ async def edit(class_id: int,
     if is_hidden is not None:
         to_updates['is_hidden'] = is_enabled
 
+    if not to_updates:
+        return
+
     set_sql = ', '.join(fr"{field_name} = %({field_name})s" for field_name in to_updates)
 
     async with SafeExecutor(

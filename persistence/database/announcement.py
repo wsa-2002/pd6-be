@@ -62,6 +62,9 @@ async def edit(announcement_id: int, title: str = None, content: str = None,
     if expire_time is not None:
         to_updates['expire_time'] = expire_time
 
+    if not to_updates:
+        return
+
     set_sql = ', '.join(fr"{field_name} = %({field_name})s" for field_name in to_updates)
 
     async with SafeExecutor(

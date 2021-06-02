@@ -58,6 +58,9 @@ async def edit(institute_id: int, name: str = None, email_domain: str = None, is
 
     set_sql = ', '.join(fr"{field_name} = %({field_name})s" for field_name in to_updates)
 
+    if not to_updates:
+        return
+
     async with SafeExecutor(
             event='update institute by id',
             sql=fr'UPDATE institute'
