@@ -49,14 +49,14 @@ async def browse(problem_id: int) -> Sequence[do.Testcase]:
                 ' ORDER BY is_sample DESC, id ASC',
             problem_id=problem_id,
             fetch='all',
-    ) as results:
+    ) as records:
         return [do.Testcase(id=id_, problem_id=problem_id, is_sample=is_sample, score=score,
                             input_file=input_file, output_file=output_file,
                             time_limit=time_limit, memory_limit=memory_limit,
                             is_enabled=is_enabled, is_hidden=is_hidden)
                 for (id_, problem_id, is_sample, score, input_file, output_file,
                      time_limit, memory_limit, is_enabled, is_hidden)
-                in results]
+                in records]
 
 
 async def edit(testcase_id: int,

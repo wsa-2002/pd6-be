@@ -127,8 +127,8 @@ async def browse_members(course_id: int) -> Sequence[do.Member]:
                 r' ORDER BY course_member.role DESC, account.id ASC',
             course_id=course_id,
             fetch='all',
-    ) as results:
-        return [do.Member(member_id=id_, role=RoleType(role_str)) for id_, role_str in results]
+    ) as records:
+        return [do.Member(member_id=id_, role=RoleType(role_str)) for id_, role_str in records]
 
 
 async def read_member(course_id: int, member_id: int) -> do.Member:

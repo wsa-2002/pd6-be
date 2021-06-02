@@ -47,10 +47,10 @@ async def browse(account_id: int) -> Sequence[do.StudentCard]:
                 '   AND account_student_card.account_id = %(account_id)s',
             account_id=account_id,
             fetch='all',
-    ) as results:
+    ) as records:
         return [do.StudentCard(id=id_, institute_id=institute_id, department=department, student_id=student_id,
                                email=email, is_enabled=is_enabled)
-                for (id_, institute_id, department, student_id, email, is_enabled) in results]
+                for (id_, institute_id, department, student_id, email, is_enabled) in records]
 
 
 async def read_owner_id(student_card_id: int) -> int:

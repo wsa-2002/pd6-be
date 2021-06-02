@@ -30,12 +30,12 @@ async def browse() -> Sequence[do.Problem]:
                 '  FROM problem'
                 ' ORDER BY id ASC',
             fetch='all',
-    ) as results:
+    ) as records:
         return [do.Problem(id=id_, type=type_, name=name, setter_id=setter_id,
                            full_score=full_score, description=description, source=source, hint=hint,
                            is_enabled=is_enabled, is_hidden=is_hidden)
                 for id_, type_, name, setter_id, full_score, description, source, hint, is_enabled, is_hidden
-                in results]
+                in records]
 
 
 async def browse_by_challenge(challenge_id: int) -> Sequence[do.Problem]:
@@ -49,12 +49,12 @@ async def browse_by_challenge(challenge_id: int) -> Sequence[do.Problem]:
                 ' ORDER BY problem_id ASC',
             challenge_id=challenge_id,
             fetch='all',
-    ) as results:
+    ) as records:
         return [do.Problem(id=id_, type=type_, name=name, setter_id=setter_id,
                            full_score=full_score, description=description, source=source, hint=hint,
                            is_enabled=is_enabled, is_hidden=is_hidden)
                 for id_, type_, name, setter_id, full_score, description, source, hint, is_enabled, is_hidden
-                in results]
+                in records]
 
 
 async def read(problem_id: int) -> do.Problem:

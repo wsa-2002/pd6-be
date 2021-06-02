@@ -38,12 +38,12 @@ async def browse(class_id: int = None) -> Sequence[do.Challenge]:
                 fr' {f"WHERE {cond_sql}" if cond_sql else ""}'
                 fr' ORDER BY class_id ASC, id ASC',
             fetch='all',
-    ) as results:
+    ) as records:
         return [do.Challenge(id=id_, class_id=class_id, type=type_, name=name, setter_id=setter_id,
                              description=description, start_time=start_time, end_time=end_time,
                              is_enabled=is_enabled, is_hidden=is_hidden)
                 for id_, class_id, type_, name, setter_id, description, start_time, end_time, is_enabled, is_hidden
-                in results]
+                in records]
 
 
 async def read(challenge_id: int) -> do.Challenge:
