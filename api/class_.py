@@ -127,8 +127,8 @@ async def add_team_under_class(class_id: int, data: AddTeamInput, request: auth.
 
 
 @router.get('/class/{class_id}/team', tags=['Team'])
-async def browse_teams_under_class(class_id: int, request: auth.Request) -> Sequence[int]:
+async def browse_teams_under_class(class_id: int, request: auth.Request) -> Sequence[do.Team]:
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
 
-    return await db.class_.browse_teams(class_id=class_id)
+    return await db.team.browse(class_id=class_id)

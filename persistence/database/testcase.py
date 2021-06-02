@@ -5,6 +5,23 @@ from base import do
 from .base import SafeExecutor
 
 
+async def add(problem_id: int, is_sample: bool, score: int, input_file: str, output_file: str,
+              time_limit: int, memory_limit: int, is_enabled: bool, is_hidden: bool) -> int:
+    async with SafeExecutor(
+            event='Add testcase',
+            sql="INSERT INTO testcase"
+                "            (problem_id, is_sample, score, input_file, output_file,"
+                "             time_limit, memory_limit, is_enabled, is_hidden)"
+                "     VALUES (%(problem_id)s, %(is_sample)s, %(score)s, %(input_file)s, %(output_file)s,"
+                "             %(time_limit)s, %(memory_limit)s, %(is_enabled)s, %(is_hidden)s)"
+                "  RETURNING id",
+            problem_id=problem_id, is_sample=is_sample, score=score, input_file=input_file, output_file=output_file,
+            time_limit=time_limit, memory_limit=memory_limit, is_enabled=is_enabled, is_hidden=is_hidden,
+            fetch=1,
+    ) as (id_,):
+        return id_
+
+
 async def read(testcase_id: int) -> do.Testcase:
     async with SafeExecutor(
             event='read testcases with problem id',
@@ -20,6 +37,26 @@ async def read(testcase_id: int) -> do.Testcase:
                            input_file=input_file, output_file=output_file,
                            time_limit=time_limit, memory_limit=memory_limit,
                            is_enabled=is_enabled, is_hidden=is_hidden)
+
+
+async def browse(problem_id: int) -> Sequence[do.Testcase]:
+    async with SafeExecutor(
+            event='browse testcases with problem id',
+            sql='SELECT id, is_sample, score, input_file, output_file, '
+                '       time_limit, memory_limit, is_enabled, is_hidden'
+                '  FROM testcase'
+                ' WHERE problem_id = %(problem_id)s'
+                ' ORDER BY is_sample DESC, id ASC',
+            problem_id=problem_id,
+            fetch='all',
+    ) as results:
+        return [do.Testcase(id=id_, problem_id=problem_id, is_sample=is_sample, score=score,
+                            input_file=input_file, output_file=output_file,
+                            time_limit=time_limit, memory_limit=memory_limit,
+                            is_enabled=is_enabled, is_hidden=is_hidden)
+                for (id_, problem_id, is_sample, score, input_file, output_file,
+                     time_limit, memory_limit, is_enabled, is_hidden)
+                in results]
 
 
 async def edit(testcase_id: int,

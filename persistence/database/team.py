@@ -22,19 +22,23 @@ async def add(name: str, class_id: int, is_enabled: bool, is_hidden: bool) -> in
         return class_id
         
 
-async def browse(only_enabled=True, exclude_hidden=True) -> Sequence[do.Team]:
-    conditions = []
+async def browse(class_id: int = None, only_enabled=True, exclude_hidden=True) -> Sequence[do.Team]:
+    conditions = {}
+
+    if class_id is not None:
+        conditions['class_id'] = class_id
     if only_enabled:
-        conditions.append('is_enabled = TRUE')
+        conditions['is_enabled'] = True
     if exclude_hidden:
-        conditions.append('is_hidden = FALSE')
-    cond_sql = ' AND '.join(conditions)
+        conditions['is_hidden'] = False
+
+    cond_sql = ' AND '.join(fr"{field_name} = %({field_name})s" for field_name in conditions)
 
     async with SafeExecutor(
             event='get all teams',
             sql=fr'SELECT id, name, class_id, is_enabled, is_hidden'
                 fr'  FROM course'
-                fr'{" WHERE " + cond_sql if cond_sql else ""}'
+                fr' {f"WHERE {cond_sql}" if cond_sql else ""}'
                 fr' ORDER BY class_id ASC, id ASC',
             fetch='all',
     ) as records:

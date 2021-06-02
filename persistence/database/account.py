@@ -35,7 +35,7 @@ async def read(account_id: int) -> do.Account:
 
 # Uses ellipsis (...) as default value for values that can be set to None
 async def edit(account_id: int,
-               nickname: Optional[str] = ...):
+               nickname: Optional[str] = ...) -> None:
     to_updates = {}
     if nickname is not ...:
         to_updates['nickname'] = nickname
@@ -56,7 +56,7 @@ async def edit(account_id: int,
         return
 
 
-async def delete_alternative_email_by_id(account_id: int):
+async def delete_alternative_email_by_id(account_id: int) -> None:
     async with SafeExecutor(
             event='set account delete alternative email',
             sql=fr'UPDATE account'
@@ -80,7 +80,7 @@ async def check_is_enabled(account_id: int) -> bool:
         return is_enabled
 
 
-async def set_enabled(account_id: int, is_enabled: bool):
+async def set_enabled(account_id: int, is_enabled: bool) -> None:
     async with SafeExecutor(
             event='set account disabled',
             sql=fr'UPDATE account'
@@ -121,7 +121,7 @@ async def add_email_verification(email: str, account_id: int, student_card_id: i
         return code
 
 
-async def verify_email(code: str):
+async def verify_email(code: str) -> None:
     async with SafeConnection(event='Verify email') as conn:
         async with conn.transaction():
             try:

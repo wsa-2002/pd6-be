@@ -46,7 +46,7 @@ def browse_challenges_under_class(class_id: int, request: auth.Request) -> Seque
     if not rbac.validate(request.account.id, RoleType.normal, class_id=class_id, inherit=False):
         raise exc.NoPermission
 
-    challenges = await db.class_.browse_challenges(class_id=class_id)
+    challenges = await db.challenge.browse(class_id=class_id)
     return challenges
 
 
@@ -120,5 +120,5 @@ def add_problem_under_challenge(challenge_id: int, data: CreateProblemInput, req
 
 
 @router.get('/challenge/{challenge_id}/problem')
-def browse_problems_under_challenge(challenge_id: int) -> Collection[int]:
-    return await db.challenge.browse_problems(challenge_id=challenge_id)
+def browse_problems_under_challenge(challenge_id: int) -> Collection[do.Problem]:
+    return await db.problem.browse_by_challenge(challenge_id=challenge_id)

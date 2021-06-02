@@ -46,7 +46,7 @@ async def read(institute_id: int, only_enabled=True) -> do.Institute:
         return do.Institute(id=id_, name=name, email_domain=email_domain, is_enabled=is_enabled)
 
 
-async def edit(institute_id: int, name: str = None, email_domain: str = None, is_enabled: bool = None):
+async def edit(institute_id: int, name: str = None, email_domain: str = None, is_enabled: bool = None) -> None:
     to_updates = {}
 
     if name:

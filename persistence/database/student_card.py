@@ -38,9 +38,9 @@ async def read(student_card_id: int) -> do.StudentCard:
                               email=email, is_enabled=is_enabled)
 
 
-async def read_by_account_id(account_id) -> Sequence[do.StudentCard]:
+async def browse(account_id: int) -> Sequence[do.StudentCard]:
     async with SafeExecutor(
-            event='get student card by account id',
+            event='browse student card by account id',
             sql='SELECT student_card.id, institute_id, department, student_id, email, is_enabled'
                 '  FROM student_card, account_student_card'
                 ' WHERE student_card.id = account_student_card.student_card_id'
@@ -67,7 +67,7 @@ async def read_owner_id(student_card_id: int) -> int:
 
 async def edit(student_card_id: int,
                institute_id: int = None, department: str = None, student_id: str = None, email: str = None,
-               is_enabled: bool = None):
+               is_enabled: bool = None) -> None:
     to_updates = {}
 
     if institute_id is not None:

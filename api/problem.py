@@ -62,12 +62,12 @@ class AddTestcaseInput(BaseModel):
 
 @router.post('/problem/{problem_id}/testcase', tags=['Testcase'])
 def add_testcase_under_problem(problem_id: int, data: AddTestcaseInput) -> int:
-    return await db.problem.add_testcase(problem_id=problem_id, is_sample=data.is_sample, score=data.score,
-                                         input_file=data.input_file, output_file=data.output_file,
-                                         time_limit=data.time_limit, memory_limit=data.memory_limit,
-                                         is_enabled=data.is_enabled, is_hidden=data.is_hidden)
+    return await db.testcase.add(problem_id=problem_id, is_sample=data.is_sample, score=data.score,
+                                 input_file=data.input_file, output_file=data.output_file,
+                                 time_limit=data.time_limit, memory_limit=data.memory_limit,
+                                 is_enabled=data.is_enabled, is_hidden=data.is_hidden)
 
 
 @router.get('/problem/{problem_id}/testcase', tags=['Testcase'])
 def browse_testcase_under_problem(problem_id: int) -> Sequence[do.Testcase]:
-    return await db.problem.browse_testcases(problem_id=problem_id)
+    return await db.testcase.browse(problem_id=problem_id)
