@@ -1,6 +1,6 @@
 from typing import Sequence, Collection, Tuple
 
-from base.enum import CourseType, RoleType
+from base.enum import RoleType
 
 from . import do
 from .base import SafeExecutor, SafeConnection

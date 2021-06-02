@@ -1,3 +1,8 @@
+"""
+Handles encryption stuff
+"""
+
+
 from datetime import datetime, timedelta
 from functools import partial
 

@@ -1,3 +1,5 @@
+# Create the FastAPI application
+
 from config import app_config
 from middleware import api
 
@@ -6,6 +8,10 @@ app = api.FastAPI(
     docs_url=app_config.docs_url,
     redoc_url=app_config.redoc_url,
 )
+
+
+# Hook startup and shutdown services for application
+# Cyclic import should be avoided!
 
 
 @app.on_event('startup')

@@ -48,7 +48,7 @@ class Request(fastapi.Request):
 
 async def auth_header_placeholder(auth_token: str = fastapi.Header(None, convert_underscores=True)):
     """
-    For injecting fastapi's documentation
+    For injecting FastAPI's documentation
     """
 
 
@@ -59,6 +59,7 @@ class APIRoute(routing.APIRoute):
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # Adds a dummy function to depend list, injecting the FastAPI documentation with dummy function's signature
         self.dependencies.append(fastapi.Depends(auth_header_placeholder))
 
     def get_route_handler(self) -> Callable:
