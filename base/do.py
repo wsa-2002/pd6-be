@@ -162,3 +162,13 @@ class Grade:
     score: Optional[int]
     comment: Optional[str]
     update_time: datetime
+
+
+@dataclass
+class Announcement:
+    id: int
+    title: str
+    content: str
+    author_id: int
+    post_time: datetime
+    expire_time: datetime

@@ -56,4 +56,5 @@ from . import (
     submission,
     judgment,
     grade,
+    announcement,
 )
