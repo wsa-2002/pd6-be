@@ -54,5 +54,7 @@ from . import (
     problem,
     testcase,
     submission,
-    judgment
+    judgment,
+    grade,
+    announcement,
 )
