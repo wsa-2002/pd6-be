@@ -35,13 +35,13 @@ def add_announcement(data: AddAnnouncementInput, request: auth.Request) -> int:
 @router.get('/announcement')
 def browse_announcements() -> Sequence[do.Announcement]:
     # TODO: check if can see all???
-    return await db.announcement.browse(True)
+    return await db.announcement.browse(show_hidden=True)
 
 
 @router.get('/announcement/{announcement_id}')
 def read_announcement(announcement_id: int) -> do.Announcement:
     # TODO: check if can see all???
-    return await db.announcement.read(announcement_id, True)
+    return await db.announcement.read(announcement_id, show_hidden=True)
 
 
 class EditAnnouncementInput(BaseModel):

@@ -42,14 +42,14 @@ def get_grade(grade_id: int) -> do.Grade:
 
 
 class EditGradeInput(BaseModel):
-    item_name: Optional[str] = None
+    title: Optional[str] = None
     score: Optional[int] = None
     comment: Optional[str] = None
 
 
 @router.patch('/grade/{grade_id}')
 def edit_grade(grade_id: int, data: EditGradeInput) -> None:
-    await db.grade.edit(grade_id=grade_id, item_name=data.item_name, score=data.score, comment=data.comment,
+    await db.grade.edit(grade_id=grade_id, title=data.title, score=data.score, comment=data.comment,
                         update_time=datetime.now())  # TODO: request.time?
 
 
