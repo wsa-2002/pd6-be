@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, Sequence, Collection
+from typing import Optional, Sequence, Collection, List
 
 from pydantic import BaseModel
 
@@ -120,5 +120,5 @@ async def add_problem_under_challenge(challenge_id: int, data: CreateProblemInpu
 
 
 @router.get('/challenge/{challenge_id}/problem')
-async def browse_problems_under_challenge(challenge_id: int) -> Collection[do.Problem]:
+async def browse_problems_under_challenge(challenge_id: int) -> Sequence[do.Problem]:
     return await db.problem.browse_by_challenge(challenge_id=challenge_id)
