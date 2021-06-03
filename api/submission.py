@@ -19,12 +19,12 @@ router = APIRouter(
 
 
 @router.post('/problem/{problem_id}/submission', tags=['Problem'])
-def submit(problem_id: int):
+async def submit(problem_id: int):
     return {'id': 1}
 
 
 @router.get('/submission/language', tags=['Administrative'])
-def browse_submission_languages() -> Sequence[do.SubmissionLanguage]:
+async def browse_submission_languages() -> Sequence[do.SubmissionLanguage]:
     return await db.submission.browse_language()
 
 
@@ -34,12 +34,12 @@ class AddSubmissionLanguageInput(BaseModel):
 
 
 @router.post('/submission/language', tags=['Administrative'])
-def add_submission_language(data: AddSubmissionLanguageInput) -> int:
+async def add_submission_language(data: AddSubmissionLanguageInput) -> int:
     return await db.submission.add_language(name=data.name, version=data.version)
 
 
 @router.delete('/submission/language/{language_id}', tags=['Administrative'])
-def delete_submission_languages(language_id: int) -> None:
+async def delete_submission_languages(language_id: int) -> None:
     return await db.submission.delete_language(language_id=language_id)
 
 
@@ -52,7 +52,7 @@ class BrowseSubmissionInput(BaseModel):
 
 
 @router.get('/submission')
-def browse_submissions(data: BrowseSubmissionInput) -> Sequence[do.Submission]:
+async def browse_submissions(data: BrowseSubmissionInput) -> Sequence[do.Submission]:
     return await db.submission.browse(
         account_id=data.account_id,
         problem_id=data.problem_id,
@@ -62,10 +62,10 @@ def browse_submissions(data: BrowseSubmissionInput) -> Sequence[do.Submission]:
 
 
 @router.get('/submission/{submission_id}')
-def read_submission(submission_id: int) -> do.Submission:
+async def read_submission(submission_id: int) -> do.Submission:
     return await db.submission.read(submission_id=submission_id)
 
 
 @router.get('/submission/{submission_id}/judgment', tags=['Judgment'])
-def browse_submission_judgments(submission_id: int) -> Sequence[do.Judgment]:
+async def browse_submission_judgments(submission_id: int) -> Sequence[do.Judgment]:
     return await db.judgment.browse(submission_id=submission_id)

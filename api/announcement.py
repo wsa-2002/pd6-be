@@ -27,19 +27,19 @@ class AddAnnouncementInput(BaseModel):
 
 
 @router.post('/announcement')
-def add_announcement(data: AddAnnouncementInput, request: auth.Request) -> int:
+async def add_announcement(data: AddAnnouncementInput, request: auth.Request) -> int:
     return await db.announcement.add(title=data.title, content=data.content, author_id=request.account.id,
                                      post_time=data.post_time, expire_time=data.expire_time)
 
 
 @router.get('/announcement')
-def browse_announcements() -> Sequence[do.Announcement]:
+async def browse_announcements() -> Sequence[do.Announcement]:
     # TODO: check if can see all???
     return await db.announcement.browse(True)
 
 
 @router.get('/announcement/{announcement_id}')
-def read_announcement(announcement_id: int) -> do.Announcement:
+async def read_announcement(announcement_id: int) -> do.Announcement:
     # TODO: check if can see all???
     return await db.announcement.read(announcement_id, True)
 
@@ -52,11 +52,11 @@ class EditAnnouncementInput(BaseModel):
 
 
 @router.patch('/announcement/{announcement_id}')
-def edit_announcement(announcement_id: int, data: EditAnnouncementInput) -> None:
+async def edit_announcement(announcement_id: int, data: EditAnnouncementInput) -> None:
     return await db.announcement.edit(announcement_id=announcement_id, title=data.title, content=data.content,
                                       post_time=data.post_time, expire_time=data.expire_time)
 
 
 @router.delete('/announcement/{announcement_id}')
-def delete_announcement(announcement_id: int) -> None:
+async def delete_announcement(announcement_id: int) -> None:
     return await db.announcement.delete(announcement_id=announcement_id)
