@@ -22,10 +22,11 @@ async def add(access_time: datetime, request_method: str, resource_path: str, ip
 async def browse(offset: int = 0, limit: int = 50) -> Sequence[do.AccessLog]:
     async with SafeExecutor(
             event='browse access_logs',
-            sql=fr'SELECT id, access_time, request_method, resource_path, ip, account_id'
-                fr'  FROM access_log'
-                fr' ORDER BY id ASC'
-                fr' OFFSET {offset} LIMIT {limit}',
+            sql="SELECT id, access_time, request_method, resource_path, ip, account_id"
+                "  FROM access_log"
+                " ORDER BY id ASC"
+                " OFFSET %(offset)s LIMIT %(limit)s",
+            offset=offset, limit=limit,
             fetch='all',
     ) as records:
         return [do.AccessLog(id=id_, access_time=access_time, request_method=request_method,
