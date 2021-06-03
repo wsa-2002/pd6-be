@@ -54,7 +54,7 @@ async def read(grade_id: int) -> do.Grade:
                 fr'  FROM grade'
                 fr' WHERE id = %(grade_id)s',
             grade_id=grade_id,
-            fetch='all',
+            fetch=1,
     ) as (id_, receiver_id, grader_id, class_id, title, score, comment, update_time):
         return do.Grade(id=id_, receiver_id=receiver_id, grader_id=grader_id, class_id=class_id, title=title,
                         score=score, comment=comment, update_time=update_time)

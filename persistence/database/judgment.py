@@ -14,10 +14,10 @@ async def browse(submission_id: int) -> Sequence[do.Judgment]:
                 fr' ORDER BY id DESC',
             submission_id=submission_id,
             fetch='all',
-    ) as results:
+    ) as records:
         return [do.Judgment(id=id_, submission_id=submission_id, status=enum.JudgmentStatusType(status),
                             total_time=total_time, max_memory=max_memory, score=score, judge_time=judge_time)
-                for id_, status, total_time, max_memory, score, judge_time in results]
+                for id_, status, total_time, max_memory, score, judge_time in records]
 
 
 async def read(judgment_id: int) -> do.Judgment:
@@ -44,10 +44,10 @@ async def browse_cases(judgment_id: int) -> Sequence[do.JudgeCase]:
                 fr' ORDER BY testcase.is_sample DESC, testcase_id ASC',
             judgment_id=judgment_id,
             fetch='all',
-    ) as results:
+    ) as records:
         return [do.JudgeCase(judgment_id=judgment_id, testcase_id=testcase_id, status=enum.JudgmentStatusType(status),
                              time_lapse=time_lapse, peak_memory=peak_memory, score=score)
-                for judgment_id, testcase_id, status, time_lapse, peak_memory, score in results]
+                for judgment_id, testcase_id, status, time_lapse, peak_memory, score in records]
 
 
 async def read_case(judgment_id: int, testcase_id: int) -> do.JudgeCase:
@@ -58,7 +58,7 @@ async def read_case(judgment_id: int, testcase_id: int) -> do.JudgeCase:
                 fr' WHERE judgment_id = %(judgment_id)s and testcase_id = %(testcase_id)s',
             judgment_id=judgment_id,
             testcase_id=testcase_id,
-            fetch='all',
+            fetch=1,
     ) as (judgment_id, testcase_id, status, time_lapse, peak_memory, score):
         return do.JudgeCase(judgment_id=judgment_id, testcase_id=testcase_id, status=enum.JudgmentStatusType(status),
                             time_lapse=time_lapse, peak_memory=peak_memory, score=score)

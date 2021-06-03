@@ -29,9 +29,9 @@ async def browse_language() -> Sequence[do.SubmissionLanguage]:
                 "  FROM submission_language"
                 " ORDER BY name ASC, version ASC",
             fetch='all',
-    ) as results:
+    ) as records:
         return [do.SubmissionLanguage(id=id_, name=name, version=version)
-                for id_, name, version in results]
+                for id_, name, version in records]
 
 
 async def read_language(language_id: int) -> do.SubmissionLanguage:
@@ -41,7 +41,7 @@ async def read_language(language_id: int) -> do.SubmissionLanguage:
                 "  FROM submission_language"
                 " WHERE id = %(id)s",
             id=language_id,
-            fetch='all',
+            fetch=1,
     ) as (name, version):
         return do.SubmissionLanguage(id=language_id, name=name, version=version)
 
@@ -94,12 +94,12 @@ async def browse(account_id: int = None, problem_id: int = None, challenge_id: i
                 fr' {f"WHERE {cond_sql}" if cond_sql else ""}'
                 fr' ORDER BY id DESC',
             fetch='all',
-    ) as results:
+    ) as records:
         return [do.Submission(id=id_, account_id=account_id, problem_id=problem_id, challenge_id=challenge_id,
                               language_id=language_id, content_file=content_file, content_length=content_length,
                               submit_time=submit_time)
                 for id_, account_id, problem_id, challenge_id, language_id, content_file, content_length, submit_time
-                in results]
+                in records]
 
 
 async def read(submission_id: int) -> do.Submission:

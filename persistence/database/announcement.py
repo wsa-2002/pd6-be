@@ -43,7 +43,7 @@ async def read(announcement_id: int, show_hidden: bool) -> do.Announcement:
                 fr' {"AND post_time <= %(cur_time)s AND expire_time > %(cur_time)s" if not show_hidden else ""}',
             announcement_id=announcement_id,
             cur_time=datetime.now(),
-            fetch='all',
+            fetch=1,
     ) as (id_, title, content, author_id, post_time, expire_time):
         return do.Announcement(id=id_, title=title, content=content, author_id=author_id,
                                post_time=post_time, expire_time=expire_time)
