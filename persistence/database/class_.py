@@ -172,38 +172,3 @@ async def delete_member(class_id: int, member_id: int):
             member_id=member_id,
     ):
         pass
-
-
-# === class -> team
-
-async def browse_teams(class_id: int) -> Sequence[do.Team]:
-    async with SafeExecutor(
-            event='get class teams',
-            sql=r'SELECT id, name, class_id, is_enabled, is_hidden'
-                r'  FROM team'
-                r' WHERE class_id = %(class_id)s'
-                r' ORDER BY id ASC',
-            class_id=class_id,
-            fetch='all',
-    ) as records:
-        return [do.Team(id=id_, name=name, class_id=c_id, is_enabled=is_enabled, is_hidden=is_hidden)
-                for (id_, name, c_id, is_enabled, is_hidden) in records]
-
-
-# === class -> challenge
-
-async def browse_challenges(class_id: int) -> Sequence[do.Challenge]:
-    async with SafeExecutor(
-            event='get challenges with class id',
-            sql='SELECT id, type, name, setter_id, description, start_time, end_time, is_enabled, is_hidden'
-                '  FROM challenge'
-                ' WHERE class_id = %(class_id)s'
-                ' ORDER BY id ASC',
-            class_id=class_id,
-            fetch='all',
-    ) as results:
-        return [do.Challenge(id=id_, class_id=class_id, type=type_, name=name, setter_id=setter_id,
-                             description=description, start_time=start_time, end_time=end_time,
-                             is_enabled=is_enabled, is_hidden=is_hidden)
-                for id_, type_, name, setter_id, description, start_time, end_time, is_enabled, is_hidden
-                in results]

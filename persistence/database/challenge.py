@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, Sequence, Collection
+from typing import Optional, Sequence
 
 from base import do, enum
 
@@ -23,12 +23,20 @@ async def add(class_id: int, type_: enum.ChallengeType, name: str, setter_id: in
         return id_
 
 
-async def browse() -> Sequence[do.Challenge]:
+async def browse(class_id: int = None) -> Sequence[do.Challenge]:
+    conditions = {}
+
+    if class_id is not None:
+        conditions['class_id'] = class_id
+
+    cond_sql = ' AND '.join(fr"{field_name} = %({field_name})s" for field_name in conditions)
+
     async with SafeExecutor(
             event='browse challenges',
-            sql='SELECT id, class_id, type, name, setter_id, description, start_time, end_time, is_enabled, is_hidden'
-                '  FROM challenge'
-                ' ORDER BY id ASC',
+            sql=fr'SELECT id, class_id, type, name, setter_id, description, start_time, end_time, is_enabled, is_hidden'
+                fr'  FROM challenge'
+                fr' {f"WHERE {cond_sql}" if cond_sql else ""}'
+                fr' ORDER BY class_id ASC, id ASC',
             fetch='all',
     ) as results:
         return [do.Challenge(id=id_, class_id=class_id, type=type_, name=name, setter_id=setter_id,
@@ -101,25 +109,6 @@ async def add_problem_relation(challenge_id: int, problem_id: int) -> None:
             problem_id=problem_id,
     ):
         pass
-
-
-async def browse_problems(challenge_id: int) -> Sequence[do.Problem]:
-    async with SafeExecutor(
-            event='browse problems with challenge id',
-            sql='SELECT id, type, name, setter_id, full_score, description, source, hint, is_enabled, is_hidden'
-                '  FROM problem'
-                '       LEFT JOIN challenge_problem'
-                '              ON problem.id = challenge_problem.problem_id'
-                ' WHERE challenge_id = %(challenge_id)s'
-                ' ORDER BY problem_id ASC',
-            challenge_id=challenge_id,
-            fetch='all',
-    ) as results:
-        return [do.Problem(id=problem_id, type=type_, name=name, setter_id=setter_id,
-                           full_score=full_score, description=description, source=source, hint=hint,
-                           is_enabled=is_enabled, is_hidden=is_hidden)
-                for problem_id, type_, name, setter_id, full_score, description, source, hint, is_enabled, is_hidden
-                in results]
 
 
 async def delete_problem_relation(challenge_id: int, problem_id: int) -> None:

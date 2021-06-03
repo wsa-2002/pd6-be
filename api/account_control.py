@@ -166,7 +166,7 @@ async def browse_account_student_cards(account_id: int, request: auth.Request) -
     if request.account.role.not_manager and request.account.id != account_id:
         raise exc.NoPermission
 
-    return await db.student_card.read_by_account_id(account_id)
+    return await db.student_card.browse(account_id)
 
 
 @router.get('/student-card/{student_card_id}')

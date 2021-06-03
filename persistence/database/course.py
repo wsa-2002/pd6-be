@@ -166,18 +166,3 @@ async def delete_member(course_id: int, member_id: int):
             member_id=member_id,
     ):
         pass
-
-
-# === course -> class
-
-async def browse_classes(course_id: int) -> Sequence[do.Class]:
-    async with SafeExecutor(
-            event='get course classes',
-            sql=r'SELECT id, name, course_id, is_enabled, is_hidden'
-                r'  FROM class'
-                r' WHERE course_id = %(course_id)s'
-                r' ORDER BY id ASC',
-            course_id=course_id,
-            fetch='all',
-    ) as results:
-        return [id_ for id_, in results]

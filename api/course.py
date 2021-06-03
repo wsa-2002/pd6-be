@@ -122,8 +122,8 @@ async def add_class_under_course(course_id: int, data: AddClassInput, request: a
 
 
 @router.get('/course/{course_id}/class', tags=['Class'])
-async def browse_classes_under_course(course_id: int, request: auth.Request) -> Sequence[int]:
+async def browse_classes_under_course(course_id: int, request: auth.Request) -> Sequence[do.Class]:
     if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
-    return await db.course.browse_classes(course_id=course_id)
+    return await db.class_.browse(course_id=course_id)

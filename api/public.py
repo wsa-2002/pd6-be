@@ -97,7 +97,7 @@ async def login(data: LoginInput) -> str:
 
     # Verify
     if not security.verify_password(to_test=data.password, hashed=pass_hash):
-        raise exc.LoginFailed
+        raise exc.LoginFailed  # Not to let user know why login failed
 
     # Get jwt
     login_token = security.encode_jwt(account_id=account_id, expire=config.login_expire)
