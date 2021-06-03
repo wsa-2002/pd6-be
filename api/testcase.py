@@ -19,7 +19,7 @@ router = APIRouter(
 
 
 @router.get('/testcase/{testcase_id}')
-def read_testcase(testcase_id: int) -> do.Testcase:
+async def read_testcase(testcase_id: int) -> do.Testcase:
     return await db.testcase.read(testcase_id=testcase_id)
 
 
@@ -35,7 +35,7 @@ class EditTestcaseInput(BaseModel):
 
 
 @router.patch('/testcase/{testcase_id}')
-def edit_testcase(testcase_id: int, data: EditTestcaseInput) -> None:
+async def edit_testcase(testcase_id: int, data: EditTestcaseInput) -> None:
     await db.testcase.edit(testcase_id=testcase_id, is_sample=data.is_sample, score=data.score,
                            input_file=data.input_file, output_file=data.output_file,
                            time_limit=data.time_limit, memory_limit=data.memory_limit,
@@ -43,5 +43,5 @@ def edit_testcase(testcase_id: int, data: EditTestcaseInput) -> None:
 
 
 @router.delete('/testcase/{testcase_id}')
-def delete_testcase(testcase_id: int) -> None:
+async def delete_testcase(testcase_id: int) -> None:
     await db.testcase.delete(testcase_id=testcase_id)

@@ -19,12 +19,12 @@ router = APIRouter(
 
 
 @router.get('/problem')
-def browse_problems() -> Sequence[do.Problem]:
+async def browse_problems() -> Sequence[do.Problem]:
     return await db.problem.browse()
 
 
 @router.get('/problem/{problem_id}')
-def read_problem(problem_id: int):
+async def read_problem(problem_id: int):
     return await db.problem.read(problem_id=problem_id)
 
 
@@ -40,12 +40,12 @@ class EditProblemInput(BaseModel):
 
 
 @router.patch('/problem/{problem_id}')
-def edit_problem(problem_id: int):
+async def edit_problem(problem_id: int):
     pass
 
 
 @router.delete('/problem/{problem_id}')
-def delete_problem(problem_id: int):
+async def delete_problem(problem_id: int):
     return await db.problem.delete(problem_id=problem_id)
 
 
@@ -61,7 +61,7 @@ class AddTestcaseInput(BaseModel):
 
 
 @router.post('/problem/{problem_id}/testcase', tags=['Testcase'])
-def add_testcase_under_problem(problem_id: int, data: AddTestcaseInput) -> int:
+async def add_testcase_under_problem(problem_id: int, data: AddTestcaseInput) -> int:
     return await db.testcase.add(problem_id=problem_id, is_sample=data.is_sample, score=data.score,
                                  input_file=data.input_file, output_file=data.output_file,
                                  time_limit=data.time_limit, memory_limit=data.memory_limit,
@@ -69,5 +69,5 @@ def add_testcase_under_problem(problem_id: int, data: AddTestcaseInput) -> int:
 
 
 @router.get('/problem/{problem_id}/testcase', tags=['Testcase'])
-def browse_testcase_under_problem(problem_id: int) -> Sequence[do.Testcase]:
+async def browse_testcase_under_problem(problem_id: int) -> Sequence[do.Testcase]:
     return await db.testcase.browse(problem_id=problem_id)

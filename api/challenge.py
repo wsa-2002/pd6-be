@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, Sequence, Collection
+from typing import Optional, Sequence, Collection, List
 
 from pydantic import BaseModel
 
@@ -29,7 +29,7 @@ class AddChallengeInput(BaseModel):
 
 
 @router.post('/class/{class_id}/challenge', tags=['Course'])
-def add_challenge_under_class(class_id: int, data: AddChallengeInput, request: auth.Request) -> int:
+async def add_challenge_under_class(class_id: int, data: AddChallengeInput, request: auth.Request) -> int:
     if not (await rbac.validate(request.account.id, RoleType.normal, class_id=class_id, inherit=False)
             or await rbac.validate(request.account.id, RoleType.manager, class_id=class_id)):
         raise exc.NoPermission
@@ -42,7 +42,7 @@ def add_challenge_under_class(class_id: int, data: AddChallengeInput, request: a
 
 
 @router.get('/class/{class_id}/challenge', tags=['Course'])
-def browse_challenges_under_class(class_id: int, request: auth.Request) -> Sequence[do.Challenge]:
+async def browse_challenges_under_class(class_id: int, request: auth.Request) -> Sequence[do.Challenge]:
     if not rbac.validate(request.account.id, RoleType.normal, class_id=class_id, inherit=False):
         raise exc.NoPermission
 
@@ -51,7 +51,7 @@ def browse_challenges_under_class(class_id: int, request: auth.Request) -> Seque
 
 
 @router.get('/challenge')
-def browse_challenges(request: auth.Request) -> Sequence[do.Challenge]:
+async def browse_challenges(request: auth.Request) -> Sequence[do.Challenge]:
     if not request.account.role.is_manager:
         raise exc.NoPermission
 
@@ -60,7 +60,7 @@ def browse_challenges(request: auth.Request) -> Sequence[do.Challenge]:
 
 
 @router.get('/challenge/{challenge_id}')
-def read_challenge(challenge_id: int, request: auth.Request) -> do.Challenge:
+async def read_challenge(challenge_id: int, request: auth.Request) -> do.Challenge:
     if not request.account.role.is_manager:
         raise exc.NoPermission
 
@@ -80,7 +80,7 @@ class EditChallengeInput(BaseModel):
 
 
 @router.patch('/challenge/{challenge_id}')
-def edit_challenge(challenge_id: int, data: EditChallengeInput, request: auth.Request) -> None:
+async def edit_challenge(challenge_id: int, data: EditChallengeInput, request: auth.Request) -> None:
     if not await rbac.validate(request.account.id, RoleType.manager, challenge_id=challenge_id):
         raise exc.NoPermission
 
@@ -90,7 +90,7 @@ def edit_challenge(challenge_id: int, data: EditChallengeInput, request: auth.Re
 
 
 @router.delete('/challenge/{challenge_id}')
-def delete_challenge(challenge_id: int, request: auth.Request) -> None:
+async def delete_challenge(challenge_id: int, request: auth.Request) -> None:
     if not await rbac.validate(request.account.id, RoleType.manager, challenge_id=challenge_id):
         raise exc.NoPermission
 
@@ -109,7 +109,7 @@ class CreateProblemInput(BaseModel):
 
 
 @router.post('/challenge/{challenge_id}/problem', tags=['Problem'])
-def add_problem_under_challenge(challenge_id: int, data: CreateProblemInput, request: auth.Request) -> int:
+async def add_problem_under_challenge(challenge_id: int, data: CreateProblemInput, request: auth.Request) -> int:
     # FIXME: not atomic operation...
     problem_id = await db.problem.add(type_=data.type, name=data.name, setter_id=request.account.id,
                                       full_score=data.full_score, description=data.description, source=data.source,
@@ -120,5 +120,5 @@ def add_problem_under_challenge(challenge_id: int, data: CreateProblemInput, req
 
 
 @router.get('/challenge/{challenge_id}/problem')
-def browse_problems_under_challenge(challenge_id: int) -> Collection[do.Problem]:
+async def browse_problems_under_challenge(challenge_id: int) -> Sequence[do.Problem]:
     return await db.problem.browse_by_challenge(challenge_id=challenge_id)

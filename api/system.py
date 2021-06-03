@@ -8,7 +8,7 @@ router = APIRouter(
 
 
 @router.get('/access-log')
-def browse_access_logs(req: auth.Request):
+async def browse_access_logs(req: auth.Request):
     """
     會做分頁功能，格式再說
     """

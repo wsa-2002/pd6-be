@@ -42,7 +42,7 @@ DROP TYPE IF EXISTS problem_type;
 
 DROP TABLE IF EXISTS challenge;
 
-DROP TABLE IF EXISTS challenge_type;
+DROP TYPE IF EXISTS challenge_type;
 
 
 -- Course management
