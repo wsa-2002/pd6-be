@@ -76,6 +76,9 @@ async def edit(grade_id: int, title: Optional[str], score: Optional[int], commen
     if update_time is not None:
         to_updates['update_time'] = update_time
 
+    if not to_updates:
+        return
+
     set_sql = ', '.join(fr"{field_name} = %({field_name})s" for field_name in to_updates)
 
     async with SafeExecutor(

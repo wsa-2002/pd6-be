@@ -85,18 +85,20 @@ async def edit(challenge_id: int,
     if is_hidden is not None:
         to_updates['is_hidden'] = is_hidden
 
+    if not to_updates:
+        return
+
     set_sql = ', '.join(fr"{field_name} = %({field_name})s" for field_name in to_updates)
 
-    if set_sql:
-        async with SafeExecutor(
-                event='edit challenge',
-                sql=fr'UPDATE challenge'
-                    fr' WHERE id = %(challenge_id)s'
-                    fr'   SET {set_sql}',
-                challenge_id=challenge_id,
-                **to_updates,
-        ):
-            pass
+    async with SafeExecutor(
+            event='edit challenge',
+            sql=fr'UPDATE challenge'
+                fr' WHERE id = %(challenge_id)s'
+                fr'   SET {set_sql}',
+            challenge_id=challenge_id,
+            **to_updates,
+    ):
+        pass
 
 
 async def add_problem_relation(challenge_id: int, problem_id: int) -> None:

@@ -87,18 +87,20 @@ async def edit(testcase_id: int,
     if is_hidden is not None:
         to_updates['is_hidden'] = is_hidden
 
+    if not to_updates:
+        return
+
     set_sql = ', '.join(fr"{field_name} = %({field_name})s" for field_name in to_updates)
 
-    if set_sql:
-        async with SafeExecutor(
-                event='edit testcase',
-                sql=fr'UPDATE testcase'
-                    fr' WHERE id = %(testcase_id)s'
-                    fr'   SET {set_sql}',
-                testcase_id=testcase_id,
-                **to_updates,
-        ):
-            pass
+    async with SafeExecutor(
+            event='edit testcase',
+            sql=fr'UPDATE testcase'
+                fr' WHERE id = %(testcase_id)s'
+                fr'   SET {set_sql}',
+            testcase_id=testcase_id,
+            **to_updates,
+    ):
+        pass
 
 
 async def delete(testcase_id: int) -> None:
