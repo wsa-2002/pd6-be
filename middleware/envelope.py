@@ -1,6 +1,16 @@
+import datetime
+import json
 import typing
 
 import fastapi.routing
+
+
+class JSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime.datetime):
+            return obj.isoformat()
+
+        return super().default(obj)
 
 
 class JSONResponse(fastapi.routing.JSONResponse):
@@ -10,11 +20,16 @@ class JSONResponse(fastapi.routing.JSONResponse):
         super().__init__(*args, **kwargs)
 
     def render(self, content: typing.Any) -> bytes:
-        return super().render({
+        return json.dumps({
             'success': self._success,
             'data': content,
             'error': self._error.__class__.__name__ if self._error else None,
-        })
+        }, cls=JSONEncoder,
+            ensure_ascii=False,
+            allow_nan=False,
+            indent=None,
+            separators=(",", ":"),
+        ).encode("utf-8")
 
 
 async def exception_handler(request, error: Exception):
