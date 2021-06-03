@@ -36,7 +36,7 @@ async def validate(account_id: int, min_role: RoleType,
             if not inherit:
                 return False  # no inherit -> only check for team-level
             # try class role, get class id
-            class_id = db.team.read_class_id(team_id=team_id)
+            class_id = (await db.team.read(team_id=team_id)).class_id
         else:
             return True
 

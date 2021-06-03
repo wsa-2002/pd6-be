@@ -35,7 +35,7 @@ async def browse(only_enabled=True, exclude_hidden=True) -> Sequence[do.Course]:
             sql=fr'SELECT id, name, type, is_enabled, is_hidden'
                 fr'  FROM course'
                 fr'{" WHERE " + cond_sql if cond_sql else ""}'
-                fr' ORDER BY id',
+                fr' ORDER BY id ASC',
             fetch='all',
     ) as records:
         return [do.Course(id=id_, name=name, type=CourseType(c_type),
@@ -123,7 +123,8 @@ async def browse_members(course_id: int) -> Sequence[do.Member]:
             sql=r'SELECT account.id, course_member.role'
                 r'  FROM course_member, account'
                 r' WHERE course_member.member_id = account.id'
-                r'   AND course_member.course_id = %(course_id)s',
+                r'   AND course_member.course_id = %(course_id)s'
+                r' ORDER BY course_member.role DESC, account.id ASC',
             course_id=course_id,
             fetch='all',
     ) as results:
@@ -169,12 +170,13 @@ async def delete_member(course_id: int, member_id: int):
 
 # === course -> class
 
-async def browse_classes(course_id: int) -> Sequence[int]:
+async def browse_classes(course_id: int) -> Sequence[do.Class]:
     async with SafeExecutor(
             event='get course classes',
-            sql=r'SELECT class.id'
+            sql=r'SELECT id, name, course_id, is_enabled, is_hidden'
                 r'  FROM class'
-                r' WHERE class.course_id = %(course_id)s',
+                r' WHERE course_id = %(course_id)s'
+                r' ORDER BY id ASC',
             course_id=course_id,
             fetch='all',
     ) as results:

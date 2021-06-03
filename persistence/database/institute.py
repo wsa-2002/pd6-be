@@ -25,7 +25,7 @@ async def browse(only_enabled=True) -> Sequence[do.Institute]:
             sql=fr'SELECT id, name, email_domain, is_enabled'
                 fr'  FROM institute'
                 fr'{" WHERE is_enabled = TRUE" if only_enabled else ""}'
-                fr' ORDER BY id',
+                fr' ORDER BY id ASC',
             fetch='all',
     ) as records:
         return [do.Institute(id=id_, name=name, email_domain=email_domain, is_enabled=is_enabled)

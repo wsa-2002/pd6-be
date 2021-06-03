@@ -10,7 +10,8 @@ async def browse(submission_id: int) -> Sequence[do.Judgment]:
             event='browse judgments',
             sql=fr'SELECT id, status, total_time, max_memory, score, judge_time'
                 fr'  FROM judgment'
-                fr' WHERE submission_id = %(submission_id)s',
+                fr' WHERE submission_id = %(submission_id)s'
+                fr' ORDER BY id DESC',
             submission_id=submission_id,
             fetch='all',
     ) as results:
@@ -35,9 +36,12 @@ async def read(judgment_id: int) -> do.Judgment:
 async def browse_cases(judgment_id: int) -> Sequence[do.JudgeCase]:
     async with SafeExecutor(
             event='browse judge cases',
-            sql=fr'SELECT judgment_id, testcase_id, status, time_lapse, peak_memory, score'
+            sql=fr'SELECT judgment_id, testcase_id,'
+                fr'       judge_case.status, judge_case.time_lapse, judge_case.peak_memory, judge_case.score'
                 fr'  FROM judge_case'
-                fr' WHERE judgment_id = %(judgment_id)s',
+                fr'       LEFT JOIN testcase ON judgment.testcase_id = testcase.id'
+                fr' WHERE judgment_id = %(judgment_id)s'
+                fr' ORDER BY testcase.is_sample DESC, testcase_id ASC',
             judgment_id=judgment_id,
             fetch='all',
     ) as results:

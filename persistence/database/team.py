@@ -35,7 +35,7 @@ async def browse(only_enabled=True, exclude_hidden=True) -> Sequence[do.Team]:
             sql=fr'SELECT id, name, class_id, is_enabled, is_hidden'
                 fr'  FROM course'
                 fr'{" WHERE " + cond_sql if cond_sql else ""}'
-                fr' ORDER BY id',
+                fr' ORDER BY class_id ASC, id ASC',
             fetch='all',
     ) as records:
         return [do.Team(id=id_, name=name, class_id=c_id,
@@ -99,7 +99,8 @@ async def browse_members(team_id: int) -> Sequence[do.Member]:
             sql=r'SELECT account.id, team_member.role'
                 r'  FROM team_member, account'
                 r' WHERE team_member.member_id = account.id'
-                r'   AND team_member.team_id = %(team_id)s',
+                r'   AND team_member.team_id = %(team_id)s'
+                r' ORDER BY team_member.role DESC, account.id ASC',
             team_id=team_id,
             fetch='all',
     ) as results:
@@ -141,15 +142,3 @@ async def delete_member(team_id: int, member_id: int):
             member_id=member_id,
     ):
         pass
-
-
-async def read_class_id(team_id: int) -> int:
-    async with SafeExecutor(
-            event='get class id by team id',
-            sql=r'SELECT class_id'
-                r'  FROM team'
-                r' WHERE team.id = %(team_id)s',
-            team_id=team_id,
-            fetch=1,
-    ) as (class_id,):
-        return class_id
