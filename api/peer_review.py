@@ -99,7 +99,7 @@ def read_peer_review_record(peer_review_record_id: int):
 
 
 @router.put('/peer-review-record/{peer_review_record_id}/score')
-def submit_peer_review_record(peer_review_record_id: int):
+def submit_peer_review_record_score(peer_review_record_id: int):
     """
     互評完了，交互評成績評語
     """
