@@ -240,12 +240,12 @@ CREATE TABLE grade (
   receiver_id INTEGER   NOT NULL  REFERENCES account(id),
   grader_id   INTEGER   NOT NULL  REFERENCES account(id),
   class_id    INTEGER   NOT NULL  REFERENCES class(id),
-  item_name   VARCHAR   NOT NULL,
+  title   VARCHAR   NOT NULL,
   score       INTEGER,
   comment     TEXT,
   update_time TIMESTAMP NOT NULL,
 
-  UNIQUE (receiver_id, item_name)
+  UNIQUE (receiver_id, title)
 );
 
 

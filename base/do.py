@@ -158,7 +158,7 @@ class Grade:
     receiver_id: int
     grader_id: int
     class_id: int
-    item_name: str
+    title: str
     score: Optional[int]
     comment: Optional[str]
     update_time: datetime
