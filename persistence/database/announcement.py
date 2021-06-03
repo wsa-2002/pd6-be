@@ -19,14 +19,14 @@ async def add(title: str, content: str, author_id: int, post_time: datetime, exp
         return announcement_id
 
 
-async def browse(only_viewable: bool) -> Sequence[do.Announcement]:
+async def browse(show_hidden: bool) -> Sequence[do.Announcement]:
     async with SafeExecutor(
             event='get all announcements',
             sql=fr'SELECT id, title, content, author_id, post_time, expire_time'
                 fr'  FROM announcement'
-                fr' {"WHERE post_time <= %(current_time)s AND expire_time > %(current_time)s" if only_viewable else ""}'
+                fr' {"WHERE post_time <= %(cur_time)s AND expire_time > %(cur_time)s" if not show_hidden else ""}'
                 fr' ORDER BY id ASC',
-            current_time=datetime.now(),
+            cur_time=datetime.now(),
             fetch='all',
     ) as records:
         return [do.Announcement(id=id_, title=title, content=content, author_id=author_id,
@@ -34,15 +34,15 @@ async def browse(only_viewable: bool) -> Sequence[do.Announcement]:
                 for (id_, title, content, author_id, post_time, expire_time) in records]
 
 
-async def read(announcement_id: int, only_viewable: bool) -> do.Announcement:
+async def read(announcement_id: int, show_hidden: bool) -> do.Announcement:
     async with SafeExecutor(
             event='get all announcements',
             sql=fr'SELECT id, title, content, author_id, post_time, expire_time'
                 fr'  FROM announcement'
                 fr' WHERE id = %(announcement_id)s'
-                fr' {"AND post_time <= %(current_time)s AND expire_time > %(current_time)s" if only_viewable else ""}',
+                fr' {"AND post_time <= %(cur_time)s AND expire_time > %(cur_time)s" if not show_hidden else ""}',
             announcement_id=announcement_id,
-            current_time=datetime.now(),
+            cur_time=datetime.now(),
             fetch='all',
     ) as (id_, title, content, author_id, post_time, expire_time):
         return do.Announcement(id=id_, title=title, content=content, author_id=author_id,
