@@ -190,8 +190,6 @@ class PeerReviewRecord:
     score: Optional[int]
     comment: Optional[str]
     submit_time: Optional[datetime]
-    disagreement: Optional[str]
-    disagreement_time: Optional[datetime]
 
 
 @dataclass

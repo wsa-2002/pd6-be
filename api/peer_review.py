@@ -104,9 +104,3 @@ def submit_peer_review_record(peer_review_record_id: int):
     互評完了，交互評成績評語
     """
     pass
-
-
-# TODO: 拔掉這個功能
-@router.put('/peer-review-record/{peer_review_record_id}/disagreement')
-def edit_peer_review_record(peer_review_record_id: int):
-    pass

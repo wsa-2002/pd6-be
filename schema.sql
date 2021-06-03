@@ -278,9 +278,7 @@ CREATE TABLE peer_review_record (
   -- 因為分配的同時就會 create record，所以下面是 NULLABLE (批改完才會填入)
   score             INTEGER,
   comment           TEXT,
-  submit_time       TIMESTAMP NOT NULL,
-  disagreement      TEXT,
-  disagreement_time TIMESTAMP,
+  submit_time       TIMESTAMP,
 
   UNIQUE (peer_review_id, grader_id, submission_id)
 );

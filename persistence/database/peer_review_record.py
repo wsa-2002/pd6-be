@@ -38,22 +38,6 @@ async def edit_score(peer_review_record_id: int, score: int, comment: str, submi
         pass
 
 
-async def edit_disagreement(peer_review_record_id: int, disagreement: str, disagreement_time: datetime = None) -> None:
-    """Allows only full edit!"""
-    if disagreement_time is None:
-        disagreement_time = datetime.now()
-
-    async with SafeExecutor(
-            event='Add (submit) peer review record (disagreement)',
-            sql="UPDATE peer_review_record"
-                " WHERE id = %(peer_review_record_id)s"
-                "   SET disagreement = %(disagreement)s, disagreement_time = %(disagreement_time)s",
-            peer_review_record_id=peer_review_record_id,
-            disagreement=disagreement, disagreement_time=disagreement_time,
-    ):
-        pass
-
-
 async def browse(grader_id: int = None, receiver_id: int = None) -> Sequence[do.PeerReviewRecord]:
     conditions = {}
 
@@ -66,8 +50,7 @@ async def browse(grader_id: int = None, receiver_id: int = None) -> Sequence[do.
 
     async with SafeExecutor(
             event='browse peer review records',
-            sql=fr'SELECT id, peer_review_id, grader_id, receiver_id, submission_id,'
-                '         score, comment, submit_time, disagreement, disagreement_time'
+            sql=fr'SELECT id, peer_review_id, grader_id, receiver_id, submission_id, score, comment, submit_time'
                 fr'  FROM peer_review_record'
                 fr' {f"WHERE {cond_sql}" if cond_sql else ""}'
                 fr' ORDER BY id ASC',
@@ -75,25 +58,20 @@ async def browse(grader_id: int = None, receiver_id: int = None) -> Sequence[do.
     ) as records:
         return [do.PeerReviewRecord(id=id_, peer_review_id=peer_review_id,
                                     grader_id=grader_id, receiver_id=receiver_id, submission_id=submission_id,
-                                    score=score, comment=comment, submit_time=submit_time,
-                                    disagreement=disagreement, disagreement_time=disagreement_time)
-                for (id_, peer_review_id, grader_id, receiver_id, submission_id,
-                     score, comment, submit_time, disagreement, disagreement_time)
+                                    score=score, comment=comment, submit_time=submit_time)
+                for (id_, peer_review_id, grader_id, receiver_id, submission_id, score, comment, submit_time)
                 in records]
 
 
 async def read(peer_review_record_id: int) -> do.PeerReviewRecord:
     async with SafeExecutor(
             event='read peer review record',
-            sql=fr'SELECT id, peer_review_id, grader_id, receiver_id, submission_id,'
-                '         score, comment, submit_time, disagreement, disagreement_time'
+            sql=fr'SELECT id, peer_review_id, grader_id, receiver_id, submission_id, score, comment, submit_time'
                 fr'  FROM peer_review_record'
                 fr' WHERE id = %(peer_review_record_id)s',
             peer_review_record_id=peer_review_record_id,
             fetch=1,
-    ) as (id_, peer_review_id, grader_id, receiver_id, submission_id,
-          score, comment, submit_time, disagreement, disagreement_time):
+    ) as (id_, peer_review_id, grader_id, receiver_id, submission_id, score, comment, submit_time):
         return do.PeerReviewRecord(id=id_, peer_review_id=peer_review_id,
                                    grader_id=grader_id, receiver_id=receiver_id, submission_id=submission_id,
-                                   score=score, comment=comment, submit_time=submit_time,
-                                   disagreement=disagreement, disagreement_time=disagreement_time)
+                                   score=score, comment=comment, submit_time=submit_time)
