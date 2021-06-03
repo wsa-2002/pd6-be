@@ -97,11 +97,11 @@ async def delete(problem_id: int) -> None:
     ...  # TODO
 
 
-async def add_testdata(problem_id: int, is_sample: bool, score: int, input_file: str, output_file: str,
-              time_limit: int, memory_limit: int, is_enabled: bool, is_hidden: bool) -> int:
+async def add_testcase(problem_id: int, is_sample: bool, score: int, input_file: str, output_file: str,
+                       time_limit: int, memory_limit: int, is_enabled: bool, is_hidden: bool) -> int:
     async with SafeExecutor(
-            event='Add testdata',
-            sql="INSERT INTO testdata"
+            event='Add testcase',
+            sql="INSERT INTO testcase"
                 "            (problem_id, is_sample, score, input_file, output_file,"
                 "             time_limit, memory_limit, is_enabled, is_hidden)"
                 "     VALUES (%(problem_id)s, %(is_sample)s, %(score)s, %(input_file)s, %(output_file)s,"
@@ -114,17 +114,17 @@ async def add_testdata(problem_id: int, is_sample: bool, score: int, input_file:
         return id_
 
 
-async def browse_testdata(problem_id: int) -> Sequence[do.Testdata]:
+async def browse_testcases(problem_id: int) -> Sequence[do.Testcase]:
     async with SafeExecutor(
-            event='browse testdatas with problem id',
+            event='browse testcases with problem id',
             sql='SELECT id, is_sample, score, input_file, output_file, '
                 '       time_limit, memory_limit, is_enabled, is_hidden'
-                '  FROM testdata'
+                '  FROM testcase'
                 ' WHERE problem_id = %(problem_id)s',
             problem_id=problem_id,
             fetch='all',
     ) as results:
-        return [do.Testdata(id=id_, problem_id=problem_id, is_sample=is_sample, score=score,
+        return [do.Testcase(id=id_, problem_id=problem_id, is_sample=is_sample, score=score,
                             input_file=input_file, output_file=output_file,
                             time_limit=time_limit, memory_limit=memory_limit,
                             is_enabled=is_enabled, is_hidden=is_hidden)

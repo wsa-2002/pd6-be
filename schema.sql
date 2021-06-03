@@ -153,7 +153,7 @@ CREATE TABLE problem (
   is_hidden   BOOLEAN       NOT NULL  DEFAULT true
 );
 
-CREATE TABLE testdata (
+CREATE TABLE testcase (
   id            SERIAL  PRIMARY KEY,
   problem_id    INTEGER NOT NULL  REFERENCES problem(id),
   is_sample     BOOLEAN NOT NULL,
@@ -221,15 +221,15 @@ CREATE TABLE judgment (
   judge_time    TIMESTAMP             NOT NULL
 );
 
-CREATE TABLE judgment_testdata_result (
+CREATE TABLE judge_case (
   judgment_id INTEGER               NOT NULL REFERENCES judgment(id),
-  testdata_id INTEGER               NOT NULL REFERENCES testdata(id),
+  testcase_id INTEGER               NOT NULL REFERENCES testcase(id),
   status      judgment_status_type  NOT NULL,
   time_lapse  INTEGER,
   peak_memory INTEGER,
   score       INTEGER,  -- 保留設定扣分測資的空間
 
-  PRIMARY KEY (judgment_id, testdata_id)
+  PRIMARY KEY (judgment_id, testcase_id)
 );
 
 

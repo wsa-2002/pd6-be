@@ -40,3 +40,17 @@ class ProblemType(StrEnum):
     peer = 'PEER'
     project = 'PROJECT'
     special = 'SPECIAL'
+
+
+class JudgmentStatusType(StrEnum):
+    wfj = 'WAITING FOR JUDGE'
+    judging = 'JUDGING'
+    ac = 'ACCEPTED'
+    wa = 'WRONG ANSWER'
+    mle = 'MEMORY LIMIT EXCEED'
+    tle = 'TIME LIMIT EXCEED'
+    re = 'RUNTIME ERROR'
+    ce = 'COMPILE ERROR'
+    other = 'OTHER - CONTACT STAFF'
+    rf = 'RESTRICTED FUNCTION'
+    se = 'SYSTEM ERROR'

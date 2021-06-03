@@ -66,21 +66,6 @@ def read_submission(submission_id: int) -> do.Submission:
     return await db.submission.read(submission_id=submission_id)
 
 
-@router.get('/submission/{submission_id}/judgment')
-def browse_submission_judgments(submission_id: int):
-    return [model.judgment_1]
-
-
-@router.get('/judgment/result', tags=['Administrative'])
-def browse_judgment_results():
-    return [model.judgment_result]
-
-
-@router.get('/judgment/{judgment_id}')
-def read_judgment(judgment_id: int):
-    return model.judgment_result
-
-
-@router.get('/judgment/{judgment_id}/testdata-result')
-def browse_judgment_testdata_results(judgment_id: int):
-    return [model.judgment_testdata_result_1, model.judgment_testdata_result_2]
+@router.get('/submission/{submission_id}/judgment', tags=['Judgment'])
+def browse_submission_judgments(submission_id: int) -> Sequence[do.Judgment]:
+    return await db.judgment.browse(submission_id=submission_id)
