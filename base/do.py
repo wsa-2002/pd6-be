@@ -165,6 +165,36 @@ class Grade:
 
 
 @dataclass
+class PeerReview:
+    id: int
+    target_challenge_id: int
+    target_problem_id: int
+    setter_id: int
+    description: str
+    min_score: int
+    max_score: int
+    max_review_count: int
+    start_time: datetime
+    end_time: datetime
+    is_enabled: bool
+    is_hidden: bool
+
+
+@dataclass
+class PeerReviewRecord:
+    id: int
+    peer_review_id: int
+    grader_id: int
+    receiver_id: int
+    submission_id: int
+    score: Optional[int]
+    comment: Optional[str]
+    submit_time: Optional[datetime]
+    disagreement: Optional[str]
+    disagreement_time: Optional[datetime]
+
+
+@dataclass
 class Announcement:
     id: int
     title: str
