@@ -37,6 +37,7 @@ async def browse(class_id: int = None) -> Sequence[do.Challenge]:
                 fr'  FROM challenge'
                 fr' {f"WHERE {cond_sql}" if cond_sql else ""}'
                 fr' ORDER BY class_id ASC, id ASC',
+            **conditions,
             fetch='all',
     ) as records:
         return [do.Challenge(id=id_, class_id=class_id, type=type_, name=name, setter_id=setter_id,

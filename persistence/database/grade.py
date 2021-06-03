@@ -40,6 +40,7 @@ async def browse(class_id: int = None, account_id: int = None) -> Sequence[do.Gr
                 fr'  FROM grade'
                 fr' {f"WHERE {cond_sql}" if cond_sql else ""}'
                 fr' ORDER BY class_id ASC, id ASC',
+            **conditions,
             fetch='all',
     ) as records:
         return [do.Grade(id=id_, receiver_id=receiver_id, grader_id=grader_id, class_id=class_id, title=title,
