@@ -25,7 +25,7 @@ def register_routers(app: fastapi.FastAPI):
         announcement,
         # peer_review,
 
-        # system,
+        system,
     )
 
     app.include_router(public.router)
@@ -47,4 +47,4 @@ def register_routers(app: fastapi.FastAPI):
     app.include_router(announcement.router)
     # app.include_router(challenge_problem.router)
 
-    # app.include_router(system.router)
+    app.include_router(system.router)

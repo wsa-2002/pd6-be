@@ -202,3 +202,12 @@ class Announcement:
     author_id: int
     post_time: datetime
     expire_time: datetime
+
+@dataclass
+class AccessLog:
+    id: int
+    access_time: datetime
+    request_method: str
+    resource_path: str
+    ip: str
+    account_id: int

@@ -59,4 +59,5 @@ from . import (
     peer_review,
     peer_review_record,
     announcement,
+    access_log
 )
