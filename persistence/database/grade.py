@@ -6,7 +6,7 @@ from base import do
 from .base import SafeExecutor
 
 
-async def add(receiver_id: int, grader_id: int, class_id: int, item_name: str,
+async def add(receiver_id: int, grader_id: int, class_id: int, title: str,
               score: Optional[int], comment: Optional[str], update_time: Optional[datetime] = None) -> int:
     if update_time is None:
         update_time = datetime.now()
@@ -14,10 +14,10 @@ async def add(receiver_id: int, grader_id: int, class_id: int, item_name: str,
     async with SafeExecutor(
             event='Add grade',
             sql=r'INSERT INTO grade'
-                r'            (receiver_id, grader_id, class_id, item_name, score, comment, update_time)'
+                r'            (receiver_id, grader_id, class_id, title, score, comment, update_time)'
                 r'     VALUES (%(name)s, %(email_domain)s)'
                 r'  RETURNING id',
-            receiver_id=receiver_id, grader_id=grader_id, class_id=class_id, item_name=item_name,
+            receiver_id=receiver_id, grader_id=grader_id, class_id=class_id, title=title,
             score=score, comment=comment, update_time=update_time,
             fetch=1,
     ) as (grade_id,):
@@ -36,39 +36,39 @@ async def browse(class_id: int = None, account_id: int = None) -> Sequence[do.Gr
 
     async with SafeExecutor(
             event='browse grades',
-            sql=fr'SELECT id, receiver_id, grader_id, class_id, item_name, score, comment, update_time'
+            sql=fr'SELECT id, receiver_id, grader_id, class_id, title, score, comment, update_time'
                 fr'  FROM grade'
                 fr' {f"WHERE {cond_sql}" if cond_sql else ""}'
                 fr' ORDER BY class_id ASC, id ASC',
             fetch='all',
     ) as records:
-        return [do.Grade(id=id_, receiver_id=receiver_id, grader_id=grader_id, class_id=class_id, item_name=item_name,
+        return [do.Grade(id=id_, receiver_id=receiver_id, grader_id=grader_id, class_id=class_id, title=title,
                          score=score, comment=comment, update_time=update_time)
-                for (id_, receiver_id, grader_id, class_id, item_name, score, comment, update_time) in records]
+                for (id_, receiver_id, grader_id, class_id, title, score, comment, update_time) in records]
 
 
 async def read(grade_id: int) -> do.Grade:
     async with SafeExecutor(
             event='read grade',
-            sql=fr'SELECT id, receiver_id, grader_id, class_id, item_name, score, comment, update_time'
+            sql=fr'SELECT id, receiver_id, grader_id, class_id, title, score, comment, update_time'
                 fr'  FROM grade'
                 fr' WHERE id = %(grade_id)s',
             grade_id=grade_id,
             fetch=1,
-    ) as (id_, receiver_id, grader_id, class_id, item_name, score, comment, update_time):
-        return do.Grade(id=id_, receiver_id=receiver_id, grader_id=grader_id, class_id=class_id, item_name=item_name,
+    ) as (id_, receiver_id, grader_id, class_id, title, score, comment, update_time):
+        return do.Grade(id=id_, receiver_id=receiver_id, grader_id=grader_id, class_id=class_id, title=title,
                         score=score, comment=comment, update_time=update_time)
 
 
-async def edit(grade_id: int, item_name: Optional[str], score: Optional[int], comment: Optional[str],
+async def edit(grade_id: int, title: Optional[str], score: Optional[int], comment: Optional[str],
                update_time: Optional[datetime] = None) -> None:
     if update_time is None:
         update_time = datetime.now()
 
     to_updates = {}
 
-    if item_name is not None:
-        to_updates['item_name'] = item_name
+    if title is not None:
+        to_updates['title'] = title
     if score is not None:
         to_updates['score'] = score
     if comment is not None:

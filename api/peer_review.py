@@ -84,8 +84,12 @@ async def browse_peer_review_records(peer_review_id: int):
     return [model.peer_review_record]
 
 
+# 改一下這些 function name
 @router.post('/peer-review/{peer_review_id}/record')
-async def add_peer_review_record(peer_review_id: int):
+async def assign_peer_review_record(peer_review_id: int):
+    """
+    發互評 (決定 A 要評哪個 submission )
+    """
     return {'id': 1}
 
 
@@ -95,10 +99,8 @@ async def read_peer_review_record(peer_review_record_id: int):
 
 
 @router.put('/peer-review-record/{peer_review_record_id}/score')
-async def edit_peer_review_record(peer_review_record_id: int):
-    pass
-
-
-@router.put('/peer-review-record/{peer_review_record_id}/disagreement')
-async def edit_peer_review_record(peer_review_record_id: int):
+async def submit_peer_review_record_score(peer_review_record_id: int):
+    """
+    互評完了，交互評成績評語
+    """
     pass

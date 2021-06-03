@@ -158,7 +158,7 @@ class Grade:
     receiver_id: int
     grader_id: int
     class_id: int
-    item_name: str
+    title: str
     score: Optional[int]
     comment: Optional[str]
     update_time: datetime
@@ -190,8 +190,6 @@ class PeerReviewRecord:
     score: Optional[int]
     comment: Optional[str]
     submit_time: Optional[datetime]
-    disagreement: Optional[str]
-    disagreement_time: Optional[datetime]
 
 
 @dataclass
