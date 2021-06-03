@@ -255,7 +255,8 @@ CREATE TABLE peer_review (
   id                  SERIAL    PRIMARY KEY,
   target_challenge_id INTEGER   NOT NULL  REFERENCES challenge(id),
   target_problem_id   INTEGER   NOT NULL  REFERENCES problem(id),
-  description         TEXT,
+  setter_id           INTEGER   NOT NULL  REFERENCES account(id),
+  description         TEXT      NOT NULL,
   min_score           INTEGER   NOT NULL,
   max_score           INTEGER   NOT NULL,
   max_review_count    INTEGER   NOT NULL,  -- 一個人最多改幾份
@@ -274,11 +275,10 @@ CREATE TABLE peer_review_record (
   grader_id         INTEGER   NOT NULL  REFERENCES account(id),
   receiver_id       INTEGER   NOT NULL  REFERENCES account(id),
   submission_id     INTEGER             REFERENCES submission(id),
+  -- 因為分配的同時就會 create record，所以下面是 NULLABLE (批改完才會填入)
   score             INTEGER,
   comment           TEXT,
-  submit_time       TIMESTAMP NOT NULL,
-  disagreement      TEXT,
-  disagreement_time TIMESTAMP,
+  submit_time       TIMESTAMP,
 
   UNIQUE (peer_review_id, grader_id, submission_id)
 );

@@ -19,28 +19,64 @@ router = APIRouter(
 
 
 @router.get('/peer-review')
-def browse_peer_reviews():
-    return [model.peer_review]
+def browse_peer_reviews() -> Sequence[do.PeerReview]:
+    return await db.peer_review.browse()
+
+
+class AddPeerReviewInput(BaseModel):
+    target_challenge_id: int
+    target_problem_id: int
+    description: str
+    min_score: int
+    max_score: int
+    max_review_count: int
+    start_time: datetime
+    end_time: datetime
+    is_enabled: bool
+    is_hidden: bool
 
 
 @router.post('/peer-review')
-def add_peer_review():
-    return {'id': 1}
+def add_peer_review(data: AddPeerReviewInput, request: auth.Request) -> int:
+    return await db.peer_review.add(target_challenge_id=data.target_challenge_id,
+                                    target_problem_id=data.target_problem_id,
+                                    setter_id=request.account.id,
+                                    description=data.description,
+                                    min_score=data.min_score, max_score=data.max_score,
+                                    max_review_count=data.max_review_count,
+                                    start_time=data.start_time, end_time=data.end_time,
+                                    is_enabled=data.is_enabled, is_hidden=data.is_hidden)
 
 
-@router.post('/peer-review/{peer_review_id}')
-def read_peer_review(peer_review_id: int):
-    return model.peer_review
+@router.get('/peer-review/{peer_review_id}')
+def read_peer_review(peer_review_id: int) -> do.PeerReview:
+    return await db.peer_review.read(peer_review_id=peer_review_id)
+
+
+class EditPeerReviewInput(BaseModel):
+    description: str
+    min_score: int
+    max_score: int
+    max_review_count: int
+    start_time: datetime
+    end_time: datetime
+    is_enabled: bool
+    is_hidden: bool
 
 
 @router.patch('/peer-review/{peer_review_id}')
-def edit_peer_review(peer_review_id: int):
-    pass
+def edit_peer_review(peer_review_id: int, data: EditPeerReviewInput) -> None:
+    return await db.peer_review.edit(peer_review_id=peer_review_id,
+                                     description=data.description,
+                                     min_score=data.min_score, max_score=data.max_score,
+                                     max_review_count=data.max_review_count,
+                                     start_time=data.start_time, end_time=data.end_time,
+                                     is_enabled=data.is_enabled, is_hidden=data.is_hidden)
 
 
 @router.delete('/peer-review/{peer_review_id}')
-def delete_peer_review(peer_review_id: int):
-    pass
+def delete_peer_review(peer_review_id: int) -> None:
+    return await db.peer_review.delete(peer_review_id=peer_review_id)
 
 
 @router.get('/peer-review/{peer_review_id}/record')
@@ -48,16 +84,23 @@ def browse_peer_review_records(peer_review_id: int):
     return [model.peer_review_record]
 
 
+# 改一下這些 function name
 @router.post('/peer-review/{peer_review_id}/record')
-def add_peer_review_record(peer_review_id: int):
+def assign_peer_review_record(peer_review_id: int):
+    """
+    發互評 (決定 A 要評哪個 submission )
+    """
     return {'id': 1}
 
 
-@router.get('/peer-review-record/{peer_review_record_id}/record')
+@router.get('/peer-review-record/{peer_review_record_id}')
 def read_peer_review_record(peer_review_record_id: int):
     return model.peer_review_record
 
 
-@router.patch('/peer-review-record/{peer_review_record_id}/record')
-def edit_peer_review_record(peer_review_record_id: int):
+@router.put('/peer-review-record/{peer_review_record_id}/score')
+def submit_peer_review_record_score(peer_review_record_id: int):
+    """
+    互評完了，交互評成績評語
+    """
     pass

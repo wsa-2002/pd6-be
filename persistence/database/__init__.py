@@ -56,5 +56,7 @@ from . import (
     submission,
     judgment,
     grade,
+    peer_review,
+    peer_review_record,
     announcement,
 )
