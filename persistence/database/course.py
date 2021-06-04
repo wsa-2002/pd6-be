@@ -23,19 +23,20 @@ async def add(name: str, course_type: CourseType, is_enabled: bool, is_hidden: b
 
 
 async def browse(only_enabled=True, exclude_hidden=True) -> Sequence[do.Course]:
-    conditions = []
+    conditions = {}
     if only_enabled:
-        conditions.append('is_enabled = TRUE')
+        conditions['is_enabled'] = True
     if exclude_hidden:
-        conditions.append('is_hidden = FALSE')
-    cond_sql = ' AND '.join(conditions)
+        conditions['is_hidden'] = False
+    cond_sql = ' AND '.join(fr"{field_name} = %({field_name})s" for field_name in conditions)
 
     async with SafeExecutor(
             event='get all courses',
             sql=fr'SELECT id, name, type, is_enabled, is_hidden'
                 fr'  FROM course'
-                fr'{" WHERE " + cond_sql if cond_sql else ""}'
+                fr' {f"WHERE {cond_sql}" if cond_sql else ""}'
                 fr' ORDER BY id ASC',
+            **conditions,
             fetch='all',
     ) as records:
         return [do.Course(id=id_, name=name, type=CourseType(c_type),
@@ -44,20 +45,21 @@ async def browse(only_enabled=True, exclude_hidden=True) -> Sequence[do.Course]:
 
 
 async def read(course_id: int, only_enabled=True, exclude_hidden=True) -> do.Course:
-    conditions = []
+    conditions = {}
     if only_enabled:
-        conditions.append('is_enabled = TRUE')
+        conditions['is_enabled'] = True
     if exclude_hidden:
-        conditions.append('is_hidden = FALSE')
-    cond_sql = ' AND '.join(conditions)
+        conditions['is_hidden'] = False
+    cond_sql = ' AND '.join(fr"{field_name} = %({field_name})s" for field_name in conditions)
 
     async with SafeExecutor(
             event='get course by id',
             sql=fr'SELECT id, name, type, is_enabled, is_hidden'
                 fr'  FROM course'
                 fr' WHERE id = %(course_id)s'
-                fr'{" AND " + cond_sql if cond_sql else ""}',
+                fr' {f"AND {cond_sql}" if cond_sql else ""}',
             course_id=course_id,
+            **conditions,
             fetch=1,
     ) as (id_, name, c_type, is_enabled, is_hidden):
         return do.Course(id=id_, name=name, type=CourseType(c_type),

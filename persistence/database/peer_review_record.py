@@ -54,6 +54,7 @@ async def browse(grader_id: int = None, receiver_id: int = None) -> Sequence[do.
                 fr'  FROM peer_review_record'
                 fr' {f"WHERE {cond_sql}" if cond_sql else ""}'
                 fr' ORDER BY id ASC',
+            **conditions,
             fetch='all',
     ) as records:
         return [do.PeerReviewRecord(id=id_, peer_review_id=peer_review_id,

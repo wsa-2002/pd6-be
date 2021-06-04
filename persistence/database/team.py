@@ -40,6 +40,7 @@ async def browse(class_id: int = None, only_enabled=True, exclude_hidden=True) -
                 fr'  FROM course'
                 fr' {f"WHERE {cond_sql}" if cond_sql else ""}'
                 fr' ORDER BY class_id ASC, id ASC',
+            **conditions,
             fetch='all',
     ) as records:
         return [do.Team(id=id_, name=name, class_id=c_id,
@@ -48,20 +49,21 @@ async def browse(class_id: int = None, only_enabled=True, exclude_hidden=True) -
 
 
 async def read(team_id: int, only_enabled=True, exclude_hidden=True) -> do.Team:
-    conditions = []
+    conditions = {}
     if only_enabled:
-        conditions.append('is_enabled = TRUE')
+        conditions['is_enabled'] = True
     if exclude_hidden:
-        conditions.append('is_hidden = FALSE')
-    cond_sql = ' AND '.join(conditions)
+        conditions['is_hidden'] = False
+    cond_sql = ' AND '.join(fr"{field_name} = %({field_name})s" for field_name in conditions)
 
     async with SafeExecutor(
             event='get team by id',
             sql=fr'SELECT id, name, class_id, is_enabled, is_hidden'
                 fr'  FROM team'
                 fr' WHERE id = %(team_id)s'
-                fr'{" AND " + cond_sql if cond_sql else ""}',
+                fr' {f"AND {cond_sql}" if cond_sql else ""}',
             team_id=team_id,
+            **conditions,
             fetch=1,
     ) as (id_, name, c_id, is_enabled, is_hidden):
         return do.Team(id=id_, name=name, class_id=c_id,

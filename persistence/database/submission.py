@@ -93,6 +93,7 @@ async def browse(account_id: int = None, problem_id: int = None, challenge_id: i
                 fr'  FROM submission'
                 fr' {f"WHERE {cond_sql}" if cond_sql else ""}'
                 fr' ORDER BY id DESC',
+            **conditions,
             fetch='all',
     ) as records:
         return [do.Submission(id=id_, account_id=account_id, problem_id=problem_id, challenge_id=challenge_id,
