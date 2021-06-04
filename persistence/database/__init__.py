@@ -47,17 +47,22 @@ from . import (
     institute,
     student_card,
     rbac,
+
     course,
     class_,
     team,
+    grade,
     challenge,
+    task,
+
     problem,
     testcase,
     submission,
     judgment,
-    grade,
+
     peer_review,
     peer_review_record,
+
     announcement,
     access_log
 )

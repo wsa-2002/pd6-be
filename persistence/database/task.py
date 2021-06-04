@@ -56,6 +56,30 @@ async def read(task_id: int) -> do.Task:
                        problem_id=problem_id, peer_review_id=peer_review_id)
 
 
+async def edit(task_id: int, identifier: str = None, selection_type: enum.TaskSelectionType = None) -> None:
+    to_updates = {}
+
+    if identifier is not None:
+        to_updates['identifier'] = identifier
+    if selection_type is not None:
+        to_updates['selection_type'] = selection_type
+
+    if not to_updates:
+        return
+
+    set_sql = ', '.join(fr"{field_name} = %({field_name})s" for field_name in to_updates)
+
+    async with SafeExecutor(
+            event='update task by id',
+            sql=fr'UPDATE task'
+                fr' WHERE task.id = %(task_id)s'
+                fr'   SET {set_sql}',
+            task_id=task_id,
+            **to_updates,
+    ):
+        pass
+
+
 async def delete(task_id: int) -> None:
     async with SafeExecutor(
             event='delete task',

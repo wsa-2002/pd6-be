@@ -97,6 +97,19 @@ async def delete_challenge(challenge_id: int, request: auth.Request) -> None:
     # TODO
 
 
-@router.get('/challenge/{challenge_id}/task')
+class AddTaskInput(BaseModel):
+    identifier: str
+    selection_type: enum.TaskSelectionType
+    problem_id: Optional[int] = None
+    peer_review_id: Optional[int] = None
+
+
+@router.post('/challenge/{challenge_id}/task', tags=['Task'])
+async def add_task_under_challenge(challenge_id: int, data: AddTaskInput) -> int:
+    return await db.task.add(challenge_id=challenge_id, identifier=data.identifier, selection_type=data.selection_type,
+                             problem_id=data.problem_id, peer_review_id=data.peer_review_id)
+
+
+@router.get('/challenge/{challenge_id}/task', tags=['Task'])
 async def browse_tasks_under_challenge(challenge_id: int) -> Sequence[do.Task]:
-    ...  # TODO
+    return await db.task.browse(challenge_id=challenge_id)
