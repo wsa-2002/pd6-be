@@ -75,7 +75,7 @@ class Challenge:
     id: int
     class_id: int
     type: enum.ChallengeType
-    name: str
+    title: str
     setter_id: int
     description: Optional[str]
     start_time: datetime
@@ -88,7 +88,7 @@ class Challenge:
 class Problem:
     id: int
     type: enum.ChallengeType
-    name: str
+    title: str
     setter_id: int
     full_score: int
     description: Optional[str]

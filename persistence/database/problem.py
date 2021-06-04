@@ -5,18 +5,18 @@ from base import do, enum
 from .base import SafeExecutor
 
 
-async def add(type_: enum.ProblemType, name: str, setter_id: int, full_score: int,
+async def add(type_: enum.ProblemType, title: str, setter_id: int, full_score: int,
               description: Optional[str], source: Optional[str], hint: Optional[str],
               is_enabled: bool, is_hidden: bool) -> int:
     async with SafeExecutor(
             event='Add problem',
             sql="INSERT INTO problem"
-                "            (type, name, setter_id, full_score,"
+                "            (type, title, setter_id, full_score,"
                 "             description, source, hint, is_enabled, is_hidden)"
-                "     VALUES (%(type)s, %(name)s, %(setter_id)s, %(full_score)s,"
+                "     VALUES (%(type)s, %(title)s, %(setter_id)s, %(full_score)s,"
                 "             %(description)s, %(source)s, %(hint)s, %(is_enabled)s, %(is_hidden)s)"
                 "  RETURNING id",
-            type=type_, name=name, setter_id=setter_id, full_score=full_score,
+            type=type_, title=title, setter_id=setter_id, full_score=full_score,
             description=description, source=source, hint=hint, is_enabled=is_enabled, is_hidden=is_hidden,
             fetch=1,
     ) as (id_,):
@@ -26,22 +26,22 @@ async def add(type_: enum.ProblemType, name: str, setter_id: int, full_score: in
 async def browse() -> Sequence[do.Problem]:
     async with SafeExecutor(
             event='browse problems',
-            sql='SELECT id, type, name, setter_id, full_score, description, source, hint, is_enabled, is_hidden'
+            sql='SELECT id, type, title, setter_id, full_score, description, source, hint, is_enabled, is_hidden'
                 '  FROM problem'
                 ' ORDER BY id ASC',
             fetch='all',
     ) as records:
-        return [do.Problem(id=id_, type=type_, name=name, setter_id=setter_id,
+        return [do.Problem(id=id_, type=type_, title=title, setter_id=setter_id,
                            full_score=full_score, description=description, source=source, hint=hint,
                            is_enabled=is_enabled, is_hidden=is_hidden)
-                for id_, type_, name, setter_id, full_score, description, source, hint, is_enabled, is_hidden
+                for id_, type_, title, setter_id, full_score, description, source, hint, is_enabled, is_hidden
                 in records]
 
 
 async def browse_by_challenge(challenge_id: int) -> Sequence[do.Problem]:
     async with SafeExecutor(
             event='browse problems with challenge id',
-            sql='SELECT id, type, name, setter_id, full_score, description, source, hint, is_enabled, is_hidden'
+            sql='SELECT id, type, title, setter_id, full_score, description, source, hint, is_enabled, is_hidden'
                 '  FROM problem'
                 '       LEFT JOIN challenge_problem'
                 '              ON problem.id = challenge_problem.problem_id'
@@ -50,30 +50,30 @@ async def browse_by_challenge(challenge_id: int) -> Sequence[do.Problem]:
             challenge_id=challenge_id,
             fetch='all',
     ) as records:
-        return [do.Problem(id=id_, type=type_, name=name, setter_id=setter_id,
+        return [do.Problem(id=id_, type=type_, title=title, setter_id=setter_id,
                            full_score=full_score, description=description, source=source, hint=hint,
                            is_enabled=is_enabled, is_hidden=is_hidden)
-                for id_, type_, name, setter_id, full_score, description, source, hint, is_enabled, is_hidden
+                for id_, type_, title, setter_id, full_score, description, source, hint, is_enabled, is_hidden
                 in records]
 
 
 async def read(problem_id: int) -> do.Problem:
     async with SafeExecutor(
             event='read problem by id',
-            sql='SELECT id, type, name, setter_id, full_score, description, source, hint, is_enabled, is_hidden'
+            sql='SELECT id, type, title, setter_id, full_score, description, source, hint, is_enabled, is_hidden'
                 '  FROM problem'
                 ' WHERE id = %(problem_id)s',
             problem_id=problem_id,
             fetch=1,
-    ) as (id_, type_, name, setter_id, full_score, description, source, hint, is_enabled, is_hidden):
-        return do.Problem(id=id_, type=type_, name=name, setter_id=setter_id,
+    ) as (id_, type_, title, setter_id, full_score, description, source, hint, is_enabled, is_hidden):
+        return do.Problem(id=id_, type=type_, title=title, setter_id=setter_id,
                           full_score=full_score, description=description, source=source, hint=hint,
                           is_enabled=is_enabled, is_hidden=is_hidden)
 
 
 async def edit(problem_id: int,
                type_: Optional[enum.ChallengeType] = None,
-               name: Optional[str] = None,
+               title: Optional[str] = None,
                full_score: Optional[int] = None,
                description: Optional[str] = ...,
                source: Optional[str] = ...,
@@ -84,8 +84,8 @@ async def edit(problem_id: int,
 
     if type_ is not None:
         to_updates['type'] = type_
-    if name is not None:
-        to_updates['name'] = name
+    if title is not None:
+        to_updates['title'] = title
     if full_score is not None:
         to_updates['full_score'] = full_score
     if description is not ...:

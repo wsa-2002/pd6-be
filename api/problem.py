@@ -30,7 +30,7 @@ async def read_problem(problem_id: int):
 
 class EditProblemInput(BaseModel):
     type: enum.ProblemType
-    name: str
+    title: str
     full_score: int
     description: Optional[str]
     source: Optional[str]

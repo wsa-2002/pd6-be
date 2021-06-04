@@ -120,7 +120,7 @@ CREATE TABLE challenge (
   id          SERIAL          PRIMARY KEY,
   class_id    INTEGER         NOT NULL  REFERENCES class(id),
   type        challenge_type  NOT NULL,
-  name        VARCHAR         NOT NULL,
+  title       VARCHAR         NOT NULL,
   setter_id   INTEGER         NOT NULL  REFERENCES account(id),
   description TEXT,
   start_time  TIMESTAMP       NOT NULL,
@@ -128,7 +128,7 @@ CREATE TABLE challenge (
   is_enabled  BOOLEAN         NOT NULL  DEFAULT false,
   is_hidden   BOOLEAN         NOT NULL  DEFAULT true,
 
-  UNIQUE (class_id, name)
+  UNIQUE (class_id, title)
 );
 
 CREATE TYPE problem_type AS ENUM (
@@ -143,7 +143,7 @@ CREATE TYPE problem_type AS ENUM (
 CREATE TABLE problem (
   id          SERIAL        PRIMARY KEY,
   type        problem_type  NOT NULL,
-  name        VARCHAR       NOT NULL  UNIQUE,
+  title       VARCHAR       NOT NULL  UNIQUE,
   setter_id   INTEGER       NOT NULL  REFERENCES account(id),
   full_score  INTEGER       NOT NULL,
   description TEXT,
