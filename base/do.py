@@ -85,6 +85,16 @@ class Challenge:
 
 
 @dataclass
+class Task:
+    id: int
+    challenge_id: int
+    identifier: str
+    selection_type: enum.TaskSelectionType
+    problem_id: int
+    peer_review_id: int
+
+
+@dataclass
 class Problem:
     id: int
     type: enum.ChallengeType
@@ -124,7 +134,7 @@ class Submission:
     id: int
     account_id: int
     problem_id: int
-    challenge_id: Optional[int]
+    task_id: Optional[int]
     language_id: int
     content_file: str
     content_length: str
@@ -167,8 +177,7 @@ class Grade:
 @dataclass
 class PeerReview:
     id: int
-    target_challenge_id: int
-    target_problem_id: int
+    target_task_id: int
     setter_id: int
     description: str
     min_score: int
@@ -186,7 +195,6 @@ class PeerReviewRecord:
     peer_review_id: int
     grader_id: int
     receiver_id: int
-    submission_id: int
     score: Optional[int]
     comment: Optional[str]
     submit_time: Optional[datetime]
