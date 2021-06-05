@@ -9,7 +9,7 @@ A `python=3.8`-`asyncio`-based version, using web framework `fastapi`.
 ### 0. `python`
 Using `conda` as example:
 ```shell
-conda create --name pdogs6-async --python=3.8
+conda create --name pdogs6-async python=3.8
 conda activate pdogs6-async
 ```
 
