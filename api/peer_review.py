@@ -24,8 +24,7 @@ async def browse_peer_reviews() -> Sequence[do.PeerReview]:
 
 
 class AddPeerReviewInput(BaseModel):
-    target_challenge_id: int
-    target_problem_id: int
+    target_task_id: int
     description: str
     min_score: int
     max_score: int
@@ -38,8 +37,7 @@ class AddPeerReviewInput(BaseModel):
 
 @router.post('/peer-review')
 async def add_peer_review(data: AddPeerReviewInput, request: auth.Request) -> int:
-    return await db.peer_review.add(target_challenge_id=data.target_challenge_id,
-                                    target_problem_id=data.target_problem_id,
+    return await db.peer_review.add(target_task_id=data.target_task_id,
                                     setter_id=request.account.id,
                                     description=data.description,
                                     min_score=data.min_score, max_score=data.max_score,
@@ -88,7 +86,7 @@ async def browse_peer_review_records(peer_review_id: int):
 @router.post('/peer-review/{peer_review_id}/record')
 async def assign_peer_review_record(peer_review_id: int):
     """
-    發互評 (決定 A 要評哪個 submission )
+    發互評 (決定 A 要評誰 )
     """
     return {'id': 1}
 

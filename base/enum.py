@@ -33,13 +33,9 @@ class ChallengeType(StrEnum):
     homework = 'HOMEWORK'
 
 
-class ProblemType(StrEnum):
-    judge = 'JUDGE'
-    options = 'OPTIONS'
-    file = 'FILE'
-    peer = 'PEER'
-    project = 'PROJECT'
-    special = 'SPECIAL'
+class TaskSelectionType(StrEnum):
+    last = 'LAST'
+    best = 'BEST'
 
 
 class JudgmentStatusType(StrEnum):

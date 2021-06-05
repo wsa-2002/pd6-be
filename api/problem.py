@@ -18,6 +18,25 @@ router = APIRouter(
 )
 
 
+class CreateProblemInput(BaseModel):
+    title: str
+    full_score: int
+    description: Optional[str]
+    source: Optional[str]
+    hint: Optional[str]
+    is_enabled: bool
+    is_hidden: bool
+
+
+@router.post('/problem', tags=['Problem'])
+async def add_problem(data: CreateProblemInput, request: auth.Request) -> int:
+    problem_id = await db.problem.add(title=data.title, setter_id=request.account.id,
+                                      full_score=data.full_score, description=data.description, source=data.source,
+                                      hint=data.hint, is_enabled=data.is_enabled, is_hidden=data.is_hidden)
+
+    return problem_id
+
+
 @router.get('/problem')
 async def browse_problems() -> Sequence[do.Problem]:
     return await db.problem.browse()
@@ -29,8 +48,7 @@ async def read_problem(problem_id: int):
 
 
 class EditProblemInput(BaseModel):
-    type: enum.ProblemType
-    name: str
+    title: str
     full_score: int
     description: Optional[str]
     source: Optional[str]

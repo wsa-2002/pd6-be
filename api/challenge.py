@@ -20,7 +20,7 @@ router = APIRouter(
 class AddChallengeInput(BaseModel):
     class_id: int
     type: enum.ChallengeType
-    name: str
+    title: str
     description: Optional[str]
     start_time: datetime
     end_time: datetime
@@ -35,7 +35,7 @@ async def add_challenge_under_class(class_id: int, data: AddChallengeInput, requ
         raise exc.NoPermission
 
     challenge_id = await db.challenge.add(
-        class_id=class_id, type_=data.type, name=data.name, setter_id=request.account.id, description=data.description,
+        class_id=class_id, type_=data.type, title=data.title, setter_id=request.account.id, description=data.description,
         start_time=data.start_time, end_time=data.end_time, is_enabled=data.is_enabled, is_hidden=data.is_hidden,
     )
     return challenge_id
@@ -71,7 +71,7 @@ async def read_challenge(challenge_id: int, request: auth.Request) -> do.Challen
 class EditChallengeInput(BaseModel):
     # class_id: int
     type: Optional[enum.ChallengeType]
-    name: Optional[str]
+    title: Optional[str]
     description: Optional[str] = ...
     start_time: Optional[datetime]
     end_time: Optional[datetime]
@@ -84,7 +84,7 @@ async def edit_challenge(challenge_id: int, data: EditChallengeInput, request: a
     if not await rbac.validate(request.account.id, RoleType.manager, challenge_id=challenge_id):
         raise exc.NoPermission
 
-    await db.challenge.edit(challenge_id=challenge_id, type_=data.type, name=data.name,
+    await db.challenge.edit(challenge_id=challenge_id, type_=data.type, title=data.title,
                             description=data.description, start_time=data.start_time, end_time=data.end_time,
                             is_enabled=data.is_enabled, is_hidden=data.is_hidden)
 
@@ -97,28 +97,19 @@ async def delete_challenge(challenge_id: int, request: auth.Request) -> None:
     # TODO
 
 
-class CreateProblemInput(BaseModel):
-    type: enum.ProblemType
-    name: str
-    full_score: int
-    description: Optional[str]
-    source: Optional[str]
-    hint: Optional[str]
-    is_enabled: bool
-    is_hidden: bool
+class AddTaskInput(BaseModel):
+    identifier: str
+    selection_type: enum.TaskSelectionType
+    problem_id: Optional[int] = None
+    peer_review_id: Optional[int] = None
 
 
-@router.post('/challenge/{challenge_id}/problem', tags=['Problem'])
-async def add_problem_under_challenge(challenge_id: int, data: CreateProblemInput, request: auth.Request) -> int:
-    # FIXME: not atomic operation...
-    problem_id = await db.problem.add(type_=data.type, name=data.name, setter_id=request.account.id,
-                                      full_score=data.full_score, description=data.description, source=data.source,
-                                      hint=data.hint, is_enabled=data.is_enabled, is_hidden=data.is_hidden)
-    await db.challenge.add_problem_relation(challenge_id=challenge_id, problem_id=problem_id)
-
-    return problem_id
+@router.post('/challenge/{challenge_id}/task', tags=['Task'])
+async def add_task_under_challenge(challenge_id: int, data: AddTaskInput) -> int:
+    return await db.task.add(challenge_id=challenge_id, identifier=data.identifier, selection_type=data.selection_type,
+                             problem_id=data.problem_id, peer_review_id=data.peer_review_id)
 
 
-@router.get('/challenge/{challenge_id}/problem')
-async def browse_problems_under_challenge(challenge_id: int) -> Sequence[do.Problem]:
-    return await db.problem.browse_by_challenge(challenge_id=challenge_id)
+@router.get('/challenge/{challenge_id}/task', tags=['Task'])
+async def browse_tasks_under_challenge(challenge_id: int) -> Sequence[do.Task]:
+    return await db.task.browse(challenge_id=challenge_id)

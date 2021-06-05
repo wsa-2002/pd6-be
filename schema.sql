@@ -108,6 +108,19 @@ CREATE TABLE team_member (
   PRIMARY KEY (team_id, member_id)
 );
 
+CREATE TABLE grade (
+  id          SERIAL    PRIMARY KEY,
+  receiver_id INTEGER   NOT NULL  REFERENCES account(id),
+  grader_id   INTEGER   NOT NULL  REFERENCES account(id),
+  class_id    INTEGER   NOT NULL  REFERENCES class(id),
+  title       VARCHAR   NOT NULL,
+  score       INTEGER,
+  comment     TEXT,
+  update_time TIMESTAMP NOT NULL,
+
+  UNIQUE (receiver_id, title)
+);
+
 
 -- Challenge-problem management
 
@@ -120,7 +133,7 @@ CREATE TABLE challenge (
   id          SERIAL          PRIMARY KEY,
   class_id    INTEGER         NOT NULL  REFERENCES class(id),
   type        challenge_type  NOT NULL,
-  name        VARCHAR         NOT NULL,
+  title       VARCHAR         NOT NULL,
   setter_id   INTEGER         NOT NULL  REFERENCES account(id),
   description TEXT,
   start_time  TIMESTAMP       NOT NULL,
@@ -128,22 +141,37 @@ CREATE TABLE challenge (
   is_enabled  BOOLEAN         NOT NULL  DEFAULT false,
   is_hidden   BOOLEAN         NOT NULL  DEFAULT true,
 
-  UNIQUE (class_id, name)
+  UNIQUE (class_id, title)
 );
 
-CREATE TYPE problem_type AS ENUM (
-  'JUDGE',
-  'OPTIONS',
-  'FILE',
-  'PEER',
-  'PROJECT',
-  'SPECIAL'
+CREATE TYPE task_selection_type AS ENUM (
+  'LAST',
+  'BEST'
 );
+
+CREATE TABLE task (
+  id              SERIAL              PRIMARY KEY,
+  challenge_id    INTEGER             NOT NULL  REFERENCES challenge(id),
+  identifier      VARCHAR             NOT NULL,  -- 題號：1 2 3 or 2-a or 3-1 or A B C
+  selection_type  task_selection_type NOT NULL,
+
+  -- 設計：每個 task 必定有且僅有一個 nullable reference id
+  --       透過 task 這張表把 course-class-challenge 體系跟各種 problem / peer review / essay 等串連
+
+  problem_id      INTEGER                       REFERENCES problem(id),
+  peer_review_id  INTEGER                       REFERENCES peer_review(id),
+
+  UNIQUE (challenge_id, identifier)
+);
+
+
+-- Problem management
+
 
 CREATE TABLE problem (
   id          SERIAL        PRIMARY KEY,
   type        problem_type  NOT NULL,
-  name        VARCHAR       NOT NULL  UNIQUE,
+  title       VARCHAR       NOT NULL  UNIQUE,
   setter_id   INTEGER       NOT NULL  REFERENCES account(id),
   full_score  INTEGER       NOT NULL,
   description TEXT,
@@ -166,13 +194,6 @@ CREATE TABLE testcase (
   is_hidden     BOOLEAN NOT NULL  DEFAULT true
 );
 
-CREATE TABLE challenge_problem (
-  challenge_id  INTEGER NOT NULL  REFERENCES challenge(id),
-  problem_id    INTEGER NOT NULL  REFERENCES problem(id),
-
-  PRIMARY KEY (challenge_id, problem_id)
-);
-
 
 -- submission management
 
@@ -188,7 +209,7 @@ CREATE TABLE submission (
   id              SERIAL    PRIMARY KEY,
   account_id      INTEGER   NOT NULL  REFERENCES account(id),
   problem_id      INTEGER   NOT NULL  REFERENCES problem(id),
-  challenge_id    INTEGER             REFERENCES challenge(id),
+  task_id         INTEGER             REFERENCES task(id),
   language_id     INTEGER   NOT NULL  REFERENCES submission_language(id),
   content_file    VARCHAR   NOT NULL,
   content_length  INTEGER   NOT NULL,
@@ -233,52 +254,34 @@ CREATE TABLE judge_case (
 );
 
 
--- Grade
-
-CREATE TABLE grade (
-  id          SERIAL    PRIMARY KEY,
-  receiver_id INTEGER   NOT NULL  REFERENCES account(id),
-  grader_id   INTEGER   NOT NULL  REFERENCES account(id),
-  class_id    INTEGER   NOT NULL  REFERENCES class(id),
-  title   VARCHAR   NOT NULL,
-  score       INTEGER,
-  comment     TEXT,
-  update_time TIMESTAMP NOT NULL,
-
-  UNIQUE (receiver_id, title)
-);
-
-
 -- Peer management
 
 CREATE TABLE peer_review (
-  id                  SERIAL    PRIMARY KEY,
-  target_challenge_id INTEGER   NOT NULL  REFERENCES challenge(id),
-  target_problem_id   INTEGER   NOT NULL  REFERENCES problem(id),
-  setter_id           INTEGER   NOT NULL  REFERENCES account(id),
-  description         TEXT      NOT NULL,
-  min_score           INTEGER   NOT NULL,
-  max_score           INTEGER   NOT NULL,
-  max_review_count    INTEGER   NOT NULL,  -- 一個人最多改幾份
-  start_time          TIMESTAMP NOT NULL,
-  end_time            TIMESTAMP NOT NULL,
-  is_enabled          BOOLEAN   NOT NULL  DEFAULT false,
-  is_hidden           BOOLEAN   NOT NULL  DEFAULT true
+  id                SERIAL    PRIMARY KEY,
+  target_task_id    INTEGER   NOT NULL  REFERENCES task(id),
+  setter_id         INTEGER   NOT NULL  REFERENCES account(id),
+  description       TEXT      NOT NULL,
+  min_score         INTEGER   NOT NULL,
+  max_score         INTEGER   NOT NULL,
+  max_review_count  INTEGER   NOT NULL,  -- 一個人最多改幾份
+  start_time        TIMESTAMP NOT NULL,
+  end_time          TIMESTAMP NOT NULL,
+  is_enabled        BOOLEAN   NOT NULL  DEFAULT false,
+  is_hidden         BOOLEAN   NOT NULL  DEFAULT true
 );
 
 /* every receiver one record -> 要改的時候 edit record, add grader -> 改完 edit record, add comment
    when every receiver one record all reviewed -> every receiver add one new record */
 
 CREATE TABLE peer_review_record (
-  id                SERIAL    PRIMARY KEY,
-  peer_review_id    INTEGER   NOT NULL  REFERENCES peer_review(id),
-  grader_id         INTEGER   NOT NULL  REFERENCES account(id),
-  receiver_id       INTEGER   NOT NULL  REFERENCES account(id),
-  submission_id     INTEGER             REFERENCES submission(id),
+  id              SERIAL    PRIMARY KEY,
+  peer_review_id  INTEGER   NOT NULL  REFERENCES peer_review(id),
+  grader_id       INTEGER   NOT NULL  REFERENCES account(id),
+  receiver_id     INTEGER   NOT NULL  REFERENCES account(id),
   -- 因為分配的同時就會 create record，所以下面是 NULLABLE (批改完才會填入)
-  score             INTEGER,
-  comment           TEXT,
-  submit_time       TIMESTAMP,
+  score           INTEGER,
+  comment         TEXT,
+  submit_time     TIMESTAMP,
 
   UNIQUE (peer_review_id, grader_id, submission_id)
 );

@@ -6,20 +6,20 @@ from base import do, enum
 from .base import SafeExecutor
 
 
-async def add(target_challenge_id: int, target_problem_id: int, setter_id: int, description: str,
+async def add(target_task_id: int, setter_id: int, description: str,
               min_score: int, max_score: int, max_review_count: int, start_time: datetime, end_time: datetime,
               is_enabled: bool, is_hidden: bool) -> int:
     async with SafeExecutor(
             event='Add peer review',
             sql="INSERT INTO peer_review"
-                "            (target_challenge_id, target_problem_id, setter_id, description,"
+                "            (target_task_id, setter_id, description,"
                 "             min_score, max_score, max_review_count, start_time, end_time,"
                 "             is_enabled, is_hidden)"
-                "     VALUES (%(target_challenge_id)s, %(target_problem_id)s, %(setter_id)s, %(description)s,"
+                "     VALUES (%(target_task_id)s, %(setter_id)s, %(description)s,"
                 "             %(min_score)s, %(max_score)s, %(max_review_count)s, %(start_time)s, %(end_time)s,"
                 "             %(is_enabled)s, %(is_hidden)s)"
                 "  RETURNING id",
-            target_challenge_id=target_challenge_id, target_problem_id=target_problem_id,
+            target_task_id=target_task_id,
             setter_id=setter_id, description=description,
             min_score=min_score, max_score=max_score, max_review_count=max_review_count,
             start_time=start_time, end_time=end_time, is_enabled=is_enabled, is_hidden=is_hidden,
@@ -31,18 +31,18 @@ async def add(target_challenge_id: int, target_problem_id: int, setter_id: int, 
 async def browse() -> Sequence[do.PeerReview]:
     async with SafeExecutor(
             event='browse peer reviews',
-            sql=fr'SELECT id, target_challenge_id, target_problem_id, setter_id, description,'
+            sql=fr'SELECT id, target_task_id, setter_id, description,'
                 '         min_score, max_score, max_review_count, start_time, end_time,'
                 '         is_enabled, is_hidden'
                 fr'  FROM peer_review'
                 fr' ORDER BY id ASC',
             fetch='all',
     ) as records:
-        return [do.PeerReview(id=id_, target_challenge_id=target_challenge_id, target_problem_id=target_problem_id,
+        return [do.PeerReview(id=id_, target_task_id=target_task_id,
                               setter_id=setter_id, description=description,
                               min_score=min_score, max_score=max_score, max_review_count=max_review_count,
                               start_time=start_time, end_time=end_time, is_enabled=is_enabled, is_hidden=is_hidden)
-                for (id_, target_challenge_id, target_problem_id, setter_id, description, min_score, max_score,
+                for (id_, target_task_id, setter_id, description, min_score, max_score,
                      max_review_count, start_time, end_time, is_enabled, is_hidden)
                 in records]
 
@@ -50,16 +50,16 @@ async def browse() -> Sequence[do.PeerReview]:
 async def read(peer_review_id: int) -> do.PeerReview:
     async with SafeExecutor(
             event='browse peer reviews',
-            sql=fr'SELECT id, target_challenge_id, target_problem_id, setter_id, description,'
+            sql=fr'SELECT id, target_task_id, setter_id, description,'
                 '         min_score, max_score, max_review_count, start_time, end_time,'
                 '         is_enabled, is_hidden'
                 fr'  FROM peer_review'
                 fr' WHERE id = %(peer_review_id)s',
             peer_review_id=peer_review_id,
             fetch='all',
-    ) as (id_, target_challenge_id, target_problem_id, setter_id, description, min_score, max_score, max_review_count,
+    ) as (id_, target_task_id, setter_id, description, min_score, max_score, max_review_count,
           start_time, end_time, is_enabled, is_hidden):
-        return do.PeerReview(id=id_, target_challenge_id=target_challenge_id, target_problem_id=target_problem_id,
+        return do.PeerReview(id=id_, target_task_id=target_task_id,
                              setter_id=setter_id, description=description,
                              min_score=min_score, max_score=max_score, max_review_count=max_review_count,
                              start_time=start_time, end_time=end_time, is_enabled=is_enabled, is_hidden=is_hidden)
