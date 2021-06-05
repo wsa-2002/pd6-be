@@ -145,7 +145,6 @@ CREATE TABLE challenge (
 );
 
 CREATE TYPE task_selection_type AS ENUM (
-  'FIRST',
   'LAST',
   'BEST'
 );
@@ -162,7 +161,7 @@ CREATE TABLE task (
   problem_id      INTEGER                       REFERENCES problem(id),
   peer_review_id  INTEGER                       REFERENCES peer_review(id),
 
-  UNIQUE (challenge_id, label)
+  UNIQUE (challenge_id, identifier)
 );
 
 

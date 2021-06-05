@@ -34,7 +34,6 @@ class ChallengeType(StrEnum):
 
 
 class TaskSelectionType(StrEnum):
-    first = 'FIRST'
     last = 'LAST'
     best = 'BEST'
 
