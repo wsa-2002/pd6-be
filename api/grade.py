@@ -27,12 +27,12 @@ async def import_class_grade(class_id: int):
 
 
 @router.get('/class/{class_id}/grade', tags=['Class'])
-async def browse_class_grades(class_id: int) -> Sequence[do.Grade]:
+async def browse_class_grade(class_id: int) -> Sequence[do.Grade]:
     return await db.grade.browse(class_id=class_id)
 
 
 @router.get('/account/{account_id}/grade', tags=['Account'])
-async def browse_account_grades(account_id: int) -> Sequence[do.Grade]:
+async def browse_account_grade(account_id: int) -> Sequence[do.Grade]:
     return await db.grade.browse(account_id=account_id)
 
 

@@ -46,7 +46,7 @@ async def add_student_card_to_account(account_id: int, data: AddStudentCardInput
 
 
 @router.get('/account/{account_id}/student-card', tags=['Account'])
-async def browse_account_student_cards(account_id: int, request: auth.Request) -> Sequence[do.StudentCard]:
+async def browse_account_student_card(account_id: int, request: auth.Request) -> Sequence[do.StudentCard]:
     if request.account.role.not_manager and request.account.id != account_id:
         raise exc.NoPermission
 

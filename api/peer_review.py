@@ -19,7 +19,7 @@ router = APIRouter(
 
 
 @router.get('/peer-review')
-async def browse_peer_reviews() -> Sequence[do.PeerReview]:
+async def browse_peer_review() -> Sequence[do.PeerReview]:
     return await db.peer_review.browse()
 
 
@@ -78,7 +78,7 @@ async def delete_peer_review(peer_review_id: int) -> None:
 
 
 @router.get('/peer-review/{peer_review_id}/record')
-async def browse_peer_review_records(peer_review_id: int):
+async def browse_peer_review_record(peer_review_id: int):
     return [model.peer_review_record]
 
 

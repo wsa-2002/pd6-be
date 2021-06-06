@@ -98,7 +98,7 @@ async def add_institute(data: AddInstituteInput, request: auth.Request) -> AddIn
 
 
 @router.get('/institute', tags=['Public'])
-async def browse_institutes(request: auth.Request) -> Sequence[do.Institute]:
+async def browse_institute(request: auth.Request) -> Sequence[do.Institute]:
     try:
         only_enabled = request.account.role.not_manager
     except exc.NoPermission:
@@ -162,7 +162,7 @@ async def add_student_card_to_account(account_id: int, data: AddStudentCardInput
 
 
 @router.get('/account/{account_id}/student-card')
-async def browse_account_student_cards(account_id: int, request: auth.Request) -> Sequence[do.StudentCard]:
+async def browse_account_student_card(account_id: int, request: auth.Request) -> Sequence[do.StudentCard]:
     if request.account.role.not_manager and request.account.id != account_id:
         raise exc.NoPermission
 

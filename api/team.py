@@ -18,7 +18,7 @@ router = APIRouter(
 
 
 @router.get('/team')
-async def browse_teams(request: auth.Request) -> Sequence[do.Team]:
+async def browse_team(request: auth.Request) -> Sequence[do.Team]:
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
@@ -96,7 +96,7 @@ async def delete_team(team_id: int, request: auth.Request) -> None:
 
 
 @router.get('/team/{team_id}/member')
-async def browse_team_members(team_id: int, request: auth.Request) -> Sequence[do.Member]:
+async def browse_team_member(team_id: int, request: auth.Request) -> Sequence[do.Member]:
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
