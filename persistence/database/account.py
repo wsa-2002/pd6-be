@@ -7,30 +7,31 @@ from base.enum import RoleType
 from .base import SafeExecutor, SafeConnection
 
 
-async def add(name: str, pass_hash: str, nickname: str, real_name: str, role: RoleType, is_enabled: bool) -> int:
+async def add(name: str, pass_hash: str, nickname: str, real_name: str, role: RoleType, is_deleted: bool) -> int:
     async with SafeExecutor(
             event='add account',
             sql=r'INSERT INTO account'
-                r'            (name, pass_hash, nickname, real_name, role, is_enabled)'
-                r'     VALUES (%(name)s, %(pass_hash)s, %(nickname)s, %(real_name)s, %(role)s, %(is_enabled)s)'
+                r'            (name, pass_hash, nickname, real_name, role, is_deleted)'
+                r'     VALUES (%(name)s, %(pass_hash)s, %(nickname)s, %(real_name)s, %(role)s, %(is_deleted)s)'
                 r'  RETURNING id',
-            name=name, pass_hash=pass_hash, nickname=nickname, real_name=real_name, role=role, is_enabled=is_enabled,
+            name=name, pass_hash=pass_hash, nickname=nickname, real_name=real_name, role=role, is_deleted=is_deleted,
             fetch=1,
     ) as (account_id,):
         return account_id
 
 
-async def read(account_id: int) -> do.Account:
+async def read(account_id: int, *, include_deleted: bool = False) -> do.Account:
     async with SafeExecutor(
             event='read account info',
-            sql=r'SELECT id, name, nickname, real_name, role_id, is_enabled, alternative_email'
-                r'  FROM account'
-                r' WHERE id = %(account_id)s',
+            sql=fr'SELECT id, name, nickname, real_name, role_id, is_deleted, alternative_email'
+                fr'  FROM account'
+                fr' WHERE id = %(account_id)s'
+                fr'{" AND NOT is_deleted" if not include_deleted else ""}',
             account_id=account_id,
             fetch=1,
-    ) as (id_, name, nickname, real_name, role_id, is_enabled, is_hidden, alternative_email):
+    ) as (id_, name, nickname, real_name, role_id, is_deleted, is_hidden, alternative_email):
         return do.Account(id=id_, name=name, nickname=nickname, real_name=real_name, role=role_id,
-                          is_enabled=is_enabled, alternative_email=alternative_email)
+                          is_deleted=is_deleted, alternative_email=alternative_email)
 
 
 # Uses ellipsis (...) as default value for values that can be set to None
@@ -56,6 +57,18 @@ async def edit(account_id: int,
         return
 
 
+async def delete(account_id: int) -> None:
+    async with SafeExecutor(
+            event='soft delete account',
+            sql=fr'UPDATE account'
+                fr' WHERE account.id = %(account_id)s'
+                fr'   SET is_deleted = %(is_deleted)s',
+            account_id=account_id,
+            is_deleted=True,
+    ):
+        return
+
+
 async def delete_alternative_email_by_id(account_id: int) -> None:
     async with SafeExecutor(
             event='set account delete alternative email',
@@ -68,39 +81,14 @@ async def delete_alternative_email_by_id(account_id: int) -> None:
         return
 
 
-async def check_is_enabled(account_id: int) -> bool:
-    async with SafeExecutor(
-            event='check account enabled',
-            sql=r'SELECT is_enabled'
-                r'  FROM account'
-                r' WHERE id = %(account_id)s',
-            account_id=account_id,
-            fetch=1,
-    ) as (is_enabled,):
-        return is_enabled
-
-
-async def set_enabled(account_id: int, is_enabled: bool) -> None:
-    async with SafeExecutor(
-            event='set account disabled',
-            sql=fr'UPDATE account'
-                fr' WHERE account.id = %(account_id)s'
-                fr'   SET account.is_enabled = %(is_enabled)s',
-            account_id=account_id,
-            is_enabled=is_enabled,
-    ):
-        return
-
-
-async def read_login_by_name(name: str, is_enabled: bool = True) -> Tuple[int, str]:
+async def read_login_by_name(name: str, include_deleted: bool = False) -> Tuple[int, str]:
     async with SafeExecutor(
             event='read account login by name',
-            sql=r'SELECT id, pass_hash'
-                r'  FROM account'
-                r' WHERE name = %(name)s'
-                r'   AND is_enabled = %(is_enabled)s',
+            sql=fr'SELECT id, pass_hash'
+                fr'  FROM account'
+                fr' WHERE name = %(name)s'
+                fr'{" AND NOT is_deleted" if not include_deleted else ""}',
             name=name,
-            is_enabled=is_enabled,
             fetch=1,
     ) as (id_, pass_hash):
         return id_, pass_hash
