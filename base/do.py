@@ -15,7 +15,7 @@ class Account:
     nickname: str
     real_name: str
     role: enum.RoleType
-    is_enabled: bool
+    is_deleted: bool
     alternative_email: Optional[str] = None
 
 
@@ -24,7 +24,7 @@ class Institute:
     id: int
     name: str
     email_domain: str
-    is_enabled: bool
+    is_disabled: bool
 
 
 @dataclass
@@ -34,7 +34,7 @@ class StudentCard:
     department: str
     student_id: str
     email: str
-    is_enabled: bool
+    is_deleted: bool
 
 
 @dataclass
@@ -42,8 +42,8 @@ class Course:
     id: int
     name: str
     type: enum.CourseType
-    is_enabled: bool
     is_hidden: bool
+    is_deleted: bool
 
 
 @dataclass
@@ -51,8 +51,8 @@ class Class:
     id: int
     name: str
     course_id: int
-    is_enabled: bool
     is_hidden: bool
+    is_deleted: bool
 
 
 @dataclass
@@ -60,14 +60,28 @@ class Team:
     id: int
     name: str
     class_id: int
-    is_enabled: bool
     is_hidden: bool
+    is_deleted: bool
 
 
 @dataclass
 class Member:
     member_id: int
     role: enum.RoleType
+
+
+@dataclass
+class Grade:
+    id: int
+    receiver_id: int
+    grader_id: int
+    class_id: int
+    title: str
+    score: Optional[int]
+    comment: Optional[str]
+    update_time: datetime
+    is_hidden: bool
+    is_deleted: bool
 
 
 @dataclass
@@ -80,8 +94,8 @@ class Challenge:
     description: Optional[str]
     start_time: datetime
     end_time: datetime
-    is_enabled: bool
     is_hidden: bool
+    is_deleted: bool
 
 
 @dataclass
@@ -92,6 +106,8 @@ class Task:
     selection_type: enum.TaskSelectionType
     problem_id: int
     peer_review_id: int
+    is_hidden: bool
+    is_deleted: bool
 
 
 @dataclass
@@ -104,8 +120,8 @@ class Problem:
     description: Optional[str]
     source: Optional[str]
     hint: Optional[str]
-    is_enabled: bool
     is_hidden: bool
+    is_deleted: bool
 
 
 @dataclass
@@ -118,8 +134,8 @@ class Testcase:
     output_file: str
     time_limit: int
     memory_limit: int
-    is_enabled: bool
-    is_hidden: bool
+    is_disabled: bool
+    is_deleted: bool
 
 
 @dataclass
@@ -163,18 +179,6 @@ class JudgeCase:
 
 
 @dataclass
-class Grade:
-    id: int
-    receiver_id: int
-    grader_id: int
-    class_id: int
-    title: str
-    score: Optional[int]
-    comment: Optional[str]
-    update_time: datetime
-
-
-@dataclass
 class PeerReview:
     id: int
     target_task_id: int
@@ -185,8 +189,8 @@ class PeerReview:
     max_review_count: int
     start_time: datetime
     end_time: datetime
-    is_enabled: bool
     is_hidden: bool
+    is_deleted: bool
 
 
 @dataclass
@@ -208,6 +212,8 @@ class Announcement:
     author_id: int
     post_time: datetime
     expire_time: datetime
+    is_deleted: bool
+
 
 @dataclass
 class AccessLog:
