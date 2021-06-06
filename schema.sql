@@ -6,13 +6,6 @@ CREATE TYPE role_type AS ENUM (
   'MANAGER'
 );  -- 'MANAGER' > 'NORMAL'
 
-CREATE TABLE institute (
-  id            SERIAL  PRIMARY KEY,
-  name          VARCHAR NOT NULL  UNIQUE,
-  email_domain  VARCHAR NOT NULL  UNIQUE,
-  is_enabled    BOOLEAN NOT NULL  DEFAULT false
-);
-
 CREATE TABLE account (
   id                SERIAL    PRIMARY KEY,
   name              VARCHAR   NOT NULL,
@@ -21,7 +14,14 @@ CREATE TABLE account (
   real_name         VARCHAR   NOT NULL,
   role              role_type NOT NULL,  -- global role
   alternative_email VARCHAR,
-  is_enabled        BOOLEAN   NOT NULL  DEFAULT false
+  is_deleted        BOOLEAN   NOT NULL  DEFAULT false
+);
+
+CREATE TABLE institute (
+  id            SERIAL  PRIMARY KEY,
+  name          VARCHAR NOT NULL  UNIQUE,
+  email_domain  VARCHAR NOT NULL  UNIQUE,
+  is_disabled   BOOLEAN NOT NULL  DEFAULT false
 );
 
 CREATE TABLE student_card (
@@ -29,9 +29,9 @@ CREATE TABLE student_card (
   account_id    INTEGER NOT NULL  REFERENCES account(id),
   institute_id  INTEGER NOT NULL  REFERENCES institute(id),
   department    VARCHAR NOT NULL,
-  student_id    VARCHAR NOT NULL  UNIQUE,  -- UNIQUE for functional safety
-  email         VARCHAR NOT NULL,
-  is_enabled    BOOLEAN NOT NULL  DEFAULT false,
+  student_id    VARCHAR NOT NULL,
+  email         VARCHAR NOT NULL  UNIQUE,
+  is_deleted    BOOLEAN NOT NULL  DEFAULT false,
 
   UNIQUE (institute_id, student_id)
 );
@@ -58,8 +58,8 @@ CREATE TABLE course (
   id          SERIAL      PRIMARY KEY,
   name        VARCHAR     NOT NULL  UNIQUE,
   type        course_type NOT NULL,
-  is_enabled  BOOLEAN     NOT NULL  DEFAULT false,
-  is_hidden   BOOLEAN     NOT NULL  DEFAULT true
+  is_hidden   BOOLEAN     NOT NULL  DEFAULT false,
+  is_deleted  BOOLEAN     NOT NULL  DEFAULT false
 );
 
 -- 好像沒屁用
@@ -76,8 +76,8 @@ CREATE TABLE class (
   id          SERIAL  PRIMARY KEY,
   name        VARCHAR NOT NULL,
   course_id   INTEGER NOT NULL  REFERENCES course(id),
-  is_enabled  BOOLEAN NOT NULL  DEFAULT false,
-  is_hidden   BOOLEAN NOT NULL  DEFAULT true,
+  is_hidden   BOOLEAN NOT NULL  DEFAULT false,
+  is_deleted  BOOLEAN NOT NULL  DEFAULT false,
 
   UNIQUE (course_id, name)
 );
@@ -94,8 +94,8 @@ CREATE TABLE team (
   id          SERIAL  PRIMARY KEY,
   name        VARCHAR NOT NULL,
   class_id    INTEGER NOT NULL  REFERENCES class(id),
-  is_enabled  BOOLEAN NOT NULL  DEFAULT false,
-  is_hidden   BOOLEAN NOT NULL  DEFAULT true,
+  is_hidden   BOOLEAN NOT NULL  DEFAULT false,
+  is_deleted  BOOLEAN NOT NULL  DEFAULT false,
 
   UNIQUE (class_id, name)
 );
@@ -117,12 +117,14 @@ CREATE TABLE grade (
   score       INTEGER,
   comment     TEXT,
   update_time TIMESTAMP NOT NULL,
+  is_hidden   BOOLEAN   NOT NULL  DEFAULT false,
+  is_deleted  BOOLEAN   NOT NULL  DEFAULT false,
 
   UNIQUE (receiver_id, title)
 );
 
 
--- Challenge-problem management
+-- Challenge-task management
 
 CREATE TYPE challenge_type AS ENUM (
   'CONTEST',
@@ -138,8 +140,8 @@ CREATE TABLE challenge (
   description TEXT,
   start_time  TIMESTAMP       NOT NULL,
   end_time    TIMESTAMP       NOT NULL,
-  is_enabled  BOOLEAN         NOT NULL  DEFAULT false,
-  is_hidden   BOOLEAN         NOT NULL  DEFAULT true,
+  is_hidden   BOOLEAN         NOT NULL  DEFAULT false,
+  is_deleted  BOOLEAN         NOT NULL  DEFAULT false,
 
   UNIQUE (class_id, title)
 );
@@ -160,6 +162,8 @@ CREATE TABLE task (
 
   problem_id      INTEGER                       REFERENCES problem(id),
   peer_review_id  INTEGER                       REFERENCES peer_review(id),
+  is_hidden       BOOLEAN             NOT NULL  DEFAULT false,
+  is_deleted      BOOLEAN             NOT NULL  DEFAULT false,
 
   UNIQUE (challenge_id, identifier)
 );
@@ -177,8 +181,8 @@ CREATE TABLE problem (
   description TEXT,
   source      TEXT,
   hint        TEXT,
-  is_enabled  BOOLEAN       NOT NULL  DEFAULT false,
-  is_hidden   BOOLEAN       NOT NULL  DEFAULT true
+  is_hidden   BOOLEAN       NOT NULL  DEFAULT false,
+  is_deleted  BOOLEAN       NOT NULL  DEFAULT false
 );
 
 CREATE TABLE testcase (
@@ -190,8 +194,8 @@ CREATE TABLE testcase (
   ouptut_file   VARCHAR NOT NULL,
   time_limit    INTEGER NOT NULL, -- ms
   memory_limit  INTEGER NOT NULL, -- kb
-  is_enabled    BOOLEAN NOT NULL  DEFAULT false,
-  is_hidden     BOOLEAN NOT NULL  DEFAULT true
+  is_disabled   BOOLEAN NOT NULL  DEFAULT false,
+  is_deleted    BOOLEAN NOT NULL  DEFAULT false
 );
 
 
@@ -266,8 +270,8 @@ CREATE TABLE peer_review (
   max_review_count  INTEGER   NOT NULL,  -- 一個人最多改幾份
   start_time        TIMESTAMP NOT NULL,
   end_time          TIMESTAMP NOT NULL,
-  is_enabled        BOOLEAN   NOT NULL  DEFAULT false,
-  is_hidden         BOOLEAN   NOT NULL  DEFAULT true
+  is_hidden         BOOLEAN   NOT NULL  DEFAULT false,
+  is_deleted        BOOLEAN   NOT NULL  DEFAULT false
 );
 
 /* every receiver one record -> 要改的時候 edit record, add grader -> 改完 edit record, add comment
@@ -294,8 +298,9 @@ CREATE TABLE announcement (
   title       VARCHAR   NOT NULL,
   content     TEXT      NOT NULL,
   author_id   INTEGER   NOT NULL  REFERENCES account(id),
-  post_time   TIMESTAMP NOT NULL,  -- 排程貼文
-  expire_time TIMESTAMP NOT NULL   -- 自動下架
+  post_time   TIMESTAMP NOT NULL, -- 排程貼文
+  expire_time TIMESTAMP NOT NULL, -- 自動下架
+  is_deleted  BOOLEAN   NOT NULL  DEFAULT false
 );
 
 CREATE TABLE access_log (
