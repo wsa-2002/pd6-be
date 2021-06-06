@@ -33,7 +33,7 @@ async def add_announcement(data: AddAnnouncementInput, request: auth.Request) ->
 
 
 @router.get('/announcement')
-async def browse_announcements() -> Sequence[do.Announcement]:
+async def browse_announcement() -> Sequence[do.Announcement]:
     # TODO: check if can see all???
     return await db.announcement.browse(show_hidden=True)
 

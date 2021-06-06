@@ -38,7 +38,7 @@ async def add_problem(data: CreateProblemInput, request: auth.Request) -> int:
 
 
 @router.get('/problem')
-async def browse_problems() -> Sequence[do.Problem]:
+async def browse_problem() -> Sequence[do.Problem]:
     return await db.problem.browse()
 
 

@@ -35,7 +35,7 @@ async def add_institute(data: AddInstituteInput, request: auth.Request) -> AddIn
 
 
 @router.get('/institute', tags=['Public'])
-async def browse_institutes(request: auth.Request) -> Sequence[do.Institute]:
+async def browse_institute(request: auth.Request) -> Sequence[do.Institute]:
     try:
         only_enabled = request.account.role.not_manager
     except exc.NoPermission:

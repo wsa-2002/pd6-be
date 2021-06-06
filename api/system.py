@@ -16,7 +16,7 @@ router = APIRouter(
 
 
 @router.get('/access-log')
-async def browse_access_logs(offset: int, limit: int, req: auth.Request) -> Sequence[do.AccessLog]:
+async def browse_access_log(offset: int, limit: int, req: auth.Request) -> Sequence[do.AccessLog]:
     if not await rbac.validate(req.account.id, RoleType.manager):
         raise exc.NoPermission
     access_logs = await db.access_log.browse(offset, limit)
