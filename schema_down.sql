@@ -12,11 +12,6 @@ DROP TABLE IF EXISTS peer_review_record;
 DROP TABLE IF EXISTS peer_review;
 
 
--- Score
-
-DROP TABLE IF EXISTS grade;
-
-
 -- submission management
 
 DROP TABLE IF EXISTS judge_case;
@@ -29,16 +24,16 @@ DROP TABLE IF EXISTS submission;
 
 DROP TABLE IF EXISTS submission_language;
 
-
--- Challenge-problem management
-
-DROP TABLE IF EXISTS challenge_problem;
-
 DROP TABLE IF EXISTS testcase;
 
 DROP TABLE IF EXISTS problem;
 
-DROP TYPE IF EXISTS problem_type;
+
+-- Challenge-task management
+
+DROP TABLE IF EXISTS task;
+
+DROP TYPE IF EXISTS task_selection_type;
 
 DROP TABLE IF EXISTS challenge;
 
@@ -46,6 +41,8 @@ DROP TYPE IF EXISTS challenge_type;
 
 
 -- Course management
+
+DROP TABLE IF EXISTS grade;
 
 DROP TABLE IF EXISTS team_member;
 
@@ -68,8 +65,8 @@ DROP TABLE IF EXISTS email_verification;
 
 DROP TABLE IF EXISTS student_card;
 
-DROP TABLE IF EXISTS account;
-
 DROP TABLE IF EXISTS institute;
+
+DROP TABLE IF EXISTS account;
 
 DROP TYPE IF EXISTS role_type;
