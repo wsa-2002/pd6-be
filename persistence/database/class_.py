@@ -6,82 +6,71 @@ from base.enum import RoleType
 from .base import SafeExecutor, SafeConnection
 
 
-async def add(name: str, course_id: int, is_enabled: bool, is_hidden: bool) -> int:
+async def add(name: str, course_id: int, is_hidden: bool, is_deleted: bool) -> int:
     async with SafeExecutor(
             event='add class',
             sql=r'INSERT INTO class'
-                r'            (name, course_id, is_enabled, is_hidden)'
-                r'     VALUES (%(name)s, %(course_id)s), %(is_enabled)s), %(is_hidden)s)'
+                r'            (name, type, is_hidden, is_deleted)'
+                r'     VALUES (%(name)s, %(course_id)s), %(is_hidden)s), %(is_deleted)s)'
                 r'  RETURNING id',
             name=name,
             course_id=course_id,
-            is_enabled=is_enabled,
             is_hidden=is_hidden,
+            is_deleted=is_deleted,
             fetch=1,
     ) as (course_id,):
         return course_id
 
 
-async def browse(course_id: int = None, only_enabled=True, exclude_hidden=True) -> Sequence[do.Class]:
-    conditions = {}
+async def browse(course_id: int = None, include_hidden=False, include_deleted=False) -> Sequence[do.Class]:
+    conditions = []
 
     if course_id is not None:
-        conditions['course_id'] = course_id
-    if only_enabled:
-        conditions['is_enabled'] = True
-    if exclude_hidden:
-        conditions['is_hidden'] = False
+        conditions.append('course_id = %(course_id)s')
+    if not include_hidden:
+        conditions.append("NOT is_hidden")
+    if not include_deleted:
+        conditions.append("NOT is_deleted")
 
-    cond_sql = ' AND '.join(fr"{field_name} = %({field_name})s" for field_name in conditions)
+    cond_sql = ' AND '.join(conditions)
 
     async with SafeExecutor(
             event='browse classes',
-            sql=fr'SELECT id, name, course_id, is_enabled, is_hidden'
+            sql=fr'SELECT id, name, course_id, is_hidden, is_deleted'
                 fr'  FROM class'
-                fr'{" WHERE " + cond_sql if cond_sql else ""}'
+                fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
                 fr' ORDER BY course_id ASC, id ASC',
-            **conditions,
+            course_id=course_id,
             fetch='all',
     ) as records:
-        return [do.Class(id=id_, name=name, course_id=course_id, is_enabled=is_enabled, is_hidden=is_hidden)
-                for (id_, name, course_id, is_enabled, is_hidden) in records]
+        return [do.Class(id=id_, name=name, course_id=course_id, is_hidden=is_hidden, is_deleted=is_deleted)
+                for (id_, name, course_id, is_hidden, is_deleted) in records]
 
 
-async def read(class_id: int, only_enabled=True, exclude_hidden=True) -> do.Class:
-    conditions = {}
-
-    if only_enabled:
-        conditions['is_enabled'] = True
-    if exclude_hidden:
-        conditions['is_hidden'] = False
-
-    cond_sql = ' AND '.join(fr"{field_name} = %({field_name})s" for field_name in conditions)
-
+async def read(class_id: int, *, include_hidden=False, include_deleted=False) -> do.Class:
     async with SafeExecutor(
             event='read class by id',
-            sql=fr'SELECT id, name, course_id, is_enabled, is_hidden'
+            sql=fr'SELECT id, name, course_id, is_hidden, is_deleted'
                 fr'  FROM class'
                 fr' WHERE id = %(class_id)s'
-                fr'{" AND " + cond_sql if cond_sql else ""}',
+                fr'{" AND NOT is_hidden" if include_hidden else ""}'
+                fr'{" AND NOT is_deleted" if include_deleted else ""}',
             class_id=class_id,
-            **conditions,
             fetch=1,
-    ) as (id_, name, course_id, is_enabled, is_hidden):
-        return do.Class(id=id_, name=name, course_id=course_id, is_enabled=is_enabled, is_hidden=is_hidden)
+    ) as (id_, name, course_id, is_hidden, is_deleted):
+        return do.Class(id=id_, name=name, course_id=course_id, is_hidden=is_hidden, is_deleted=is_deleted)
 
 
 async def edit(class_id: int,
-               name: str = None, course_id: int = None, is_enabled: bool = None, is_hidden: bool = None):
+               name: str = None, course_id: int = None, is_hidden: bool = None):
     to_updates = {}
 
     if name is not None:
         to_updates['name'] = name
     if course_id is not None:
         to_updates['course_id'] = course_id
-    if is_enabled is not None:
-        to_updates['is_enabled'] = is_enabled
     if is_hidden is not None:
-        to_updates['is_hidden'] = is_enabled
+        to_updates['is_hidden'] = is_hidden
 
     if not to_updates:
         return
@@ -95,6 +84,18 @@ async def edit(class_id: int,
                 fr'   SET {set_sql}',
             class_id=class_id,
             **to_updates,
+    ):
+        pass
+
+
+async def delete(class_id: int) -> None:
+    async with SafeExecutor(
+            event='soft delete class',
+            sql=fr'UPDATE class'
+                fr' WHERE class.id = %(class_id)s'
+                fr'   SET is_deleted = %(is_deleted)s',
+            class_id=class_id,
+            is_deleted=True,
     ):
         pass
 
