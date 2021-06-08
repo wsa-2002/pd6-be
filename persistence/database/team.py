@@ -23,16 +23,18 @@ async def add(name: str, class_id: int, is_hidden: bool, is_deleted: bool) -> in
 
 
 async def browse(class_id: int = None, include_hidden=False, include_deleted=False) -> Sequence[do.Team]:
-    conditions = []
-
+    conditions = {}
     if class_id is not None:
-        conditions.append('class_id = %(class_id)s')
-    if not include_hidden:
-        conditions.append("NOT is_hidden")
-    if not include_deleted:
-        conditions.append("NOT is_deleted")
+        conditions['class_id'] = class_id
 
-    cond_sql = ' AND '.join(conditions)
+    filters = []
+    if not include_hidden:
+        filters.append("NOT is_hidden")
+    if not include_deleted:
+        filters.append("NOT is_deleted")
+
+    cond_sql = ' AND '.join(list(fr"{field_name} = %({field_name})s" for field_name in conditions)
+                            + filters)
 
     async with SafeExecutor(
             event='browse teams',
@@ -40,7 +42,7 @@ async def browse(class_id: int = None, include_hidden=False, include_deleted=Fal
                 fr'  FROM team'
                 fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
                 fr' ORDER BY class_id ASC, id ASC',
-            class_id=class_id,
+            **conditions,
             fetch='all',
     ) as records:
         return [do.Team(id=id_, name=name, class_id=class_id, is_hidden=is_hidden, is_deleted=is_deleted)

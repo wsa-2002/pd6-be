@@ -23,16 +23,18 @@ async def add(name: str, course_id: int, is_hidden: bool, is_deleted: bool) -> i
 
 
 async def browse(course_id: int = None, include_hidden=False, include_deleted=False) -> Sequence[do.Class]:
-    conditions = []
-
+    conditions = {}
     if course_id is not None:
-        conditions.append('course_id = %(course_id)s')
-    if not include_hidden:
-        conditions.append("NOT is_hidden")
-    if not include_deleted:
-        conditions.append("NOT is_deleted")
+        conditions['course_id'] = course_id
 
-    cond_sql = ' AND '.join(conditions)
+    filters = []
+    if not include_hidden:
+        filters.append("NOT is_hidden")
+    if not include_deleted:
+        filters.append("NOT is_deleted")
+
+    cond_sql = ' AND '.join(list(fr"{field_name} = %({field_name})s" for field_name in conditions)
+                            + filters)
 
     async with SafeExecutor(
             event='browse classes',
@@ -40,7 +42,7 @@ async def browse(course_id: int = None, include_hidden=False, include_deleted=Fa
                 fr'  FROM class'
                 fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
                 fr' ORDER BY course_id ASC, id ASC',
-            course_id=course_id,
+            **conditions,
             fetch='all',
     ) as records:
         return [do.Class(id=id_, name=name, course_id=course_id, is_hidden=is_hidden, is_deleted=is_deleted)
