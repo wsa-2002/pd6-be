@@ -61,8 +61,8 @@ async def read(challenge_id: int, include_hidden=False, include_deleted=False) -
                 r'is_hidden, is_deleted'
                 r'  FROM challenge'
                 r' WHERE id = %(challenge_id)s'
-                fr'{" AND NOT is_hidden" if include_hidden else ""}'
-                fr'{" AND NOT is_deleted" if include_deleted else ""}',
+                fr'{" AND NOT is_hidden" if not include_hidden else ""}'
+                fr'{" AND NOT is_deleted" if not include_deleted else ""}',
             challenge_id=challenge_id,
             fetch=1,
     ) as (id_, class_id, type_, title, setter_id, description, start_time, end_time, is_hidden, is_deleted):

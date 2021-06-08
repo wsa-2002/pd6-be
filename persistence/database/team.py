@@ -55,8 +55,8 @@ async def read(team_id: int, *, include_hidden=False, include_deleted=False) -> 
             sql=fr'SELECT id, name, class_id, is_hidden, is_deleted'
                 fr'  FROM team'
                 fr' WHERE id = %(team_id)s'
-                fr'{" AND NOT is_hidden" if include_hidden else ""}'
-                fr'{" AND NOT is_deleted" if include_deleted else ""}',
+                fr'{" AND NOT is_hidden" if not include_hidden else ""}'
+                fr'{" AND NOT is_deleted" if not include_deleted else ""}',
             team_id=team_id,
             fetch=1,
     ) as (id_, name, class_id, is_hidden, is_deleted):

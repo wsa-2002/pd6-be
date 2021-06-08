@@ -51,7 +51,7 @@ async def read(announcement_id: int, show_hidden: bool, include_deleted=False) -
                 fr'  FROM announcement'
                 fr' WHERE id = %(announcement_id)s'
                 fr'{" AND post_time <= %(cur_time)s AND expire_time > %(cur_time)s" if not show_hidden else ""}'
-                fr'{" AND NOT is_deleted" if include_deleted else ""}',
+                fr'{" AND NOT is_deleted" if not include_deleted else ""}',
             announcement_id=announcement_id,
             cur_time=datetime.now(),
             fetch=1,

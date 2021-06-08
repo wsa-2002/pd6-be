@@ -24,7 +24,7 @@ async def browse(*, include_disabled=False) -> Sequence[do.Institute]:
             event='get all institutes',
             sql=fr'SELECT id, name, email_domain, is_disabled'
                 fr'  FROM institute'
-                fr'{" WHERE NOT is_disabled" if include_disabled else ""}'
+                fr'{" WHERE NOT is_disabled" if not include_disabled else ""}'
                 fr' ORDER BY id ASC',
             fetch='all',
     ) as records:
@@ -38,7 +38,7 @@ async def read(institute_id: int, *, include_disabled=True) -> do.Institute:
             sql=fr'SELECT id, name, email_domain, is_disabled'
                 fr'  FROM institute'
                 fr' WHERE id = %(institute_id)s'
-                fr'{" WHERE NOT is_disabled" if include_disabled else ""}'
+                fr'{" WHERE NOT is_disabled" if not include_disabled else ""}'
                 fr' ORDER BY id',
             institute_id=institute_id,
             fetch=1,

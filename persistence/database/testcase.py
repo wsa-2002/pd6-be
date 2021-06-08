@@ -29,8 +29,8 @@ async def read(testcase_id: int, include_disabled=False, include_deleted=False) 
                 fr'       time_limit, memory_limit, is_disabled, is_deleted'
                 fr'  FROM testcase'
                 fr' WHERE id = %(testcase_id)s'
-                fr'{" AND NOT is_disabled" if include_disabled else ""}'
-                fr'{" AND NOT is_deleted" if include_deleted else ""}',
+                fr'{" AND NOT is_disabled" if not include_disabled else ""}'
+                fr'{" AND NOT is_deleted" if not include_deleted else ""}',
             testcase_id=testcase_id,
             fetch=1,
     ) as (problem_id, is_sample, score, input_file, output_file,
@@ -48,8 +48,8 @@ async def browse(problem_id: int, include_disabled=False, include_deleted=False)
                 fr'       time_limit, memory_limit, is_disabled, is_deleted'
                 fr'  FROM testcase'
                 fr' WHERE problem_id = %(problem_id)s'
-                fr'{" AND NOT is_disabled" if include_disabled else ""}'
-                fr'{" AND NOT is_deleted" if include_deleted else ""}'
+                fr'{" AND NOT is_disabled" if not include_disabled else ""}'
+                fr'{" AND NOT is_deleted" if not include_deleted else ""}'
                 fr' ORDER BY is_sample DESC, id ASC',
             problem_id=problem_id,
             fetch='all',

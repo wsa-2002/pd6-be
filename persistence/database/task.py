@@ -29,8 +29,8 @@ async def browse(challenge_id: int, include_hidden=False, include_deleted=False)
                 fr'       problem_id, peer_review_id, is_hidden, is_deleted'
                 fr'  FROM task'
                 fr' WHERE challenge_id = %(challenge_id)s'
-                fr'{" AND NOT is_hidden" if include_hidden else ""}'
-                fr'{" AND NOT is_deleted" if include_deleted else ""}'
+                fr'{" AND NOT is_hidden" if not include_hidden else ""}'
+                fr'{" AND NOT is_deleted" if not include_deleted else ""}'
                 fr' ORDER BY identifier ASC',
             challenge_id=challenge_id,
             fetch='all',
@@ -51,8 +51,8 @@ async def read(task_id: int, include_hidden=False, include_deleted=False) -> do.
                 fr'       problem_id, peer_review_id, is_hidden, is_deleted'
                 fr'  FROM task'
                 fr' WHERE id = %(task_id)s'
-                fr'{" AND NOT is_hidden" if include_hidden else ""}'
-                fr'{" AND NOT is_deleted" if include_deleted else ""}'
+                fr'{" AND NOT is_hidden" if not include_hidden else ""}'
+                fr'{" AND NOT is_deleted" if not include_deleted else ""}'
                 fr' ORDER BY identifier ASC',
             task_id=task_id,
             fetch='all',

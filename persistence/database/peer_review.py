@@ -35,7 +35,7 @@ async def browse(include_deleted=False) -> Sequence[do.PeerReview]:
                 fr'       min_score, max_score, max_review_count, start_time, end_time,'
                 fr'       is_hidden, is_deleted'
                 fr'  FROM peer_review'
-                fr'{" WHERE NOT is_deleted" if include_deleted else ""}'
+                fr'{" WHERE NOT is_deleted" if not include_deleted else ""}'
                 fr' ORDER BY id ASC',
             fetch='all',
     ) as records:
@@ -56,7 +56,7 @@ async def read(peer_review_id: int, include_deleted=False) -> do.PeerReview:
                 fr'       is_hidden, is_deleted'
                 fr'  FROM peer_review'
                 fr' WHERE id = %(peer_review_id)s'
-                fr'{" AND NOT is_deleted" if include_deleted else ""}',
+                fr'{" AND NOT is_deleted" if not include_deleted else ""}',
             peer_review_id=peer_review_id,
             fetch='all',
     ) as (id_, target_task_id, setter_id, description, min_score, max_score, max_review_count,

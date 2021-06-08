@@ -27,7 +27,7 @@ async def browse_language(include_disabled=False) -> Sequence[do.SubmissionLangu
             event='Browse submission language',
             sql=fr'SELECT id, name, version, is_disabled'
                 fr'  FROM submission_language'
-                fr'{" WHERE NOT is_disabled" if include_disabled else ""}'
+                fr'{" WHERE NOT is_disabled" if not include_disabled else ""}'
                 fr' ORDER BY name ASC, version ASC',
             fetch='all',
     ) as records:
@@ -41,7 +41,7 @@ async def read_language(language_id: int, include_disabled=False) -> do.Submissi
             sql=fr'SELECT id, name, version, is_disabled'
                 fr'  FROM submission_language'
                 fr' WHERE id = %(id)s'
-                fr'{" AND NOT is_disabled" if include_disabled else ""}',
+                fr'{" AND NOT is_disabled" if not include_disabled else ""}',
             id=language_id,
             fetch=1,
     ) as (id_, name, version, is_disabled):

@@ -55,8 +55,8 @@ async def browse_by_challenge(challenge_id: int, include_hidden=False, include_d
                 fr'       LEFT JOIN challenge_problem'
                 fr'              ON problem.id = challenge_problem.problem_id'
                 fr' WHERE challenge_id = %(challenge_id)s'
-                fr'{" AND NOT is_hidden" if include_hidden else ""}'
-                fr'{" AND NOT is_deleted" if include_deleted else ""}'
+                fr'{" AND NOT is_hidden" if not include_hidden else ""}'
+                fr'{" AND NOT is_deleted" if not include_deleted else ""}'
                 fr' ORDER BY problem_id ASC',
             challenge_id=challenge_id,
             fetch='all',
@@ -74,8 +74,8 @@ async def read(problem_id: int, include_hidden=False, include_deleted=False) -> 
             sql=fr'SELECT id, title, setter_id, full_score, description, source, hint, is_hidden, is_deleted'
                 fr'  FROM problem'
                 fr' WHERE id = %(problem_id)s'
-                fr'{" AND NOT is_hidden" if include_hidden else ""}'
-                fr'{" AND NOT is_deleted" if include_deleted else ""}',
+                fr'{" AND NOT is_hidden" if not include_hidden else ""}'
+                fr'{" AND NOT is_deleted" if not include_deleted else ""}',
             problem_id=problem_id,
             fetch=1,
     ) as (id_, title, setter_id, full_score, description, source, hint, is_hidden, is_deleted):
