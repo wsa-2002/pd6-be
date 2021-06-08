@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Sequence
 
 import exceptions
 from base import do
@@ -18,6 +18,21 @@ async def add(name: str, pass_hash: str, nickname: str, real_name: str, role: Ro
             fetch=1,
     ) as (account_id,):
         return account_id
+
+
+async def browse(include_deleted: bool = False) -> Sequence[do.Account]:
+    async with SafeExecutor(
+            event='browse account',
+            sql=fr'SELECT id, name, nickname, real_name, role_id, is_deleted, alternative_email'
+                fr'  FROM account'
+                fr'{" WHERE NOT is_deleted" if not include_deleted else ""}'
+                fr' ORDER BY id ASC',
+            fetch='all',
+    ) as records:
+        return [do.Account(id=id_, name=name, nickname=nickname, real_name=real_name, role=role_id,
+                           is_deleted=is_deleted, alternative_email=alternative_email)
+                for (id_, name, nickname, real_name, role_id, is_deleted, is_hidden, alternative_email)
+                in records]
 
 
 async def read(account_id: int, *, include_deleted: bool = False) -> do.Account:
