@@ -20,7 +20,7 @@ async def read_class_role_by_account_id(class_id: int, account_id: int) -> RoleT
             event='get class role by account id',
             sql=r'SELECT role'
                 r'  FROM class_member'
-                r' WHERE lass_id = %(class_id)s'
+                r' WHERE class_id = %(class_id)s'
                 r'   AND member_id = %(account_id)s',
             class_id=class_id,
             account_id=account_id,
