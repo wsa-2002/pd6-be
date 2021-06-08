@@ -19,7 +19,7 @@ router = APIRouter(
 
 
 @router.get('/judgment/status', tags=['Administrative'])
-async def browse_judgment_statuses() -> Sequence[enum.JudgmentStatusType]:
+async def browse_judgment_status() -> Sequence[enum.JudgmentStatusType]:
     return list(enum.JudgmentStatusType)
 
 

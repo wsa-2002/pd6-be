@@ -44,7 +44,7 @@ async def add_course(data: AddCourseInput, request: auth.Request) -> AddCourseOu
 
 
 @router.get('/course')
-async def browse_courses(request: auth.Request) -> Sequence[do.Course]:
+async def browse_course(request: auth.Request) -> Sequence[do.Course]:
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
@@ -122,7 +122,7 @@ async def add_class_under_course(course_id: int, data: AddClassInput, request: a
 
 
 @router.get('/course/{course_id}/class', tags=['Class'])
-async def browse_classes_under_course(course_id: int, request: auth.Request) -> Sequence[do.Class]:
+async def browse_class_under_course(course_id: int, request: auth.Request) -> Sequence[do.Class]:
     if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 

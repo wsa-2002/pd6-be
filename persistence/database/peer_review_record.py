@@ -30,8 +30,8 @@ async def edit_score(peer_review_record_id: int, score: int, comment: str, submi
     async with SafeExecutor(
             event='Add (submit) peer review record (score)',
             sql="UPDATE peer_review_record"
-                " WHERE id = %(peer_review_record_id)s"
-                "   SET score = %(score)s, comment = %(comment)s, submit_time = %(submit_time)s",
+                "   SET score = %(score)s, comment = %(comment)s, submit_time = %(submit_time)s"
+                " WHERE id = %(peer_review_record_id)s",
             peer_review_record_id=peer_review_record_id,
             score=score, comment=comment, submit_time=submit_time,
     ):

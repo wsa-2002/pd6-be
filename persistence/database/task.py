@@ -83,8 +83,8 @@ async def edit(task_id: int, identifier: str = None, selection_type: enum.TaskSe
     async with SafeExecutor(
             event='update task by id',
             sql=fr'UPDATE task'
-                fr' WHERE task.id = %(task_id)s'
-                fr'   SET {set_sql}',
+                fr'   SET {set_sql}'
+                fr' WHERE id = %(task_id)s',
             task_id=task_id,
             **to_updates,
     ):

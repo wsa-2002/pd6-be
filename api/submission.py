@@ -24,7 +24,7 @@ async def submit(problem_id: int):
 
 
 @router.get('/submission/language', tags=['Administrative'])
-async def browse_submission_languages() -> Sequence[do.SubmissionLanguage]:
+async def browse_submission_language() -> Sequence[do.SubmissionLanguage]:
     return await db.submission.browse_language()
 
 
@@ -39,7 +39,7 @@ async def add_submission_language(data: AddSubmissionLanguageInput) -> int:
 
 
 @router.delete('/submission/language/{language_id}', tags=['Administrative'])
-async def delete_submission_languages(language_id: int) -> None:
+async def delete_submission_language(language_id: int) -> None:
     return await db.submission.delete_language(language_id=language_id)
 
 
@@ -52,7 +52,7 @@ class BrowseSubmissionInput(BaseModel):
 
 
 @router.get('/submission')
-async def browse_submissions(data: BrowseSubmissionInput) -> Sequence[do.Submission]:
+async def browse_submission(data: BrowseSubmissionInput) -> Sequence[do.Submission]:
     return await db.submission.browse(
         account_id=data.account_id,
         problem_id=data.problem_id,
@@ -67,5 +67,5 @@ async def read_submission(submission_id: int) -> do.Submission:
 
 
 @router.get('/submission/{submission_id}/judgment', tags=['Judgment'])
-async def browse_submission_judgments(submission_id: int) -> Sequence[do.Judgment]:
+async def browse_submission_judgment(submission_id: int) -> Sequence[do.Judgment]:
     return await db.judgment.browse(submission_id=submission_id)

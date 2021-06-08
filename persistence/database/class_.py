@@ -80,7 +80,7 @@ async def edit(class_id: int,
     async with SafeExecutor(
             event='edit class by id',
             sql=fr'UPDATE class'
-                fr' WHERE class.id = %(class_id)s'
+                fr' WHERE id = %(class_id)s'
                 fr'   SET {set_sql}',
             class_id=class_id,
             **to_updates,

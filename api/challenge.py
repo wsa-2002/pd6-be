@@ -42,7 +42,7 @@ async def add_challenge_under_class(class_id: int, data: AddChallengeInput, requ
 
 
 @router.get('/class/{class_id}/challenge', tags=['Course'])
-async def browse_challenges_under_class(class_id: int, request: auth.Request) -> Sequence[do.Challenge]:
+async def browse_challenge_under_class(class_id: int, request: auth.Request) -> Sequence[do.Challenge]:
     if not rbac.validate(request.account.id, RoleType.normal, class_id=class_id, inherit=False):
         raise exc.NoPermission
 
@@ -51,7 +51,7 @@ async def browse_challenges_under_class(class_id: int, request: auth.Request) ->
 
 
 @router.get('/challenge')
-async def browse_challenges(request: auth.Request) -> Sequence[do.Challenge]:
+async def browse_challenge(request: auth.Request) -> Sequence[do.Challenge]:
     if not request.account.role.is_manager:
         raise exc.NoPermission
 
@@ -111,5 +111,5 @@ async def add_task_under_challenge(challenge_id: int, data: AddTaskInput) -> int
 
 
 @router.get('/challenge/{challenge_id}/task', tags=['Task'])
-async def browse_tasks_under_challenge(challenge_id: int) -> Sequence[do.Task]:
+async def browse_task_under_challenge(challenge_id: int) -> Sequence[do.Task]:
     return await db.task.browse(challenge_id=challenge_id)

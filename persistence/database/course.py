@@ -78,8 +78,8 @@ async def edit(course_id: int,
     async with SafeExecutor(
             event='update course by id',
             sql=fr'UPDATE course'
-                fr' WHERE course.id = %(course_id)s'
-                fr'   SET {set_sql}',
+                fr'   SET {set_sql}'
+                fr' WHERE id = %(course_id)s',
             course_id=course_id,
             **to_updates,
     ):
@@ -156,8 +156,8 @@ async def edit_member(course_id: int, member_id: int, role: RoleType):
     async with SafeExecutor(
             event='set course member',
             sql=r'UPDATE course_member'
-                r' WHERE course_id = %(course_id)s AND member_id = %(member_id)s'
-                r'   SET role = %(role)s',
+                r'   SET role = %(role)s'
+                r' WHERE course_id = %(course_id)s AND member_id = %(member_id)s',
             course_id=course_id,
             member_id=member_id,
             role=role,

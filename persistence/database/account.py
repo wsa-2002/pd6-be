@@ -49,8 +49,8 @@ async def edit(account_id: int,
     async with SafeExecutor(
             event='update account info',
             sql=fr'UPDATE account'
-                fr' WHERE account.id = %(account_id)s'
-                fr'   SET {set_sql}',
+                fr'   SET {set_sql}'
+                fr' WHERE id = %(account_id)s',
             account_id=account_id,
             **to_updates,
     ):
@@ -73,8 +73,8 @@ async def delete_alternative_email_by_id(account_id: int) -> None:
     async with SafeExecutor(
             event='set account delete alternative email',
             sql=fr'UPDATE account'
-                fr' WHERE account.id = %(account_id)s'
-                fr'   SET alternative_email = %(alternative_email)s',
+                fr'   SET alternative_email = %(alternative_email)s'
+                fr' WHERE id = %(account_id)s',
             account_id=account_id,
             alternative_email=None,
     ):

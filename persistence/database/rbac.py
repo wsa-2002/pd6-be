@@ -6,9 +6,9 @@ from .base import SafeExecutor
 async def read_global_role_by_account_id(account_id: int) -> RoleType:
     async with SafeExecutor(
             event='get global role by account id',
-            sql=r'SELECT account.role'
+            sql=r'SELECT role'
                 r'  FROM account'
-                r' WHERE account.id = %(account_id)s',
+                r' WHERE id = %(account_id)s',
             account_id=account_id,
             fetch=1,
     ) as (role,):
@@ -18,10 +18,10 @@ async def read_global_role_by_account_id(account_id: int) -> RoleType:
 async def read_class_role_by_account_id(class_id: int, account_id: int) -> RoleType:
     async with SafeExecutor(
             event='get class role by account id',
-            sql=r'SELECT class_member.role'
+            sql=r'SELECT role'
                 r'  FROM class_member'
-                r' WHERE class_member.class_id = %(class_id)s'
-                r'   AND class_member.member_id = %(account_id)s',
+                r' WHERE class_id = %(class_id)s'
+                r'   AND member_id = %(account_id)s',
             class_id=class_id,
             account_id=account_id,
             fetch=1,
@@ -32,10 +32,10 @@ async def read_class_role_by_account_id(class_id: int, account_id: int) -> RoleT
 async def read_team_role_by_account_id(team_id: int, account_id: int) -> RoleType:
     async with SafeExecutor(
             event='get team role by account id',
-            sql=r'SELECT team_member.role'
+            sql=r'SELECT role'
                 r'  FROM team_member'
-                r' WHERE team_member.team_id = %(class_id)s'
-                r'   AND team_member.member_id = %(account_id)s',
+                r' WHERE team_id = %(class_id)s'
+                r'   AND member_id = %(account_id)s',
             team_id=team_id,
             account_id=account_id,
             fetch=1,

@@ -108,8 +108,8 @@ async def edit(grade_id: int, title: Optional[str], score: Optional[int], commen
     async with SafeExecutor(
             event='update grade by id',
             sql=fr'UPDATE grade'
-                fr' WHERE grade.id = %(grade_id)s'
-                fr'   SET {set_sql}',
+                fr'   SET {set_sql}'
+                fr' WHERE id = %(grade_id)s',
             grade_id=grade_id,
             **to_updates,
     ):
