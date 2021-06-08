@@ -6,47 +6,58 @@ from base import do
 from .base import SafeExecutor
 
 
-async def add(title: str, content: str, author_id: int, post_time: datetime, expire_time: datetime) -> int:
+async def add(title: str, content: str, author_id: int, post_time: datetime, expire_time: datetime, is_deleted: bool) \
+        -> int:
     async with SafeExecutor(
             event='Add announcement',
             sql=r'INSERT INTO announcement'
-                r'            (title, content, author_id, post_time, expire_time)'
-                r'     VALUES (%(title)s, %(content)s, %(author_id)s, %(post_time)s, %(expire_time)s)'
+                r'            (title, content, author_id, post_time, expire_time, is_deleted)'
+                r'     VALUES (%(title)s, %(content)s, %(author_id)s, %(post_time)s, %(expire_time)s, %(is_deleted)s)'
                 r'  RETURNING id',
             title=title, content=content, author_id=author_id, post_time=post_time, expire_time=expire_time,
+            is_deleted=is_deleted,
             fetch=1,
     ) as (announcement_id,):
         return announcement_id
 
 
-async def browse(show_hidden: bool) -> Sequence[do.Announcement]:
+async def browse(show_hidden: bool, include_deleted=False) -> Sequence[do.Announcement]:
+    filters = []
+    if not show_hidden:
+        filters.append("post_time <= %(cur_time)s AND expire_time > %(cur_time)s")
+    if not include_deleted:
+        filters.append("NOT is_deleted")
+
+    cond_sql = ' AND '.join(filters)
+
     async with SafeExecutor(
             event='get all announcements',
-            sql=fr'SELECT id, title, content, author_id, post_time, expire_time'
+            sql=fr'SELECT id, title, content, author_id, post_time, expire_time, is_deleted'
                 fr'  FROM announcement'
-                fr' {"WHERE post_time <= %(cur_time)s AND expire_time > %(cur_time)s" if not show_hidden else ""}'
+                fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
                 fr' ORDER BY id ASC',
             cur_time=datetime.now(),
             fetch='all',
     ) as records:
         return [do.Announcement(id=id_, title=title, content=content, author_id=author_id,
-                                post_time=post_time, expire_time=expire_time)
-                for (id_, title, content, author_id, post_time, expire_time) in records]
+                                post_time=post_time, expire_time=expire_time, is_deleted=is_deleted)
+                for (id_, title, content, author_id, post_time, expire_time, is_deleted) in records]
 
 
-async def read(announcement_id: int, show_hidden: bool) -> do.Announcement:
+async def read(announcement_id: int, show_hidden: bool, include_deleted=False) -> do.Announcement:
     async with SafeExecutor(
             event='get all announcements',
-            sql=fr'SELECT id, title, content, author_id, post_time, expire_time'
+            sql=fr'SELECT id, title, content, author_id, post_time, expire_time, is_deleted'
                 fr'  FROM announcement'
                 fr' WHERE id = %(announcement_id)s'
-                fr' {"AND post_time <= %(cur_time)s AND expire_time > %(cur_time)s" if not show_hidden else ""}',
+                fr'{" AND post_time <= %(cur_time)s AND expire_time > %(cur_time)s" if not show_hidden else ""}'
+                fr'{" AND NOT is_deleted" if include_deleted else ""}',
             announcement_id=announcement_id,
             cur_time=datetime.now(),
             fetch=1,
-    ) as (id_, title, content, author_id, post_time, expire_time):
+    ) as (id_, title, content, author_id, post_time, expire_time, is_deleted):
         return do.Announcement(id=id_, title=title, content=content, author_id=author_id,
-                               post_time=post_time, expire_time=expire_time)
+                               post_time=post_time, expire_time=expire_time, is_deleted=is_deleted)
 
 
 async def edit(announcement_id: int, title: str = None, content: str = None,
@@ -80,9 +91,11 @@ async def edit(announcement_id: int, title: str = None, content: str = None,
 
 async def delete(announcement_id: int) -> None:
     async with SafeExecutor(
-            event='delete announcement by id',
-            sql=fr'DELETE FROM announcement'
-                fr'      WHERE announcement.id = %(announcement_id)s',
+            event='soft delete announcement',
+            sql=fr'UPDATE announcement'
+                fr' WHERE id = %(announcement_id)s'
+                fr'   SET is_deleted = %(is_deleted)s',
             announcement_id=announcement_id,
+            is_deleted=True,
     ):
         pass
