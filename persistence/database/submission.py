@@ -9,45 +9,43 @@ from .base import SafeExecutor
 # Submission Language
 
 
-async def add_language(name: str, version: str) -> int:
+async def add_language(name: str, version: str, is_disabled: bool) -> int:
     async with SafeExecutor(
             event='Add submission language',
             sql="INSERT INTO submission_language"
-                "            (name, version)"
-                "     VALUES (%(name)s, %(version)s)"
+                "            (name, version, is_disabled)"
+                "     VALUES (%(name)s, %(version)s, %(is_disabled)s)"
                 "  RETURNING id",
-            name=name, version=version,
+            name=name, version=version, is_disabled=is_disabled,
             fetch=1,
     ) as (id_,):
         return id_
 
 
-async def browse_language() -> Sequence[do.SubmissionLanguage]:
+async def browse_language(include_disabled=False) -> Sequence[do.SubmissionLanguage]:
     async with SafeExecutor(
             event='Browse submission language',
-            sql="SELECT id, name, version"
-                "  FROM submission_language"
-                " ORDER BY name ASC, version ASC",
+            sql=fr'SELECT id, name, version, is_disabled'
+                fr'  FROM submission_language'
+                fr'{" WHERE NOT is_disabled" if include_disabled else ""}'
+                fr' ORDER BY name ASC, version ASC',
             fetch='all',
     ) as records:
-        return [do.SubmissionLanguage(id=id_, name=name, version=version)
-                for id_, name, version in records]
+        return [do.SubmissionLanguage(id=id_, name=name, version=version, is_disabled=is_disabled)
+                for id_, name, version, is_disabled in records]
 
 
-async def read_language(language_id: int) -> do.SubmissionLanguage:
+async def read_language(language_id: int, include_disabled=False) -> do.SubmissionLanguage:
     async with SafeExecutor(
             event='read submission language',
-            sql="SELECT name, version"
-                "  FROM submission_language"
-                " WHERE id = %(id)s",
+            sql=fr'SELECT id, name, version, is_disabled'
+                fr'  FROM submission_language'
+                fr' WHERE id = %(id)s'
+                fr'{" AND NOT is_disabled" if include_disabled else ""}',
             id=language_id,
             fetch=1,
-    ) as (name, version):
-        return do.SubmissionLanguage(id=language_id, name=name, version=version)
-
-
-async def delete_language(language_id: int) -> None:
-    ...  # TODO (應該是 soft-delete)
+    ) as (id_, name, version, is_disabled):
+        return do.SubmissionLanguage(id=id_, name=name, version=version, is_disabled=is_disabled)
 
 
 # Submission

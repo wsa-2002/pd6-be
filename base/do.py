@@ -142,6 +142,7 @@ class SubmissionLanguage:
     id: int
     name: str
     version: str
+    is_disabled: bool
 
 
 @dataclass
