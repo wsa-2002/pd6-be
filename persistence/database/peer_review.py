@@ -95,8 +95,8 @@ async def edit(peer_review_id: int, description: str = None, min_score: int = No
     async with SafeExecutor(
             event='edit peer review',
             sql=fr'UPDATE peer_review'
-                fr' WHERE id = %(peer_review_id)s'
-                fr'   SET {set_sql}',
+                fr'   SET {set_sql}'
+                fr' WHERE id = %(peer_review_id)s',
             peer_review_id=peer_review_id,
             **to_updates,
     ):

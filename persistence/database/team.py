@@ -91,8 +91,8 @@ async def edit(team_id: int, name: str = None, class_id: int = None,
     async with SafeExecutor(
             event='update team by id',
             sql=fr'UPDATE team'
-                fr' WHERE team.id = %(team_id)s'
-                fr'   SET {set_sql}',
+                fr'   SET {set_sql}'
+                fr' WHERE id = %(team_id)s',
             team_id=team_id,
             **to_updates,
     ):
@@ -133,8 +133,8 @@ async def edit_member(team_id: int, member_id: int, role: RoleType):
     async with SafeExecutor(
             event='set team member',
             sql=r'UPDATE team_member'
-                r' WHERE team_id = %(team_id)s AND member_id = %(member_id)s'
-                r'   SET role = %(role)s',
+                r'   SET role = %(role)s'
+                r' WHERE team_id = %(team_id)s AND member_id = %(member_id)s',
             team_id=team_id,
             member_id=member_id,
             role=role,
