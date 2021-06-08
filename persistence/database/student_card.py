@@ -58,7 +58,7 @@ async def read_owner_id(student_card_id: int) -> int:
             event='get student owner id by student card id',
             sql='SELECT account_id'
                 '  FROM account_student_card'
-                ' WHERE account_student_card.student_card_id = %(student_card_id)s',
+                ' WHERE student_card_id = %(student_card_id)s',
             student_card_id=student_card_id,
             fetch=1,
     ) as (id_,):
@@ -89,8 +89,8 @@ async def edit(student_card_id: int,
     async with SafeExecutor(
             event='edit student_card by id',
             sql=fr'UPDATE student_card'
-                fr' WHERE student_card.id = %(student_card_id)s'
-                fr'   SET {set_sql}',
+                fr'   SET {set_sql}'
+                fr' WHERE id = %(student_card_id)s',
             student_card_id=student_card_id,
             **to_updates,
     ):

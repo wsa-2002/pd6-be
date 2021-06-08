@@ -95,8 +95,8 @@ async def edit(testcase_id: int,
     async with SafeExecutor(
             event='edit testcase',
             sql=fr'UPDATE testcase'
-                fr' WHERE id = %(testcase_id)s'
-                fr'   SET {set_sql}',
+                fr'   SET {set_sql}'
+                fr' WHERE id = %(testcase_id)s',
             testcase_id=testcase_id,
             **to_updates,
     ):

@@ -64,8 +64,8 @@ async def edit(institute_id: int, name: str = None, email_domain: str = None, is
     async with SafeExecutor(
             event='update institute by id',
             sql=fr'UPDATE institute'
-                fr' WHERE institute.id = %(institute_id)s'
-                fr'   SET {set_sql}',
+                fr'   SET {set_sql}'
+                fr' WHERE id = %(institute_id)s',
             institute_id=institute_id,
             **to_updates,
     ):
