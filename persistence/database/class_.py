@@ -92,8 +92,8 @@ async def delete(class_id: int) -> None:
     async with SafeExecutor(
             event='soft delete class',
             sql=fr'UPDATE class'
-                fr' WHERE class.id = %(class_id)s'
-                fr'   SET is_deleted = %(is_deleted)s',
+                fr'   SET is_deleted = %(is_deleted)s'
+                fr' WHERE id = %(class_id)s',
             class_id=class_id,
             is_deleted=True,
     ):

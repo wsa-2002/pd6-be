@@ -109,8 +109,8 @@ async def delete(peer_review_id: int) -> None:
     async with SafeExecutor(
             event='soft delete peer_review',
             sql=fr'UPDATE peer_review'
-                fr' WHERE id = %(peer_review_id)s'
-                fr'   SET is_deleted = %(is_deleted)s',
+                fr'   SET is_deleted = %(is_deleted)s'
+                fr' WHERE id = %(peer_review_id)s',
             peer_review_id=peer_review_id,
             is_deleted=True,
     ):

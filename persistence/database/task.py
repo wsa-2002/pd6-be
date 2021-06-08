@@ -95,8 +95,8 @@ async def delete(task_id: int) -> None:
     async with SafeExecutor(
             event='soft delete task',
             sql=fr'UPDATE task'
-                fr' WHERE id = %(task_id)s'
-                fr'   SET is_deleted = %(is_deleted)s',
+                fr'   SET is_deleted = %(is_deleted)s'
+                fr' WHERE id = %(task_id)s',
             task_id=task_id,
             is_deleted=True,
     ):

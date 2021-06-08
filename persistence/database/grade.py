@@ -120,8 +120,8 @@ async def delete(grade_id: int) -> None:
     async with SafeExecutor(
             event='soft delete team',
             sql=fr'UPDATE grade'
-                fr' WHERE id = %(grade_id)s'
-                fr'   SET is_deleted = %(is_deleted)s',
+                fr'   SET is_deleted = %(is_deleted)s'
+                fr' WHERE id = %(grade_id)s',
             grade_id=grade_id,
             is_deleted=True,
     ):

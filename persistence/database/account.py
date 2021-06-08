@@ -61,8 +61,8 @@ async def delete(account_id: int) -> None:
     async with SafeExecutor(
             event='soft delete account',
             sql=fr'UPDATE account'
-                fr' WHERE account.id = %(account_id)s'
-                fr'   SET is_deleted = %(is_deleted)s',
+                fr'   SET is_deleted = %(is_deleted)s'
+                fr' WHERE id = %(account_id)s',
             account_id=account_id,
             is_deleted=True,
     ):

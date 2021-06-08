@@ -126,8 +126,8 @@ async def delete(problem_id: int) -> None:
     async with SafeExecutor(
             event='soft delete problem',
             sql=fr'UPDATE problem'
-                fr' WHERE id = %(problem_id)s'
-                fr'   SET is_deleted = %(is_deleted)s',
+                fr'   SET is_deleted = %(is_deleted)s'
+                fr' WHERE id = %(problem_id)s',
             problem_id=problem_id,
             is_deleted=True,
     ):

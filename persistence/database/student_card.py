@@ -104,8 +104,8 @@ async def delete(student_card_id: int) -> None:
     async with SafeExecutor(
             event='soft delete student_card',
             sql=fr'UPDATE student_card'
-                fr' WHERE student_card.id = %(student_card_id)s'
-                fr'   SET is_deleted = %(is_deleted)s',
+                fr'   SET is_deleted = %(is_deleted)s'
+                fr' WHERE id = %(student_card_id)s',
             student_card_id=student_card_id,
             is_deleted=True,
     ):
