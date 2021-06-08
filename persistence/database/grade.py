@@ -1,5 +1,4 @@
 from datetime import datetime
-from itertools import chain
 from typing import Sequence, Optional
 
 from base import do
@@ -45,10 +44,8 @@ async def browse(class_id: int = None, account_id: int = None,
     if not include_deleted:
         filters.append("NOT is_deleted")
 
-    cond_sql = ' AND '.join(chain(
-        (fr"{field_name} = %({field_name})s" for field_name in conditions),
-        *filters,
-    ))
+    cond_sql = ' AND '.join(list(fr"{field_name} = %({field_name})s" for field_name in conditions)
+                            + filters)
 
     async with SafeExecutor(
             event='browse grades',

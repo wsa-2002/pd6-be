@@ -174,7 +174,6 @@ CREATE TABLE task (
 
 CREATE TABLE problem (
   id          SERIAL        PRIMARY KEY,
-  type        problem_type  NOT NULL,
   title       VARCHAR       NOT NULL  UNIQUE,
   setter_id   INTEGER       NOT NULL  REFERENCES account(id),
   full_score  INTEGER       NOT NULL,

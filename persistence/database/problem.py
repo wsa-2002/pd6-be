@@ -1,74 +1,87 @@
 from typing import Optional, Sequence
 
-from base import do, enum
+from base import do
 
 from .base import SafeExecutor
 
 
 async def add(title: str, setter_id: int, full_score: int,
               description: Optional[str], source: Optional[str], hint: Optional[str],
-              is_enabled: bool, is_hidden: bool) -> int:
+              is_hidden: bool, is_deleted: bool) -> int:
     async with SafeExecutor(
             event='Add problem',
             sql="INSERT INTO problem"
                 "            (title, setter_id, full_score,"
-                "             description, source, hint, is_enabled, is_hidden)"
+                "             description, source, hint, is_hidden, is_deleted)"
                 "     VALUES (%(title)s, %(setter_id)s, %(full_score)s,"
-                "             %(description)s, %(source)s, %(hint)s, %(is_enabled)s, %(is_hidden)s)"
+                "             %(description)s, %(source)s, %(hint)s, %(is_hidden)s, %(is_deleted)s)"
                 "  RETURNING id",
             title=title, setter_id=setter_id, full_score=full_score,
-            description=description, source=source, hint=hint, is_enabled=is_enabled, is_hidden=is_hidden,
+            description=description, source=source, hint=hint, is_hidden=is_hidden, is_deleted=is_deleted,
             fetch=1,
     ) as (id_,):
         return id_
 
 
-async def browse() -> Sequence[do.Problem]:
+async def browse(include_hidden=False, include_deleted=False) -> Sequence[do.Problem]:
+    filters = []
+    if not include_hidden:
+        filters.append("NOT is_hidden")
+    if not include_deleted:
+        filters.append("NOT is_deleted")
+
+    cond_sql = ' AND '.join(filters)
+
     async with SafeExecutor(
             event='browse problems',
-            sql='SELECT id, title, setter_id, full_score, description, source, hint, is_enabled, is_hidden'
-                '  FROM problem'
-                ' ORDER BY id ASC',
+            sql=fr'SELECT id, title, setter_id, full_score, description, source, hint, is_hidden, is_deleted'
+                fr'  FROM problem'
+                fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
+                fr' ORDER BY id ASC',
             fetch='all',
     ) as records:
         return [do.Problem(id=id_, title=title, setter_id=setter_id,
                            full_score=full_score, description=description, source=source, hint=hint,
-                           is_enabled=is_enabled, is_hidden=is_hidden)
-                for id_, title, setter_id, full_score, description, source, hint, is_enabled, is_hidden
+                           is_hidden=is_hidden, is_deleted=is_deleted)
+                for id_, title, setter_id, full_score, description, source, hint, is_hidden, is_deleted
                 in records]
 
 
-async def browse_by_challenge(challenge_id: int) -> Sequence[do.Problem]:
+async def browse_by_challenge(challenge_id: int, include_hidden=False, include_deleted=False) -> Sequence[do.Problem]:
     async with SafeExecutor(
             event='browse problems with challenge id',
-            sql='SELECT id, title, setter_id, full_score, description, source, hint, is_enabled, is_hidden'
-                '  FROM problem'
-                '       LEFT JOIN challenge_problem'
-                '              ON problem.id = challenge_problem.problem_id'
-                ' WHERE challenge_id = %(challenge_id)s'
-                ' ORDER BY problem_id ASC',
+            sql=fr'SELECT id, title, setter_id, full_score, description, source, hint, is_hidden, is_deleted'
+                fr'  FROM problem'
+                fr'       LEFT JOIN challenge_problem'
+                fr'              ON problem.id = challenge_problem.problem_id'
+                fr' WHERE challenge_id = %(challenge_id)s'
+                fr'{" AND NOT is_hidden" if include_hidden else ""}'
+                fr'{" AND NOT is_deleted" if include_deleted else ""}'
+                fr' ORDER BY problem_id ASC',
             challenge_id=challenge_id,
             fetch='all',
     ) as records:
         return [do.Problem(id=id_, title=title, setter_id=setter_id,
                            full_score=full_score, description=description, source=source, hint=hint,
-                           is_enabled=is_enabled, is_hidden=is_hidden)
-                for id_, title, setter_id, full_score, description, source, hint, is_enabled, is_hidden
+                           is_hidden=is_hidden, is_deleted=is_deleted)
+                for id_, title, setter_id, full_score, description, source, hint, is_hidden, is_deleted
                 in records]
 
 
-async def read(problem_id: int) -> do.Problem:
+async def read(problem_id: int, include_hidden=False, include_deleted=False) -> do.Problem:
     async with SafeExecutor(
             event='read problem by id',
-            sql='SELECT id, title, setter_id, full_score, description, source, hint, is_enabled, is_hidden'
-                '  FROM problem'
-                ' WHERE id = %(problem_id)s',
+            sql=fr'SELECT id, title, setter_id, full_score, description, source, hint, is_hidden, is_deleted'
+                fr'  FROM problem'
+                fr' WHERE id = %(problem_id)s'
+                fr'{" AND NOT is_hidden" if include_hidden else ""}'
+                fr'{" AND NOT is_deleted" if include_deleted else ""}',
             problem_id=problem_id,
             fetch=1,
-    ) as (id_, title, setter_id, full_score, description, source, hint, is_enabled, is_hidden):
+    ) as (id_, title, setter_id, full_score, description, source, hint, is_hidden, is_deleted):
         return do.Problem(id=id_, title=title, setter_id=setter_id,
                           full_score=full_score, description=description, source=source, hint=hint,
-                          is_enabled=is_enabled, is_hidden=is_hidden)
+                          is_hidden=is_hidden, is_deleted=is_deleted)
 
 
 async def edit(problem_id: int,
@@ -77,8 +90,7 @@ async def edit(problem_id: int,
                description: Optional[str] = ...,
                source: Optional[str] = ...,
                hint: Optional[str] = ...,
-               is_enabled: Optional[bool] = None,
-               is_hidden: Optional[bool] = None) -> None:
+               is_hidden: Optional[bool] = None,) -> None:
     to_updates = {}
 
     if title is not None:
@@ -91,8 +103,6 @@ async def edit(problem_id: int,
         to_updates['source'] = source
     if hint is not ...:
         to_updates['hint'] = hint
-    if is_enabled is not None:
-        to_updates['is_enabled'] = is_enabled
     if is_hidden is not None:
         to_updates['is_hidden'] = is_hidden
 
@@ -113,4 +123,12 @@ async def edit(problem_id: int,
 
 
 async def delete(problem_id: int) -> None:
-    ...  # TODO
+    async with SafeExecutor(
+            event='soft delete problem',
+            sql=fr'UPDATE problem'
+                fr' WHERE id = %(problem_id)s'
+                fr'   SET is_deleted = %(is_deleted)s',
+            problem_id=problem_id,
+            is_deleted=True,
+    ):
+        pass
