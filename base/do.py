@@ -113,7 +113,6 @@ class Task:
 @dataclass
 class Problem:
     id: int
-    type: enum.ChallengeType
     title: str
     setter_id: int
     full_score: int
@@ -143,6 +142,7 @@ class SubmissionLanguage:
     id: int
     name: str
     version: str
+    is_disabled: bool
 
 
 @dataclass

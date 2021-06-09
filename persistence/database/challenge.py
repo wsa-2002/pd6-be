@@ -7,58 +7,68 @@ from .base import SafeExecutor
 
 
 async def add(class_id: int, type_: enum.ChallengeType, title: str, setter_id: int, description: Optional[str],
-              start_time: datetime, end_time: datetime, is_enabled: bool, is_hidden: bool) -> int:
+              start_time: datetime, end_time: datetime, is_hidden: bool, is_deleted: bool) -> int:
     async with SafeExecutor(
             event='Add challenge',
             sql="INSERT INTO challenge"
                 "            (class_id, type, title, setter_id, description,"
-                "             start_time, end_time, is_enabled, is_hidden)"
+                "             start_time, end_time, is_hidden, is_deleted)"
                 "     VALUES (%(class_id)s, %(type)s, %(title)s, %(setter_id)s, %(description)s,"
-                "             %(start_time)s, %(end_time)s, %(is_enabled)s, %(is_hidden)s)"
+                "             %(start_time)s, %(end_time)s, %(is_hidden)s, %(is_deleted)s)"
                 "  RETURNING id",
             class_id=class_id, type=type_, title=title, setter_id=setter_id, description=description,
-            start_time=start_time, end_time=end_time, is_enabled=is_enabled, is_hidden=is_hidden,
+            start_time=start_time, end_time=end_time, is_hidden=is_hidden, is_deleted=is_deleted,
             fetch=1,
     ) as (id_,):
         return id_
 
 
-async def browse(class_id: int = None) -> Sequence[do.Challenge]:
+async def browse(class_id: int = None, include_hidden=False, include_deleted=False) -> Sequence[do.Challenge]:
     conditions = {}
-
     if class_id is not None:
         conditions['class_id'] = class_id
 
-    cond_sql = ' AND '.join(fr"{field_name} = %({field_name})s" for field_name in conditions)
+    filters = []
+    if not include_hidden:
+        filters.append("NOT is_hidden")
+    if not include_deleted:
+        filters.append("NOT is_deleted")
+
+    cond_sql = ' AND '.join(list(fr"{field_name} = %({field_name})s" for field_name in conditions)
+                            + filters)
 
     async with SafeExecutor(
             event='browse challenges',
-            sql=fr'SELECT id, class_id, type, title, setter_id, description, start_time, end_time, is_enabled, is_hidden'
+            sql=fr'SELECT id, class_id, type, title, setter_id, description, start_time, end_time,'
+                fr'       is_hidden, is_deleted'
                 fr'  FROM challenge'
-                fr' {f"WHERE {cond_sql}" if cond_sql else ""}'
+                fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
                 fr' ORDER BY class_id ASC, id ASC',
             **conditions,
             fetch='all',
     ) as records:
         return [do.Challenge(id=id_, class_id=class_id, type=type_, title=title, setter_id=setter_id,
                              description=description, start_time=start_time, end_time=end_time,
-                             is_enabled=is_enabled, is_hidden=is_hidden)
-                for id_, class_id, type_, title, setter_id, description, start_time, end_time, is_enabled, is_hidden
+                             is_hidden=is_hidden, is_deleted=is_deleted)
+                for id_, class_id, type_, title, setter_id, description, start_time, end_time, is_hidden, is_deleted
                 in records]
 
 
-async def read(challenge_id: int) -> do.Challenge:
+async def read(challenge_id: int, include_hidden=False, include_deleted=False) -> do.Challenge:
     async with SafeExecutor(
             event='read challenge by id',
-            sql='SELECT id, class_id, type, title, setter_id, description, start_time, end_time, is_enabled, is_hidden'
-                '  FROM challenge'
-                ' WHERE id = %(challenge_id)s',
+            sql=r'SELECT id, class_id, type, title, setter_id, description, start_time, end_time,'
+                r'is_hidden, is_deleted'
+                r'  FROM challenge'
+                r' WHERE id = %(challenge_id)s'
+                fr'{" AND NOT is_hidden" if not include_hidden else ""}'
+                fr'{" AND NOT is_deleted" if not include_deleted else ""}',
             challenge_id=challenge_id,
             fetch=1,
-    ) as (id_, class_id, type_, title, setter_id, description, start_time, end_time, is_enabled, is_hidden):
+    ) as (id_, class_id, type_, title, setter_id, description, start_time, end_time, is_hidden, is_deleted):
         return do.Challenge(id=id_, class_id=class_id, type=type_, title=title, setter_id=setter_id,
                             description=description, start_time=start_time, end_time=end_time,
-                            is_enabled=is_enabled, is_hidden=is_hidden)
+                            is_hidden=is_hidden, is_deleted=is_deleted)
 
 
 async def edit(challenge_id: int,
@@ -67,8 +77,7 @@ async def edit(challenge_id: int,
                description: Optional[str] = ...,
                start_time: Optional[datetime] = None,
                end_time: Optional[datetime] = None,
-               is_enabled: Optional[bool] = None,
-               is_hidden: Optional[bool] = None) -> None:
+               is_hidden: Optional[bool] = None,) -> None:
     to_updates = {}
 
     if type_ is not None:
@@ -81,8 +90,6 @@ async def edit(challenge_id: int,
         to_updates['start_time'] = start_time
     if end_time is not None:
         to_updates['end_time'] = end_time
-    if is_enabled is not None:
-        to_updates['is_enabled'] = is_enabled
     if is_hidden is not None:
         to_updates['is_hidden'] = is_hidden
 
@@ -98,6 +105,18 @@ async def edit(challenge_id: int,
                 fr' WHERE id = %(challenge_id)s',
             challenge_id=challenge_id,
             **to_updates,
+    ):
+        pass
+
+
+async def delete(challenge_id: int) -> None:
+    async with SafeExecutor(
+            event='soft delete challenge',
+            sql=fr'UPDATE challenge'
+                fr'   SET is_deleted = %(is_deleted)s'
+                fr' WHERE id = %(challenge_id)s',
+            challenge_id=challenge_id,
+            is_deleted=True,
     ):
         pass
 

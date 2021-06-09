@@ -174,7 +174,6 @@ CREATE TABLE task (
 
 CREATE TABLE problem (
   id          SERIAL        PRIMARY KEY,
-  type        problem_type  NOT NULL,
   title       VARCHAR       NOT NULL  UNIQUE,
   setter_id   INTEGER       NOT NULL  REFERENCES account(id),
   full_score  INTEGER       NOT NULL,
@@ -202,9 +201,10 @@ CREATE TABLE testcase (
 -- submission management
 
 CREATE TABLE submission_language (
-  id      SERIAL  PRIMARY KEY,
-  name    VARCHAR NOT NULL,
-  version VARCHAR NOT NULL,
+  id            SERIAL  PRIMARY KEY,
+  name          VARCHAR NOT NULL,
+  version       VARCHAR NOT NULL,
+  is_disabled   BOOLEAN NOT NULL  DEFAULT false,
 
   UNIQUE (name, version)
 );
