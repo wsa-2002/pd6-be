@@ -5,19 +5,18 @@ from base import do
 from .base import SafeExecutor
 
 
-async def add(title: str, setter_id: int, full_score: int,
-              description: Optional[str], source: Optional[str], hint: Optional[str],
-              is_hidden: bool, is_deleted: bool) -> int:
+async def add(title: str, setter_id: int, full_score: int, description: Optional[str],
+              source: Optional[str], hint: Optional[str], is_hidden: bool) -> int:
     async with SafeExecutor(
             event='Add problem',
             sql="INSERT INTO problem"
-                "            (title, setter_id, full_score,"
-                "             description, source, hint, is_hidden, is_deleted)"
-                "     VALUES (%(title)s, %(setter_id)s, %(full_score)s,"
-                "             %(description)s, %(source)s, %(hint)s, %(is_hidden)s, %(is_deleted)s)"
+                "            (title, setter_id, full_score, description,"
+                "             source, hint, is_hidden)"
+                "     VALUES (%(title)s, %(setter_id)s, %(full_score)s, %(description)s,"
+                "             %(source)s, %(hint)s, %(is_hidden)s)"
                 "  RETURNING id",
-            title=title, setter_id=setter_id, full_score=full_score,
-            description=description, source=source, hint=hint, is_hidden=is_hidden, is_deleted=is_deleted,
+            title=title, setter_id=setter_id, full_score=full_score, description=description,
+            source=source, hint=hint, is_hidden=is_hidden,
             fetch=1,
     ) as (id_,):
         return id_

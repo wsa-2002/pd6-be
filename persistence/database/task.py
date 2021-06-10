@@ -6,17 +6,17 @@ from .base import SafeExecutor
 
 
 async def add(challenge_id: int, identifier: str, selection_type: enum.TaskSelectionType,
-              problem_id: Optional[int], peer_review_id: Optional[int], is_hidden: bool, is_deleted: bool) -> int:
+              problem_id: Optional[int], peer_review_id: Optional[int], is_hidden: bool) -> int:
     async with SafeExecutor(
             event='Add task',
             sql="INSERT INTO task"
                 "            (challenge_id, identifier, selection_type,"
-                "             problem_id, peer_review_id, is_hidden, is_deleted)"
+                "             problem_id, peer_review_id, is_hidden)"
                 "     VALUES (%(challenge_id)s, %(identifier)s, %(selection_type)s,"
-                "             %(problem_id)s, %(peer_review_id)s, %(is_hidden)s, %(is_deleted)s)"
+                "             %(problem_id)s, %(peer_review_id)s, %(is_hidden)s)"
                 "  RETURNING id",
             challenge_id=challenge_id, identifier=identifier, selection_type=selection_type,
-            problem_id=problem_id, peer_review_id=peer_review_id, is_hidden=is_hidden, is_deleted=is_deleted,
+            problem_id=problem_id, peer_review_id=peer_review_id, is_hidden=is_hidden,
             fetch=1,
     ) as (id_,):
         return id_

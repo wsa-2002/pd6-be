@@ -7,14 +7,14 @@ from base.enum import RoleType
 from .base import SafeExecutor, SafeConnection
 
 
-async def add(name: str, pass_hash: str, nickname: str, real_name: str, role: RoleType, is_deleted: bool) -> int:
+async def add(name: str, pass_hash: str, nickname: str, real_name: str, role: RoleType) -> int:
     async with SafeExecutor(
             event='add account',
             sql=r'INSERT INTO account'
-                r'            (name, pass_hash, nickname, real_name, role, is_deleted)'
-                r'     VALUES (%(name)s, %(pass_hash)s, %(nickname)s, %(real_name)s, %(role)s, %(is_deleted)s)'
+                r'            (name, pass_hash, nickname, real_name, role)'
+                r'     VALUES (%(name)s, %(pass_hash)s, %(nickname)s, %(real_name)s, %(role)s)'
                 r'  RETURNING id',
-            name=name, pass_hash=pass_hash, nickname=nickname, real_name=real_name, role=role, is_deleted=is_deleted,
+            name=name, pass_hash=pass_hash, nickname=nickname, real_name=real_name, role=role,
             fetch=1,
     ) as (account_id,):
         return account_id
@@ -139,6 +139,7 @@ async def verify_email(code: str) -> None:
                 raise exceptions.NotFound
 
             if student_card_id:  # student card email
+                # TODO FIXME: should be replaced (no more is_enabled for student card)
                 await conn.execute(r'UPDATE student_card'
                                    r'   SET is_enabled = $1'
                                    r' WHERE id = $2',

@@ -6,17 +6,17 @@ from .base import SafeExecutor
 
 
 async def add(problem_id: int, is_sample: bool, score: int, input_file: str, output_file: str,
-              time_limit: int, memory_limit: int, is_disabled: bool, is_deleted: bool) -> int:
+              time_limit: int, memory_limit: int, is_disabled: bool) -> int:
     async with SafeExecutor(
             event='Add testcase',
             sql="INSERT INTO testcase"
                 "            (problem_id, is_sample, score, input_file, output_file,"
-                "             time_limit, memory_limit, is_disabled, is_deleted)"
+                "             time_limit, memory_limit, is_disabled)"
                 "     VALUES (%(problem_id)s, %(is_sample)s, %(score)s, %(input_file)s, %(output_file)s,"
-                "             %(time_limit)s, %(memory_limit)s, %(is_disabled)s, %(is_deleted)s)"
+                "             %(time_limit)s, %(memory_limit)s, %(is_disabled)s)"
                 "  RETURNING id",
             problem_id=problem_id, is_sample=is_sample, score=score, input_file=input_file, output_file=output_file,
-            time_limit=time_limit, memory_limit=memory_limit, is_disabled=is_disabled, is_deleted=is_deleted,
+            time_limit=time_limit, memory_limit=memory_limit, is_disabled=is_disabled,
             fetch=1,
     ) as (id_,):
         return id_

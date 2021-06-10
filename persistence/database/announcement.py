@@ -6,16 +6,15 @@ from base import do
 from .base import SafeExecutor
 
 
-async def add(title: str, content: str, author_id: int, post_time: datetime, expire_time: datetime, is_deleted: bool) \
+async def add(title: str, content: str, author_id: int, post_time: datetime, expire_time: datetime) \
         -> int:
     async with SafeExecutor(
             event='Add announcement',
             sql=r'INSERT INTO announcement'
-                r'            (title, content, author_id, post_time, expire_time, is_deleted)'
-                r'     VALUES (%(title)s, %(content)s, %(author_id)s, %(post_time)s, %(expire_time)s, %(is_deleted)s)'
+                r'            (title, content, author_id, post_time, expire_time)'
+                r'     VALUES (%(title)s, %(content)s, %(author_id)s, %(post_time)s, %(expire_time)s)'
                 r'  RETURNING id',
             title=title, content=content, author_id=author_id, post_time=post_time, expire_time=expire_time,
-            is_deleted=is_deleted,
             fetch=1,
     ) as (announcement_id,):
         return announcement_id
