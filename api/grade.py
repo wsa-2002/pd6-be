@@ -45,14 +45,15 @@ class EditGradeInput(BaseModel):
     title: Optional[str] = None
     score: Optional[int] = None
     comment: Optional[str] = None
+    is_hidden: bool = None
 
 
 @router.patch('/grade/{grade_id}')
 async def edit_grade(grade_id: int, data: EditGradeInput) -> None:
     await db.grade.edit(grade_id=grade_id, title=data.title, score=data.score, comment=data.comment,
-                        update_time=datetime.now())  # TODO: request.time?
+                        update_time=datetime.now(), is_hidden=data.is_hidden)  # TODO: request.time?
 
 
 @router.delete('/grade/{grade_id}')
 async def delete_grade(grade_id: int):
-    ...  # TODO: hard delete?
+    await db.grade.delete(grade_id)

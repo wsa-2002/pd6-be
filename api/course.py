@@ -20,7 +20,6 @@ router = APIRouter(
 class AddCourseInput(BaseModel):
     name: str
     type: CourseType
-    is_enabled: bool
     is_hidden: bool
 
 
@@ -37,7 +36,6 @@ async def add_course(data: AddCourseInput, request: auth.Request) -> AddCourseOu
     course_id = await db.course.add(
         name=data.name,
         course_type=data.type,
-        is_enabled=data.is_enabled,
         is_hidden=data.is_hidden,
     )
     return AddCourseOutput(id=course_id)
@@ -49,7 +47,7 @@ async def browse_course(request: auth.Request) -> Sequence[do.Course]:
         raise exc.NoPermission
 
     show_limited = request.account.role.not_manager
-    courses = await db.course.browse(only_enabled=show_limited, exclude_hidden=show_limited)
+    courses = await db.course.browse(include_hidden=not show_limited, include_deleted=not show_limited)
     return courses
 
 
@@ -59,14 +57,13 @@ async def read_course(course_id: int, request: auth.Request) -> do.Course:
         raise exc.NoPermission
 
     show_limited = request.account.role.not_manager
-    course = await db.course.read(course_id, only_enabled=show_limited, exclude_hidden=show_limited)
+    course = await db.course.read(course_id, include_hidden=not show_limited, include_deleted=not show_limited)
     return course
 
 
 class EditCourseInput(BaseModel):
     name: Optional[str]
     type: Optional[CourseType]
-    is_enabled: Optional[bool]
     is_hidden: Optional[bool]
 
 
@@ -79,7 +76,6 @@ async def edit_course(course_id: int, data: EditCourseInput, request: auth.Reque
         course_id=course_id,
         name=data.name,
         course_type=data.type,
-        is_enabled=data.is_enabled,
         is_hidden=data.is_hidden,
     )
 
@@ -89,15 +85,11 @@ async def delete_course(course_id: int, request: auth.Request) -> None:
     if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
-    await db.course.edit(
-        course_id=course_id,
-        is_enabled=False,
-    )
+    await db.course.delete(course_id)
 
 
 class AddClassInput(BaseModel):
     name: str
-    is_enabled: bool
     is_hidden: bool
 
 
@@ -114,7 +106,6 @@ async def add_class_under_course(course_id: int, data: AddClassInput, request: a
     class_id = await db.class_.add(
         name=data.name,
         course_id=course_id,
-        is_enabled=data.is_enabled,
         is_hidden=data.is_hidden,
     )
 

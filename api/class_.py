@@ -23,7 +23,7 @@ async def browse_class(request: auth.Request) -> Sequence[do.Class]:
         raise exc.NoPermission
 
     show_limited = request.account.role.not_manager
-    classes = await db.class_.browse(only_enabled=show_limited, exclude_hidden=show_limited)
+    classes = await db.class_.browse(include_hidden=not show_limited, include_deleted=not show_limited)
     return classes
 
 
@@ -33,14 +33,13 @@ async def read_class(class_id: int, request: auth.Request) -> do.Class:
         raise exc.NoPermission
 
     show_limited = request.account.role.not_manager
-    class_ = await db.class_.read(class_id=class_id, only_enabled=show_limited, exclude_hidden=show_limited)
+    class_ = await db.class_.read(class_id=class_id, include_hidden=not show_limited, include_deleted=not show_limited)
     return class_
 
 
 class EditClassInput(BaseModel):
     name: Optional[str]
     course_id: Optional[int]
-    is_enabled: Optional[bool]
     is_hidden: Optional[bool]
 
 
@@ -53,7 +52,6 @@ async def edit_class(class_id: int, data: EditClassInput, request: auth.Request)
         class_id=class_id,
         name=data.name,
         course_id=data.course_id,
-        is_enabled=data.is_enabled,
         is_hidden=data.is_hidden,
     )
 
@@ -63,10 +61,7 @@ async def delete_class(class_id: int, request: auth.Request) -> None:
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
 
-    await db.class_.edit(
-        class_id=class_id,
-        is_enabled=False,
-    )
+    await db.class_.delete(class_id)
 
 
 @router.get('/class/{class_id}/member')
@@ -102,7 +97,6 @@ async def delete_class_member(class_id: int, member_id: int, request: auth.Reque
 
 class AddTeamInput(BaseModel):
     name: str
-    is_enabled: bool
     is_hidden: bool
 
 
@@ -119,7 +113,6 @@ async def add_team_under_class(class_id: int, data: AddTeamInput, request: auth.
     team_id = await db.team.add(
         name=data.name,
         class_id=class_id,
-        is_enabled=data.is_enabled,
         is_hidden=data.is_hidden,
     )
 

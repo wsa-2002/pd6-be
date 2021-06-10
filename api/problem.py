@@ -24,7 +24,6 @@ class CreateProblemInput(BaseModel):
     description: Optional[str]
     source: Optional[str]
     hint: Optional[str]
-    is_enabled: bool
     is_hidden: bool
 
 
@@ -32,7 +31,7 @@ class CreateProblemInput(BaseModel):
 async def add_problem(data: CreateProblemInput, request: auth.Request) -> int:
     problem_id = await db.problem.add(title=data.title, setter_id=request.account.id,
                                       full_score=data.full_score, description=data.description, source=data.source,
-                                      hint=data.hint, is_enabled=data.is_enabled, is_hidden=data.is_hidden)
+                                      hint=data.hint, is_hidden=data.is_hidden)
 
     return problem_id
 
@@ -53,13 +52,14 @@ class EditProblemInput(BaseModel):
     description: Optional[str]
     source: Optional[str]
     hint: Optional[str]
-    is_enabled: bool
     is_hidden: bool
 
 
 @router.patch('/problem/{problem_id}')
-async def edit_problem(problem_id: int):
-    pass
+async def edit_problem(problem_id: int, data: EditProblemInput):
+    return await db.problem.edit(problem_id, title=data.title, full_score=data.full_score,
+                                 description=data.description, source=data.source,
+                                 hint=data.hint, is_hidden=data.is_hidden)
 
 
 @router.delete('/problem/{problem_id}')
@@ -74,8 +74,7 @@ class AddTestcaseInput(BaseModel):
     output_file: str  # TODO
     time_limit: int
     memory_limit: int
-    is_enabled: bool
-    is_hidden: bool
+    is_disabled: bool
 
 
 @router.post('/problem/{problem_id}/testcase', tags=['Testcase'])
@@ -83,7 +82,7 @@ async def add_testcase_under_problem(problem_id: int, data: AddTestcaseInput) ->
     return await db.testcase.add(problem_id=problem_id, is_sample=data.is_sample, score=data.score,
                                  input_file=data.input_file, output_file=data.output_file,
                                  time_limit=data.time_limit, memory_limit=data.memory_limit,
-                                 is_enabled=data.is_enabled, is_hidden=data.is_hidden)
+                                 is_disabled=data.is_disabled)
 
 
 @router.get('/problem/{problem_id}/testcase', tags=['Testcase'])

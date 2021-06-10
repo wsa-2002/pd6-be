@@ -30,8 +30,7 @@ class EditTestcaseInput(BaseModel):
     output_file: str  # TODO
     time_limit: int
     memory_limit: int
-    is_enabled: bool
-    is_hidden: bool
+    is_disabled: bool
 
 
 @router.patch('/testcase/{testcase_id}')
@@ -39,7 +38,7 @@ async def edit_testcase(testcase_id: int, data: EditTestcaseInput) -> None:
     await db.testcase.edit(testcase_id=testcase_id, is_sample=data.is_sample, score=data.score,
                            input_file=data.input_file, output_file=data.output_file,
                            time_limit=data.time_limit, memory_limit=data.memory_limit,
-                           is_enabled=data.is_enabled, is_hidden=data.is_hidden)
+                           is_disabled=data.is_disabled)
 
 
 @router.delete('/testcase/{testcase_id}')

@@ -48,15 +48,13 @@ class AddAccountInput(BaseModel):
 @router.post('/account', tags=['Account-Control'], response_class=envelope.JSONResponse)
 async def add_account(data: AddAccountInput) -> None:
     account_id = await db.account.add(name=data.name, pass_hash=security.hash_password(data.password),
-                                      nickname=data.nickname, real_name=data.real_name, role=RoleType.guest,
-                                      is_enabled=True)
+                                      nickname=data.nickname, real_name=data.real_name, role=RoleType.guest)
     student_card_id = await db.student_card.add(
         account_id=account_id,
         institute_id=data.institute_id,
         department=data.department,
         student_id=data.student_id,
         email=data.institute_email,
-        is_enabled=False,  # Not yet verified => disabled
     )
 
     code = await db.account.add_email_verification(email=data.institute_email,

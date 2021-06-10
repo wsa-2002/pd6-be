@@ -18,6 +18,7 @@ router = APIRouter(
 class AddInstituteInput(BaseModel):
     name: str
     email_domain: str
+    is_disabled: bool
 
 
 @dataclass
@@ -30,29 +31,29 @@ async def add_institute(data: AddInstituteInput, request: auth.Request) -> AddIn
     if not request.account.role.is_manager:
         raise exc.NoPermission
 
-    institute_id = await db.institute.add(name=data.name, email_domain=data.email_domain)
+    institute_id = await db.institute.add(name=data.name, email_domain=data.email_domain, is_disabled=data.is_disabled)
     return AddInstituteOutput(id=institute_id)
 
 
 @router.get('/institute', tags=['Public'])
 async def browse_institute(request: auth.Request) -> Sequence[do.Institute]:
     try:
-        only_enabled = request.account.role.not_manager
+        include_disabled = request.account.role.is_manager
     except exc.NoPermission:
-        only_enabled = True
+        include_disabled = False
 
-    return await db.institute.browse(only_enabled=only_enabled)
+    return await db.institute.browse(include_disabled=include_disabled)
 
 
 @router.get('/institute/{institute_id}')
 async def read_institute(institute_id: int, request: auth.Request) -> do.Institute:
-    return await db.institute.read(institute_id, only_enabled=request.account.role.not_manager)
+    return await db.institute.read(institute_id, include_disabled=request.account.role.is_manager)
 
 
 class EditInstituteInput(BaseModel):
     name: Optional[str]
     email_domain: Optional[str]
-    is_enabled: Optional[bool]
+    is_disabled: Optional[bool]
 
 
 @router.patch('/institute/{institute_id}')
@@ -64,5 +65,5 @@ async def edit_institute(institute_id: int, data: EditInstituteInput, request: a
         institute_id=institute_id,
         name=data.name,
         email_domain=data.email_domain,
-        is_enabled=data.is_enabled,
+        is_disabled=data.is_disabled,
     )
