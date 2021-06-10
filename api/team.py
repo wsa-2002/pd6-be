@@ -47,9 +47,9 @@ async def is_team_manager(team_id, account_id):
 
 
 class EditTeamInput(BaseModel):
-    name: str
-    class_id: int
-    is_hidden: bool
+    name: str = None
+    class_id: int = None
+    is_hidden: bool = None
 
 
 @router.patch('/team/{team_id}')

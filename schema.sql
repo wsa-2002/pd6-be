@@ -309,7 +309,7 @@ CREATE TABLE access_log (
   request_method  VARCHAR   NOT NULL, -- Longest is `CONNECT` -> 7
   resource_path   VARCHAR   NOT NULL,
   ip              VARCHAR   NOT NULL, -- Linux `INET6_ADDRSTRLEN = 48` -> 47 + terminating NULL
-  account_id      INTEGER   REFERENCES account(id)
+  account_id      INTEGER             REFERENCES account(id)
 );
 
 

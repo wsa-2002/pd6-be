@@ -51,7 +51,7 @@ async def read(account_id: int, *, include_deleted: bool = False) -> do.Account:
 
 # Uses ellipsis (...) as default value for values that can be set to None
 async def edit(account_id: int,
-               nickname: Optional[str] = ...) -> None:
+               nickname: str = ...) -> None:
     to_updates = {}
     if nickname is not ...:
         to_updates['nickname'] = nickname
@@ -109,7 +109,7 @@ async def read_login_by_name(name: str, include_deleted: bool = False) -> Tuple[
         return id_, pass_hash
 
 
-async def add_email_verification(email: str, account_id: int, student_card_id: int = None) -> str:
+async def add_email_verification(email: str, account_id: int, student_card_id: Optional[int]) -> str:
     async with SafeExecutor(
             event='create email verification',
             sql=r'INSERT INTO email_verification'

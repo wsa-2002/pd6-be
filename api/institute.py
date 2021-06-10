@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional, Sequence
+from typing import Sequence
 
 from pydantic import BaseModel
 
@@ -51,9 +51,9 @@ async def read_institute(institute_id: int, request: auth.Request) -> do.Institu
 
 
 class EditInstituteInput(BaseModel):
-    name: Optional[str]
-    email_domain: Optional[str]
-    is_disabled: Optional[bool]
+    name: str = None
+    email_domain: str = None
+    is_disabled: bool = None
 
 
 @router.patch('/institute/{institute_id}')

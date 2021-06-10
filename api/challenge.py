@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, Sequence, Collection, List
+from typing import Optional, Sequence
 
 from pydantic import BaseModel
 
@@ -69,12 +69,12 @@ async def read_challenge(challenge_id: int, request: auth.Request) -> do.Challen
 
 class EditChallengeInput(BaseModel):
     # class_id: int
-    type: Optional[enum.ChallengeType]
-    title: Optional[str]
+    type: enum.ChallengeType = None
+    title: str = None
     description: Optional[str] = ...
-    start_time: Optional[datetime]
-    end_time: Optional[datetime]
-    is_hidden: Optional[bool]
+    start_time: datetime = None
+    end_time: datetime = None
+    is_hidden: bool = None
 
 
 @router.patch('/challenge/{challenge_id}')
@@ -98,9 +98,9 @@ async def delete_challenge(challenge_id: int, request: auth.Request) -> None:
 class AddTaskInput(BaseModel):
     identifier: str
     selection_type: enum.TaskSelectionType
-    problem_id: Optional[int] = None
-    peer_review_id: Optional[int] = None
-    is_hidden: bool = None
+    problem_id: Optional[int] = ...
+    peer_review_id: Optional[int] = ...
+    is_hidden: bool
 
 
 @router.post('/challenge/{challenge_id}/task', tags=['Task'])

@@ -48,8 +48,8 @@ async def read_account(account_id: int, request: auth.Request) -> ReadAccountOut
 
 
 class EditAccountInput(BaseModel):
-    nickname: Optional[str]
-    alternative_email: Optional[str]
+    nickname: str = None
+    alternative_email: str = None
 
 
 @router.patch('/account/{account_id}')
@@ -61,7 +61,8 @@ async def edit_account(account_id: int, data: EditAccountInput, request: auth.Re
     await db.account.edit(account_id=account_id, nickname=data.nickname)
 
     if data.alternative_email:  # 加或改 alternative email
-        code = await db.account.add_email_verification(email=data.alternative_email, account_id=account_id)
+        code = await db.account.add_email_verification(email=data.alternative_email, account_id=account_id,
+                                                       student_card_id=None)
         await email.send_email_verification_email(to=data.alternative_email, code=code)
     else:  # 刪掉 alternative email
         await db.account.delete_alternative_email_by_id(account_id=account_id)
@@ -78,6 +79,7 @@ async def delete_account(account_id: int, request: auth.Request) -> None:
 class AddInstituteInput(BaseModel):
     name: str
     email_domain: str
+    is_disabled: bool
 
 
 @dataclass
@@ -90,7 +92,7 @@ async def add_institute(data: AddInstituteInput, request: auth.Request) -> AddIn
     if not request.account.role.is_manager:
         raise exc.NoPermission
 
-    institute_id = await db.institute.add(name=data.name, email_domain=data.email_domain)
+    institute_id = await db.institute.add(name=data.name, email_domain=data.email_domain, is_disabled=data.is_disabled)
     return AddInstituteOutput(id=institute_id)
 
 
@@ -110,9 +112,9 @@ async def read_institute(institute_id: int, request: auth.Request) -> do.Institu
 
 
 class EditInstituteInput(BaseModel):
-    name: Optional[str]
-    email_domain: Optional[str]
-    is_disabled: Optional[bool]
+    name: str = None
+    email_domain: str = None
+    is_disabled: bool = None
 
 
 @router.patch('/institute/{institute_id}')
@@ -177,10 +179,10 @@ async def read_student_card(student_card_id: int, request: auth.Request) -> do.S
 
 
 class EditStudentCardInput(BaseModel):
-    institute_id: int
-    department: str
-    student_id: str
-    email: str
+    institute_id: int = None
+    department: str = None
+    student_id: str = None
+    email: str = None
 
 
 @router.patch('/student-card/{student_card_id}')

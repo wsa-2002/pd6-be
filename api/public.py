@@ -37,7 +37,7 @@ class AddAccountInput(BaseModel):
     password: str
     nickname: str
     real_name: str
-    alternative_email: Optional[str]
+    alternative_email: Optional[str] = ...
     # Student card
     institute_id: int
     department: str
@@ -63,7 +63,8 @@ async def add_account(data: AddAccountInput) -> None:
 
     if data.alternative_email:
         # Alternative email 不直接寫進去，等 verify 的時候再寫進 db
-        code = await db.account.add_email_verification(email=data.alternative_email, account_id=account_id)
+        code = await db.account.add_email_verification(email=data.alternative_email, account_id=account_id,
+                                                       student_card_id=None)
         await email.send_email_verification_email(to=data.alternative_email, code=code)
 
 

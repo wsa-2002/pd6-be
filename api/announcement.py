@@ -1,11 +1,9 @@
-from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional, Sequence
+from typing import Sequence
 
 from pydantic import BaseModel
 
 from base import do
-from base.enum import CourseType, RoleType
 import exceptions as exc
 from middleware import APIRouter, envelope, auth
 import persistence.database as db
@@ -45,10 +43,10 @@ async def read_announcement(announcement_id: int) -> do.Announcement:
 
 
 class EditAnnouncementInput(BaseModel):
-    title: Optional[str] = None
-    content: Optional[str] = None
-    post_time: Optional[datetime] = None
-    expire_time: Optional[datetime] = None
+    title: str = None
+    content: str = None
+    post_time: datetime = None
+    expire_time: datetime = None
 
 
 @router.patch('/announcement/{announcement_id}')

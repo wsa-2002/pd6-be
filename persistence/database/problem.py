@@ -84,12 +84,12 @@ async def read(problem_id: int, include_hidden=False, include_deleted=False) -> 
 
 
 async def edit(problem_id: int,
-               title: Optional[str] = None,
-               full_score: Optional[int] = None,
+               title: str = None,
+               full_score: int = None,
                description: Optional[str] = ...,
                source: Optional[str] = ...,
                hint: Optional[str] = ...,
-               is_hidden: Optional[bool] = None,) -> None:
+               is_hidden: bool = None,) -> None:
     to_updates = {}
 
     if title is not None:

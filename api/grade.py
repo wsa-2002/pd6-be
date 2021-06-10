@@ -1,11 +1,9 @@
-from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional, Sequence
 
 from pydantic import BaseModel
 
 from base import do
-from base.enum import CourseType, RoleType
 import exceptions as exc
 from middleware import APIRouter, envelope, auth
 import persistence.database as db
@@ -42,9 +40,9 @@ async def get_grade(grade_id: int) -> do.Grade:
 
 
 class EditGradeInput(BaseModel):
-    title: Optional[str] = None
-    score: Optional[int] = None
-    comment: Optional[str] = None
+    title: str = None
+    score: Optional[int] = ...
+    comment: Optional[str] = ...
     is_hidden: bool = None
 
 
