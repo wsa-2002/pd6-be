@@ -7,17 +7,17 @@ from .base import SafeExecutor
 
 
 async def add(class_id: int, type_: enum.ChallengeType, title: str, setter_id: int, description: Optional[str],
-              start_time: datetime, end_time: datetime, is_hidden: bool, is_deleted: bool) -> int:
+              start_time: datetime, end_time: datetime, is_hidden: bool) -> int:
     async with SafeExecutor(
             event='Add challenge',
             sql="INSERT INTO challenge"
                 "            (class_id, type, title, setter_id, description,"
-                "             start_time, end_time, is_hidden, is_deleted)"
+                "             start_time, end_time, is_hidden)"
                 "     VALUES (%(class_id)s, %(type)s, %(title)s, %(setter_id)s, %(description)s,"
-                "             %(start_time)s, %(end_time)s, %(is_hidden)s, %(is_deleted)s)"
+                "             %(start_time)s, %(end_time)s, %(is_hidden)s)"
                 "  RETURNING id",
             class_id=class_id, type=type_, title=title, setter_id=setter_id, description=description,
-            start_time=start_time, end_time=end_time, is_hidden=is_hidden, is_deleted=is_deleted,
+            start_time=start_time, end_time=end_time, is_hidden=is_hidden,
             fetch=1,
     ) as (id_,):
         return id_

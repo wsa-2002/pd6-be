@@ -6,17 +6,16 @@ from base.enum import RoleType
 from .base import SafeExecutor
 
 
-async def add(name: str, class_id: int, is_hidden: bool, is_deleted: bool) -> int:
+async def add(name: str, class_id: int, is_hidden: bool) -> int:
     async with SafeExecutor(
             event='add team',
             sql=r'INSERT INTO team'
-                r'            (name, type, is_hidden, is_deleted)'
-                r'     VALUES (%(name)s, %(class_id)s), %(is_hidden)s), %(is_deleted)s)'
+                r'            (name, type, is_hidden)'
+                r'     VALUES (%(name)s, %(class_id)s), %(is_hidden)s))'
                 r'  RETURNING id',
             name=name,
             class_id=class_id,
             is_hidden=is_hidden,
-            is_deleted=is_deleted,
             fetch=1,
     ) as (class_id,):
         return class_id

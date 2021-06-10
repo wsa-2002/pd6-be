@@ -6,17 +6,16 @@ from base.enum import CourseType, RoleType
 from .base import SafeExecutor, SafeConnection
 
 
-async def add(name: str, course_type: CourseType, is_hidden: bool, is_deleted: bool) -> int:
+async def add(name: str, course_type: CourseType, is_hidden: bool) -> int:
     async with SafeExecutor(
             event='create course',
             sql=r'INSERT INTO course'
-                r'            (name, type, is_hidden, is_deleted)'
-                r'     VALUES (%(name)s, %(course_type)s), %(is_hidden)s), %(is_deleted)s)'
+                r'            (name, type, is_hidden)'
+                r'     VALUES (%(name)s, %(course_type)s), %(is_hidden)s))'
                 r'  RETURNING id',
             name=name,
             course_type=course_type,
             is_hidden=is_hidden,
-            is_deleted=is_deleted,
             fetch=1,
     ) as (course_id,):
         return course_id

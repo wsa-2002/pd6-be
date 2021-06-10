@@ -6,23 +6,19 @@ from base import do
 from .base import SafeExecutor
 
 
-async def add(target_task_id: int, setter_id: int, description: str,
-              min_score: int, max_score: int, max_review_count: int, start_time: datetime, end_time: datetime,
-              is_hidden: bool, is_deleted: bool) -> int:
+async def add(target_task_id: int, setter_id: int, description: str, min_score: int, max_score: int,
+              max_review_count: int, start_time: datetime, end_time: datetime, is_hidden: bool) -> int:
     async with SafeExecutor(
             event='Add peer review',
             sql="INSERT INTO peer_review"
-                "            (target_task_id, setter_id, description,"
-                "             min_score, max_score, max_review_count, start_time, end_time,"
-                "             is_hidden, is_deleted)"
-                "     VALUES (%(target_task_id)s, %(setter_id)s, %(description)s,"
-                "             %(min_score)s, %(max_score)s, %(max_review_count)s, %(start_time)s, %(end_time)s,"
-                "             %(is_enabled)s, %(is_hidden)s)"
+                "            (target_task_id, setter_id, description, min_score, max_score,"
+                "             max_review_count, start_time, end_time, is_hidden)"
+                "     VALUES (%(target_task_id)s, %(setter_id)s, %(description)s, %(min_score)s, %(max_score)s,"
+                "             %(max_review_count)s, %(start_time)s, %(end_time)s, %(is_hidden)s)"
                 "  RETURNING id",
             target_task_id=target_task_id,
-            setter_id=setter_id, description=description,
-            min_score=min_score, max_score=max_score, max_review_count=max_review_count,
-            start_time=start_time, end_time=end_time, is_hidden=is_hidden, is_deleted=is_deleted,
+            setter_id=setter_id, description=description, min_score=min_score, max_score=max_score,
+            max_review_count=max_review_count, start_time=start_time, end_time=end_time, is_hidden=is_hidden,
             fetch=1,
     ) as (id_,):
         return id_

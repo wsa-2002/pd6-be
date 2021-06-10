@@ -6,25 +6,21 @@ from base import do
 from .base import SafeExecutor
 
 
-async def add(receiver_id: int, grader_id: int, class_id: int, title: str,
-              score: Optional[int], comment: Optional[str], is_hidden: bool, is_deleted: bool,
-              update_time: Optional[datetime] = None) -> int:
+async def add(receiver_id: int, grader_id: int, class_id: int, title: str, score: Optional[int], comment: Optional[str],
+              is_hidden: bool, update_time: Optional[datetime] = None) -> int:
     if update_time is None:
         update_time = datetime.now()
 
     async with SafeExecutor(
             event='Add grade',
             sql=r'INSERT INTO grade'
-                r'            (receiver_id, grader_id, class_id,'
-                r'             title, score, comment, update_time,'
-                r'             is_hidden, is_deleted)'
-                r'     VALUES (%(receiver_id)s, %(grader_id)s, %(class_id)s,'
-                r'             %(title)s, %(score)s, %(comment)s, %(update_time)s,'
-                r'             %(is_hidden)s, %(is_deleted)s)'
+                r'            (receiver_id, grader_id, class_id, title, score, comment,'
+                r'             update_time, is_hidden)'
+                r'     VALUES (%(receiver_id)s, %(grader_id)s, %(class_id)s, %(title)s, %(score)s, %(comment)s,'
+                r'             %(update_time)s, %(is_hidden)s)'
                 r'  RETURNING id',
-            receiver_id=receiver_id, grader_id=grader_id, class_id=class_id,
-            title=title, score=score, comment=comment, update_time=update_time,
-            is_hidden=is_hidden, is_deleted=is_deleted,
+            receiver_id=receiver_id, grader_id=grader_id, class_id=class_id,  title=title, score=score, comment=comment,
+            update_time=update_time, is_hidden=is_hidden,
             fetch=1,
     ) as (grade_id,):
         return grade_id
