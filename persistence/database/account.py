@@ -139,6 +139,7 @@ async def verify_email(code: str) -> None:
                 raise exceptions.NotFound
 
             if student_card_id:  # student card email
+                # TODO FIXME: should be replaced (no more is_enabled for student card)
                 await conn.execute(r'UPDATE student_card'
                                    r'   SET is_enabled = $1'
                                    r' WHERE id = $2',
