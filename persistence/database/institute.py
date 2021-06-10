@@ -5,15 +5,16 @@ from base import do
 from .base import SafeExecutor
 
 
-async def add(name: str, email_domain: str) -> int:
+async def add(name: str, email_domain: str, is_disabled: bool) -> int:
     async with SafeExecutor(
             event='Add institute',
             sql=r'INSERT INTO institute'
-                r'            (name, email_domain)'
-                r'     VALUES (%(name)s, %(email_domain)s)'
+                r'            (name, email_domain, is_disabled)'
+                r'     VALUES (%(name)s, %(email_domain)s, %(is_disabled)s)'
                 r'  RETURNING id',
             name=name,
             email_domain=email_domain,
+            is_disabled=is_disabled,
             fetch=1,
     ) as (institute_id,):
         return institute_id
