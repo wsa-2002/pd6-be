@@ -22,6 +22,33 @@ async def add_language(name: str, version: str, is_disabled: bool) -> int:
         return id_
 
 
+async def edit_language(language_id: int,
+                        name: str = None, version: str = None, is_disabled: bool = None) -> None:
+    to_updates = {}
+
+    if name is not None:
+        to_updates['name'] = name
+    if version is not None:
+        to_updates['version'] = version
+    if is_disabled is not ...:
+        to_updates['is_disabled'] = is_disabled
+
+    if not to_updates:
+        return
+
+    set_sql = ', '.join(fr"{field_name} = %({field_name})s" for field_name in to_updates)
+
+    async with SafeExecutor(
+            event='edit submission language',
+            sql=fr'UPDATE submission_language'
+                fr'   SET {set_sql}'
+                fr' WHERE id = %(language_id)s',
+            language_id=language_id,
+            **to_updates,
+    ):
+        pass
+
+
 async def browse_language(include_disabled=False) -> Sequence[do.SubmissionLanguage]:
     async with SafeExecutor(
             event='Browse submission language',
