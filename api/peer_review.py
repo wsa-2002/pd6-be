@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional, Sequence
+from typing import Sequence
 
 from pydantic import BaseModel
 
@@ -51,13 +51,13 @@ async def read_peer_review(peer_review_id: int) -> do.PeerReview:
 
 
 class EditPeerReviewInput(BaseModel):
-    description: str
-    min_score: int
-    max_score: int
-    max_review_count: int
-    start_time: datetime
-    end_time: datetime
-    is_hidden: bool
+    description: str = None
+    min_score: int = None
+    max_score: int = None
+    max_review_count: int = None
+    start_time: datetime = None
+    end_time: datetime = None
+    is_hidden: bool = None
 
 
 @router.patch('/peer-review/{peer_review_id}')

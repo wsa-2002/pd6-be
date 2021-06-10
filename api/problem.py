@@ -1,11 +1,8 @@
-from dataclasses import dataclass
-from datetime import datetime
 from typing import Optional, Sequence
 
 from pydantic import BaseModel
 
 from base import do, enum
-from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, envelope, auth
 import persistence.database as db
@@ -47,12 +44,12 @@ async def read_problem(problem_id: int):
 
 
 class EditProblemInput(BaseModel):
-    title: str
-    full_score: int
-    description: Optional[str]
-    source: Optional[str]
-    hint: Optional[str]
-    is_hidden: bool
+    title: str = None
+    full_score: int = None
+    description: Optional[str] = ...
+    source: Optional[str] = ...
+    hint: Optional[str] = ...
+    is_hidden: bool = None
 
 
 @router.patch('/problem/{problem_id}')

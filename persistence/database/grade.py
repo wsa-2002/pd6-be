@@ -78,7 +78,7 @@ async def read(grade_id: int, include_hidden=False, include_deleted=False) -> do
                         is_hidden=is_hidden, is_deleted=is_deleted)
 
 
-async def edit(grade_id: int, title: str = None, score: int = None, comment: str = None,
+async def edit(grade_id: int, title: str = None, score: Optional[int] = ..., comment: Optional[str] = ...,
                update_time: datetime = None, is_hidden: bool = None) -> None:
     if update_time is None:
         update_time = datetime.now()
@@ -87,9 +87,9 @@ async def edit(grade_id: int, title: str = None, score: int = None, comment: str
 
     if title is not None:
         to_updates['title'] = title
-    if score is not None:
+    if score is not ...:
         to_updates['score'] = score
-    if comment is not None:
+    if comment is not ...:
         to_updates['comment'] = comment
     if update_time is not None:
         to_updates['update_time'] = update_time

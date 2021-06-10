@@ -63,11 +63,11 @@ async def read_student_card(student_card_id: int, request: auth.Request) -> do.S
 
 
 class EditStudentCardInput(BaseModel):
-    institute_id: int
-    department: str
-    student_id: str
-    email: str
-    is_enabled: bool
+    institute_id: int = None
+    department: str = None
+    student_id: str = None
+    email: str = None
+    is_enabled: bool = None
 
 
 @router.patch('/student-card/{student_card_id}')

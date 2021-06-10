@@ -23,8 +23,8 @@ async def read_task(task_id: int, request: auth.Request) -> do.Task:
 
 
 class EditTaskInput(BaseModel):
-    identifier: str
-    selection_type: enum.TaskSelectionType
+    identifier: str = None
+    selection_type: enum.TaskSelectionType = None
     is_hidden: bool = None
 
 
