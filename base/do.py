@@ -104,8 +104,8 @@ class Task:
     challenge_id: int
     identifier: str
     selection_type: enum.TaskSelectionType
-    problem_id: int
-    peer_review_id: int
+    problem_id: Optional[int]
+    peer_review_id: Optional[int]
     is_hidden: bool
     is_deleted: bool
 
@@ -222,4 +222,4 @@ class AccessLog:
     request_method: str
     resource_path: str
     ip: str
-    account_id: int
+    account_id: Optional[int]
