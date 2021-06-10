@@ -18,11 +18,6 @@ router = APIRouter(
 )
 
 
-@router.post('/problem/{problem_id}/submission', tags=['Problem'])
-async def submit(problem_id: int):
-    return {'id': 1}
-
-
 @router.get('/submission/language', tags=['Administrative'])
 async def browse_submission_language() -> Sequence[do.SubmissionLanguage]:
     return await db.submission.browse_language()
@@ -31,16 +26,30 @@ async def browse_submission_language() -> Sequence[do.SubmissionLanguage]:
 class AddSubmissionLanguageInput(BaseModel):
     name: str
     version: str
+    is_disabled: bool
 
 
 @router.post('/submission/language', tags=['Administrative'])
 async def add_submission_language(data: AddSubmissionLanguageInput) -> int:
-    return await db.submission.add_language(name=data.name, version=data.version)
+    return await db.submission.add_language(name=data.name, version=data.version, is_disabled=data.is_disabled)
 
 
-@router.delete('/submission/language/{language_id}', tags=['Administrative'])
-async def delete_submission_language(language_id: int) -> None:
-    return await db.submission.delete_language(language_id=language_id)
+class EditSubmissionLanguageInput(BaseModel):
+    name: str = None
+    version: str = None
+    is_disabled: bool = None
+
+
+@router.patch('/submission/language/{language_id}', tags=['Administrative'])
+async def edit_submission_language(language_id: int, data: EditSubmissionLanguageInput) -> None:
+    return await db.submission.edit_language(language_id,
+                                             name=data.name, version=data.version, is_disabled=data.is_disabled)
+
+
+@router.post('/problem/{problem_id}/submission', tags=['Problem'])
+async def submit(problem_id: int):
+    # TODO
+    return {'id': 1}
 
 
 class BrowseSubmissionInput(BaseModel):

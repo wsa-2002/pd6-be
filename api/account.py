@@ -22,9 +22,8 @@ class ReadAccountOutput:
     name: str
     nickname: str
     role: str
-    real_name: Optional[str] = None
-    is_enabled: Optional[str] = None
-    alternative_email: Optional[str] = None
+    real_name: str
+    alternative_email: Optional[str]
 
 
 @router.get('/account/{account_id}')
@@ -33,19 +32,17 @@ async def read_account(account_id: int, request: auth.Request) -> ReadAccountOut
     if request.account.role.is_guest and not ask_for_self:
         raise exc.NoPermission
 
-    target_account = await db.account.read(account_id)
+    super_access = ask_for_self or request.account.role.is_manager
+
+    target_account = await db.account.read(account_id, include_deleted=super_access)
     result = ReadAccountOutput(
         id=target_account.id,
         name=target_account.name,
         nickname=target_account.nickname,
         role=target_account.role,
+        real_name=target_account.real_name if super_access else None,
+        alternative_email=target_account.alternative_email if super_access else None,
     )
-
-    show_personal = ask_for_self or request.account.role.is_manager
-    if show_personal:
-        result.real_name = target_account.real_name
-        result.is_enabled = target_account.is_enabled
-        result.alternative_email = target_account.alternative_email
 
     return result
 
@@ -75,7 +72,7 @@ async def delete_account(account_id: int, request: auth.Request) -> None:
     if request.account.role.not_manager and request.account.id != account_id:
         raise exc.NoPermission
 
-    await db.account.set_enabled(account_id=account_id, is_enabled=False)
+    await db.account.delete(account_id)
 
 
 class AddInstituteInput(BaseModel):
@@ -100,22 +97,22 @@ async def add_institute(data: AddInstituteInput, request: auth.Request) -> AddIn
 @router.get('/institute', tags=['Public'])
 async def browse_institute(request: auth.Request) -> Sequence[do.Institute]:
     try:
-        only_enabled = request.account.role.not_manager
+        include_disabled = request.account.role.is_manager
     except exc.NoPermission:
-        only_enabled = True
+        include_disabled = False
 
-    return await db.institute.browse(only_enabled=only_enabled)
+    return await db.institute.browse(include_disabled=include_disabled)
 
 
 @router.get('/institute/{institute_id}')
 async def read_institute(institute_id: int, request: auth.Request) -> do.Institute:
-    return await db.institute.read(institute_id, only_enabled=request.account.role.not_manager)
+    return await db.institute.read(institute_id, include_disabled=request.account.role.is_manager)
 
 
 class EditInstituteInput(BaseModel):
     name: Optional[str]
     email_domain: Optional[str]
-    is_enabled: Optional[bool]
+    is_disabled: Optional[bool]
 
 
 @router.patch('/institute/{institute_id}')
@@ -127,8 +124,11 @@ async def edit_institute(institute_id: int, data: EditInstituteInput, request: a
         institute_id=institute_id,
         name=data.name,
         email_domain=data.email_domain,
-        is_enabled=data.is_enabled,
+        is_disabled=data.is_disabled,
     )
+
+
+# TODO: Student card 機制調整
 
 
 class AddStudentCardInput(BaseModel):
@@ -136,7 +136,6 @@ class AddStudentCardInput(BaseModel):
     department: str
     student_id: str
     email: str
-    is_enabled: bool
 
 
 @dataclass
@@ -156,7 +155,6 @@ async def add_student_card_to_account(account_id: int, data: AddStudentCardInput
         department=data.department,
         student_id=data.student_id,
         email=data.email,
-        is_enabled=data.is_enabled,
     )
     return AddStudentCardOutput(id=student_card_id)
 
@@ -183,7 +181,6 @@ class EditStudentCardInput(BaseModel):
     department: str
     student_id: str
     email: str
-    is_enabled: bool
 
 
 @router.patch('/student-card/{student_card_id}')
@@ -198,7 +195,6 @@ async def edit_student_card(student_card_id: int, data: EditStudentCardInput, re
         department=data.department,
         student_id=data.student_id,
         email=data.email,
-        is_enabled=data.is_enabled,
     )
 
 
@@ -208,4 +204,4 @@ async def delete_student_card(student_card_id: int, request: auth.Request) -> No
     if request.account.role.not_manager and request.account.id != owner_id:
         raise exc.NoPermission
 
-    await db.student_card.edit(student_card_id, is_enabled=False)
+    await db.student_card.delete(student_card_id)

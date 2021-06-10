@@ -1,3 +1,5 @@
+# TODO: Rewrite this whole stuff?
+
 from dataclasses import dataclass
 from typing import Sequence
 
@@ -20,7 +22,6 @@ class AddStudentCardInput(BaseModel):
     department: str
     student_id: str
     email: str
-    is_enabled: bool
 
 
 @dataclass
@@ -40,7 +41,6 @@ async def add_student_card_to_account(account_id: int, data: AddStudentCardInput
         department=data.department,
         student_id=data.student_id,
         email=data.email,
-        is_enabled=data.is_enabled,
     )
     return AddStudentCardOutput(id=student_card_id)
 

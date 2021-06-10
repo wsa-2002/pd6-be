@@ -31,7 +31,6 @@ class AddPeerReviewInput(BaseModel):
     max_review_count: int
     start_time: datetime
     end_time: datetime
-    is_enabled: bool
     is_hidden: bool
 
 
@@ -43,7 +42,7 @@ async def add_peer_review(data: AddPeerReviewInput, request: auth.Request) -> in
                                     min_score=data.min_score, max_score=data.max_score,
                                     max_review_count=data.max_review_count,
                                     start_time=data.start_time, end_time=data.end_time,
-                                    is_enabled=data.is_enabled, is_hidden=data.is_hidden)
+                                    is_hidden=data.is_hidden)
 
 
 @router.get('/peer-review/{peer_review_id}')
@@ -58,7 +57,6 @@ class EditPeerReviewInput(BaseModel):
     max_review_count: int
     start_time: datetime
     end_time: datetime
-    is_enabled: bool
     is_hidden: bool
 
 
@@ -69,7 +67,7 @@ async def edit_peer_review(peer_review_id: int, data: EditPeerReviewInput) -> No
                                      min_score=data.min_score, max_score=data.max_score,
                                      max_review_count=data.max_review_count,
                                      start_time=data.start_time, end_time=data.end_time,
-                                     is_enabled=data.is_enabled, is_hidden=data.is_hidden)
+                                     is_hidden=data.is_hidden)
 
 
 @router.delete('/peer-review/{peer_review_id}')

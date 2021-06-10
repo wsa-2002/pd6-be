@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from typing import Sequence
 
 from pydantic import BaseModel
@@ -23,7 +22,7 @@ async def browse_team(request: auth.Request) -> Sequence[do.Team]:
         raise exc.NoPermission
 
     show_limited = request.account.role.not_manager
-    teams = await db.team.browse(only_enabled=show_limited, exclude_hidden=show_limited)
+    teams = await db.team.browse(include_hidden=not show_limited, include_deleted=not show_limited)
     return teams
 
 
@@ -33,24 +32,23 @@ async def read_team(team_id: int, request: auth.Request) -> do.Team:
         raise exc.NoPermission
 
     show_limited = request.account.role.not_manager
-    team = await db.team.read(team_id, only_enabled=show_limited, exclude_hidden=show_limited)
+    team = await db.team.read(team_id, include_hidden=not show_limited, include_deleted=not show_limited)
     return team
 
 
 async def is_team_manager(team_id, account_id):
     # Check with team role
     try:
-        req_account_role = await db.team.read_member_role(team_id=team_id, member_id=account_id)
+        req_account_role = await db.team.read_member(team_id=team_id, member_id=account_id)
     except exc.NotFound:  # Not even in team
         return False
     else:
-        return req_account_role.is_manager
+        return req_account_role.role.is_manager
 
 
 class EditTeamInput(BaseModel):
     name: str
     class_id: int
-    is_enabled: bool
     is_hidden: bool
 
 
@@ -71,7 +69,6 @@ async def edit_team(team_id: int, data: EditTeamInput, request: auth.Request) ->
         team_id=team_id,
         name=data.name,
         class_id=data.class_id,
-        is_enabled=data.is_enabled,
         is_hidden=data.is_hidden,
     )
 
@@ -89,10 +86,7 @@ async def delete_team(team_id: int, request: auth.Request) -> None:
     if not await is_team_manager(team_id, request.account.id):
         raise exc.NoPermission
 
-    await db.team.edit(
-        team_id=team_id,
-        is_enabled=False,
-    )
+    await db.team.delete(team_id)
 
 
 @router.get('/team/{team_id}/member')
@@ -101,7 +95,7 @@ async def browse_team_member(team_id: int, request: auth.Request) -> Sequence[do
         raise exc.NoPermission
 
     try:
-        await db.team.read_member_role(team_id=team_id, member_id=request.account.id)
+        await db.team.read_member(team_id=team_id, member_id=request.account.id)
     except exc.NotFound:  # Not even in course
         if not request.account.role.is_manager:  # and is not manager
             raise exc.NoPermission
