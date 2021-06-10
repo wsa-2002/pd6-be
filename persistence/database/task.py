@@ -64,8 +64,12 @@ async def read(task_id: int, include_hidden=False, include_deleted=False) -> do.
                        is_hidden=is_hidden, is_deleted=is_deleted)
 
 
-async def edit(task_id: int, identifier: str = None, selection_type: enum.TaskSelectionType = None,
-               is_hidden: bool = None) -> None:
+async def edit(task_id: int,
+               identifier: str = None, selection_type: enum.TaskSelectionType = None, is_hidden: bool = None,
+               problem_id: Optional[int] = None, peer_review_id: Optional[int] = None) -> None:
+    if problem_id is not None and peer_review_id is not None:
+        raise ValueError("Only one id can be given to a task")
+
     to_updates = {}
 
     if identifier is not None:
@@ -74,6 +78,9 @@ async def edit(task_id: int, identifier: str = None, selection_type: enum.TaskSe
         to_updates['selection_type'] = selection_type
     if is_hidden is not None:
         to_updates['is_hidden'] = is_hidden
+    if problem_id is not None or peer_review_id is not None:
+        to_updates['problem_id'] = problem_id
+        to_updates['peer_review_id'] = peer_review_id
 
     if not to_updates:
         return

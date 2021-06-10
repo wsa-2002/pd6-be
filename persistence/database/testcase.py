@@ -1,4 +1,4 @@
-from typing import Optional, Sequence
+from typing import Sequence
 
 from base import do
 
@@ -64,13 +64,13 @@ async def browse(problem_id: int, include_disabled=False, include_deleted=False)
 
 
 async def edit(testcase_id: int,
-               is_sample: Optional[bool] = None,
-               score: Optional[int] = None,
-               input_file: Optional[str] = None,
-               output_file: Optional[str] = None,
-               time_limit: Optional[int] = None,
-               memory_limit: Optional[int] = None,
-               is_disabled: Optional[bool] = None,) -> None:
+               is_sample: bool = None,
+               score: int = None,
+               input_file: str = None,
+               output_file: str = None,
+               time_limit: int = None,
+               memory_limit: int = None,
+               is_disabled: bool = None,) -> None:
     to_updates = {}
 
     if is_sample is not None:

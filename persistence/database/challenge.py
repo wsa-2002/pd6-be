@@ -72,12 +72,12 @@ async def read(challenge_id: int, include_hidden=False, include_deleted=False) -
 
 
 async def edit(challenge_id: int,
-               type_: Optional[enum.ChallengeType] = None,
-               title: Optional[str] = None,
+               type_: enum.ChallengeType = None,
+               title: str = None,
                description: Optional[str] = ...,
-               start_time: Optional[datetime] = None,
-               end_time: Optional[datetime] = None,
-               is_hidden: Optional[bool] = None,) -> None:
+               start_time: datetime = None,
+               end_time: datetime = None,
+               is_hidden: bool = None,) -> None:
     to_updates = {}
 
     if type_ is not None:

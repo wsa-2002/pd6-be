@@ -7,7 +7,7 @@ from .base import SafeExecutor
 
 
 async def add(receiver_id: int, grader_id: int, class_id: int, title: str, score: Optional[int], comment: Optional[str],
-              is_hidden: bool, update_time: Optional[datetime] = None) -> int:
+              is_hidden: bool, update_time: datetime = None) -> int:
     if update_time is None:
         update_time = datetime.now()
 
@@ -78,8 +78,8 @@ async def read(grade_id: int, include_hidden=False, include_deleted=False) -> do
                         is_hidden=is_hidden, is_deleted=is_deleted)
 
 
-async def edit(grade_id: int, title: Optional[str], score: Optional[int], comment: Optional[str],
-               update_time: Optional[datetime] = None, is_hidden: bool = None) -> None:
+async def edit(grade_id: int, title: str = None, score: int = None, comment: str = None,
+               update_time: datetime = None, is_hidden: bool = None) -> None:
     if update_time is None:
         update_time = datetime.now()
 
