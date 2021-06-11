@@ -2,6 +2,8 @@ import datetime
 import json
 import typing
 
+from pydantic import BaseModel, create_model
+
 import exceptions as exc
 
 import fastapi.exceptions
@@ -33,6 +35,22 @@ class JSONResponse(fastapi.routing.JSONResponse):
             indent=None,
             separators=(",", ":"),
         ).encode("utf-8")
+
+
+def pack_response_model(Model: typing.Type[BaseModel], name: str):
+    if Model not in (None, type(None)):
+        return create_model(
+            name,
+            success=(bool, ...),
+            data=(Model, ...),
+            error=(typing.Any, None),
+        )
+    else:
+        return create_model(
+            name,
+            success=(bool, ...),
+            error=(typing.Any, None),
+        )
 
 
 async def exception_handler(request, error: Exception):
