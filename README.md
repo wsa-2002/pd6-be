@@ -17,9 +17,13 @@ conda activate pdogs6-async
 ```shell
 pip install -r requirements.txt
 cp .env.example .env
+cp logging.yaml.example logging.yaml
 ```
 
-Then fill out the environment variables in `.env`.
+Then
+1. Fill out the environment variables in `.env`.
+2. Check the `filename`s in `logging.yaml`, and replace if needed.
+3. Check the `propagate`s in `logging.yaml`, and replace with `True` if you want to show that genre of log on your console.
 
 ### 2. Start the server
 ```shell
