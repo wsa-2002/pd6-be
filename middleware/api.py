@@ -121,28 +121,33 @@ def get_openapi_path(
                     )
                     fastapi.openapi.utils.deep_dict_update(openapi_response, process_response)
                     openapi_response["description"] = description
-            http422 = str(fastapi.openapi.utils.HTTP_422_UNPROCESSABLE_ENTITY)
-            if (all_route_params or route.body_field) and not any(
-                [
-                    status in operation["responses"]
-                    for status in [http422, "4XX", "default"]
-                ]
-            ):
-                operation["responses"][http422] = {
-                    "description": "Validation Error",
-                    "content": {
-                        "application/json": {
-                            "schema": {"$ref": fastapi.openapi.utils.REF_PREFIX + "HTTPValidationError"}
-                        }
-                    },
-                }
-                if "ValidationError" not in definitions:
-                    definitions.update(
-                        {
-                            "ValidationError": fastapi.openapi.utils.validation_error_definition,
-                            "HTTPValidationError": fastapi.openapi.utils.validation_error_response_definition,
-                        }
-                    )
+
+            # HTTP 422 ValidationError is removed
+            # because they will be handled in envelope's error handler
+            # and NOT raised with HTTP code 422
+
+            # http422 = str(fastapi.openapi.utils.HTTP_422_UNPROCESSABLE_ENTITY)
+            # if (all_route_params or route.body_field) and not any(
+            #     [
+            #         status in operation["responses"]
+            #         for status in [http422, "4XX", "default"]
+            #     ]
+            # ):
+            #     operation["responses"][http422] = {
+            #         "description": "Validation Error",
+            #         "content": {
+            #             "application/json": {
+            #                 "schema": {"$ref": fastapi.openapi.utils.REF_PREFIX + "HTTPValidationError"}
+            #             }
+            #         },
+            #     }
+            #     if "ValidationError" not in definitions:
+            #         definitions.update(
+            #             {
+            #                 "ValidationError": fastapi.openapi.utils.validation_error_definition,
+            #                 "HTTPValidationError": fastapi.openapi.utils.validation_error_response_definition,
+            #             }
+            #         )
             path[method.lower()] = operation
     return path, security_schemes, definitions
 

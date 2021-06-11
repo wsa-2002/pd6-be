@@ -2,6 +2,9 @@ import datetime
 import json
 import typing
 
+import exceptions as exc
+
+import fastapi.exceptions
 import fastapi.routing
 
 
@@ -33,4 +36,8 @@ class JSONResponse(fastapi.routing.JSONResponse):
 
 
 async def exception_handler(request, error: Exception):
+    # Convert Pydantic's ValidationError to self-defined error
+    if isinstance(error, fastapi.exceptions.ValidationError):
+        error = exc.IllegalInput(cause=error)
+
     return JSONResponse(success=False, error=error)

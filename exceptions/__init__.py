@@ -26,3 +26,15 @@ class NotFound(PdogsException):
     """
     Data not found, e.g. asked data not found in database
     """
+
+
+class IllegalInput(PdogsException):
+    """
+    A malformed input is given
+    """
+    def __init__(self, *args, cause: Exception, **kwargs):
+        """
+        An optional `cause` exception can be given, mimicking the `raise from` syntax (and does almost the same thing).
+        """
+        super().__init__(*args, **kwargs)
+        self.__cause__ = cause
