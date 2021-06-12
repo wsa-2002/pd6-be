@@ -4,6 +4,9 @@ import typing
 
 import fastapi.routing
 
+import exceptions
+import log
+
 
 class JSONEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -19,6 +22,7 @@ class JSONResponse(fastapi.routing.JSONResponse):
         self._error = error
         super().__init__(*args, **kwargs)
 
+    @log.timed
     def render(self, content: typing.Any) -> bytes:
         return json.dumps({
             'success': self._success,
@@ -33,4 +37,7 @@ class JSONResponse(fastapi.routing.JSONResponse):
 
 
 async def exception_handler(request, error: Exception):
+    is_predefined = isinstance(error, exceptions.PdogsException)
+    log.exception(error, info_level=is_predefined)
+
     return JSONResponse(success=False, error=error)
