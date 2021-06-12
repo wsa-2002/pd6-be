@@ -28,3 +28,9 @@ class SMTPHandler(metaclass=mcs.Singleton):
 
 
 smtp_handler = SMTPHandler()
+
+
+# For import usage
+from . import (
+    verification,
+)
