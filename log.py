@@ -43,37 +43,23 @@ def exception(exc: Exception, msg='', info_level=False):
 # Timing logging
 
 
-def timed(error_on_exception=False):
-    def decorator(timed_func):
-        @wraps(timed_func)
-        def wrapped(*args, **kwargs):
-            uuid = uuid1()
+def timed(timed_func):
+    @wraps(timed_func)
+    def wrapped(*args, **kwargs):
+        exec_uuid = uuid1()
 
-            start = datetime.now()
-            _Logger.timing_logger.info(f'request {get_request_uuid()}\t{uuid}\tENTER\t'
-                                       f'{timed_func.__module__}.{timed_func.__qualname__}\t')
+        start = datetime.now()
+        _Logger.timing_logger.info(f'request {get_request_uuid()}\t{exec_uuid}\tENTER\t'
+                                   f'{timed_func.__module__}.{timed_func.__qualname__}\t')
 
-            try:
-                return timed_func(*args, **kwargs)
+        try:
+            return timed_func(*args, **kwargs)
+        finally:
+            end = datetime.now()
+            _Logger.timing_logger.info(f'request {get_request_uuid()}\t{exec_uuid}\tLEAVE\t'
+                                       f'{timed_func.__module__}.{timed_func.__qualname__}\t{end - start}')
 
-            except Exception as exc:
-                log_message = f"Timed func {timed_func.__qualname__} from {timed_func.__module__} uuid {uuid} " \
-                              f"occurred exception"
-
-                if error_on_exception:
-                    exception(exc, msg=log_message)
-                else:
-                    info(f"{log_message}: {format_exc(exc)}")
-
-                raise exc
-
-            finally:
-                end = datetime.now()
-                _Logger.timing_logger.info(f'request {get_request_uuid()}\t{uuid}\tLEAVE\t'
-                                           f'{timed_func.__module__}.{timed_func.__qualname__}\t{end - start}')
-
-        return wrapped
-    return decorator
+    return wrapped
 
 
 def format_exc(e: Exception):

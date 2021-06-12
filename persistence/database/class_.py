@@ -1,11 +1,13 @@
 from typing import Sequence, Collection, Tuple
 
+import log
 from base import do
 from base.enum import RoleType
 
 from .base import SafeExecutor, SafeConnection
 
 
+@log.timed
 async def add(name: str, course_id: int, is_hidden: bool) -> int:
     async with SafeExecutor(
             event='add class',
@@ -21,6 +23,7 @@ async def add(name: str, course_id: int, is_hidden: bool) -> int:
         return course_id
 
 
+@log.timed
 async def browse(course_id: int = None, include_hidden=False, include_deleted=False) -> Sequence[do.Class]:
     conditions = {}
     if course_id is not None:
@@ -48,6 +51,7 @@ async def browse(course_id: int = None, include_hidden=False, include_deleted=Fa
                 for (id_, name, course_id, is_hidden, is_deleted) in records]
 
 
+@log.timed
 async def read(class_id: int, *, include_hidden=False, include_deleted=False) -> do.Class:
     async with SafeExecutor(
             event='read class by id',
@@ -62,6 +66,7 @@ async def read(class_id: int, *, include_hidden=False, include_deleted=False) ->
         return do.Class(id=id_, name=name, course_id=course_id, is_hidden=is_hidden, is_deleted=is_deleted)
 
 
+@log.timed
 async def edit(class_id: int,
                name: str = None, course_id: int = None, is_hidden: bool = None):
     to_updates = {}
@@ -89,6 +94,7 @@ async def edit(class_id: int,
         pass
 
 
+@log.timed
 async def delete(class_id: int) -> None:
     async with SafeExecutor(
             event='soft delete class',
@@ -104,6 +110,7 @@ async def delete(class_id: int) -> None:
 # === member control
 
 
+@log.timed
 async def add_member(class_id: int, member_id: int, role: RoleType):
     async with SafeExecutor(
             event='add member to class',
@@ -117,6 +124,7 @@ async def add_member(class_id: int, member_id: int, role: RoleType):
         pass
 
 
+@log.timed
 async def add_members(class_id: int, member_roles: Collection[Tuple[int, RoleType]]):
     async with SafeConnection(event='add members to class') as conn:
         await conn.executemany(
@@ -128,6 +136,7 @@ async def add_members(class_id: int, member_roles: Collection[Tuple[int, RoleTyp
         )
 
 
+@log.timed
 async def browse_members(class_id: int) -> Sequence[do.Member]:
     async with SafeExecutor(
             event='browse class members',
@@ -142,6 +151,7 @@ async def browse_members(class_id: int) -> Sequence[do.Member]:
         return [do.Member(member_id=id_, role=RoleType(role_str)) for id_, role_str in records]
 
 
+@log.timed
 async def read_member(class_id: int, member_id: int) -> do.Member:
     async with SafeExecutor(
             event='read class member role',
@@ -155,6 +165,7 @@ async def read_member(class_id: int, member_id: int) -> do.Member:
         return do.Member(member_id=member_id, role=RoleType(role))
 
 
+@log.timed
 async def edit_member(class_id: int, member_id: int, role: RoleType):
     async with SafeExecutor(
             event='set class member',
@@ -168,6 +179,7 @@ async def edit_member(class_id: int, member_id: int, role: RoleType):
         pass
 
 
+@log.timed
 async def delete_member(class_id: int, member_id: int):
     async with SafeExecutor(
             event='HARD DELETE class member',

@@ -1,10 +1,12 @@
 from typing import Sequence
 
+import log
 from base import do
 
 from .base import SafeExecutor
 
 
+@log.timed
 async def add(problem_id: int, is_sample: bool, score: int, input_file: str, output_file: str,
               time_limit: int, memory_limit: int, is_disabled: bool) -> int:
     async with SafeExecutor(
@@ -22,6 +24,7 @@ async def add(problem_id: int, is_sample: bool, score: int, input_file: str, out
         return id_
 
 
+@log.timed
 async def read(testcase_id: int, include_disabled=False, include_deleted=False) -> do.Testcase:
     async with SafeExecutor(
             event='read testcases with problem id',
@@ -41,6 +44,7 @@ async def read(testcase_id: int, include_disabled=False, include_deleted=False) 
                            is_disabled=is_disabled, is_deleted=is_deleted)
 
 
+@log.timed
 async def browse(problem_id: int, include_disabled=False, include_deleted=False) -> Sequence[do.Testcase]:
     async with SafeExecutor(
             event='browse testcases with problem id',
@@ -63,6 +67,7 @@ async def browse(problem_id: int, include_disabled=False, include_deleted=False)
                 in records]
 
 
+@log.timed
 async def edit(testcase_id: int,
                is_sample: bool = None,
                score: int = None,
@@ -104,6 +109,7 @@ async def edit(testcase_id: int,
         pass
 
 
+@log.timed
 async def delete(testcase_id: int) -> None:
     async with SafeExecutor(
             event='soft delete testcase',

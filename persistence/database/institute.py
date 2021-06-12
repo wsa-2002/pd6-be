@@ -1,10 +1,12 @@
 from typing import Sequence
 
+import log
 from base import do
 
 from .base import SafeExecutor
 
 
+@log.timed
 async def add(name: str, email_domain: str, is_disabled: bool) -> int:
     async with SafeExecutor(
             event='Add institute',
@@ -20,6 +22,7 @@ async def add(name: str, email_domain: str, is_disabled: bool) -> int:
         return institute_id
 
 
+@log.timed
 async def browse(*, include_disabled=False) -> Sequence[do.Institute]:
     async with SafeExecutor(
             event='get all institutes',
@@ -33,6 +36,7 @@ async def browse(*, include_disabled=False) -> Sequence[do.Institute]:
                 for (id_, name, email_domain, is_disabled) in records]
 
 
+@log.timed
 async def read(institute_id: int, *, include_disabled=True) -> do.Institute:
     async with SafeExecutor(
             event='get all institutes',
@@ -47,6 +51,7 @@ async def read(institute_id: int, *, include_disabled=True) -> do.Institute:
         return do.Institute(id=id_, name=name, email_domain=email_domain, is_disabled=is_disabled)
 
 
+@log.timed
 async def edit(institute_id: int, name: str = None, email_domain: str = None, is_disabled: bool = None) -> None:
     to_updates = {}
 

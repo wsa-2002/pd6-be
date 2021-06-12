@@ -1,11 +1,13 @@
 from datetime import datetime
 from typing import Optional, Sequence
 
+import log
 from base import do, enum
 
 from .base import SafeExecutor
 
 
+@log.timed
 async def add(class_id: int, type_: enum.ChallengeType, title: str, setter_id: int, description: Optional[str],
               start_time: datetime, end_time: datetime, is_hidden: bool) -> int:
     async with SafeExecutor(
@@ -23,6 +25,7 @@ async def add(class_id: int, type_: enum.ChallengeType, title: str, setter_id: i
         return id_
 
 
+@log.timed
 async def browse(class_id: int = None, include_hidden=False, include_deleted=False) -> Sequence[do.Challenge]:
     conditions = {}
     if class_id is not None:
@@ -54,6 +57,7 @@ async def browse(class_id: int = None, include_hidden=False, include_deleted=Fal
                 in records]
 
 
+@log.timed
 async def read(challenge_id: int, include_hidden=False, include_deleted=False) -> do.Challenge:
     async with SafeExecutor(
             event='read challenge by id',
@@ -71,6 +75,7 @@ async def read(challenge_id: int, include_hidden=False, include_deleted=False) -
                             is_hidden=is_hidden, is_deleted=is_deleted)
 
 
+@log.timed
 async def edit(challenge_id: int,
                type_: enum.ChallengeType = None,
                title: str = None,
@@ -109,6 +114,7 @@ async def edit(challenge_id: int,
         pass
 
 
+@log.timed
 async def delete(challenge_id: int) -> None:
     async with SafeExecutor(
             event='soft delete challenge',
@@ -121,6 +127,7 @@ async def delete(challenge_id: int) -> None:
         pass
 
 
+@log.timed
 async def add_problem_relation(challenge_id: int, problem_id: int) -> None:
     async with SafeExecutor(
             event='add challenge_problem',
@@ -133,6 +140,7 @@ async def add_problem_relation(challenge_id: int, problem_id: int) -> None:
         pass
 
 
+@log.timed
 async def delete_problem_relation(challenge_id: int, problem_id: int) -> None:
     async with SafeExecutor(
             event='delete challenge_problem',
