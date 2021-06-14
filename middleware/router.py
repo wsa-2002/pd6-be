@@ -1,6 +1,7 @@
 """
 複製貼上這麼多 code 只是為了把 route_class_override 掛上去而已 = =
 """
+import re
 import typing
 from typing import (
     Any,
@@ -15,7 +16,7 @@ from typing import (
 
 import fastapi.routing
 from fastapi import params
-from fastapi.datastructures import Default
+from fastapi.datastructures import Default, DefaultPlaceholder
 from fastapi.encoders import DictIntStrAny, SetIntStr
 from fastapi.types import DecoratedCallable
 # Followings are originally imported from starlette
@@ -24,7 +25,7 @@ from fastapi.routing import JSONResponse, Response
 from fastapi.routing import BaseRoute
 
 
-from . import auth
+from . import auth, envelope
 
 
 class APIRouter(fastapi.routing.APIRouter):
@@ -34,7 +35,7 @@ class APIRouter(fastapi.routing.APIRouter):
         prefix: str = "",
         tags: Optional[List[str]] = None,
         dependencies: Optional[Sequence[params.Depends]] = None,
-        default_response_class: Type[Response] = Default(JSONResponse),
+        default_response_class: Type[Response] = Default(Response),
         responses: Optional[Dict[Union[int, str], Dict[str, Any]]] = None,
         callbacks: Optional[List[BaseRoute]] = None,
         routes: Optional[List[BaseRoute]] = None,
@@ -76,7 +77,7 @@ class APIRouter(fastapi.routing.APIRouter):
         response_model_exclude_defaults: bool = False,
         response_model_exclude_none: bool = False,
         include_in_schema: bool = True,
-        response_class: Type[Response] = Default(JSONResponse),
+        response_class: Type[Response] = Default(Response),
         name: Optional[str] = None,
         callbacks: Optional[List[BaseRoute]] = None,
         route_class_override: Optional[Type[fastapi.routing.APIRoute]] = None,
@@ -91,6 +92,18 @@ class APIRouter(fastapi.routing.APIRouter):
                 except KeyError:
                     # raise SyntaxError("No return type type-hint is given!")
                     pass
+            # If finally will use envelope's JSONResponse, pack the model with envelope's structure
+            if ((
+                    isinstance(response_class, DefaultPlaceholder)
+                    and issubclass(self.default_response_class, envelope.JSONResponse)
+            ) or (
+                    not isinstance(response_class, DefaultPlaceholder)
+                    and issubclass(response_class, envelope.JSONResponse)
+            )):
+                model = envelope.pack_response_model(
+                    model,
+                    name=f"{'_'.join(methods)}__{re.sub(r'[^0-9a-zA-Z]', '_', path)}",
+                )
 
             self.add_api_route(
                 path,
@@ -143,7 +156,7 @@ class APIRouter(fastapi.routing.APIRouter):
         response_model_exclude_defaults: bool = False,
         response_model_exclude_none: bool = False,
         include_in_schema: bool = True,
-        response_class: Type[Response] = Default(JSONResponse),
+        response_class: Type[Response] = Default(Response),
         name: Optional[str] = None,
         callbacks: Optional[List[BaseRoute]] = None,
         route_class_override: Optional[Type[fastapi.routing.APIRoute]] = None,
@@ -195,7 +208,7 @@ class APIRouter(fastapi.routing.APIRouter):
         response_model_exclude_defaults: bool = False,
         response_model_exclude_none: bool = False,
         include_in_schema: bool = True,
-        response_class: Type[Response] = Default(JSONResponse),
+        response_class: Type[Response] = Default(Response),
         name: Optional[str] = None,
         callbacks: Optional[List[BaseRoute]] = None,
         route_class_override: Optional[Type[fastapi.routing.APIRoute]] = None,
@@ -247,7 +260,7 @@ class APIRouter(fastapi.routing.APIRouter):
         response_model_exclude_defaults: bool = False,
         response_model_exclude_none: bool = False,
         include_in_schema: bool = True,
-        response_class: Type[Response] = Default(JSONResponse),
+        response_class: Type[Response] = Default(Response),
         name: Optional[str] = None,
         callbacks: Optional[List[BaseRoute]] = None,
         route_class_override: Optional[Type[fastapi.routing.APIRoute]] = None,
@@ -299,7 +312,7 @@ class APIRouter(fastapi.routing.APIRouter):
         response_model_exclude_defaults: bool = False,
         response_model_exclude_none: bool = False,
         include_in_schema: bool = True,
-        response_class: Type[Response] = Default(JSONResponse),
+        response_class: Type[Response] = Default(Response),
         name: Optional[str] = None,
         callbacks: Optional[List[BaseRoute]] = None,
         route_class_override: Optional[Type[fastapi.routing.APIRoute]] = None,
@@ -351,7 +364,7 @@ class APIRouter(fastapi.routing.APIRouter):
         response_model_exclude_defaults: bool = False,
         response_model_exclude_none: bool = False,
         include_in_schema: bool = True,
-        response_class: Type[Response] = Default(JSONResponse),
+        response_class: Type[Response] = Default(Response),
         name: Optional[str] = None,
         callbacks: Optional[List[BaseRoute]] = None,
         route_class_override: Optional[Type[fastapi.routing.APIRoute]] = None,
@@ -403,7 +416,7 @@ class APIRouter(fastapi.routing.APIRouter):
         response_model_exclude_defaults: bool = False,
         response_model_exclude_none: bool = False,
         include_in_schema: bool = True,
-        response_class: Type[Response] = Default(JSONResponse),
+        response_class: Type[Response] = Default(Response),
         name: Optional[str] = None,
         callbacks: Optional[List[BaseRoute]] = None,
         route_class_override: Optional[Type[fastapi.routing.APIRoute]] = None,
@@ -455,7 +468,7 @@ class APIRouter(fastapi.routing.APIRouter):
         response_model_exclude_defaults: bool = False,
         response_model_exclude_none: bool = False,
         include_in_schema: bool = True,
-        response_class: Type[Response] = Default(JSONResponse),
+        response_class: Type[Response] = Default(Response),
         name: Optional[str] = None,
         callbacks: Optional[List[BaseRoute]] = None,
         route_class_override: Optional[Type[fastapi.routing.APIRoute]] = None,
@@ -507,7 +520,7 @@ class APIRouter(fastapi.routing.APIRouter):
         response_model_exclude_defaults: bool = False,
         response_model_exclude_none: bool = False,
         include_in_schema: bool = True,
-        response_class: Type[Response] = Default(JSONResponse),
+        response_class: Type[Response] = Default(Response),
         name: Optional[str] = None,
         callbacks: Optional[List[BaseRoute]] = None,
         route_class_override: Optional[Type[fastapi.routing.APIRoute]] = None,

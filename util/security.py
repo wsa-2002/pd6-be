@@ -28,7 +28,11 @@ def encode_jwt(account_id: int, expire: timedelta) -> str:
 
 @log.timed
 def decode_jwt(encoded: str) -> int:
-    decoded = _jwt_decoder(encoded)
+    try:
+        decoded = _jwt_decoder(encoded)
+    except jwt.DecodeError:
+        raise exc.LoginFailed
+
     expire = datetime.fromisoformat(decoded['expire'])
     if datetime.now() >= expire:
         raise exc.LoginExpired

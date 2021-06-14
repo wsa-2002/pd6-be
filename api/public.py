@@ -1,6 +1,5 @@
 from typing import Optional
 
-from fastapi import APIRouter
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
@@ -8,6 +7,7 @@ from base.enum import RoleType
 from config import config, app_config
 import exceptions as exc
 from middleware import envelope
+from middleware.router import APIRouter
 import persistence.database as db
 import persistence.email as email
 from util import security

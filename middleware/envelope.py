@@ -2,6 +2,11 @@ import datetime
 import json
 import typing
 
+from pydantic import BaseModel, create_model
+
+import exceptions as exc
+
+import fastapi.exceptions
 import fastapi.routing
 
 import exceptions
@@ -36,7 +41,28 @@ class JSONResponse(fastapi.routing.JSONResponse):
         ).encode("utf-8")
 
 
+def pack_response_model(Model: typing.Type[BaseModel], name: str):
+    if Model in (None, type(None)):
+        # data is None -> no data
+        return create_model(
+            name,
+            success=(bool, ...),
+            error=(typing.Any, None),
+        )
+
+    return create_model(  # Normal case
+        name,
+        success=(bool, ...),
+        data=(Model, ...),
+        error=(typing.Any, None),
+    )
+
+
 async def exception_handler(request, error: Exception):
+    # Convert Pydantic's ValidationError to self-defined error
+    if isinstance(error, fastapi.exceptions.ValidationError):
+        error = exc.IllegalInput(cause=error)
+
     is_predefined = isinstance(error, exceptions.PdogsException)
     log.exception(error, info_level=is_predefined)
 
