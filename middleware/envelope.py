@@ -38,19 +38,20 @@ class JSONResponse(fastapi.routing.JSONResponse):
 
 
 def pack_response_model(Model: typing.Type[BaseModel], name: str):
-    if Model not in (None, type(None)):
-        return create_model(
-            name,
-            success=(bool, ...),
-            data=(Model, ...),
-            error=(typing.Any, None),
-        )
-    else:
+    if Model in (None, type(None)):
+        # data is None -> no data
         return create_model(
             name,
             success=(bool, ...),
             error=(typing.Any, None),
         )
+
+    return create_model(  # Normal case
+        name,
+        success=(bool, ...),
+        data=(Model, ...),
+        error=(typing.Any, None),
+    )
 
 
 async def exception_handler(request, error: Exception):
