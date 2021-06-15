@@ -1,3 +1,14 @@
+# Setup loggers from yaml
+
+
+with open('logging.yaml', 'r') as conf:
+    import yaml
+    log_config = yaml.safe_load(conf.read())
+
+    import logging.config
+    logging.config.dictConfig(log_config)
+
+
 # Create the FastAPI application
 
 from config import app_config
@@ -35,8 +46,19 @@ async def app_shutdown():
 
 
 # Add middlewares
-from middleware import auth
-app.add_middleware(auth.Middleware)
+# Order matters! First added middlewares are executed last.
+
+import middleware.auth
+app.add_middleware(middleware.auth.Middleware)
+
+import middleware.logging
+app.middleware('http')(middleware.logging.middleware)
+
+import middleware.tracker
+app.middleware('http')(middleware.tracker.middleware)
+
+import starlette_context.middleware
+app.add_middleware(starlette_context.middleware.RawContextMiddleware)
 
 
 # Register custom exception handlers

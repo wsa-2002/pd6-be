@@ -51,9 +51,15 @@ class SMTPConfig:
     use_tls = strtobool(env_values.get('SMTP_USE_TLS'))
 
 
+class LoggerConfig:
+    event_logger_name = env_values.get('EVENT_LOGGER_NAME')
+    timing_logger_name = env_values.get('TIMING_LOGGER_NAME')
+
+
 # default config objects
 config = Config()
 service_config = ServiceConfig()
 app_config = AppConfig()
 db_config = DBConfig()
 smtp_config = SMTPConfig()
+logger_config = LoggerConfig()
