@@ -3,7 +3,6 @@ from functools import wraps
 import logging
 
 import traceback
-from typing import ParamSpec, TypeVar, Callable, Awaitable
 from uuid import uuid1
 
 from config import logger_config
