@@ -10,7 +10,6 @@ from .base import SafeExecutor
 # Submission Language
 
 
-@log.timed
 async def add_language(name: str, version: str, is_disabled: bool) -> int:
     async with SafeExecutor(
             event='Add submission language',
@@ -24,7 +23,6 @@ async def add_language(name: str, version: str, is_disabled: bool) -> int:
         return id_
 
 
-@log.timed
 async def edit_language(language_id: int,
                         name: str = None, version: str = None, is_disabled: bool = None) -> None:
     to_updates = {}
@@ -52,7 +50,6 @@ async def edit_language(language_id: int,
         pass
 
 
-@log.timed
 async def browse_language(include_disabled=False) -> Sequence[do.SubmissionLanguage]:
     async with SafeExecutor(
             event='Browse submission language',
@@ -66,7 +63,6 @@ async def browse_language(include_disabled=False) -> Sequence[do.SubmissionLangu
                 for id_, name, version, is_disabled in records]
 
 
-@log.timed
 async def read_language(language_id: int, include_disabled=False) -> do.SubmissionLanguage:
     async with SafeExecutor(
             event='read submission language',
@@ -83,7 +79,6 @@ async def read_language(language_id: int, include_disabled=False) -> do.Submissi
 # Submission
 
 
-@log.timed
 async def add(account_id: int, problem_id: int, task_id: Optional[int], language_id: int,
               content_file: str, content_length: str, submit_time: datetime) -> int:
     async with SafeExecutor(
@@ -102,7 +97,6 @@ async def add(account_id: int, problem_id: int, task_id: Optional[int], language
 
 
 # TODO: more filters
-@log.timed
 async def browse(account_id: int = None, problem_id: int = None, task_id: int = None, language_id: int = None) \
         -> Sequence[do.Submission]:
     conditions = {}
@@ -135,7 +129,6 @@ async def browse(account_id: int = None, problem_id: int = None, task_id: int = 
                 in records]
 
 
-@log.timed
 async def read(submission_id: int) -> do.Submission:
     async with SafeExecutor(
             event='read submission',

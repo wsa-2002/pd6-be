@@ -4,7 +4,6 @@ from base.enum import RoleType
 from .base import SafeExecutor
 
 
-@log.timed
 async def read_global_role_by_account_id(account_id: int) -> RoleType:
     async with SafeExecutor(
             event='get global role by account id',
@@ -17,7 +16,6 @@ async def read_global_role_by_account_id(account_id: int) -> RoleType:
         return RoleType(role)
 
 
-@log.timed
 async def read_class_role_by_account_id(class_id: int, account_id: int) -> RoleType:
     async with SafeExecutor(
             event='get class role by account id',
@@ -32,7 +30,6 @@ async def read_class_role_by_account_id(class_id: int, account_id: int) -> RoleT
         return RoleType(role)
 
 
-@log.timed
 async def read_team_role_by_account_id(team_id: int, account_id: int) -> RoleType:
     async with SafeExecutor(
             event='get team role by account id',

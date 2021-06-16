@@ -6,7 +6,6 @@ from base import do
 from .base import SafeExecutor
 
 
-@log.timed
 async def add(account_id: int, institute_id: int, department: str, student_id: str, email: str) \
         -> int:
     async with SafeExecutor(
@@ -25,7 +24,6 @@ async def add(account_id: int, institute_id: int, department: str, student_id: s
         return id_
 
 
-@log.timed
 async def read(student_card_id: int, *, include_deleted: bool = False) -> do.StudentCard:
     async with SafeExecutor(
             event='get student card by id',
@@ -40,7 +38,6 @@ async def read(student_card_id: int, *, include_deleted: bool = False) -> do.Stu
                               email=email, is_deleted=is_deleted)
 
 
-@log.timed
 async def browse(account_id: int, *, include_deleted: bool = False) -> Sequence[do.StudentCard]:
     async with SafeExecutor(
             event='browse student card by account id',
@@ -57,7 +54,6 @@ async def browse(account_id: int, *, include_deleted: bool = False) -> Sequence[
                 for (id_, institute_id, department, student_id, email, is_deleted) in records]
 
 
-@log.timed
 async def read_owner_id(student_card_id: int, *, include_deleted: bool = False) -> int:
     async with SafeExecutor(
             event='get student owner id by student card id',
@@ -71,7 +67,6 @@ async def read_owner_id(student_card_id: int, *, include_deleted: bool = False) 
         return id_
 
 
-@log.timed
 async def edit(student_card_id: int,
                institute_id: int = None, department: str = None, student_id: str = None, email: str = None,
                is_enabled: bool = None) -> None:
@@ -104,7 +99,6 @@ async def edit(student_card_id: int,
         pass
 
 
-@log.timed
 async def delete(student_card_id: int) -> None:
     async with SafeExecutor(
             event='soft delete student_card',

@@ -7,7 +7,6 @@ from base.enum import RoleType
 from .base import SafeExecutor
 
 
-@log.timed
 async def add(name: str, class_id: int, is_hidden: bool) -> int:
     async with SafeExecutor(
             event='add team',
@@ -23,7 +22,6 @@ async def add(name: str, class_id: int, is_hidden: bool) -> int:
         return class_id
 
 
-@log.timed
 async def browse(class_id: int = None, include_hidden=False, include_deleted=False) -> Sequence[do.Team]:
     conditions = {}
     if class_id is not None:
@@ -51,7 +49,6 @@ async def browse(class_id: int = None, include_hidden=False, include_deleted=Fal
                 for (id_, name, class_id, is_hidden, is_deleted) in records]
 
 
-@log.timed
 async def read(team_id: int, *, include_hidden=False, include_deleted=False) -> do.Team:
     async with SafeExecutor(
             event='get team by id',
@@ -66,7 +63,6 @@ async def read(team_id: int, *, include_hidden=False, include_deleted=False) -> 
         return do.Team(id=id_, name=name, class_id=class_id, is_hidden=is_hidden, is_deleted=is_deleted)
 
 
-@log.timed
 async def edit(team_id: int,
                name: str = None, class_id: int = None, is_hidden: bool = None):
     to_updates = {}
@@ -94,7 +90,6 @@ async def edit(team_id: int,
         pass
 
 
-@log.timed
 async def delete(team_id: int) -> None:
     async with SafeExecutor(
             event='soft delete team',
@@ -110,7 +105,6 @@ async def delete(team_id: int) -> None:
 # === member control
 
 
-@log.timed
 async def browse_members(team_id: int) -> Sequence[do.Member]:
     async with SafeExecutor(
             event='get team members id',
@@ -125,7 +119,6 @@ async def browse_members(team_id: int) -> Sequence[do.Member]:
         return [do.Member(member_id=id_, role=RoleType(role_str)) for id_, role_str in records]
 
 
-@log.timed
 async def read_member(team_id: int, member_id: int) -> do.Member:
     async with SafeExecutor(
             event='get team member role',
@@ -139,7 +132,6 @@ async def read_member(team_id: int, member_id: int) -> do.Member:
         return do.Member(member_id=member_id, role=RoleType(role))
 
 
-@log.timed
 async def edit_member(team_id: int, member_id: int, role: RoleType):
     async with SafeExecutor(
             event='set team member',
@@ -153,7 +145,6 @@ async def edit_member(team_id: int, member_id: int, role: RoleType):
         pass
 
 
-@log.timed
 async def delete_member(team_id: int, member_id: int):
     async with SafeExecutor(
             event='HARD DELETE team member',
