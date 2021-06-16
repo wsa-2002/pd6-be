@@ -311,9 +311,3 @@ CREATE TABLE access_log (
   ip              VARCHAR   NOT NULL, -- Linux `INET6_ADDRSTRLEN = 48` -> 47 + terminating NULL
   account_id      INTEGER             REFERENCES account(id)
 );
-
-
--- Data
-
-INSERT INTO institute (id, name, email_domain, is_enabled)
-VALUES (1, 'NTU', 'ntu.edu.tw', true);
