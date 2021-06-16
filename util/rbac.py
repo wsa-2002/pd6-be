@@ -4,9 +4,9 @@ import log
 from persistence import database as db
 
 
-async def validate(account_id: int, min_role: RoleType,
+async def validate(account_id: int, min_role: RoleType, *,
                    class_id: int = None, team_id: int = None, problem_id: int = None, challenge_id: int = None,
-                   inherit=True) -> bool:
+                   inherit: bool = False) -> bool:
     """
     Validates if given account owns specific role, possibly of specific group.
     Only one group_id can be given. If multiple are given, upper-level ones will be ignored.
