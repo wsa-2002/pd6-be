@@ -27,7 +27,7 @@ class JSONResponse(fastapi.routing.JSONResponse):
         self._error = error
         super().__init__(*args, **kwargs)
 
-        def render(self, content: typing.Any) -> bytes:
+    def render(self, content: typing.Any) -> bytes:
         return json.dumps({
             'success': self._success,
             'data': content,
