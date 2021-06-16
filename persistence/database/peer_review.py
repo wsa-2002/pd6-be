@@ -1,11 +1,13 @@
 from datetime import datetime
 from typing import Sequence
 
+import log
 from base import do
 
 from .base import SafeExecutor
 
 
+@log.timed
 async def add(target_task_id: int, setter_id: int, description: str, min_score: int, max_score: int,
               max_review_count: int, start_time: datetime, end_time: datetime, is_hidden: bool) -> int:
     async with SafeExecutor(
@@ -24,6 +26,7 @@ async def add(target_task_id: int, setter_id: int, description: str, min_score: 
         return id_
 
 
+@log.timed
 async def browse(include_deleted=False) -> Sequence[do.PeerReview]:
     async with SafeExecutor(
             event='browse peer reviews',
@@ -44,6 +47,7 @@ async def browse(include_deleted=False) -> Sequence[do.PeerReview]:
                 in records]
 
 
+@log.timed
 async def read(peer_review_id: int, include_deleted=False) -> do.PeerReview:
     async with SafeExecutor(
             event='browse peer reviews',
@@ -63,6 +67,7 @@ async def read(peer_review_id: int, include_deleted=False) -> do.PeerReview:
                              start_time=start_time, end_time=end_time, is_hidden=is_hidden, is_deleted=is_deleted)
 
 
+@log.timed
 async def edit(peer_review_id: int, description: str = None, min_score: int = None, max_score: int = None,
                max_review_count: int = None, start_time: datetime = None, end_time: datetime = None,
                is_hidden: bool = None, is_deleted: bool = None) -> None:
@@ -101,6 +106,7 @@ async def edit(peer_review_id: int, description: str = None, min_score: int = No
         pass
 
 
+@log.timed
 async def delete(peer_review_id: int) -> None:
     async with SafeExecutor(
             event='soft delete peer_review',

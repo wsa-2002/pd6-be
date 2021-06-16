@@ -1,10 +1,12 @@
 from email.message import EmailMessage
 
+import log
 from config import service_config, smtp_config
 from persistence.email import smtp_handler
 
 
-async def send_email_verification_email(to: str, code: str, subject='PDOGS Email Verification'):
+@log.timed
+async def send(to: str, code: str, subject='PDOGS Email Verification'):
     message = EmailMessage()
     message["From"] = f"{smtp_config.username}@{smtp_config.host}"
     message["To"] = to

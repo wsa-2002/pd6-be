@@ -1,11 +1,13 @@
 from datetime import datetime
 from typing import Sequence
 
+import log
 from base import do
 
 from .base import SafeExecutor
 
 
+@log.timed
 async def add(peer_review_id: int, grader_id: int, receiver_id: int) -> int:
     """
     Assign a new peer review record
@@ -22,6 +24,7 @@ async def add(peer_review_id: int, grader_id: int, receiver_id: int) -> int:
         return id_
 
 
+@log.timed
 async def edit_score(peer_review_record_id: int, score: int, comment: str, submit_time: datetime = None) -> None:
     """Allows only full edit!"""
     if submit_time is None:
@@ -38,6 +41,7 @@ async def edit_score(peer_review_record_id: int, score: int, comment: str, submi
         pass
 
 
+@log.timed
 async def browse(grader_id: int = None, receiver_id: int = None) -> Sequence[do.PeerReviewRecord]:
     conditions = {}
 
@@ -64,6 +68,7 @@ async def browse(grader_id: int = None, receiver_id: int = None) -> Sequence[do.
                 in records]
 
 
+@log.timed
 async def read(peer_review_record_id: int) -> do.PeerReviewRecord:
     async with SafeExecutor(
             event='read peer review record',

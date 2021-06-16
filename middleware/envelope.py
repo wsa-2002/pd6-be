@@ -9,6 +9,9 @@ import exceptions as exc
 import fastapi.exceptions
 import fastapi.routing
 
+import exceptions
+import log
+
 
 class JSONEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -24,6 +27,7 @@ class JSONResponse(fastapi.routing.JSONResponse):
         self._error = error
         super().__init__(*args, **kwargs)
 
+    @log.timed
     def render(self, content: typing.Any) -> bytes:
         return json.dumps({
             'success': self._success,
@@ -58,5 +62,8 @@ async def exception_handler(request, error: Exception):
     # Convert Pydantic's ValidationError to self-defined error
     if isinstance(error, fastapi.exceptions.ValidationError):
         error = exc.IllegalInput(cause=error)
+
+    is_predefined = isinstance(error, exceptions.PdogsException)
+    log.exception(error, info_level=is_predefined)
 
     return JSONResponse(success=False, error=error)

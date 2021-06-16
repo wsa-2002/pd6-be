@@ -7,8 +7,11 @@ If you don't want auto-commit, use `async with Connection.transaction(): ...`.
 
 
 import collections
+from datetime import datetime
 import itertools
 from typing import Any, Dict, Tuple, List, Optional, Union
+
+import log
 
 
 # https://github.com/MagicStack/asyncpg/issues/9#issuecomment-600659015
@@ -50,12 +53,13 @@ class SafeConnection:
 
     async def __aenter__(self) -> asyncpg.connection.Connection:
         self._conn: asyncpg.connection.Connection = await pool_handler.pool.acquire()
-        # log.info(f"Starting {self.__class__.__name__}: {self._event}")
+        log.info(f"Starting {self.__class__.__name__}: {self._event}")
         return self._conn
 
     async def __aexit__(self, exc_type, exc_value, traceback):
         await pool_handler.pool.release(self._conn)
-        # log.info(f"Ended {self.__class__.__name__}: {self._event} after {datetime.now() - self._start_time}")
+        exec_time_ms = (datetime.now() - start_time).total_seconds() * 1000
+        log.info(f"Ended {self.__class__.__name__}: {self._event} after {exec_time_ms} ms")
 
 
 class SafeExecutor:
@@ -87,7 +91,9 @@ class SafeExecutor:
 
         If fetch is `None` or strange value: return `None`
         """
-        # log.info(f"Starting {self.__class__.__name__}: {self._event}, sql: {self._sql}, params: {self._parameters}")
+        start_time = datetime.now()
+
+        log.info(f"Starting {self.__class__.__name__}: {self._event}, sql: {self._sql}, params: {self._parameters}")
 
         async with pool_handler.pool.acquire() as conn:
             conn: asyncpg.connection.Connection
@@ -106,12 +112,13 @@ class SafeExecutor:
             else:
                 raise ValueError
 
+            exec_time_ms = (datetime.now() - start_time).total_seconds() * 1000
+            log.info(f"Ended {self.__class__.__name__}: {self._event} after {exec_time_ms} ms")
+
             if not results:
                 raise exc.NotFound
 
             return results
-
-            # log.info(f"Ended {self.__class__.__name__}: {self._event} after {datetime.now() - self._start_time}")
 
     async def __aexit__(self, exc_type, exc_value, traceback):
         if self._fetch == 'one' or self._fetch == 1 and exc_type is TypeError:  # Handles TypeError: value unpack

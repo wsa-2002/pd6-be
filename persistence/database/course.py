@@ -1,11 +1,13 @@
 from typing import Sequence, Collection, Tuple
 
+import log
 from base import do
 from base.enum import CourseType, RoleType
 
 from .base import SafeExecutor, SafeConnection
 
 
+@log.timed
 async def add(name: str, course_type: CourseType, is_hidden: bool) -> int:
     async with SafeExecutor(
             event='create course',
@@ -21,6 +23,7 @@ async def add(name: str, course_type: CourseType, is_hidden: bool) -> int:
         return course_id
 
 
+@log.timed
 async def browse(*, include_hidden=False, include_deleted=False) -> Sequence[do.Course]:
     conditions = []
     if not include_hidden:
@@ -43,6 +46,7 @@ async def browse(*, include_hidden=False, include_deleted=False) -> Sequence[do.
                 for (id_, name, c_type, is_hidden, is_deleted) in records]
 
 
+@log.timed
 async def read(course_id: int, *, include_hidden=False, include_deleted=False) -> do.Course:
     async with SafeExecutor(
             event='get course by id',
@@ -58,6 +62,7 @@ async def read(course_id: int, *, include_hidden=False, include_deleted=False) -
                          is_hidden=is_hidden, is_deleted=is_deleted)
 
 
+@log.timed
 async def edit(course_id: int,
                name: str = None, course_type: CourseType = None, is_hidden: bool = None):
     to_updates = {}
@@ -85,6 +90,7 @@ async def edit(course_id: int,
         pass
 
 
+@log.timed
 async def delete(course_id: int) -> None:
     async with SafeExecutor(
             event='soft delete course',
@@ -100,6 +106,7 @@ async def delete(course_id: int) -> None:
 # === member control
 
 
+@log.timed
 async def add_member(course_id: int, member_id: int, role: RoleType):
     async with SafeExecutor(
             event='add member to course',
@@ -113,6 +120,7 @@ async def add_member(course_id: int, member_id: int, role: RoleType):
         pass
 
 
+@log.timed
 async def add_members(course_id: int, member_roles: Collection[Tuple[int, RoleType]]):
     async with SafeConnection(event='add members to course') as conn:
         await conn.executemany(
@@ -124,6 +132,7 @@ async def add_members(course_id: int, member_roles: Collection[Tuple[int, RoleTy
         )
 
 
+@log.timed
 async def browse_members(course_id: int) -> Sequence[do.Member]:
     async with SafeExecutor(
             event='get course members id',
@@ -138,6 +147,7 @@ async def browse_members(course_id: int) -> Sequence[do.Member]:
         return [do.Member(member_id=id_, role=RoleType(role_str)) for id_, role_str in records]
 
 
+@log.timed
 async def read_member(course_id: int, member_id: int) -> do.Member:
     async with SafeExecutor(
             event='get course member role',
@@ -151,6 +161,7 @@ async def read_member(course_id: int, member_id: int) -> do.Member:
         return do.Member(member_id=member_id, role=RoleType(role))
 
 
+@log.timed
 async def edit_member(course_id: int, member_id: int, role: RoleType):
     async with SafeExecutor(
             event='set course member',
@@ -164,6 +175,7 @@ async def edit_member(course_id: int, member_id: int, role: RoleType):
         pass
 
 
+@log.timed
 async def delete_member(course_id: int, member_id: int):
     async with SafeExecutor(
             event='HARD DELETE course member',

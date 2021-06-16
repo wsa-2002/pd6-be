@@ -7,7 +7,7 @@ from base import do
 import exceptions as exc
 from middleware import APIRouter, envelope, auth
 import persistence.database as db
-from util import email
+import persistence.email as email
 
 
 router = APIRouter(
@@ -63,7 +63,7 @@ async def edit_account(account_id: int, data: EditAccountInput, request: auth.Re
     if data.alternative_email:  # 加或改 alternative email
         code = await db.account.add_email_verification(email=data.alternative_email, account_id=account_id,
                                                        student_card_id=None)
-        await email.send_email_verification_email(to=data.alternative_email, code=code)
+        await email.verification.send(to=data.alternative_email, code=code)
     else:  # 刪掉 alternative email
         await db.account.delete_alternative_email_by_id(account_id=account_id)
 

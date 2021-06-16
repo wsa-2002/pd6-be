@@ -1,10 +1,12 @@
 from typing import Optional, Sequence
 
+import log
 from base import do
 
 from .base import SafeExecutor
 
 
+@log.timed
 async def add(title: str, setter_id: int, full_score: int, description: Optional[str],
               source: Optional[str], hint: Optional[str], is_hidden: bool) -> int:
     async with SafeExecutor(
@@ -22,6 +24,7 @@ async def add(title: str, setter_id: int, full_score: int, description: Optional
         return id_
 
 
+@log.timed
 async def browse(include_hidden=False, include_deleted=False) -> Sequence[do.Problem]:
     filters = []
     if not include_hidden:
@@ -46,6 +49,7 @@ async def browse(include_hidden=False, include_deleted=False) -> Sequence[do.Pro
                 in records]
 
 
+@log.timed
 async def browse_by_challenge(challenge_id: int, include_hidden=False, include_deleted=False) -> Sequence[do.Problem]:
     async with SafeExecutor(
             event='browse problems with challenge id',
@@ -67,6 +71,7 @@ async def browse_by_challenge(challenge_id: int, include_hidden=False, include_d
                 in records]
 
 
+@log.timed
 async def read(problem_id: int, include_hidden=False, include_deleted=False) -> do.Problem:
     async with SafeExecutor(
             event='read problem by id',
@@ -83,6 +88,7 @@ async def read(problem_id: int, include_hidden=False, include_deleted=False) -> 
                           is_hidden=is_hidden, is_deleted=is_deleted)
 
 
+@log.timed
 async def edit(problem_id: int,
                title: str = None,
                full_score: int = None,
@@ -121,6 +127,7 @@ async def edit(problem_id: int,
         pass
 
 
+@log.timed
 async def delete(problem_id: int) -> None:
     async with SafeExecutor(
             event='soft delete problem',

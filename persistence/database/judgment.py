@@ -1,10 +1,12 @@
 from typing import Sequence
 
+import log
 from base import do, enum
 
 from .base import SafeExecutor
 
 
+@log.timed
 async def browse(submission_id: int) -> Sequence[do.Judgment]:
     async with SafeExecutor(
             event='browse judgments',
@@ -20,6 +22,7 @@ async def browse(submission_id: int) -> Sequence[do.Judgment]:
                 for id_, status, total_time, max_memory, score, judge_time in records]
 
 
+@log.timed
 async def read(judgment_id: int) -> do.Judgment:
     async with SafeExecutor(
             event='read judgment',
@@ -33,6 +36,7 @@ async def read(judgment_id: int) -> do.Judgment:
                            total_time=total_time, max_memory=max_memory, score=score, judge_time=judge_time)
 
 
+@log.timed
 async def browse_cases(judgment_id: int) -> Sequence[do.JudgeCase]:
     async with SafeExecutor(
             event='browse judge cases',
@@ -50,6 +54,7 @@ async def browse_cases(judgment_id: int) -> Sequence[do.JudgeCase]:
                 for judgment_id, testcase_id, status, time_lapse, peak_memory, score in records]
 
 
+@log.timed
 async def read_case(judgment_id: int, testcase_id: int) -> do.JudgeCase:
     async with SafeExecutor(
             event='read judge case',

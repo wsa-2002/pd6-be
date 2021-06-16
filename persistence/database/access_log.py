@@ -2,10 +2,12 @@ from datetime import datetime
 from typing import Optional, Sequence
 
 from base import do
+import log
 
 from .base import SafeExecutor
 
 
+@log.timed
 async def add(access_time: datetime, request_method: str, resource_path: str, ip: str, account_id: Optional[int]) \
         -> int:
     async with SafeExecutor(
@@ -21,6 +23,7 @@ async def add(access_time: datetime, request_method: str, resource_path: str, ip
         return id_
 
 
+@log.timed
 async def browse(offset: int = 0, limit: int = 50) -> Sequence[do.AccessLog]:
     async with SafeExecutor(
             event='browse access_logs',

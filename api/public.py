@@ -9,7 +9,8 @@ import exceptions as exc
 from middleware import envelope
 from middleware.router import APIRouter
 import persistence.database as db
-from util import email, security
+import persistence.email as email
+from util import security
 
 
 router = APIRouter(tags=['Public'])
@@ -59,13 +60,13 @@ async def add_account(data: AddAccountInput) -> None:
 
     code = await db.account.add_email_verification(email=data.institute_email,
                                                    account_id=account_id, student_card_id=student_card_id)
-    await email.send_email_verification_email(to=data.institute_email, code=code)
+    await email.verification.send(to=data.institute_email, code=code)
 
     if data.alternative_email:
         # Alternative email 不直接寫進去，等 verify 的時候再寫進 db
         code = await db.account.add_email_verification(email=data.alternative_email, account_id=account_id,
                                                        student_card_id=None)
-        await email.send_email_verification_email(to=data.alternative_email, code=code)
+        await email.verification.send(to=data.alternative_email, code=code)
 
 
 # Warning: this location is statically used in email string

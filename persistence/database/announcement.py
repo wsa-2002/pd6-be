@@ -1,11 +1,13 @@
 from datetime import datetime
 from typing import Sequence
 
+import log
 from base import do
 
 from .base import SafeExecutor
 
 
+@log.timed
 async def add(title: str, content: str, author_id: int, post_time: datetime, expire_time: datetime) \
         -> int:
     async with SafeExecutor(
@@ -20,6 +22,7 @@ async def add(title: str, content: str, author_id: int, post_time: datetime, exp
         return announcement_id
 
 
+@log.timed
 async def browse(show_hidden: bool, include_deleted=False) -> Sequence[do.Announcement]:
     filters = []
     if not show_hidden:
@@ -43,6 +46,7 @@ async def browse(show_hidden: bool, include_deleted=False) -> Sequence[do.Announ
                 for (id_, title, content, author_id, post_time, expire_time, is_deleted) in records]
 
 
+@log.timed
 async def read(announcement_id: int, show_hidden: bool, include_deleted=False) -> do.Announcement:
     async with SafeExecutor(
             event='get all announcements',
@@ -59,6 +63,7 @@ async def read(announcement_id: int, show_hidden: bool, include_deleted=False) -
                                post_time=post_time, expire_time=expire_time, is_deleted=is_deleted)
 
 
+@log.timed
 async def edit(announcement_id: int, title: str = None, content: str = None,
                post_time: datetime = None, expire_time: datetime = None) -> None:
     to_updates = {}
@@ -88,6 +93,7 @@ async def edit(announcement_id: int, title: str = None, content: str = None,
         pass
 
 
+@log.timed
 async def delete(announcement_id: int) -> None:
     async with SafeExecutor(
             event='soft delete announcement',
