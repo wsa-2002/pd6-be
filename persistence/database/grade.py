@@ -7,7 +7,6 @@ from base import do
 from .base import SafeExecutor
 
 
-@log.timed
 async def add(receiver_id: int, grader_id: int, class_id: int, title: str, score: Optional[int], comment: Optional[str],
               is_hidden: bool, update_time: datetime = None) -> int:
     if update_time is None:
@@ -28,7 +27,6 @@ async def add(receiver_id: int, grader_id: int, class_id: int, title: str, score
         return grade_id
 
 
-@log.timed
 async def browse(class_id: int = None, account_id: int = None,
                  include_hidden=False, include_deleted=False) -> Sequence[do.Grade]:
     conditions = {}
@@ -64,7 +62,6 @@ async def browse(class_id: int = None, account_id: int = None,
                 in records]
 
 
-@log.timed
 async def read(grade_id: int, include_hidden=False, include_deleted=False) -> do.Grade:
     async with SafeExecutor(
             event='read grade',
@@ -82,7 +79,6 @@ async def read(grade_id: int, include_hidden=False, include_deleted=False) -> do
                         is_hidden=is_hidden, is_deleted=is_deleted)
 
 
-@log.timed
 async def edit(grade_id: int, title: str = None, score: Optional[int] = ..., comment: Optional[str] = ...,
                update_time: datetime = None, is_hidden: bool = None) -> None:
     if update_time is None:
@@ -117,7 +113,6 @@ async def edit(grade_id: int, title: str = None, score: Optional[int] = ..., com
         pass
 
 
-@log.timed
 async def delete(grade_id: int) -> None:
     async with SafeExecutor(
             event='soft delete team',

@@ -8,7 +8,6 @@ import log
 from .base import SafeExecutor, SafeConnection
 
 
-@log.timed
 async def add(name: str, pass_hash: str, nickname: str, real_name: str, role: RoleType) -> int:
     async with SafeExecutor(
             event='add account',
@@ -22,7 +21,6 @@ async def add(name: str, pass_hash: str, nickname: str, real_name: str, role: Ro
         return account_id
 
 
-@log.timed
 async def browse(include_deleted: bool = False) -> Sequence[do.Account]:
     async with SafeExecutor(
             event='browse account',
@@ -38,7 +36,6 @@ async def browse(include_deleted: bool = False) -> Sequence[do.Account]:
                 in records]
 
 
-@log.timed
 async def read(account_id: int, *, include_deleted: bool = False) -> do.Account:
     async with SafeExecutor(
             event='read account info',
@@ -54,7 +51,6 @@ async def read(account_id: int, *, include_deleted: bool = False) -> do.Account:
 
 
 # Uses ellipsis (...) as default value for values that can be set to None
-@log.timed
 async def edit(account_id: int,
                nickname: str = ...) -> None:
     to_updates = {}
@@ -77,7 +73,6 @@ async def edit(account_id: int,
         return
 
 
-@log.timed
 async def delete(account_id: int) -> None:
     async with SafeExecutor(
             event='soft delete account',
@@ -90,7 +85,6 @@ async def delete(account_id: int) -> None:
         return
 
 
-@log.timed
 async def delete_alternative_email_by_id(account_id: int) -> None:
     async with SafeExecutor(
             event='set account delete alternative email',
@@ -103,7 +97,6 @@ async def delete_alternative_email_by_id(account_id: int) -> None:
         return
 
 
-@log.timed
 async def read_login_by_name(name: str, include_deleted: bool = False) -> Tuple[int, str]:
     async with SafeExecutor(
             event='read account login by name',
@@ -117,7 +110,6 @@ async def read_login_by_name(name: str, include_deleted: bool = False) -> Tuple[
         return id_, pass_hash
 
 
-@log.timed
 async def add_email_verification(email: str, account_id: int, student_card_id: Optional[int]) -> str:
     async with SafeExecutor(
             event='create email verification',
@@ -133,7 +125,6 @@ async def add_email_verification(email: str, account_id: int, student_card_id: O
         return code
 
 
-@log.timed
 async def verify_email(code: str) -> None:
     async with SafeConnection(event='Verify email') as conn:
         async with conn.transaction():

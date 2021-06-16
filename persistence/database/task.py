@@ -6,7 +6,6 @@ from base import do, enum
 from .base import SafeExecutor
 
 
-@log.timed
 async def add(challenge_id: int, identifier: str, selection_type: enum.TaskSelectionType,
               problem_id: Optional[int], peer_review_id: Optional[int], is_hidden: bool) -> int:
     async with SafeExecutor(
@@ -24,7 +23,6 @@ async def add(challenge_id: int, identifier: str, selection_type: enum.TaskSelec
         return id_
 
 
-@log.timed
 async def browse(challenge_id: int, include_hidden=False, include_deleted=False) -> Sequence[do.Task]:
     async with SafeExecutor(
             event='browse tasks',
@@ -47,7 +45,6 @@ async def browse(challenge_id: int, include_hidden=False, include_deleted=False)
                 in records]
 
 
-@log.timed
 async def read(task_id: int, include_hidden=False, include_deleted=False) -> do.Task:
     async with SafeExecutor(
             event='browse tasks',
@@ -68,7 +65,6 @@ async def read(task_id: int, include_hidden=False, include_deleted=False) -> do.
                        is_hidden=is_hidden, is_deleted=is_deleted)
 
 
-@log.timed
 async def edit(task_id: int,
                identifier: str = None, selection_type: enum.TaskSelectionType = None, is_hidden: bool = None,
                problem_id: Optional[int] = None, peer_review_id: Optional[int] = None) -> None:
@@ -103,7 +99,6 @@ async def edit(task_id: int,
         pass
 
 
-@log.timed
 async def delete(task_id: int) -> None:
     async with SafeExecutor(
             event='soft delete task',

@@ -5,7 +5,6 @@ from config import service_config, smtp_config
 from persistence.email import smtp_handler
 
 
-@log.timed
 async def send(to: str, code: str, subject='PDOGS Email Verification'):
     message = EmailMessage()
     message["From"] = f"{smtp_config.username}@{smtp_config.host}"

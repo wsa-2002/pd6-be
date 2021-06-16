@@ -3,6 +3,7 @@ from functools import wraps
 import logging
 
 import traceback
+from typing import ParamSpec, TypeVar, Callable, Awaitable
 from uuid import uuid1
 
 from config import logger_config
@@ -40,26 +41,26 @@ def exception(exc: Exception, msg='', info_level=False):
         _Logger.event_logger.exception(exc)
 
 
-# Timing logging
-
-
-def timed(timed_func):
-    @wraps(timed_func)
-    def wrapped(*args, **kwargs):
-        exec_uuid = uuid1()
-
-        start = datetime.now()
-        _Logger.timing_logger.info(f'request {get_request_uuid()}\t{exec_uuid}\tENTER\t'
-                                   f'{timed_func.__module__}.{timed_func.__qualname__}\t')
-
-        try:
-            return timed_func(*args, **kwargs)
-        finally:
-            end = datetime.now()
-            _Logger.timing_logger.info(f'request {get_request_uuid()}\t{exec_uuid}\tLEAVE\t'
-                                       f'{timed_func.__module__}.{timed_func.__qualname__}\t{end - start}')
-
-    return wrapped
+# TODO: fix type hint for async decorators: need new feature in Py 3.10
+# # Timing logging
+#
+# def timed(timed_func):
+#     @wraps(timed_func)
+#     def wrapped(*args, **kwargs):
+#         exec_uuid = uuid1()
+#
+#         start = datetime.now()
+#         _Logger.timing_logger.info(f'request {get_request_uuid()}\t{exec_uuid}\tENTER\t'
+#                                    f'{timed_func.__module__}.{timed_func.__qualname__}\t')
+#
+#         try:
+#             return timed_func(*args, **kwargs)
+#         finally:
+#             end = datetime.now()
+#             _Logger.timing_logger.info(f'request {get_request_uuid()}\t{exec_uuid}\tLEAVE\t'
+#                                        f'{timed_func.__module__}.{timed_func.__qualname__}\t{end - start}')
+#
+#     return wrapped
 
 
 def format_exc(e: Exception):
