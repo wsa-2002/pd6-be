@@ -68,8 +68,7 @@ async def read_owner_id(student_card_id: int, *, include_deleted: bool = False) 
 
 
 async def edit(student_card_id: int,
-               institute_id: int = None, department: str = None, student_id: str = None, email: str = None,
-               is_enabled: bool = None) -> None:
+               institute_id: int = None, department: str = None, student_id: str = None, email: str = None) -> None:
     to_updates = {}
 
     if institute_id is not None:
@@ -80,8 +79,6 @@ async def edit(student_card_id: int,
         to_updates['student_id'] = student_id
     if email is not None:
         to_updates['email'] = email
-    if is_enabled is not None:
-        to_updates['is_enabled'] = is_enabled
 
     if not to_updates:
         return

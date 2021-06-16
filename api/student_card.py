@@ -67,7 +67,6 @@ class EditStudentCardInput(BaseModel):
     department: str = None
     student_id: str = None
     email: str = None
-    is_enabled: bool = None
 
 
 @router.patch('/student-card/{student_card_id}')
@@ -82,7 +81,6 @@ async def edit_student_card(student_card_id: int, data: EditStudentCardInput, re
         department=data.department,
         student_id=data.student_id,
         email=data.email,
-        is_enabled=data.is_enabled,
     )
 
 
@@ -92,4 +90,4 @@ async def delete_student_card(student_card_id: int, request: auth.Request) -> No
     if request.account.role.not_manager and request.account.id != owner_id:
         raise exc.NoPermission
 
-    await db.student_card.edit(student_card_id, is_enabled=False)
+    await db.student_card.delete(student_card_id)
