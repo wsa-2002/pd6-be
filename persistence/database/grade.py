@@ -27,13 +27,13 @@ async def add(receiver_id: int, grader_id: int, class_id: int, title: str, score
         return grade_id
 
 
-async def browse(class_id: int = None, account_id: int = None,
+async def browse(class_id: int = None, receiver_id: int = None,
                  include_hidden=False, include_deleted=False) -> Sequence[do.Grade]:
     conditions = {}
     if class_id is not None:
         conditions['class_id'] = class_id
-    if account_id is not None:
-        conditions['account_id'] = account_id
+    if receiver_id is not None:
+        conditions['receiver_id'] = receiver_id
 
     filters = []
     if not include_hidden:

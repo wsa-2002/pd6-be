@@ -46,8 +46,9 @@ async def browse_course(request: auth.Request) -> Sequence[do.Course]:
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
-    show_limited = request.account.role.not_manager
-    courses = await db.course.browse(include_hidden=not show_limited, include_deleted=not show_limited)
+    is_manager = await rbac.validate(request.account.id, RoleType.manager)
+
+    courses = await db.course.browse(include_hidden=is_manager)
     return courses
 
 
@@ -56,8 +57,9 @@ async def read_course(course_id: int, request: auth.Request) -> do.Course:
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
-    show_limited = request.account.role.not_manager
-    course = await db.course.read(course_id, include_hidden=not show_limited, include_deleted=not show_limited)
+    is_manager = await rbac.validate(request.account.id, RoleType.manager)
+
+    course = await db.course.read(course_id, include_hidden=is_manager)
     return course
 
 
@@ -114,7 +116,9 @@ async def add_class_under_course(course_id: int, data: AddClassInput, request: a
 
 @router.get('/course/{course_id}/class', tags=['Class'])
 async def browse_class_under_course(course_id: int, request: auth.Request) -> Sequence[do.Class]:
-    if not await rbac.validate(request.account.id, RoleType.manager):
+    if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
-    return await db.class_.browse(course_id=course_id)
+    is_manager = await rbac.validate(request.account.id, RoleType.manager)
+    # TODO: browse hidden class as CLASS manager
+    return await db.class_.browse(course_id=course_id, include_hidden=is_manager)
