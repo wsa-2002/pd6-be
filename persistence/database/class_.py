@@ -49,6 +49,55 @@ async def browse(course_id: int = None, include_hidden=False, include_deleted=Fa
                 for (id_, name, course_id, is_hidden, is_deleted) in records]
 
 
+async def browse_from_problem(problem_id: int, include_hidden=False, include_deleted=False) -> Sequence[do.Class]:
+    async with SafeExecutor(
+            event='browse classes from problem',
+            sql=fr'SELECT class.id, class.name, class.course_id, class.is_hidden, class.is_deleted'
+                fr'  FROM class'
+                fr'       INNER JOIN challenge'
+                fr'               ON challenge.class_id = class.id'
+                fr'{"            AND NOT challenge.is_hidden" if not include_hidden else ""}'
+                fr'{"            AND NOT challenge.is_deleted" if not include_deleted else ""}'
+                fr'       INNER JOIN task'
+                fr'               ON task.challenge_id = challenge.id'
+                fr'{"            AND NOT task.is_hidden" if not include_hidden else ""}'
+                fr'{"            AND NOT task.is_deleted" if not include_deleted else ""}'
+                fr'       INNER JOIN problem'
+                fr'               ON problem.id = task.problem_id'
+                fr'{"            AND NOT problem.is_hidden" if not include_hidden else ""}'
+                fr'{"            AND NOT problem.is_deleted" if not include_deleted else ""}'
+                fr' WHERE problem.id = %(problem_id)s'
+                fr'{" AND NOT class.is_hidden" if not include_hidden else ""}'
+                fr'{" AND NOT class.is_deleted" if not include_deleted else ""}'
+                fr' ORDER BY class.course_id ASC, class.id ASC',
+            problem_id=problem_id,
+            fetch='all',
+    ) as records:
+        return [do.Class(id=id_, name=name, course_id=course_id, is_hidden=is_hidden, is_deleted=is_deleted)
+                for (id_, name, course_id, is_hidden, is_deleted) in records]
+
+
+async def browse_from_member_role(member_id: int, role: RoleType, include_hidden=False, include_deleted=False) \
+        -> Sequence[do.Class]:
+    async with SafeExecutor(
+            event='browse classes from account role',
+            sql=fr'SELECT class.id, class.name, class.course_id, class.is_hidden, class.is_deleted'
+                fr'  FROM class'
+                fr'       INNER JOIN class_member'
+                fr'               ON class_member.class_id = class.id'
+                fr'              AND class_member.member_id = %(member_id)s'
+                fr' WHERE class_member.role = %(role)s'
+                fr'{" AND NOT class.is_hidden" if not include_hidden else ""}'
+                fr'{" AND NOT class.is_deleted" if not include_deleted else ""}'
+                fr' ORDER BY class.course_id ASC, class.id ASC',
+            role=role,
+            member_id=member_id,
+            fetch='all',
+    ) as records:
+        return [do.Class(id=id_, name=name, course_id=course_id, is_hidden=is_hidden, is_deleted=is_deleted)
+                for (id_, name, course_id, is_hidden, is_deleted) in records]
+
+
 async def read(class_id: int, *, include_hidden=False, include_deleted=False) -> do.Class:
     async with SafeExecutor(
             event='read class by id',

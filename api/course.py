@@ -119,6 +119,8 @@ async def browse_class_under_course(course_id: int, request: auth.Request) -> Se
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
-    is_manager = await rbac.validate(request.account.id, RoleType.manager)
-    # TODO: browse hidden class as CLASS manager
-    return await db.class_.browse(course_id=course_id, include_hidden=is_manager)
+    # 先包含 hidden，再篩選這個 account 能看到的 class
+    return [class_ for class_ in await db.class_.browse(course_id=course_id, include_hidden=True)
+            if (not class_.is_hidden  # not hidden => 都可以看到
+                # hidden => 要 manager
+                or rbac.validate(request.account.id, RoleType.manager, class_id=class_.id))]

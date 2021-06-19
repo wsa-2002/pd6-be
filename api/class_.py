@@ -22,9 +22,14 @@ async def browse_class(request: auth.Request) -> Sequence[do.Class]:
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
-    is_manager = await rbac.validate(request.account.id, RoleType.manager)
-    # TODO: browse hidden class as CLASS manager
-    return await db.class_.browse(include_hidden=is_manager)
+    classes = set()  # FIXME: 其實不可以 set QQ
+    classes.update(await db.class_.browse_from_member_role(member_id=request.account.id, role=RoleType.manager,
+                                                           include_hidden=True))  # classes as manager
+    classes.update(await db.class_.browse(include_hidden=False))  # normal classes
+
+    # 這邊多 sort 了一次！
+    def sorter(class_: do.Class): return class_.course_id, class_.id
+    return sorted(classes, key=sorter)
 
 
 @router.get('/class/{class_id}')
