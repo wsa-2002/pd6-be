@@ -53,7 +53,6 @@ from . import (
     team,
     grade,
     challenge,
-    task,
 
     problem,
     testcase,

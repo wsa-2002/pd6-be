@@ -15,24 +15,6 @@ router = APIRouter(
 )
 
 
-class CreateProblemInput(BaseModel):
-    title: str
-    full_score: int
-    description: Optional[str]
-    source: Optional[str]
-    hint: Optional[str]
-    is_hidden: bool
-
-
-@router.post('/problem', tags=['Problem'])
-async def add_problem(data: CreateProblemInput, request: auth.Request) -> int:
-    problem_id = await db.problem.add(title=data.title, setter_id=request.account.id,
-                                      full_score=data.full_score, description=data.description, source=data.source,
-                                      hint=data.hint, is_hidden=data.is_hidden)
-
-    return problem_id
-
-
 @router.get('/problem')
 async def browse_problem() -> Sequence[do.Problem]:
     return await db.problem.browse()

@@ -56,7 +56,6 @@ class BrowseSubmissionInput(BaseModel):
     # TODO: add more
     account_id: int = None
     problem_id: int = None
-    task_id: int = None
     language_id: int = None
 
 
@@ -65,7 +64,6 @@ async def browse_submission(data: BrowseSubmissionInput) -> Sequence[do.Submissi
     return await db.submission.browse(
         account_id=data.account_id,
         problem_id=data.problem_id,
-        task_id=data.task_id,
         language_id=data.language_id,
     )
 
