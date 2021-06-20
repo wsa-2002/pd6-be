@@ -56,7 +56,6 @@ async def edit_submission_language(language_id: int, data: EditSubmissionLanguag
 
 
 class AddSubmissionInput(BaseModel):
-    task_id: int
     language_id: int
     content_file: str  # TODO
 
@@ -70,27 +69,17 @@ async def submit(problem_id: int, data: AddSubmissionInput, request: auth.Reques
 
     # Validate problem
     problem = await db.problem.read(problem_id, include_hidden=True)
-    if problem.is_hidden:  # 只要 account 在任何一個 class 是 manager 就 ok
-        if not any(await rbac.validate(request.account.id, RoleType.manager, class_id=related_class.id)
-                   for related_class in await db.class_.browse_from_problem(problem.id)):
-            raise exc.NoPermission
+    challenge = await db.challenge.read(problem.challenge_id, include_hidden=True)
+    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+        raise exc.NoPermission
 
     # Validate language
     language = await db.submission.read_language(data.language_id)
     if language.is_disabled:
         raise exc.IllegalInput
 
-    # Validate task
-    if data.task_id is not None:
-        task = await db.task.read(data.task_id, include_hidden=True)
-        challenge = await db.challenge.read(task.challenge_id, include_hidden=True)
-        class_role = await rbac.get_role(request.account.id, class_id=challenge.class_id)
-        if (class_role < RoleType.manager and (task.is_hidden or challenge.is_hidden)   # hidden 只有 manager 可以
-                or not challenge.start_time <= submit_time < challenge.end_time):  # 超出時間
-            raise exc.NoPermission
-
     return await db.submission.add(account_id=request.account.id, problem_id=problem.id,
-                                   task_id=data.task_id, language_id=data.language_id,
+                                   language_id=data.language_id,
                                    content_file=data.content_file, content_length=len(data.content_file),
                                    submit_time=submit_time)
 
@@ -120,12 +109,11 @@ async def read_submission(submission_id: int, request: auth.Request) -> do.Submi
         return submission
 
     # 可以看自己管理的 class 的
-    if submission.task_id is not None:
-        task = await db.task.read(submission.task_id, include_hidden=True)
-        challenge = await db.challenge.read(task.challenge_id, include_hidden=True)
-        class_role = await rbac.get_role(request.account.id, class_id=challenge.class_id)
-        if class_role >= RoleType.manager:
-            return submission
+    problem = await db.problem.read(problem_id=submission.problem_id, include_hidden=True)
+    challenge = await db.challenge.read(problem.challenge_id, include_hidden=True)
+    class_role = await rbac.get_role(request.account.id, class_id=challenge.class_id)
+    if class_role >= RoleType.manager:
+        return submission
 
     raise exc.NoPermission
 

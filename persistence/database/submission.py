@@ -80,7 +80,7 @@ async def read_language(language_id: int, include_disabled=True) -> do.Submissio
 
 
 async def add(account_id: int, problem_id: int, language_id: int,
-              content_file: str, content_length: str, submit_time: datetime) -> int:
+              content_file: str, content_length: int, submit_time: datetime) -> int:
     async with SafeExecutor(
             event='Add submission',
             sql="INSERT INTO submission"
