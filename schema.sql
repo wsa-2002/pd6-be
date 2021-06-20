@@ -175,8 +175,8 @@ CREATE TABLE testcase (
   problem_id    INTEGER NOT NULL  REFERENCES problem(id),
   is_sample     BOOLEAN NOT NULL,
   score         INTEGER NOT NULL, -- 保留設定扣分測資的空間
-  input_file    VARCHAR NOT NULL,
-  ouptut_file   VARCHAR NOT NULL,
+  input_file    VARCHAR,
+  ouptut_file   VARCHAR,
   time_limit    INTEGER NOT NULL, -- ms
   memory_limit  INTEGER NOT NULL, -- kb
   is_disabled   BOOLEAN NOT NULL  DEFAULT false,

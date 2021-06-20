@@ -11,6 +11,8 @@ from middleware import APIRouter, envelope, auth
 import persistence.database as db
 from util import rbac
 
+from .problem import ReadTestcaseOutput
+
 
 router = APIRouter(
     tags=['Testcase'],
@@ -19,22 +21,41 @@ router = APIRouter(
 
 
 @router.get('/testcase/{testcase_id}')
-async def read_testcase(testcase_id: int, request: auth.Request) -> do.Testcase:
+async def read_testcase(testcase_id: int, request: auth.Request) -> ReadTestcaseOutput:
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
-    # TODO: normal should not see input and output (maybe use another solution)
-    return await db.testcase.read(testcase_id=testcase_id)
+    testcase = await db.testcase.read(testcase_id=testcase_id)
+    return ReadTestcaseOutput(
+        id=testcase.id,
+        problem_id=testcase.problem_id,
+        is_sample=testcase.is_sample,
+        score=testcase.score,
+        time_limit=testcase.time_limit,
+        memory_limit=testcase.memory_limit,
+        is_disabled=testcase.is_disabled,
+        is_deleted=testcase.is_deleted,
+    )
 
 
 class EditTestcaseInput(BaseModel):
     is_sample: bool = None
     score: int = None
-    input_file: str = None  # TODO
-    output_file: str = None  # TODO
     time_limit: int = None
     memory_limit: int = None
     is_disabled: bool = None
+
+
+@router.get('/testcase/{testcase_id}/input-data')
+async def read_testcase_input_data(testcase_id: int):
+    testcase = await db.testcase.read(testcase_id)
+    ...  # TODO
+
+
+@router.get('/testcase/{testcase_id}/output-data')
+async def read_testcase_output_data(testcase_id: int):
+    testcase = await db.testcase.read(testcase_id)
+    ...  # TODO
 
 
 @router.patch('/testcase/{testcase_id}')
@@ -48,9 +69,20 @@ async def edit_testcase(testcase_id: int, data: EditTestcaseInput, request: auth
         raise exc.NoPermission
 
     await db.testcase.edit(testcase_id=testcase_id, is_sample=data.is_sample, score=data.score,
-                           input_file=data.input_file, output_file=data.output_file,
                            time_limit=data.time_limit, memory_limit=data.memory_limit,
                            is_disabled=data.is_disabled)
+
+
+@router.put('/testcase/{testcase_id}/input-data')
+async def edit_testcase_input_data(testcase_id: int):
+    await db.testcase.read(testcase_id, include_deleted=False)  # Make sure it's there
+    ...  # TODO
+
+
+@router.put('/testcase/{testcase_id}/output-data')
+async def edit_testcase_output_data(testcase_id: int):
+    await db.testcase.read(testcase_id, include_deleted=False)  # Make sure it's there
+    ...  # TODO
 
 
 @router.delete('/testcase/{testcase_id}')
@@ -64,3 +96,15 @@ async def delete_testcase(testcase_id: int, request: auth.Request) -> None:
         raise exc.NoPermission
 
     await db.testcase.delete(testcase_id=testcase_id)
+
+
+@router.delete('/testcase/{testcase_id}/input-data')
+async def delete_testcase_input_data(testcase_id: int):
+    await db.testcase.read(testcase_id, include_deleted=False)  # Make sure it's there
+    ...  # TODO
+
+
+@router.delete('/testcase/{testcase_id}/output-data')
+async def delete_testcase_output_data(testcase_id: int):
+    await db.testcase.read(testcase_id, include_deleted=False)  # Make sure it's there
+    ...  # TODO

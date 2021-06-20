@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Optional, Sequence
 
 from pydantic import BaseModel
@@ -62,8 +63,6 @@ async def delete_problem(problem_id: int, request: auth.Request):
 class AddTestcaseInput(BaseModel):
     is_sample: bool
     score: int
-    input_file: str  # TODO
-    output_file: str  # TODO
     time_limit: int
     memory_limit: int
     is_disabled: bool
@@ -78,15 +77,35 @@ async def add_testcase_under_problem(problem_id: int, data: AddTestcaseInput, re
         raise exc.NoPermission
 
     return await db.testcase.add(problem_id=problem_id, is_sample=data.is_sample, score=data.score,
-                                 input_file=data.input_file, output_file=data.output_file,
+                                 input_file=None, output_file=None,
                                  time_limit=data.time_limit, memory_limit=data.memory_limit,
                                  is_disabled=data.is_disabled)
 
 
-@router.get('/problem/{problem_id}/testcase', tags=['Testcase'])
-async def browse_testcase_under_problem(problem_id: int, request: auth.Request) -> Sequence[do.Testcase]:
+@dataclass
+class ReadTestcaseOutput:
+    id: int
+    problem_id: int
+    is_sample: bool
+    score: int
+    time_limit: int
+    memory_limit: int
+    is_disabled: bool
+    is_deleted: bool
+
+
+async def browse_testcase_under_problem(problem_id: int, request: auth.Request) -> Sequence[ReadTestcaseOutput]:
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
-    # TODO: normal should not see input and output (maybe use another solution)
-    return await db.testcase.browse(problem_id=problem_id)
+    testcases = await db.testcase.browse(problem_id=problem_id)
+    return [ReadTestcaseOutput(
+        id=testcase.id,
+        problem_id=testcase.problem_id,
+        is_sample=testcase.is_sample,
+        score=testcase.score,
+        time_limit=testcase.time_limit,
+        memory_limit=testcase.memory_limit,
+        is_disabled=testcase.is_disabled,
+        is_deleted=testcase.is_deleted,
+    ) for testcase in testcases]
