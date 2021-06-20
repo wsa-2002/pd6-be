@@ -1,21 +1,24 @@
 from typing import Optional, Sequence
 
 import log
-from base import do
+from base import do, enum
 
 from .base import SafeExecutor
 
 
-async def add(title: str, setter_id: int, full_score: int, description: Optional[str],
+async def add(challenge_id: int, challenge_label: str, selection_type: enum.TaskSelectionType,
+              title: str, setter_id: int, full_score: int, description: Optional[str],
               source: Optional[str], hint: Optional[str], is_hidden: bool) -> int:
     async with SafeExecutor(
             event='Add problem',
             sql="INSERT INTO problem"
-                "            (title, setter_id, full_score, description,"
+                "            (challenge_id, challenge_label, selection_type,"
+                "             title, setter_id, full_score, description,"
                 "             source, hint, is_hidden)"
                 "     VALUES (%(title)s, %(setter_id)s, %(full_score)s, %(description)s,"
                 "             %(source)s, %(hint)s, %(is_hidden)s)"
                 "  RETURNING id",
+            challenge_id=challenge_id, challenge_label=challenge_label, selection_type=selection_type,
             title=title, setter_id=setter_id, full_score=full_score, description=description,
             source=source, hint=hint, is_hidden=is_hidden,
             fetch=1,
@@ -34,57 +37,72 @@ async def browse(include_hidden=False, include_deleted=False) -> Sequence[do.Pro
 
     async with SafeExecutor(
             event='browse problems',
-            sql=fr'SELECT id, title, setter_id, full_score, description, source, hint, is_hidden, is_deleted'
+            sql=fr'SELECT id, challenge_id, challenge_label, selection_type, title, setter_id, full_score, '
+                fr'       description, source, hint, is_hidden, is_deleted'
                 fr'  FROM problem'
                 fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
                 fr' ORDER BY id ASC',
             fetch='all',
     ) as records:
-        return [do.Problem(id=id_, title=title, setter_id=setter_id,
+        return [do.Problem(id=id_,
+                           challenge_id=challenge_id, challenge_label=challenge_label,
+                           selection_type=enum.TaskSelectionType(selection_type),
+                           title=title, setter_id=setter_id,
                            full_score=full_score, description=description, source=source, hint=hint,
                            is_hidden=is_hidden, is_deleted=is_deleted)
-                for id_, title, setter_id, full_score, description, source, hint, is_hidden, is_deleted
+                for (id_, challenge_id, challenge_label, selection_type, title, setter_id, full_score,
+                     description, source, hint, is_hidden, is_deleted)
                 in records]
 
 
 async def browse_by_challenge(challenge_id: int, include_hidden=False, include_deleted=False) -> Sequence[do.Problem]:
     async with SafeExecutor(
             event='browse problems with challenge id',
-            sql=fr'SELECT id, title, setter_id, full_score, description, source, hint, is_hidden, is_deleted'
+            sql=fr'SELECT id, challenge_id, challenge_label, selection_type, title, setter_id, full_score, '
+                fr'       description, source, hint, is_hidden, is_deleted'
                 fr'  FROM problem'
-                fr'       LEFT JOIN challenge_problem'
-                fr'              ON problem.id = challenge_problem.problem_id'
                 fr' WHERE challenge_id = %(challenge_id)s'
                 fr'{" AND NOT is_hidden" if not include_hidden else ""}'
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}'
-                fr' ORDER BY problem_id ASC',
+                fr' ORDER BY id ASC',
             challenge_id=challenge_id,
             fetch='all',
     ) as records:
-        return [do.Problem(id=id_, title=title, setter_id=setter_id,
+        return [do.Problem(id=id_,
+                           challenge_id=challenge_id, challenge_label=challenge_label,
+                           selection_type=enum.TaskSelectionType(selection_type),
+                           title=title, setter_id=setter_id,
                            full_score=full_score, description=description, source=source, hint=hint,
                            is_hidden=is_hidden, is_deleted=is_deleted)
-                for id_, title, setter_id, full_score, description, source, hint, is_hidden, is_deleted
+                for (id_, challenge_id, challenge_label, selection_type, title, setter_id, full_score,
+                     description, source, hint, is_hidden, is_deleted)
                 in records]
 
 
 async def read(problem_id: int, include_hidden=False, include_deleted=False) -> do.Problem:
     async with SafeExecutor(
             event='read problem by id',
-            sql=fr'SELECT id, title, setter_id, full_score, description, source, hint, is_hidden, is_deleted'
+            sql=fr'SELECT id, challenge_id, challenge_label, selection_type, title, setter_id, full_score, '
+                fr'       description, source, hint, is_hidden, is_deleted'
                 fr'  FROM problem'
                 fr' WHERE id = %(problem_id)s'
                 fr'{" AND NOT is_hidden" if not include_hidden else ""}'
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}',
             problem_id=problem_id,
             fetch=1,
-    ) as (id_, title, setter_id, full_score, description, source, hint, is_hidden, is_deleted):
-        return do.Problem(id=id_, title=title, setter_id=setter_id,
+    ) as (id_, challenge_id, challenge_label, selection_type, title, setter_id, full_score,
+          description, source, hint, is_hidden, is_deleted):
+        return do.Problem(id=id_,
+                          challenge_id=challenge_id, challenge_label=challenge_label,
+                          selection_type=enum.TaskSelectionType(selection_type),
+                          title=title, setter_id=setter_id,
                           full_score=full_score, description=description, source=source, hint=hint,
                           is_hidden=is_hidden, is_deleted=is_deleted)
 
 
 async def edit(problem_id: int,
+               challenge_label: str = None,
+               selection_type: enum.TaskSelectionType = None,
                title: str = None,
                full_score: int = None,
                description: Optional[str] = ...,
@@ -93,6 +111,10 @@ async def edit(problem_id: int,
                is_hidden: bool = None,) -> None:
     to_updates = {}
 
+    if challenge_label is not None:
+        to_updates['challenge_label'] = challenge_label
+    if selection_type is not None:
+        to_updates['selection_type'] = selection_type
     if title is not None:
         to_updates['title'] = title
     if full_score is not None:

@@ -99,7 +99,6 @@ class BrowseSubmissionInput(BaseModel):
     # TODO: add more
     account_id: int = None
     problem_id: int = None
-    task_id: int = None
     language_id: int = None
 
 
@@ -108,7 +107,6 @@ async def browse_submission(data: BrowseSubmissionInput, request: auth.Request) 
     return await db.submission.browse(
         account_id=request.account.id,  # TODO: 現在只有開放看自己的
         problem_id=data.problem_id,
-        task_id=data.task_id,
         language_id=data.language_id,
     )
 

@@ -16,7 +16,6 @@ def register_routers(app: fastapi.FastAPI):
         grade,
 
         challenge,
-        task,
 
         problem,
         testcase,
@@ -39,7 +38,6 @@ def register_routers(app: fastapi.FastAPI):
     app.include_router(grade.router)
 
     app.include_router(challenge.router)
-    app.include_router(task.router)
 
     app.include_router(problem.router)
     app.include_router(testcase.router)
