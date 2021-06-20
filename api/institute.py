@@ -39,12 +39,12 @@ async def add_institute(data: AddInstituteInput, request: auth.Request) -> AddIn
 
 @router.get('/institute', tags=['Public'])
 async def browse_institute() -> Sequence[do.Institute]:
-    return await db.institute.browse(include_disabled=True)
+    return await db.institute.browse()
 
 
 @router.get('/institute/{institute_id}', tags=['Public'])
 async def read_institute(institute_id: int) -> do.Institute:
-    return await db.institute.read(institute_id, include_disabled=True)
+    return await db.institute.read(institute_id)
 
 
 class EditInstituteInput(BaseModel):

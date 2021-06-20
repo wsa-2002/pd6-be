@@ -21,7 +21,7 @@ async def add(name: str, email_domain: str, is_disabled: bool) -> int:
         return institute_id
 
 
-async def browse(*, include_disabled=False) -> Sequence[do.Institute]:
+async def browse(*, include_disabled=True) -> Sequence[do.Institute]:
     async with SafeExecutor(
             event='get all institutes',
             sql=fr'SELECT id, name, email_domain, is_disabled'

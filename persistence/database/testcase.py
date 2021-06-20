@@ -23,7 +23,7 @@ async def add(problem_id: int, is_sample: bool, score: int, input_file: Optional
         return id_
 
 
-async def read(testcase_id: int, include_disabled=False, include_deleted=False) -> do.Testcase:
+async def read(testcase_id: int, include_disabled=True, include_deleted=False) -> do.Testcase:
     async with SafeExecutor(
             event='read testcases with problem id',
             sql=fr'SELECT problem_id, is_sample, score, time_limit, memory_limit, is_disabled, is_deleted'
@@ -40,7 +40,7 @@ async def read(testcase_id: int, include_disabled=False, include_deleted=False) 
                            is_disabled=is_disabled, is_deleted=is_deleted)
 
 
-async def browse(problem_id: int, include_disabled=False, include_deleted=False) -> Sequence[do.Testcase]:
+async def browse(problem_id: int, include_disabled=True, include_deleted=False) -> Sequence[do.Testcase]:
     async with SafeExecutor(
             event='browse testcases with problem id',
             sql=fr'SELECT id, is_sample, score, time_limit, memory_limit, is_disabled, is_deleted'

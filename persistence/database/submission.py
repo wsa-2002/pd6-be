@@ -50,7 +50,7 @@ async def edit_language(language_id: int,
         pass
 
 
-async def browse_language(include_disabled=False) -> Sequence[do.SubmissionLanguage]:
+async def browse_language(include_disabled=True) -> Sequence[do.SubmissionLanguage]:
     async with SafeExecutor(
             event='Browse submission language',
             sql=fr'SELECT id, name, version, is_disabled'
@@ -63,7 +63,7 @@ async def browse_language(include_disabled=False) -> Sequence[do.SubmissionLangu
                 for id_, name, version, is_disabled in records]
 
 
-async def read_language(language_id: int, include_disabled=False) -> do.SubmissionLanguage:
+async def read_language(language_id: int, include_disabled=True) -> do.SubmissionLanguage:
     async with SafeExecutor(
             event='read submission language',
             sql=fr'SELECT id, name, version, is_disabled'
