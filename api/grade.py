@@ -46,7 +46,7 @@ async def browse_account_grade(account_id: int, request: auth.Request) -> Sequen
 @router.get('/grade/{grade_id}')
 async def get_grade(grade_id: int, request: auth.Request) -> do.Grade:
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    grade = await db.grade.read(grade_id=grade_id)
+    grade = await db.grade.read(grade_id=grade_id, include_hidden=True)
 
     is_class_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=grade.class_id)
     is_self = request.account.id is grade.receiver_id
@@ -66,7 +66,7 @@ class EditGradeInput(BaseModel):
 @router.patch('/grade/{grade_id}')
 async def edit_grade(grade_id: int, data: EditGradeInput, request: auth.Request) -> None:
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    grade = await db.grade.read(grade_id=grade_id)
+    grade = await db.grade.read(grade_id=grade_id, include_hidden=True)
 
     is_class_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=grade.class_id)
     if not is_class_manager:
@@ -79,7 +79,7 @@ async def edit_grade(grade_id: int, data: EditGradeInput, request: auth.Request)
 @router.delete('/grade/{grade_id}')
 async def delete_grade(grade_id: int, request: auth.Request):
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    grade = await db.grade.read(grade_id=grade_id)
+    grade = await db.grade.read(grade_id=grade_id, include_hidden=True)
 
     is_class_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=grade.class_id)
     if not is_class_manager:

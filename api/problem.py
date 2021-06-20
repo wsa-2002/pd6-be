@@ -39,8 +39,8 @@ class EditProblemInput(BaseModel):
 @router.patch('/problem/{problem_id}')
 async def edit_problem(problem_id: int, data: EditProblemInput, request: auth.Request):
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    problem = await db.problem.read(problem_id)
-    challenge = await db.challenge.read(problem.challenge_id)
+    problem = await db.problem.read(problem_id, include_hidden=True)
+    challenge = await db.challenge.read(problem.challenge_id, include_hidden=True)
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
@@ -52,8 +52,8 @@ async def edit_problem(problem_id: int, data: EditProblemInput, request: auth.Re
 @router.delete('/problem/{problem_id}')
 async def delete_problem(problem_id: int, request: auth.Request):
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    problem = await db.problem.read(problem_id)
-    challenge = await db.challenge.read(problem.challenge_id)
+    problem = await db.problem.read(problem_id, include_hidden=True)
+    challenge = await db.challenge.read(problem.challenge_id, include_hidden=True)
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
@@ -71,8 +71,8 @@ class AddTestcaseInput(BaseModel):
 @router.post('/problem/{problem_id}/testcase', tags=['Testcase'])
 async def add_testcase_under_problem(problem_id: int, data: AddTestcaseInput, request: auth.Request) -> int:
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    problem = await db.problem.read(problem_id)
-    challenge = await db.challenge.read(problem.challenge_id)
+    problem = await db.problem.read(problem_id, include_hidden=True)
+    challenge = await db.challenge.read(problem.challenge_id, include_hidden=True)
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
