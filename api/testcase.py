@@ -1,10 +1,5 @@
-from dataclasses import dataclass
-from datetime import datetime
-from typing import Sequence
-
 from pydantic import BaseModel
 
-from base import do, enum
 from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, envelope, auth
@@ -47,25 +42,38 @@ class EditTestcaseInput(BaseModel):
 
 
 @router.get('/testcase/{testcase_id}/input-data')
-async def read_testcase_input_data(testcase_id: int):
+async def read_testcase_input_data(testcase_id: int, request: auth.Request):
+    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
+    testcase = await db.testcase.read(testcase_id)
+    problem = await db.problem.read(testcase.problem_id)
+    challenge = await db.challenge.read(problem.challenge_id)
+    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+        raise exc.NoPermission
+
     testcase = await db.testcase.read(testcase_id)
     ...  # TODO
 
 
 @router.get('/testcase/{testcase_id}/output-data')
-async def read_testcase_output_data(testcase_id: int):
+async def read_testcase_output_data(testcase_id: int, request: auth.Request):
+    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
+    testcase = await db.testcase.read(testcase_id)
+    problem = await db.problem.read(testcase.problem_id)
+    challenge = await db.challenge.read(problem.challenge_id)
+    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+        raise exc.NoPermission
+
     testcase = await db.testcase.read(testcase_id)
     ...  # TODO
 
 
 @router.patch('/testcase/{testcase_id}')
 async def edit_testcase(testcase_id: int, data: EditTestcaseInput, request: auth.Request) -> None:
-    # 因為需要 problem_id 才能判斷權限，所以先 read
+    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     testcase = await db.testcase.read(testcase_id)
-    related_classes = await db.class_.browse_from_problem(problem_id=testcase.problem_id, include_hidden=True)
-    # 只要 account 在任何一個 class 是 manager 就 ok
-    if not any(await rbac.validate(request.account.id, RoleType.manager, class_id=related_class.id)
-               for related_class in related_classes):
+    problem = await db.problem.read(testcase.problem_id)
+    challenge = await db.challenge.read(problem.challenge_id)
+    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
     await db.testcase.edit(testcase_id=testcase_id, is_sample=data.is_sample, score=data.score,
@@ -74,37 +82,64 @@ async def edit_testcase(testcase_id: int, data: EditTestcaseInput, request: auth
 
 
 @router.put('/testcase/{testcase_id}/input-data')
-async def edit_testcase_input_data(testcase_id: int):
+async def edit_testcase_input_data(testcase_id: int, request: auth.Request):
+    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
+    testcase = await db.testcase.read(testcase_id)
+    problem = await db.problem.read(testcase.problem_id)
+    challenge = await db.challenge.read(problem.challenge_id)
+    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+        raise exc.NoPermission
+
     await db.testcase.read(testcase_id, include_deleted=False)  # Make sure it's there
     ...  # TODO
 
 
 @router.put('/testcase/{testcase_id}/output-data')
-async def edit_testcase_output_data(testcase_id: int):
+async def edit_testcase_output_data(testcase_id: int, request: auth.Request):
+    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
+    testcase = await db.testcase.read(testcase_id)
+    problem = await db.problem.read(testcase.problem_id)
+    challenge = await db.challenge.read(problem.challenge_id)
+    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+        raise exc.NoPermission
+
     await db.testcase.read(testcase_id, include_deleted=False)  # Make sure it's there
     ...  # TODO
 
 
 @router.delete('/testcase/{testcase_id}')
 async def delete_testcase(testcase_id: int, request: auth.Request) -> None:
-    # 因為需要 problem_id 才能判斷權限，所以先 read
+    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     testcase = await db.testcase.read(testcase_id)
-    related_classes = await db.class_.browse_from_problem(problem_id=testcase.problem_id, include_hidden=True)
-    # 只要 account 在任何一個 class 是 manager 就 ok
-    if not any(await rbac.validate(request.account.id, RoleType.manager, class_id=related_class.id)
-               for related_class in related_classes):
+    problem = await db.problem.read(testcase.problem_id)
+    challenge = await db.challenge.read(problem.challenge_id)
+    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
     await db.testcase.delete(testcase_id=testcase_id)
 
 
 @router.delete('/testcase/{testcase_id}/input-data')
-async def delete_testcase_input_data(testcase_id: int):
+async def delete_testcase_input_data(testcase_id: int, request: auth.Request):
+    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
+    testcase = await db.testcase.read(testcase_id)
+    problem = await db.problem.read(testcase.problem_id)
+    challenge = await db.challenge.read(problem.challenge_id)
+    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+        raise exc.NoPermission
+
     await db.testcase.read(testcase_id, include_deleted=False)  # Make sure it's there
     ...  # TODO
 
 
 @router.delete('/testcase/{testcase_id}/output-data')
-async def delete_testcase_output_data(testcase_id: int):
+async def delete_testcase_output_data(testcase_id: int, request: auth.Request):
+    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
+    testcase = await db.testcase.read(testcase_id)
+    problem = await db.problem.read(testcase.problem_id)
+    challenge = await db.challenge.read(problem.challenge_id)
+    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+        raise exc.NoPermission
+
     await db.testcase.read(testcase_id, include_deleted=False)  # Make sure it's there
     ...  # TODO

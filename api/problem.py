@@ -38,10 +38,10 @@ class EditProblemInput(BaseModel):
 
 @router.patch('/problem/{problem_id}')
 async def edit_problem(problem_id: int, data: EditProblemInput, request: auth.Request):
-    related_classes = await db.class_.browse_from_problem(problem_id=problem_id, include_hidden=True)
-    # 只要 account 在任何一個 class 是 manager 就 ok
-    if not any(await rbac.validate(request.account.id, RoleType.manager, class_id=related_class.id)
-               for related_class in related_classes):
+    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
+    problem = await db.problem.read(problem_id)
+    challenge = await db.challenge.read(problem.challenge_id)
+    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
     return await db.problem.edit(problem_id, title=data.title, full_score=data.full_score,
@@ -51,10 +51,10 @@ async def edit_problem(problem_id: int, data: EditProblemInput, request: auth.Re
 
 @router.delete('/problem/{problem_id}')
 async def delete_problem(problem_id: int, request: auth.Request):
-    related_classes = await db.class_.browse_from_problem(problem_id=problem_id, include_hidden=True)
-    # 只要 account 在任何一個 class 是 manager 就 ok
-    if not any(await rbac.validate(request.account.id, RoleType.manager, class_id=related_class.id)
-               for related_class in related_classes):
+    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
+    problem = await db.problem.read(problem_id)
+    challenge = await db.challenge.read(problem.challenge_id)
+    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
     return await db.problem.delete(problem_id=problem_id)
@@ -70,10 +70,10 @@ class AddTestcaseInput(BaseModel):
 
 @router.post('/problem/{problem_id}/testcase', tags=['Testcase'])
 async def add_testcase_under_problem(problem_id: int, data: AddTestcaseInput, request: auth.Request) -> int:
-    related_classes = await db.class_.browse_from_problem(problem_id=problem_id, include_hidden=True)
-    # 只要 account 在任何一個 class 是 manager 就 ok
-    if not any(await rbac.validate(request.account.id, RoleType.manager, class_id=related_class.id)
-               for related_class in related_classes):
+    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
+    problem = await db.problem.read(problem_id)
+    challenge = await db.challenge.read(problem.challenge_id)
+    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
     return await db.testcase.add(problem_id=problem_id, is_sample=data.is_sample, score=data.score,
