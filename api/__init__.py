@@ -24,7 +24,7 @@ def register_routers(app: fastapi.FastAPI):
         submission,
         judgment,
 
-        # peer_review,
+        peer_review,
 
         announcement,
         system,
@@ -47,6 +47,8 @@ def register_routers(app: fastapi.FastAPI):
     app.include_router(testcase.router)
     app.include_router(submission.router)
     app.include_router(judgment.router)
+
+    app.include_router(peer_review.router)
 
     app.include_router(announcement.router)
     app.include_router(system.router)
