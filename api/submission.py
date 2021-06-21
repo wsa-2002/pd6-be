@@ -20,7 +20,11 @@ router = APIRouter(
 
 @router.get('/submission/language', tags=['Administrative'])
 async def browse_submission_language(request: auth.Request) -> Sequence[do.SubmissionLanguage]:
-    if not await rbac.validate(request.account.id, RoleType.manager):
+    """
+    ### 權限
+    - System normal
+    """
+    if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
     return await db.submission.browse_language()
@@ -34,6 +38,10 @@ class AddSubmissionLanguageInput(BaseModel):
 
 @router.post('/submission/language', tags=['Administrative'])
 async def add_submission_language(data: AddSubmissionLanguageInput, request: auth.Request) -> int:
+    """
+    ### 權限
+    - System manager
+    """
     if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
@@ -48,6 +56,10 @@ class EditSubmissionLanguageInput(BaseModel):
 
 @router.patch('/submission/language/{language_id}', tags=['Administrative'])
 async def edit_submission_language(language_id: int, data: EditSubmissionLanguageInput, request: auth.Request) -> None:
+    """
+    ### 權限
+    - System manager
+    """
     if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
@@ -62,6 +74,10 @@ class AddSubmissionInput(BaseModel):
 
 @router.post('/problem/{problem_id}/submission', tags=['Problem'])
 async def submit(problem_id: int, data: AddSubmissionInput, request: auth.Request):
+    """
+    ### 權限
+    - System normal
+    """
     submit_time = datetime.now()  # TODO: request time?
 
     if not await rbac.validate(request.account.id, RoleType.normal):
@@ -93,6 +109,11 @@ class BrowseSubmissionInput(BaseModel):
 
 @router.get('/submission')
 async def browse_submission(data: BrowseSubmissionInput, request: auth.Request) -> Sequence[do.Submission]:
+    """
+    ### 權限
+    - Self
+    - Class manager
+    """
     return await db.submission.browse(
         account_id=request.account.id,  # TODO: 現在只有開放看自己的
         problem_id=data.problem_id,
@@ -102,6 +123,11 @@ async def browse_submission(data: BrowseSubmissionInput, request: auth.Request) 
 
 @router.get('/submission/{submission_id}')
 async def read_submission(submission_id: int, request: auth.Request) -> do.Submission:
+    """
+    ### 權限
+    - Self
+    - Class manager
+    """
     submission = await db.submission.read(submission_id=submission_id)
 
     # 可以看自己的
@@ -120,5 +146,10 @@ async def read_submission(submission_id: int, request: auth.Request) -> do.Submi
 
 @router.get('/submission/{submission_id}/judgment', tags=['Judgment'])
 async def browse_submission_judgment(submission_id: int, request: auth.Request) -> Sequence[do.Judgment]:
+    """
+    ### 權限
+    - Self (latest)
+    - Class manager (all)
+    """
     # TODO: 權限控制
     return await db.judgment.browse(submission_id=submission_id)

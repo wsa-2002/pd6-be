@@ -27,6 +27,10 @@ class AddAnnouncementInput(BaseModel):
 
 @router.post('/announcement')
 async def add_announcement(data: AddAnnouncementInput, request: auth.Request) -> int:
+    """
+    ### 權限
+    - System manager
+    """
     if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
@@ -36,6 +40,11 @@ async def add_announcement(data: AddAnnouncementInput, request: auth.Request) ->
 
 @router.get('/announcement')
 async def browse_announcement(request: auth.Request) -> Sequence[do.Announcement]:
+    """
+    ### 權限
+    - System manager (all)
+    - System guest (limited)
+    """
     system_role = await rbac.get_role(request.account.id)
     if not system_role >= RoleType.guest:
         raise exc.NoPermission
@@ -45,6 +54,11 @@ async def browse_announcement(request: auth.Request) -> Sequence[do.Announcement
 
 @router.get('/announcement/{announcement_id}')
 async def read_announcement(announcement_id: int, request: auth.Request) -> do.Announcement:
+    """
+    ### 權限
+    - System manager (all)
+    - System guest (limited)
+    """
     system_role = await rbac.get_role(request.account.id)
     if not system_role >= RoleType.guest:
         raise exc.NoPermission
@@ -61,6 +75,10 @@ class EditAnnouncementInput(BaseModel):
 
 @router.patch('/announcement/{announcement_id}')
 async def edit_announcement(announcement_id: int, data: EditAnnouncementInput, request: auth.Request) -> None:
+    """
+    ### 權限
+    - System manager
+    """
     if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
@@ -70,6 +88,10 @@ async def edit_announcement(announcement_id: int, data: EditAnnouncementInput, r
 
 @router.delete('/announcement/{announcement_id}')
 async def delete_announcement(announcement_id: int, request: auth.Request) -> None:
+    """
+    ### 權限
+    - System manager
+    """
     if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 

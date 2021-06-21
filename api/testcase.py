@@ -17,6 +17,10 @@ router = APIRouter(
 
 @router.get('/testcase/{testcase_id}')
 async def read_testcase(testcase_id: int, request: auth.Request) -> ReadTestcaseOutput:
+    """
+    ### 權限
+    - System normal
+    """
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
@@ -43,6 +47,10 @@ class EditTestcaseInput(BaseModel):
 
 @router.get('/testcase/{testcase_id}/input-data')
 async def read_testcase_input_data(testcase_id: int, request: auth.Request):
+    """
+    ### 權限
+    - Class manager
+    """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     testcase = await db.testcase.read(testcase_id)
     problem = await db.problem.read(testcase.problem_id, include_hidden=True)
@@ -56,6 +64,10 @@ async def read_testcase_input_data(testcase_id: int, request: auth.Request):
 
 @router.get('/testcase/{testcase_id}/output-data')
 async def read_testcase_output_data(testcase_id: int, request: auth.Request):
+    """
+    ### 權限
+    - Class manager
+    """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     testcase = await db.testcase.read(testcase_id)
     problem = await db.problem.read(testcase.problem_id, include_hidden=True)
@@ -69,6 +81,10 @@ async def read_testcase_output_data(testcase_id: int, request: auth.Request):
 
 @router.patch('/testcase/{testcase_id}')
 async def edit_testcase(testcase_id: int, data: EditTestcaseInput, request: auth.Request) -> None:
+    """
+    ### 權限
+    - Class manager
+    """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     testcase = await db.testcase.read(testcase_id)
     problem = await db.problem.read(testcase.problem_id, include_hidden=True)
@@ -83,6 +99,10 @@ async def edit_testcase(testcase_id: int, data: EditTestcaseInput, request: auth
 
 @router.put('/testcase/{testcase_id}/input-data')
 async def edit_testcase_input_data(testcase_id: int, request: auth.Request):
+    """
+    ### 權限
+    - Class manager
+    """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     testcase = await db.testcase.read(testcase_id)
     problem = await db.problem.read(testcase.problem_id, include_hidden=True)
@@ -96,6 +116,10 @@ async def edit_testcase_input_data(testcase_id: int, request: auth.Request):
 
 @router.put('/testcase/{testcase_id}/output-data')
 async def edit_testcase_output_data(testcase_id: int, request: auth.Request):
+    """
+    ### 權限
+    - Class manager
+    """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     testcase = await db.testcase.read(testcase_id)
     problem = await db.problem.read(testcase.problem_id, include_hidden=True)
@@ -109,6 +133,10 @@ async def edit_testcase_output_data(testcase_id: int, request: auth.Request):
 
 @router.delete('/testcase/{testcase_id}')
 async def delete_testcase(testcase_id: int, request: auth.Request) -> None:
+    """
+    ### 權限
+    - Class manager
+    """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     testcase = await db.testcase.read(testcase_id)
     problem = await db.problem.read(testcase.problem_id, include_hidden=True)
@@ -121,6 +149,10 @@ async def delete_testcase(testcase_id: int, request: auth.Request) -> None:
 
 @router.delete('/testcase/{testcase_id}/input-data')
 async def delete_testcase_input_data(testcase_id: int, request: auth.Request):
+    """
+    ### 權限
+    - Class manager
+    """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     testcase = await db.testcase.read(testcase_id)
     problem = await db.problem.read(testcase.problem_id, include_hidden=True)
@@ -134,6 +166,10 @@ async def delete_testcase_input_data(testcase_id: int, request: auth.Request):
 
 @router.delete('/testcase/{testcase_id}/output-data')
 async def delete_testcase_output_data(testcase_id: int, request: auth.Request):
+    """
+    ### 權限
+    - Class manager
+    """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     testcase = await db.testcase.read(testcase_id)
     problem = await db.problem.read(testcase.problem_id, include_hidden=True)

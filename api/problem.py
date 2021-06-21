@@ -19,12 +19,33 @@ router = APIRouter(
 
 @router.get('/problem')
 async def browse_problem() -> Sequence[do.Problem]:
+    """
+    ### 權限
+    - System normal (not hidden)
+    - Class manager (hidden)
+    """
+    # TODO: browse including managed class??
     return await db.problem.browse()
 
 
 @router.get('/problem/{problem_id}')
-async def read_problem(problem_id: int):
-    return await db.problem.read(problem_id=problem_id)
+async def read_problem(problem_id: int, request: auth.Request) -> do.Problem:
+    """
+    ### 權限
+    - Class manager (hidden)
+    - System normal (not hidden)
+    """
+    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
+    problem = await db.problem.read(problem_id, include_hidden=True)
+    challenge = await db.challenge.read(problem.challenge_id, include_hidden=True)
+
+    is_system_normal = await rbac.validate(request.account.id, RoleType.normal)
+    is_class_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)
+
+    if not (problem.is_hidden and is_class_manager or not problem.is_hidden and is_system_normal):
+        raise exc.NoPermission
+
+    return problem
 
 
 class EditProblemInput(BaseModel):
@@ -38,6 +59,10 @@ class EditProblemInput(BaseModel):
 
 @router.patch('/problem/{problem_id}')
 async def edit_problem(problem_id: int, data: EditProblemInput, request: auth.Request):
+    """
+    ### 權限
+    - Class manager
+    """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     problem = await db.problem.read(problem_id, include_hidden=True)
     challenge = await db.challenge.read(problem.challenge_id, include_hidden=True)
@@ -51,6 +76,10 @@ async def edit_problem(problem_id: int, data: EditProblemInput, request: auth.Re
 
 @router.delete('/problem/{problem_id}')
 async def delete_problem(problem_id: int, request: auth.Request):
+    """
+    ### 權限
+    - Class manager
+    """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     problem = await db.problem.read(problem_id, include_hidden=True)
     challenge = await db.challenge.read(problem.challenge_id, include_hidden=True)
@@ -70,6 +99,10 @@ class AddTestcaseInput(BaseModel):
 
 @router.post('/problem/{problem_id}/testcase', tags=['Testcase'])
 async def add_testcase_under_problem(problem_id: int, data: AddTestcaseInput, request: auth.Request) -> int:
+    """
+    ### 權限
+    - Class manager
+    """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     problem = await db.problem.read(problem_id, include_hidden=True)
     challenge = await db.challenge.read(problem.challenge_id, include_hidden=True)
@@ -95,6 +128,10 @@ class ReadTestcaseOutput:
 
 
 async def browse_testcase_under_problem(problem_id: int, request: auth.Request) -> Sequence[ReadTestcaseOutput]:
+    """
+    ### 權限
+    - System normal
+    """
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 

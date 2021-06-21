@@ -19,6 +19,11 @@ router = APIRouter(
 
 @router.get('/class')
 async def browse_class(request: auth.Request) -> Sequence[do.Class]:
+    """
+    ### 權限
+    - Class+ manager (hidden)
+    - System normal (not hidden)
+    """
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
@@ -34,6 +39,11 @@ async def browse_class(request: auth.Request) -> Sequence[do.Class]:
 
 @router.get('/class/{class_id}')
 async def read_class(class_id: int, request: auth.Request) -> do.Class:
+    """
+    ### 權限
+    - Class+ manager (hidden)
+    - System normal (not hidden)
+    """
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
@@ -51,6 +61,10 @@ class EditClassInput(BaseModel):
 
 @router.patch('/class/{class_id}')
 async def edit_class(class_id: int, data: EditClassInput, request: auth.Request) -> None:
+    """
+    ### 權限
+    - Class+ manager
+    """
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id, inherit=True):
         raise exc.NoPermission
 
@@ -64,6 +78,10 @@ async def edit_class(class_id: int, data: EditClassInput, request: auth.Request)
 
 @router.delete('/class/{class_id}')
 async def delete_class(class_id: int, request: auth.Request) -> None:
+    """
+    ### 權限
+    - System manager
+    """
     if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
@@ -72,7 +90,13 @@ async def delete_class(class_id: int, request: auth.Request) -> None:
 
 @router.get('/class/{class_id}/member')
 async def browse_class_member(class_id: int, request: auth.Request) -> Sequence[do.Member]:
-    if not await rbac.validate(request.account.id, RoleType.normal, class_id=class_id):
+    """
+    ### 權限
+    - Class normal
+    - Class+ manager
+    """
+    if (not await rbac.validate(request.account.id, RoleType.normal, class_id=class_id)
+            and not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id, inherit=True)):
         raise exc.NoPermission
 
     return await db.class_.browse_members(class_id=class_id)
@@ -85,6 +109,10 @@ class EditClassMemberInput(BaseModel):
 
 @router.patch('/class/{class_id}/member')
 async def edit_class_member(class_id: int, data: Sequence[EditClassMemberInput], request: auth.Request) -> None:
+    """
+    ### 權限
+    - Class+ manager
+    """
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id, inherit=True):
         raise exc.NoPermission
 
@@ -94,6 +122,10 @@ async def edit_class_member(class_id: int, data: Sequence[EditClassMemberInput],
 
 @router.delete('/class/{class_id}/member/{member_id}')
 async def delete_class_member(class_id: int, member_id: int, request: auth.Request) -> None:
+    """
+    ### 權限
+    - Class+ manager
+    """
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id, inherit=True):
         raise exc.NoPermission
 
@@ -112,6 +144,10 @@ class AddTeamOutput:
 
 @router.post('/class/{class_id}/team', tags=['Team'])
 async def add_team_under_class(class_id: int, data: AddTeamInput, request: auth.Request) -> AddTeamOutput:
+    """
+    ### 權限
+    - Class manager
+    """
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
 
@@ -126,8 +162,13 @@ async def add_team_under_class(class_id: int, data: AddTeamInput, request: auth.
 
 @router.get('/class/{class_id}/team', tags=['Team'])
 async def browse_team_under_class(class_id: int, request: auth.Request) -> Sequence[do.Team]:
-    if not await rbac.validate(request.account.id, RoleType.normal, class_id=class_id):
+    """
+    ### 權限
+    - Class normal (not hidden)
+    - Class manager (hidden)
+    """
+    class_role = await rbac.get_role(request.account.id, class_id=class_id)
+    if class_role < RoleType.normal:
         raise exc.NoPermission
-    is_class_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=class_id)
 
-    return await db.team.browse(class_id=class_id, include_hidden=is_class_manager)
+    return await db.team.browse(class_id=class_id, include_hidden=class_role >= RoleType.manager)

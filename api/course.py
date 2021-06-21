@@ -30,6 +30,10 @@ class AddCourseOutput:
 
 @router.post('/course')
 async def add_course(data: AddCourseInput, request: auth.Request) -> AddCourseOutput:
+    """
+    ### 權限
+    - System manager
+    """
     if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
@@ -43,23 +47,31 @@ async def add_course(data: AddCourseInput, request: auth.Request) -> AddCourseOu
 
 @router.get('/course')
 async def browse_course(request: auth.Request) -> Sequence[do.Course]:
-    if not await rbac.validate(request.account.id, RoleType.normal):
+    """
+    ### 權限
+    - System manager (hidden)
+    - System normal (not hidden)
+    """
+    system_role = await rbac.get_role(request.account.id)
+    if system_role < RoleType.normal:
         raise exc.NoPermission
 
-    is_manager = await rbac.validate(request.account.id, RoleType.manager)
-
-    courses = await db.course.browse(include_hidden=is_manager)
+    courses = await db.course.browse(include_hidden=system_role is RoleType.manager)
     return courses
 
 
 @router.get('/course/{course_id}')
 async def read_course(course_id: int, request: auth.Request) -> do.Course:
-    if not await rbac.validate(request.account.id, RoleType.normal):
+    """
+    ### 權限
+    - System manager (hidden)
+    - System normal (not hidden)
+    """
+    system_role = await rbac.get_role(request.account.id)
+    if system_role < RoleType.normal:
         raise exc.NoPermission
 
-    is_manager = await rbac.validate(request.account.id, RoleType.manager)
-
-    course = await db.course.read(course_id, include_hidden=is_manager)
+    course = await db.course.read(course_id, include_hidden=system_role is RoleType.manager)
     return course
 
 
@@ -71,6 +83,10 @@ class EditCourseInput(BaseModel):
 
 @router.patch('/course/{course_id}')
 async def edit_course(course_id: int, data: EditCourseInput, request: auth.Request) -> None:
+    """
+    ### 權限
+    - System manager
+    """
     if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
@@ -84,6 +100,10 @@ async def edit_course(course_id: int, data: EditCourseInput, request: auth.Reque
 
 @router.delete('/course/{course_id}')
 async def delete_course(course_id: int, request: auth.Request) -> None:
+    """
+    ### 權限
+    - System manager
+    """
     if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
@@ -102,6 +122,10 @@ class AddClassOutput:
 
 @router.post('/course/{course_id}/class', tags=['Class'])
 async def add_class_under_course(course_id: int, data: AddClassInput, request: auth.Request) -> AddClassOutput:
+    """
+    ### 權限
+    - System manager
+    """
     if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
@@ -116,11 +140,17 @@ async def add_class_under_course(course_id: int, data: AddClassInput, request: a
 
 @router.get('/course/{course_id}/class', tags=['Class'])
 async def browse_class_under_course(course_id: int, request: auth.Request) -> Sequence[do.Class]:
+    """
+    ### 權限
+    - Class+ manager (hidden)
+    - System normal (not hidden)
+    """
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
+    # FIXME
     # 先包含 hidden，再篩選這個 account 能看到的 class
     return [class_ for class_ in await db.class_.browse(course_id=course_id, include_hidden=True)
             if (not class_.is_hidden  # not hidden => 都可以看到
-                # hidden => 要 manager
-                or rbac.validate(request.account.id, RoleType.manager, class_id=class_.id))]
+                # hidden => 要 class manager
+                or rbac.validate(request.account.id, RoleType.manager, class_id=class_.id, inherit=True))]

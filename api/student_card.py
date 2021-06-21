@@ -33,6 +33,11 @@ class AddStudentCardOutput:
 @router.post('/account/{account_id}/student-card', tags=['Account'])
 async def add_student_card_to_account(account_id: int, data: AddStudentCardInput, request: auth.Request) \
         -> AddStudentCardOutput:
+    """
+    ### 權限
+    - System manager
+    - Self
+    """
     is_manager = await rbac.validate(request.account.id, RoleType.manager)
     is_self = request.account.id is account_id
 
@@ -51,6 +56,11 @@ async def add_student_card_to_account(account_id: int, data: AddStudentCardInput
 
 @router.get('/account/{account_id}/student-card', tags=['Account'])
 async def browse_account_student_card(account_id: int, request: auth.Request) -> Sequence[do.StudentCard]:
+    """
+    ### 權限
+    - System manager
+    - Self
+    """
     is_manager = await rbac.validate(request.account.id, RoleType.manager)
     is_self = request.account.id is account_id
 
@@ -62,6 +72,11 @@ async def browse_account_student_card(account_id: int, request: auth.Request) ->
 
 @router.get('/student-card/{student_card_id}')
 async def read_student_card(student_card_id: int, request: auth.Request) -> do.StudentCard:
+    """
+    ### 權限
+    - System manager
+    - Self
+    """
     is_manager = await rbac.validate(request.account.id, RoleType.manager)
     owner_id = await db.student_card.read_owner_id(student_card_id=student_card_id)
     is_self = request.account.id is owner_id
@@ -81,6 +96,11 @@ class EditStudentCardInput(BaseModel):
 
 @router.patch('/student-card/{student_card_id}')
 async def edit_student_card(student_card_id: int, data: EditStudentCardInput, request: auth.Request) -> None:
+    """
+    ### 權限
+    - System manager
+    - Self
+    """
     is_manager = await rbac.validate(request.account.id, RoleType.manager)
     owner_id = await db.student_card.read_owner_id(student_card_id=student_card_id)
     is_self = request.account.id is owner_id
@@ -99,6 +119,11 @@ async def edit_student_card(student_card_id: int, data: EditStudentCardInput, re
 
 @router.delete('/student-card/{student_card_id}')
 async def delete_student_card(student_card_id: int, request: auth.Request) -> None:
+    """
+    ### 權限
+    - System manager
+    - Self
+    """
     is_manager = await rbac.validate(request.account.id, RoleType.manager)
     owner_id = await db.student_card.read_owner_id(student_card_id=student_card_id)
     is_self = request.account.id is owner_id

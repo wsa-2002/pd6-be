@@ -18,14 +18,28 @@ router = APIRouter(
 
 @router.get('/judgment/status', tags=['Administrative', 'Public'])
 async def browse_judgment_status() -> Sequence[enum.JudgmentStatusType]:
+    """
+    ### 權限
+    - Public
+    """
     return list(enum.JudgmentStatusType)
 
 
 @router.get('/judgment/{judgment_id}')
 async def read_judgment(judgment_id: int) -> do.Judgment:
+    """
+    ### 權限
+    - Self (latest)
+    - Class manager (all)
+    """
     return await db.judgment.read(judgment_id=judgment_id)
 
 
 @router.get('/judgment/{judgment_id}/judge-case')
 async def browse_judgment_judge_case(judgment_id: int) -> Sequence[do.JudgeCase]:
+    """
+    ### 權限
+    - Self (latest)
+    - Class manager (all)
+    """
     return await db.judgment.browse_cases(judgment_id=judgment_id)

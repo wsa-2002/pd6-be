@@ -30,6 +30,10 @@ class AddInstituteOutput:
 
 @router.post('/institute')
 async def add_institute(data: AddInstituteInput, request: auth.Request) -> AddInstituteOutput:
+    """
+    ### 權限
+    - System Manager
+    """
     if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
@@ -39,11 +43,19 @@ async def add_institute(data: AddInstituteInput, request: auth.Request) -> AddIn
 
 @router.get('/institute', tags=['Public'])
 async def browse_institute() -> Sequence[do.Institute]:
+    """
+    ### 權限
+    - Public
+    """
     return await db.institute.browse()
 
 
 @router.get('/institute/{institute_id}', tags=['Public'])
 async def read_institute(institute_id: int) -> do.Institute:
+    """
+    ### 權限
+    - Public
+    """
     return await db.institute.read(institute_id)
 
 
@@ -55,6 +67,10 @@ class EditInstituteInput(BaseModel):
 
 @router.patch('/institute/{institute_id}')
 async def edit_institute(institute_id: int, data: EditInstituteInput, request: auth.Request) -> None:
+    """
+    ### 權限
+    - System Manager
+    """
     if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 

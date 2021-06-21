@@ -28,6 +28,12 @@ class ReadAccountOutput:
 
 @router.get('/account/{account_id}')
 async def read_account(account_id: int, request: auth.Request) -> ReadAccountOutput:
+    """
+    ### 權限
+    - System Manager
+    - Self
+    - System Normal (個資除外)
+    """
     is_manager = await rbac.validate(request.account.id, RoleType.manager)
     is_normal = await rbac.validate(request.account.id, RoleType.normal)
     is_self = request.account.id is account_id
@@ -57,6 +63,11 @@ class EditAccountInput(BaseModel):
 
 @router.patch('/account/{account_id}')
 async def edit_account(account_id: int, data: EditAccountInput, request: auth.Request) -> None:
+    """
+    ### 權限
+    - System Manager
+    - Self
+    """
     is_manager = await rbac.validate(request.account.id, RoleType.manager)
     is_self = request.account.id is account_id
 
@@ -76,6 +87,11 @@ async def edit_account(account_id: int, data: EditAccountInput, request: auth.Re
 
 @router.delete('/account/{account_id}')
 async def delete_account(account_id: int, request: auth.Request) -> None:
+    """
+    ### 權限
+    - System manager
+    - Self
+    """
     is_manager = await rbac.validate(request.account.id, RoleType.manager)
     is_self = request.account.id is account_id
 

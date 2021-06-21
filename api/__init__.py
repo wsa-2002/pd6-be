@@ -8,7 +8,9 @@ def register_routers(app: fastapi.FastAPI):
     from . import (
         public,
 
+        institute,
         account,
+        student_card,
 
         course,
         class_,
@@ -30,7 +32,9 @@ def register_routers(app: fastapi.FastAPI):
 
     app.include_router(public.router)
 
+    app.include_router(institute.router)
     app.include_router(account.router)
+    app.include_router(student_card.router)
 
     app.include_router(course.router)
     app.include_router(class_.router)
