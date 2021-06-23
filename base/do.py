@@ -129,8 +129,8 @@ class Testcase:
     problem_id: int
     is_sample: bool
     score: int
-    input_file: str
-    output_file: str
+    input_file: Optional[str]
+    output_file: Optional[str]
     time_limit: int
     memory_limit: int
     is_disabled: bool
