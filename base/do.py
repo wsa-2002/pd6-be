@@ -99,20 +99,11 @@ class Challenge:
 
 
 @dataclass
-class Task:
-    id: int
-    challenge_id: int
-    identifier: str
-    selection_type: enum.TaskSelectionType
-    problem_id: Optional[int]
-    peer_review_id: Optional[int]
-    is_hidden: bool
-    is_deleted: bool
-
-
-@dataclass
 class Problem:
     id: int
+    challenge_id: int
+    challenge_label: str
+    selection_type: enum.TaskSelectionType
     title: str
     setter_id: int
     full_score: int
@@ -150,7 +141,6 @@ class Submission:
     id: int
     account_id: int
     problem_id: int
-    task_id: Optional[int]
     language_id: int
     content_file: str
     content_length: str
@@ -181,7 +171,9 @@ class JudgeCase:
 @dataclass
 class PeerReview:
     id: int
-    target_task_id: int
+    challenge_id: int
+    challenge_label: str
+    target_problem_id: int
     setter_id: int
     description: str
     min_score: int

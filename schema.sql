@@ -151,37 +151,23 @@ CREATE TYPE task_selection_type AS ENUM (
   'BEST'
 );
 
-CREATE TABLE task (
-  id              SERIAL              PRIMARY KEY,
-  challenge_id    INTEGER             NOT NULL  REFERENCES challenge(id),
-  identifier      VARCHAR             NOT NULL,  -- 題號：1 2 3 or 2-a or 3-1 or A B C
-  selection_type  task_selection_type NOT NULL,
-
-  -- 設計：每個 task 必定有且僅有一個 nullable reference id
-  --       透過 task 這張表把 course-class-challenge 體系跟各種 problem / peer review / essay 等串連
-
-  problem_id      INTEGER                       REFERENCES problem(id),
-  peer_review_id  INTEGER                       REFERENCES peer_review(id),
-  is_hidden       BOOLEAN             NOT NULL  DEFAULT false,
-  is_deleted      BOOLEAN             NOT NULL  DEFAULT false,
-
-  UNIQUE (challenge_id, identifier)
-);
-
 
 -- Problem management
 
 
 CREATE TABLE problem (
-  id          SERIAL        PRIMARY KEY,
-  title       VARCHAR       NOT NULL  UNIQUE,
-  setter_id   INTEGER       NOT NULL  REFERENCES account(id),
-  full_score  INTEGER       NOT NULL,
-  description TEXT,
-  source      TEXT,
-  hint        TEXT,
-  is_hidden   BOOLEAN       NOT NULL  DEFAULT false,
-  is_deleted  BOOLEAN       NOT NULL  DEFAULT false
+  id              SERIAL              PRIMARY KEY,
+  challenge_id    INTEGER             NOT NULL  REFERENCES challenge(id),
+  challenge_label VARCHAR             NOT NULL,  -- 題號：1 2 3 or 2-a or 3-1 or A B C
+  selection_type  task_selection_type NOT NULL,
+  title           VARCHAR             NOT NULL  UNIQUE,
+  setter_id       INTEGER             NOT NULL  REFERENCES account(id),
+  full_score      INTEGER             NOT NULL,
+  description     TEXT,
+  source          TEXT,
+  hint            TEXT,
+  is_hidden       BOOLEAN             NOT NULL  DEFAULT false,
+  is_deleted      BOOLEAN             NOT NULL  DEFAULT false
 );
 
 CREATE TABLE testcase (
@@ -213,7 +199,6 @@ CREATE TABLE submission (
   id              SERIAL    PRIMARY KEY,
   account_id      INTEGER   NOT NULL  REFERENCES account(id),
   problem_id      INTEGER   NOT NULL  REFERENCES problem(id),
-  task_id         INTEGER             REFERENCES task(id),
   language_id     INTEGER   NOT NULL  REFERENCES submission_language(id),
   content_file    VARCHAR   NOT NULL,
   content_length  INTEGER   NOT NULL,
@@ -262,7 +247,9 @@ CREATE TABLE judge_case (
 
 CREATE TABLE peer_review (
   id                SERIAL    PRIMARY KEY,
-  target_task_id    INTEGER   NOT NULL  REFERENCES task(id),
+  challenge_id      INTEGER   NOT NULL  REFERENCES challenge(id),
+  challenge_label   VARCHAR   NOT NULL,  -- 題號：1 2 3 or 2-a or 3-1 or A B C
+  target_problem_id INTEGER   NOT NULL  REFERENCES problem(id),
   setter_id         INTEGER   NOT NULL  REFERENCES account(id),
   description       TEXT      NOT NULL,
   min_score         INTEGER   NOT NULL,
