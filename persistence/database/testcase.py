@@ -26,16 +26,18 @@ async def add(problem_id: int, is_sample: bool, score: int, input_file: Optional
 async def read(testcase_id: int, include_disabled=False, include_deleted=False) -> do.Testcase:
     async with SafeExecutor(
             event='read testcases with problem id',
-            sql=fr'SELECT problem_id, is_sample, score, time_limit, memory_limit, is_disabled, is_deleted'
+            sql=fr'SELECT id, problem_id, is_sample, score, input_file, output_file,'
+                fr'       time_limit, memory_limit, is_disabled, is_deleted'
                 fr'  FROM testcase'
                 fr' WHERE id = %(testcase_id)s'
                 fr'{" AND NOT is_disabled" if not include_disabled else ""}'
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}',
             testcase_id=testcase_id,
             fetch=1,
-    ) as (problem_id, is_sample, score, time_limit, memory_limit, is_disabled, is_deleted):
-        return do.Testcase(id=testcase_id, problem_id=problem_id, is_sample=is_sample, score=score,
-                           input_file=None, output_file=None,
+    ) as (id_, problem_id, is_sample, score, input_file, output_file,
+          time_limit, memory_limit, is_disabled, is_deleted):
+        return do.Testcase(id=id_, problem_id=problem_id, is_sample=is_sample, score=score,
+                           input_file=input_file, output_file=output_file,
                            time_limit=time_limit, memory_limit=memory_limit,
                            is_disabled=is_disabled, is_deleted=is_deleted)
 
@@ -43,7 +45,8 @@ async def read(testcase_id: int, include_disabled=False, include_deleted=False) 
 async def browse(problem_id: int, include_disabled=False, include_deleted=False) -> Sequence[do.Testcase]:
     async with SafeExecutor(
             event='browse testcases with problem id',
-            sql=fr'SELECT id, is_sample, score, time_limit, memory_limit, is_disabled, is_deleted'
+            sql=fr'SELECT id, problem_id, is_sample, score, input_file, output_file,'
+                fr'       time_limit, memory_limit, is_disabled, is_deleted'
                 fr'  FROM testcase'
                 fr' WHERE problem_id = %(problem_id)s'
                 fr'{" AND NOT is_disabled" if not include_disabled else ""}'
@@ -53,10 +56,11 @@ async def browse(problem_id: int, include_disabled=False, include_deleted=False)
             fetch='all',
     ) as records:
         return [do.Testcase(id=id_, problem_id=problem_id, is_sample=is_sample, score=score,
-                            input_file=None, output_file=None,
+                            input_file=input_file, output_file=output_file,
                             time_limit=time_limit, memory_limit=memory_limit,
                             is_disabled=is_disabled, is_deleted=is_deleted)
-                for (id_, problem_id, is_sample, score, time_limit, memory_limit, is_disabled, is_deleted)
+                for (id_, problem_id, is_sample, score, input_file, output_file,
+                     time_limit, memory_limit, is_disabled, is_deleted)
                 in records]
 
 
