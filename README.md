@@ -7,6 +7,7 @@ A `python=3.8`-`asyncio`-based version, using web framework `fastapi`.
 ## Setup test server
 
 ### 0. `python`
+suggest using pycharm for development tool -- by kiyume
 Using `conda` as example:
 ```shell
 conda create --name pdogs6-async python=3.8
@@ -22,10 +23,12 @@ cp logging.yaml.example logging.yaml
 
 Then
 1. Fill out the environment variables in `.env`.
-2. Check the `filename`s in `logging.yaml`, and replace if needed.
+2. Check the `filename`s in `logging.yaml`, and replace if you needed.
 3. Check the `propagate`s in `logging.yaml`, and replace with `True` if you want to show that genre of log on your console.
 
 ### 2. Start the server
+manually create a folder `log` under `PD6-BE` first.
+
 ```shell
 pip install uvicorn
 uvicorn app:app --reload
@@ -40,7 +43,7 @@ INFO:     Started server process xxxx
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
 ```
-
+Now you can go to http://127.0.0.1:8000 and test it.
 You may also change the host & port with `--host` and `--port`:
 ```shell
 uvicorn app:app --reload --host 0.0.0.0 --port 80
