@@ -7,9 +7,10 @@ from pydantic import BaseModel
 
 from base import do
 import exceptions as exc
+from base.enum import RoleType
 from middleware import APIRouter, envelope, auth
 import persistence.database as db
-
+from util import rbac
 
 router = APIRouter(
     tags=['Student Card'],
@@ -32,7 +33,15 @@ class AddStudentCardOutput:
 @router.post('/account/{account_id}/student-card', tags=['Account'])
 async def add_student_card_to_account(account_id: int, data: AddStudentCardInput, request: auth.Request) \
         -> AddStudentCardOutput:
-    if request.account.role.not_manager and request.account.id != account_id:
+    """
+    ### 權限
+    - System manager
+    - Self
+    """
+    is_manager = await rbac.validate(request.account.id, RoleType.manager)
+    is_self = request.account.id is account_id
+
+    if not (is_manager or is_self):
         raise exc.NoPermission
 
     student_card_id = await db.student_card.add(
@@ -47,7 +56,15 @@ async def add_student_card_to_account(account_id: int, data: AddStudentCardInput
 
 @router.get('/account/{account_id}/student-card', tags=['Account'])
 async def browse_account_student_card(account_id: int, request: auth.Request) -> Sequence[do.StudentCard]:
-    if request.account.role.not_manager and request.account.id != account_id:
+    """
+    ### 權限
+    - System manager
+    - Self
+    """
+    is_manager = await rbac.validate(request.account.id, RoleType.manager)
+    is_self = request.account.id is account_id
+
+    if not (is_manager or is_self):
         raise exc.NoPermission
 
     return await db.student_card.browse(account_id)
@@ -55,8 +72,16 @@ async def browse_account_student_card(account_id: int, request: auth.Request) ->
 
 @router.get('/student-card/{student_card_id}')
 async def read_student_card(student_card_id: int, request: auth.Request) -> do.StudentCard:
+    """
+    ### 權限
+    - System manager
+    - Self
+    """
+    is_manager = await rbac.validate(request.account.id, RoleType.manager)
     owner_id = await db.student_card.read_owner_id(student_card_id=student_card_id)
-    if request.account.role.not_manager and request.account.id != owner_id:
+    is_self = request.account.id is owner_id
+
+    if not (is_manager or is_self):
         raise exc.NoPermission
 
     return await db.student_card.read(student_card_id=student_card_id)
@@ -71,8 +96,16 @@ class EditStudentCardInput(BaseModel):
 
 @router.patch('/student-card/{student_card_id}')
 async def edit_student_card(student_card_id: int, data: EditStudentCardInput, request: auth.Request) -> None:
-    # 暫時只開給 manager
-    if not request.account.role.is_manager:
+    """
+    ### 權限
+    - System manager
+    - Self
+    """
+    is_manager = await rbac.validate(request.account.id, RoleType.manager)
+    owner_id = await db.student_card.read_owner_id(student_card_id=student_card_id)
+    is_self = request.account.id is owner_id
+
+    if not (is_manager or is_self):
         raise exc.NoPermission
 
     await db.student_card.edit(
@@ -86,8 +119,16 @@ async def edit_student_card(student_card_id: int, data: EditStudentCardInput, re
 
 @router.delete('/student-card/{student_card_id}')
 async def delete_student_card(student_card_id: int, request: auth.Request) -> None:
+    """
+    ### 權限
+    - System manager
+    - Self
+    """
+    is_manager = await rbac.validate(request.account.id, RoleType.manager)
     owner_id = await db.student_card.read_owner_id(student_card_id=student_card_id)
-    if request.account.role.not_manager and request.account.id != owner_id:
+    is_self = request.account.id is owner_id
+
+    if not (is_manager or is_self):
         raise exc.NoPermission
 
     await db.student_card.delete(student_card_id)

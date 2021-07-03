@@ -46,7 +46,7 @@ class AddAccountInput(BaseModel):
     institute_email: str
 
 
-@router.post('/account', tags=['Account-Control'], response_class=envelope.JSONResponse)
+@router.post('/account', tags=['Account'], response_class=envelope.JSONResponse)
 async def add_account(data: AddAccountInput) -> None:
     account_id = await db.account.add(name=data.name, pass_hash=security.hash_password(data.password),
                                       nickname=data.nickname, real_name=data.real_name, role=RoleType.guest)
@@ -71,8 +71,8 @@ async def add_account(data: AddAccountInput) -> None:
 
 # Warning: this location is statically used in email string
 # Use "get" for convenience (access from browser)
-@router.get('/email-verification', tags=['Account-Control'], response_class=HTMLResponse)
-@router.post('/email-verification', tags=['Account-Control'], response_class=HTMLResponse)
+@router.get('/email-verification', tags=['Account', 'Student Card'], response_class=HTMLResponse)
+@router.post('/email-verification', tags=['Account', 'Student Card'], response_class=HTMLResponse)
 async def email_verification(code: str):
     try:
         await db.account.verify_email(code=code)
@@ -88,7 +88,7 @@ class LoginInput(BaseModel):
     password: str
 
 
-@router.post('/account/jwt', tags=['Account-Control'], response_class=envelope.JSONResponse)
+@router.post('/account/jwt', tags=['Account'], response_class=envelope.JSONResponse)
 async def login(data: LoginInput) -> str:
     try:
         account_id, pass_hash = await db.account.read_login_by_name(name=data.name)

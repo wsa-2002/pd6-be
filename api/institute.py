@@ -5,8 +5,10 @@ from pydantic import BaseModel
 
 from base import do
 import exceptions as exc
+from base.enum import RoleType
 from middleware import APIRouter, envelope, auth
 import persistence.database as db
+from util import rbac
 
 
 router = APIRouter(
@@ -28,7 +30,11 @@ class AddInstituteOutput:
 
 @router.post('/institute')
 async def add_institute(data: AddInstituteInput, request: auth.Request) -> AddInstituteOutput:
-    if not request.account.role.is_manager:
+    """
+    ### 權限
+    - System Manager
+    """
+    if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
     institute_id = await db.institute.add(name=data.name, email_domain=data.email_domain, is_disabled=data.is_disabled)
@@ -36,18 +42,21 @@ async def add_institute(data: AddInstituteInput, request: auth.Request) -> AddIn
 
 
 @router.get('/institute', tags=['Public'])
-async def browse_institute(request: auth.Request) -> Sequence[do.Institute]:
-    try:
-        include_disabled = request.account.role.is_manager
-    except exc.NoPermission:
-        include_disabled = False
+async def browse_institute() -> Sequence[do.Institute]:
+    """
+    ### 權限
+    - Public
+    """
+    return await db.institute.browse()
 
-    return await db.institute.browse(include_disabled=include_disabled)
 
-
-@router.get('/institute/{institute_id}')
-async def read_institute(institute_id: int, request: auth.Request) -> do.Institute:
-    return await db.institute.read(institute_id, include_disabled=request.account.role.is_manager)
+@router.get('/institute/{institute_id}', tags=['Public'])
+async def read_institute(institute_id: int) -> do.Institute:
+    """
+    ### 權限
+    - Public
+    """
+    return await db.institute.read(institute_id)
 
 
 class EditInstituteInput(BaseModel):
@@ -58,7 +67,11 @@ class EditInstituteInput(BaseModel):
 
 @router.patch('/institute/{institute_id}')
 async def edit_institute(institute_id: int, data: EditInstituteInput, request: auth.Request) -> None:
-    if not request.account.role.is_manager:
+    """
+    ### 權限
+    - System Manager
+    """
+    if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
     await db.institute.edit(

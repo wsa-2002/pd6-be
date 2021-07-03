@@ -143,7 +143,7 @@ class Submission:
     problem_id: int
     language_id: int
     content_file: str
-    content_length: str
+    content_length: int
     submit_time: datetime
 
 

@@ -1,14 +1,14 @@
 from dataclasses import dataclass
-from typing import Optional, Sequence
+from typing import Optional
 
 from pydantic import BaseModel
 
-from base import do
 import exceptions as exc
+from base.enum import RoleType
 from middleware import APIRouter, envelope, auth
 import persistence.database as db
 import persistence.email as email
-
+from util import rbac
 
 router = APIRouter(
     tags=['Account'],
@@ -28,20 +28,29 @@ class ReadAccountOutput:
 
 @router.get('/account/{account_id}')
 async def read_account(account_id: int, request: auth.Request) -> ReadAccountOutput:
-    ask_for_self = request.account.id == account_id
-    if request.account.role.is_guest and not ask_for_self:
+    """
+    ### 權限
+    - System Manager
+    - Self
+    - System Normal (個資除外)
+    """
+    is_manager = await rbac.validate(request.account.id, RoleType.manager)
+    is_normal = await rbac.validate(request.account.id, RoleType.normal)
+    is_self = request.account.id is account_id
+
+    if not (is_manager or is_normal or is_self):
         raise exc.NoPermission
 
-    super_access = ask_for_self or request.account.role.is_manager
+    view_personal = is_self or is_manager
 
-    target_account = await db.account.read(account_id, include_deleted=super_access)
+    target_account = await db.account.read(account_id)
     result = ReadAccountOutput(
         id=target_account.id,
         name=target_account.name,
         nickname=target_account.nickname,
         role=target_account.role,
-        real_name=target_account.real_name if super_access else None,
-        alternative_email=target_account.alternative_email if super_access else None,
+        real_name=target_account.real_name if view_personal else None,
+        alternative_email=target_account.alternative_email if view_personal else None,
     )
 
     return result
@@ -54,7 +63,15 @@ class EditAccountInput(BaseModel):
 
 @router.patch('/account/{account_id}')
 async def edit_account(account_id: int, data: EditAccountInput, request: auth.Request) -> None:
-    if request.account.role.not_manager and request.account.id != account_id:
+    """
+    ### 權限
+    - System Manager
+    - Self
+    """
+    is_manager = await rbac.validate(request.account.id, RoleType.manager)
+    is_self = request.account.id is account_id
+
+    if not (is_manager or is_self):
         raise exc.NoPermission
 
     # 不檢查 if data.nickname，因為 nickname 可以被刪掉 (設成 None)
@@ -70,7 +87,15 @@ async def edit_account(account_id: int, data: EditAccountInput, request: auth.Re
 
 @router.delete('/account/{account_id}')
 async def delete_account(account_id: int, request: auth.Request) -> None:
-    if request.account.role.not_manager and request.account.id != account_id:
+    """
+    ### 權限
+    - System manager
+    - Self
+    """
+    is_manager = await rbac.validate(request.account.id, RoleType.manager)
+    is_self = request.account.id is account_id
+
+    if not (is_manager or is_self):
         raise exc.NoPermission
 
     await db.account.delete(account_id)
