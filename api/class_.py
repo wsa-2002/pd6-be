@@ -6,18 +6,20 @@ from pydantic import BaseModel
 from base import do
 from base.enum import RoleType
 import exceptions as exc
-from middleware import APIRouter, envelope, auth
+from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
 from util import rbac
 
 
 router = APIRouter(
     tags=['Class'],
-    default_response_class=envelope.JSONResponse,
+    route_class=auth.APIRoute,
+    default_response_class=response.JSONResponse,
 )
 
 
 @router.get('/class')
+@enveloped
 async def browse_class(request: auth.Request) -> Sequence[do.Class]:
     """
     ### 權限
@@ -38,6 +40,7 @@ async def browse_class(request: auth.Request) -> Sequence[do.Class]:
 
 
 @router.get('/class/{class_id}')
+@enveloped
 async def read_class(class_id: int, request: auth.Request) -> do.Class:
     """
     ### 權限
@@ -60,6 +63,7 @@ class EditClassInput(BaseModel):
 
 
 @router.patch('/class/{class_id}')
+@enveloped
 async def edit_class(class_id: int, data: EditClassInput, request: auth.Request) -> None:
     """
     ### 權限
@@ -77,6 +81,7 @@ async def edit_class(class_id: int, data: EditClassInput, request: auth.Request)
 
 
 @router.delete('/class/{class_id}')
+@enveloped
 async def delete_class(class_id: int, request: auth.Request) -> None:
     """
     ### 權限
@@ -89,6 +94,7 @@ async def delete_class(class_id: int, request: auth.Request) -> None:
 
 
 @router.get('/class/{class_id}/member')
+@enveloped
 async def browse_class_member(class_id: int, request: auth.Request) -> Sequence[do.Member]:
     """
     ### 權限
@@ -108,6 +114,7 @@ class EditClassMemberInput(BaseModel):
 
 
 @router.patch('/class/{class_id}/member')
+@enveloped
 async def edit_class_member(class_id: int, data: Sequence[EditClassMemberInput], request: auth.Request) -> None:
     """
     ### 權限
@@ -121,6 +128,7 @@ async def edit_class_member(class_id: int, data: Sequence[EditClassMemberInput],
 
 
 @router.delete('/class/{class_id}/member/{member_id}')
+@enveloped
 async def delete_class_member(class_id: int, member_id: int, request: auth.Request) -> None:
     """
     ### 權限
@@ -143,6 +151,7 @@ class AddTeamOutput:
 
 
 @router.post('/class/{class_id}/team', tags=['Team'])
+@enveloped
 async def add_team_under_class(class_id: int, data: AddTeamInput, request: auth.Request) -> AddTeamOutput:
     """
     ### 權限
@@ -161,6 +170,7 @@ async def add_team_under_class(class_id: int, data: AddTeamInput, request: auth.
 
 
 @router.get('/class/{class_id}/team', tags=['Team'])
+@enveloped
 async def browse_team_under_class(class_id: int, request: auth.Request) -> Sequence[do.Team]:
     """
     ### 權限

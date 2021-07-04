@@ -8,13 +8,14 @@ from pydantic import BaseModel
 from base import do
 import exceptions as exc
 from base.enum import RoleType
-from middleware import APIRouter, envelope, auth
+from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
 from util import rbac
 
 router = APIRouter(
     tags=['Student Card'],
-    default_response_class=envelope.JSONResponse,
+    route_class=auth.APIRoute,
+    default_response_class=response.JSONResponse,
 )
 
 
@@ -31,6 +32,7 @@ class AddStudentCardOutput:
 
 
 @router.post('/account/{account_id}/student-card', tags=['Account'])
+@enveloped
 async def add_student_card_to_account(account_id: int, data: AddStudentCardInput, request: auth.Request) \
         -> AddStudentCardOutput:
     """
@@ -55,6 +57,7 @@ async def add_student_card_to_account(account_id: int, data: AddStudentCardInput
 
 
 @router.get('/account/{account_id}/student-card', tags=['Account'])
+@enveloped
 async def browse_account_student_card(account_id: int, request: auth.Request) -> Sequence[do.StudentCard]:
     """
     ### 權限
@@ -71,6 +74,7 @@ async def browse_account_student_card(account_id: int, request: auth.Request) ->
 
 
 @router.get('/student-card/{student_card_id}')
+@enveloped
 async def read_student_card(student_card_id: int, request: auth.Request) -> do.StudentCard:
     """
     ### 權限
@@ -95,6 +99,7 @@ class EditStudentCardInput(BaseModel):
 
 
 @router.patch('/student-card/{student_card_id}')
+@enveloped
 async def edit_student_card(student_card_id: int, data: EditStudentCardInput, request: auth.Request) -> None:
     """
     ### 權限
@@ -118,6 +123,7 @@ async def edit_student_card(student_card_id: int, data: EditStudentCardInput, re
 
 
 @router.delete('/student-card/{student_card_id}')
+@enveloped
 async def delete_student_card(student_card_id: int, request: auth.Request) -> None:
     """
     ### 權限

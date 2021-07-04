@@ -1,68 +1,88 @@
-import datetime
-import json
+from dataclasses import dataclass
+import functools
 import typing
 
-from pydantic import BaseModel, create_model
+import fastapi
 
 import exceptions as exc
-
-import fastapi.exceptions
-import fastapi.routing
-
-import exceptions
 import log
 
 
-class JSONEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, datetime.datetime):
-            return obj.isoformat()
+def _make_enveloped_annotations(func):
+    """
+    Returns annotation with the return annotation enveloped
+    """
 
-        return super().default(obj)
+    if original := func.__annotations__.get('return', None):
+        new_return_annotation = {
+            'success': bool,
+            'data': original,
+            'error': typing.Optional[str],
+        }
+    else:  # return is None -> no data
+        new_return_annotation = {
+            'success': bool,
+            'error': typing.Optional[str],
+        }
 
+    # Create a model class for type annotation with pydantic.BaseModel as base
 
-class JSONResponse(fastapi.routing.JSONResponse):
-    def __init__(self, *args, success=True, error: Exception = None, **kwargs):
-        self._success = success
-        self._error = error
-        super().__init__(*args, **kwargs)
+    return_model_name = f"{func.__name__}_return"
+    return_annotation_dict = {
+        '__module__': func.__module__,
+        '__qualname__': return_model_name,
+        '__annotations__': new_return_annotation,
+    }
 
-    def render(self, content: typing.Any) -> bytes:
-        return json.dumps({
-            'success': self._success,
-            'data': content,
-            'error': self._error.__class__.__name__ if self._error else None,
-        }, cls=JSONEncoder,
-            ensure_ascii=False,
-            allow_nan=False,
-            indent=None,
-            separators=(",", ":"),
-        ).encode("utf-8")
+    new_annotations = dict(**func.__annotations__)
+    return_type = type(return_model_name, (), return_annotation_dict)
+    return_type = dataclass()(return_type)
+    new_annotations['return'] = return_type
 
-
-def pack_response_model(Model: typing.Type[BaseModel], name: str):
-    if Model in (None, type(None)):
-        # data is None -> no data
-        return create_model(
-            name,
-            success=(bool, ...),
-            error=(typing.Any, None),
-        )
-
-    return create_model(  # Normal case
-        name,
-        success=(bool, ...),
-        data=(Model, ...),
-        error=(typing.Any, None),
-    )
+    return new_annotations
 
 
-async def exception_handler(request, error: Exception):
-    # Convert Pydantic's ValidationError to self-defined error
+_WRAPPER_ASSIGNMENTS = ('__module__', '__name__', '__qualname__', '__doc__')  # All except '__annotations__'
+_WRAPPER_UPDATES = functools.WRAPPER_UPDATES
+
+
+def enveloped(func):
+    """
+    Add envelope and handle error.
+    """
+
+    async def wrapped(*args, **kwargs):
+        try:
+            data = await func(*args, **kwargs)
+        except Exception as e:
+            return {
+                'success': False,
+                'data': None,
+                'error': _handle_exc(e).__class__.__name__,
+            }
+        else:
+            return {
+                'success': True,
+                'data': data,
+                'error': None,
+            }
+
+    setattr(wrapped, '__annotations__', _make_enveloped_annotations(func))
+    functools.update_wrapper(wrapped, func, _WRAPPER_ASSIGNMENTS, _WRAPPER_UPDATES)
+
+    return wrapped
+
+
+async def _handle_exc(error: Exception) -> Exception:
+    # Convert pydantic-originated ValidationError to self-defined error
     if isinstance(error, fastapi.exceptions.ValidationError):
         error = exc.IllegalInput(cause=error)
 
-    is_predefined = isinstance(error, exceptions.PdogsException)
-    log.exception(error, info_level=is_predefined)
+    # Log the exception
+    if isinstance(error, exc.PdogsException):
+        log.exception(error, info_level=True)
+    else:
+        log.exception(error, info_level=False)
+        error = exc.SystemException(cause=error)
 
-    return JSONResponse(success=False, error=error)
+    return error

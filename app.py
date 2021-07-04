@@ -61,16 +61,6 @@ import starlette_context.middleware
 app.add_middleware(starlette_context.middleware.RawContextMiddleware)
 
 
-# Register custom exception handlers
-from fastapi.exceptions import RequestValidationError, HTTPException
-from middleware import envelope
-from exceptions import PdogsException
-app.add_exception_handler(RequestValidationError, envelope.exception_handler)
-app.add_exception_handler(HTTPException, envelope.exception_handler)
-app.add_exception_handler(PdogsException, envelope.exception_handler)
-app.add_exception_handler(Exception, envelope.exception_handler)  # General fallback
-
-
 # Register routers
 from api import register_routers
 register_routers(app)
