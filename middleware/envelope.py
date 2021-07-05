@@ -25,7 +25,7 @@ def _make_enveloped_annotations(func):
             'error': typing.Optional[str],
         }
 
-    # Create a model class for type annotation with pydantic.BaseModel as base
+    # Create a model dataclass for return type annotation
 
     return_model_name = f"{func.__name__}_return"
     return_annotation_dict = {
