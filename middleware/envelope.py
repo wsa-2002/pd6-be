@@ -16,12 +16,13 @@ def _make_enveloped_annotations(func):
     if original := func.__annotations__.get('return', None):
         new_return_annotation = {
             'success': bool,
-            'data': original,
+            'data': typing.Optional[original],
             'error': typing.Optional[str],
         }
     else:  # return is None -> no data
         new_return_annotation = {
             'success': bool,
+            'data': type(None),
             'error': typing.Optional[str],
         }
 
@@ -74,7 +75,7 @@ def enveloped(func):
     return wrapped
 
 
-async def _handle_exc(error: Exception) -> Exception:
+def _handle_exc(error: Exception) -> Exception:
     # Convert pydantic-originated ValidationError to self-defined error
     if isinstance(error, fastapi.exceptions.ValidationError):
         error = exc.IllegalInput(cause=error)
