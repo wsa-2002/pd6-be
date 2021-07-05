@@ -55,10 +55,11 @@ def enveloped(func):
         try:
             data = await func(*args, **kwargs)
         except Exception as e:
+            handled_exc = _handle_exc(e)
             return {
                 'success': False,
                 'data': None,
-                'error': _handle_exc(e).__class__.__name__,
+                'error': handled_exc.__class__.__name__,
             }
         else:
             return {
