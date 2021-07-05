@@ -33,10 +33,10 @@ def _make_enveloped_annotations(func):
         '__qualname__': return_model_name,
         '__annotations__': new_return_annotation,
     }
-
-    new_annotations = dict(**func.__annotations__)
     return_type = type(return_model_name, (), return_annotation_dict)
     return_type = dataclass()(return_type)
+
+    new_annotations = dict(**func.__annotations__)
     new_annotations['return'] = return_type
 
     return new_annotations
