@@ -6,14 +6,15 @@ from pydantic import BaseModel
 from base import do
 import exceptions as exc
 from base.enum import RoleType
-from middleware import APIRouter, envelope, auth
+from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
 from util import rbac
 
 
 router = APIRouter(
     tags=['Announcement'],
-    default_response_class=envelope.JSONResponse,
+    route_class=auth.APIRoute,
+    default_response_class=response.JSONResponse,
 )
 
 
@@ -26,6 +27,7 @@ class AddAnnouncementInput(BaseModel):
 
 
 @router.post('/announcement')
+@enveloped
 async def add_announcement(data: AddAnnouncementInput, request: auth.Request) -> int:
     """
     ### 權限
@@ -39,6 +41,7 @@ async def add_announcement(data: AddAnnouncementInput, request: auth.Request) ->
 
 
 @router.get('/announcement')
+@enveloped
 async def browse_announcement(request: auth.Request) -> Sequence[do.Announcement]:
     """
     ### 權限
@@ -53,6 +56,7 @@ async def browse_announcement(request: auth.Request) -> Sequence[do.Announcement
 
 
 @router.get('/announcement/{announcement_id}')
+@enveloped
 async def read_announcement(announcement_id: int, request: auth.Request) -> do.Announcement:
     """
     ### 權限
@@ -74,6 +78,7 @@ class EditAnnouncementInput(BaseModel):
 
 
 @router.patch('/announcement/{announcement_id}')
+@enveloped
 async def edit_announcement(announcement_id: int, data: EditAnnouncementInput, request: auth.Request) -> None:
     """
     ### 權限
@@ -87,6 +92,7 @@ async def edit_announcement(announcement_id: int, data: EditAnnouncementInput, r
 
 
 @router.delete('/announcement/{announcement_id}')
+@enveloped
 async def delete_announcement(announcement_id: int, request: auth.Request) -> None:
     """
     ### 權限

@@ -3,16 +3,18 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-import exceptions as exc
 from base.enum import RoleType
-from middleware import APIRouter, envelope, auth
+import exceptions as exc
+from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
 import persistence.email as email
 from util import rbac
 
+
 router = APIRouter(
     tags=['Account'],
-    default_response_class=envelope.JSONResponse,
+    route_class=auth.APIRoute,
+    default_response_class=response.JSONResponse,
 )
 
 
@@ -27,6 +29,7 @@ class ReadAccountOutput:
 
 
 @router.get('/account/{account_id}')
+@enveloped
 async def read_account(account_id: int, request: auth.Request) -> ReadAccountOutput:
     """
     ### 權限
@@ -62,6 +65,7 @@ class EditAccountInput(BaseModel):
 
 
 @router.patch('/account/{account_id}')
+@enveloped
 async def edit_account(account_id: int, data: EditAccountInput, request: auth.Request) -> None:
     """
     ### 權限
@@ -86,6 +90,7 @@ async def edit_account(account_id: int, data: EditAccountInput, request: auth.Re
 
 
 @router.delete('/account/{account_id}')
+@enveloped
 async def delete_account(account_id: int, request: auth.Request) -> None:
     """
     ### 權限

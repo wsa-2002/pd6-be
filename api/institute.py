@@ -6,14 +6,15 @@ from pydantic import BaseModel
 from base import do
 import exceptions as exc
 from base.enum import RoleType
-from middleware import APIRouter, envelope, auth
+from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
 from util import rbac
 
 
 router = APIRouter(
     tags=['Institute'],
-    default_response_class=envelope.JSONResponse,
+    route_class=auth.APIRoute,
+    default_response_class=response.JSONResponse,
 )
 
 
@@ -29,6 +30,7 @@ class AddInstituteOutput:
 
 
 @router.post('/institute')
+@enveloped
 async def add_institute(data: AddInstituteInput, request: auth.Request) -> AddInstituteOutput:
     """
     ### 權限
@@ -42,6 +44,7 @@ async def add_institute(data: AddInstituteInput, request: auth.Request) -> AddIn
 
 
 @router.get('/institute', tags=['Public'])
+@enveloped
 async def browse_institute() -> Sequence[do.Institute]:
     """
     ### 權限
@@ -51,6 +54,7 @@ async def browse_institute() -> Sequence[do.Institute]:
 
 
 @router.get('/institute/{institute_id}', tags=['Public'])
+@enveloped
 async def read_institute(institute_id: int) -> do.Institute:
     """
     ### 權限
@@ -66,6 +70,7 @@ class EditInstituteInput(BaseModel):
 
 
 @router.patch('/institute/{institute_id}')
+@enveloped
 async def edit_institute(institute_id: int, data: EditInstituteInput, request: auth.Request) -> None:
     """
     ### 權限

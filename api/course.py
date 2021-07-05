@@ -6,14 +6,15 @@ from pydantic import BaseModel
 from base import do
 from base.enum import CourseType, RoleType
 import exceptions as exc
-from middleware import APIRouter, envelope, auth
+from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
 from util import rbac
 
 
 router = APIRouter(
     tags=['Course'],
-    default_response_class=envelope.JSONResponse,
+    route_class=auth.APIRoute,
+    default_response_class=response.JSONResponse,
 )
 
 
@@ -29,6 +30,7 @@ class AddCourseOutput:
 
 
 @router.post('/course')
+@enveloped
 async def add_course(data: AddCourseInput, request: auth.Request) -> AddCourseOutput:
     """
     ### 權限
@@ -46,6 +48,7 @@ async def add_course(data: AddCourseInput, request: auth.Request) -> AddCourseOu
 
 
 @router.get('/course')
+@enveloped
 async def browse_course(request: auth.Request) -> Sequence[do.Course]:
     """
     ### 權限
@@ -61,6 +64,7 @@ async def browse_course(request: auth.Request) -> Sequence[do.Course]:
 
 
 @router.get('/course/{course_id}')
+@enveloped
 async def read_course(course_id: int, request: auth.Request) -> do.Course:
     """
     ### 權限
@@ -82,6 +86,7 @@ class EditCourseInput(BaseModel):
 
 
 @router.patch('/course/{course_id}')
+@enveloped
 async def edit_course(course_id: int, data: EditCourseInput, request: auth.Request) -> None:
     """
     ### 權限
@@ -99,6 +104,7 @@ async def edit_course(course_id: int, data: EditCourseInput, request: auth.Reque
 
 
 @router.delete('/course/{course_id}')
+@enveloped
 async def delete_course(course_id: int, request: auth.Request) -> None:
     """
     ### 權限
@@ -121,6 +127,7 @@ class AddClassOutput:
 
 
 @router.post('/course/{course_id}/class', tags=['Class'])
+@enveloped
 async def add_class_under_course(course_id: int, data: AddClassInput, request: auth.Request) -> AddClassOutput:
     """
     ### 權限
@@ -139,6 +146,7 @@ async def add_class_under_course(course_id: int, data: AddClassInput, request: a
 
 
 @router.get('/course/{course_id}/class', tags=['Class'])
+@enveloped
 async def browse_class_under_course(course_id: int, request: auth.Request) -> Sequence[do.Class]:
     """
     ### 權限
