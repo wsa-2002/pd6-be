@@ -62,16 +62,6 @@ CREATE TABLE course (
   is_deleted  BOOLEAN     NOT NULL  DEFAULT false
 );
 
--- 好像沒屁用
-
-CREATE TABLE course_member (
-  course_id INTEGER   NOT NULL  REFERENCES course(id),
-  member_id INTEGER   NOT NULL  REFERENCES account(id),
-  role      role_type NOT NULL,
-
-  PRIMARY KEY (course_id, member_id)
-);
-
 CREATE TABLE class (
   id          SERIAL  PRIMARY KEY,
   name        VARCHAR NOT NULL,
