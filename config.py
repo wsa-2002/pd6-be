@@ -56,6 +56,10 @@ class LoggerConfig:
     timing_logger_name = env_values.get('TIMING_LOGGER_NAME')
 
 
+class PD4Config:
+    PD4_salt = env_values.get('PD4_salt')
+
+
 # default config objects
 config = Config()
 service_config = ServiceConfig()
@@ -63,3 +67,4 @@ app_config = AppConfig()
 db_config = DBConfig()
 smtp_config = SMTPConfig()
 logger_config = LoggerConfig()
+PD4_config = PD4Config()

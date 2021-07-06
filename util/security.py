@@ -7,10 +7,10 @@ from datetime import datetime, timedelta
 from functools import partial
 
 import jwt
-from passlib.hash import argon2
+from passlib.hash import argon2, md5_crypt
 
 import log
-from config import config
+from config import config, PD4_config
 import exceptions as exc
 
 
@@ -43,3 +43,7 @@ def hash_password(password: str) -> str:
 
 def verify_password(to_test: str, hashed: str) -> bool:
     return argon2.verify(to_test, hashed)
+
+
+def verify_password_4s(to_test: str, hashed: str) -> bool:
+    return md5_crypt.verify(to_test + PD4_config.PD4_salt, hashed)
