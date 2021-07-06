@@ -60,6 +60,7 @@ class Team:
     id: int
     name: str
     class_id: int
+    label: str
     is_hidden: bool
     is_deleted: bool
 
