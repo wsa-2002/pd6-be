@@ -57,7 +57,7 @@ class LoggerConfig:
 
 
 class PD4sConfig:
-    PD4s_salt = env_values.get('PD4s_salt')
+    pd4s_salt = env_values.get('PD4S_SALT')
 
 
 # default config objects
@@ -67,4 +67,4 @@ app_config = AppConfig()
 db_config = DBConfig()
 smtp_config = SMTPConfig()
 logger_config = LoggerConfig()
-PD4s_config = PD4sConfig()
+pd4s_config = PD4sConfig()

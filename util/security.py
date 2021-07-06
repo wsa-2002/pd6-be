@@ -10,7 +10,7 @@ import jwt
 from passlib.hash import argon2, md5_crypt
 
 import log
-from config import config, PD4s_config
+from config import config, pd4s_config
 import exceptions as exc
 
 
@@ -46,4 +46,4 @@ def verify_password(to_test: str, hashed: str) -> bool:
 
 
 def verify_password_4s(to_test: str, hashed: str) -> bool:
-    return md5_crypt.verify(to_test + PD4s_config.PD4s_salt, hashed)
+    return md5_crypt.verify(to_test + pd4s_config.pd4s_salt, hashed)
