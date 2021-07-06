@@ -9,6 +9,7 @@ from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
+import util
 from util import rbac
 
 
@@ -83,7 +84,7 @@ async def submit(problem_id: int, data: AddSubmissionInput, request: auth.Reques
     ### 權限
     - System normal
     """
-    submit_time = datetime.now()  # TODO: request time?
+    submit_time = util.get_request_time()
 
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission

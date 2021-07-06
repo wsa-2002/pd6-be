@@ -8,6 +8,7 @@ import exceptions as exc
 from base.enum import RoleType
 from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
+import util
 from util import rbac
 
 
@@ -102,7 +103,7 @@ async def edit_grade(grade_id: int, data: EditGradeInput, request: auth.Request)
         raise exc.NoPermission
 
     await db.grade.edit(grade_id=grade_id, title=data.title, score=data.score, comment=data.comment,
-                        update_time=datetime.now(), is_hidden=data.is_hidden)  # TODO: request.time?
+                        update_time=util.get_request_time(), is_hidden=data.is_hidden)  # TODO: request.time?
 
 
 @router.delete('/grade/{grade_id}')
