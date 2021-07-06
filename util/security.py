@@ -7,7 +7,8 @@ from datetime import datetime, timedelta
 from functools import partial
 
 import jwt
-from passlib.hash import argon2, md5_crypt
+from passlib.hash import argon2
+import hashlib
 
 import log
 from config import config, pd4s_config
@@ -46,4 +47,4 @@ def verify_password(to_test: str, hashed: str) -> bool:
 
 
 def verify_password_4s(to_test: str, hashed: str) -> bool:
-    return md5_crypt.verify(to_test + pd4s_config.pd4s_salt, hashed)
+    return hashlib.md5(to_test + pd4s_config.pd4s_salt) == hashed
