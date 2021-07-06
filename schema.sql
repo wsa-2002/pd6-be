@@ -84,6 +84,7 @@ CREATE TABLE team (
   id          SERIAL  PRIMARY KEY,
   name        VARCHAR NOT NULL,
   class_id    INTEGER NOT NULL  REFERENCES class(id),
+  label       VARCHAR NOT NULL,
   is_hidden   BOOLEAN NOT NULL  DEFAULT false,
   is_deleted  BOOLEAN NOT NULL  DEFAULT false,
 

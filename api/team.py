@@ -41,6 +41,7 @@ async def read_team(team_id: int, request: auth.Request) -> do.Team:
 class EditTeamInput(BaseModel):
     name: str = None
     class_id: int = None
+    label: str = None
     is_hidden: bool = None
 
 
@@ -73,6 +74,7 @@ async def edit_team(team_id: int, data: EditTeamInput, request: auth.Request) ->
         name=data.name,
         class_id=data.class_id,
         is_hidden=data.is_hidden,
+        label=data.label,
     )
 
 
