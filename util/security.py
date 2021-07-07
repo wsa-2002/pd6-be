@@ -8,9 +8,10 @@ from functools import partial
 
 import jwt
 from passlib.hash import argon2
+import hashlib
 
 import log
-from config import config
+from config import config, pd4s_config
 import exceptions as exc
 
 
@@ -43,3 +44,7 @@ def hash_password(password: str) -> str:
 
 def verify_password(to_test: str, hashed: str) -> bool:
     return argon2.verify(to_test, hashed)
+
+
+def verify_password_4s(to_test: str, hashed: str) -> bool:
+    return hashlib.md5(to_test + pd4s_config.pd4s_salt) == hashed
