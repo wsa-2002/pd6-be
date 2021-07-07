@@ -92,13 +92,20 @@ class LoginInput(BaseModel):
 @enveloped
 async def login(data: LoginInput) -> str:
     try:
-        account_id, pass_hash = await db.account.read_login_by_name(name=data.name)
+        account_id, pass_hash, is_4s_hash = await db.account.read_login_by_name(name=data.name)
     except exc.NotFound:
         raise exc.LoginFailed  # Not to let user know why login failed
 
     # Verify
-    if not security.verify_password(to_test=data.password, hashed=pass_hash):
-        raise exc.LoginFailed  # Not to let user know why login failed
+    if is_4s_hash:
+        if not security.verify_password_4s(to_test=data.password, hashed=pass_hash):
+            raise exc.LoginFailed  # Not to let user know why login failed
+        else:
+            pass_hash = security.hash_password(data.password)
+            await db.account.edit_pass_hash(account_id=account_id, pass_hash=pass_hash)
+    else:
+        if not security.verify_password(to_test=data.password, hashed=pass_hash):
+            raise exc.LoginFailed  # Not to let user know why login failed
 
     # Get jwt
     login_token = security.encode_jwt(account_id=account_id, expire=config.login_expire)
