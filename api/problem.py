@@ -3,27 +3,52 @@ from typing import Optional, Sequence
 
 from pydantic import BaseModel
 
-from base import do, enum
+from base import do
+from base.enum import RoleType
 import exceptions as exc
-from middleware import APIRouter, envelope, auth
+from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
 from util import rbac
 
 
 router = APIRouter(
     tags=['Problem'],
-    default_response_class=envelope.JSONResponse,
+    route_class=auth.APIRoute,
+    default_response_class=response.JSONResponse,
 )
 
 
 @router.get('/problem')
+@enveloped
 async def browse_problem() -> Sequence[do.Problem]:
+    """
+    ### 權限
+    - System normal (not hidden)
+    - Class manager (hidden)
+    """
+    # TODO: browse including managed class??
     return await db.problem.browse()
 
 
 @router.get('/problem/{problem_id}')
-async def read_problem(problem_id: int):
-    return await db.problem.read(problem_id=problem_id)
+@enveloped
+async def read_problem(problem_id: int, request: auth.Request) -> do.Problem:
+    """
+    ### 權限
+    - Class manager (hidden)
+    - System normal (not hidden)
+    """
+    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
+    problem = await db.problem.read(problem_id, include_hidden=True)
+    challenge = await db.challenge.read(problem.challenge_id, include_hidden=True)
+
+    is_system_normal = await rbac.validate(request.account.id, RoleType.normal)
+    is_class_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)
+
+    if not (problem.is_hidden and is_class_manager or not problem.is_hidden and is_system_normal):
+        raise exc.NoPermission
+
+    return problem
 
 
 class EditProblemInput(BaseModel):
@@ -36,14 +61,36 @@ class EditProblemInput(BaseModel):
 
 
 @router.patch('/problem/{problem_id}')
-async def edit_problem(problem_id: int, data: EditProblemInput):
+@enveloped
+async def edit_problem(problem_id: int, data: EditProblemInput, request: auth.Request):
+    """
+    ### 權限
+    - Class manager
+    """
+    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
+    problem = await db.problem.read(problem_id, include_hidden=True)
+    challenge = await db.challenge.read(problem.challenge_id, include_hidden=True)
+    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+        raise exc.NoPermission
+
     return await db.problem.edit(problem_id, title=data.title, full_score=data.full_score,
                                  description=data.description, source=data.source,
                                  hint=data.hint, is_hidden=data.is_hidden)
 
 
 @router.delete('/problem/{problem_id}')
-async def delete_problem(problem_id: int):
+@enveloped
+async def delete_problem(problem_id: int, request: auth.Request):
+    """
+    ### 權限
+    - Class manager
+    """
+    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
+    problem = await db.problem.read(problem_id, include_hidden=True)
+    challenge = await db.challenge.read(problem.challenge_id, include_hidden=True)
+    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+        raise exc.NoPermission
+
     return await db.problem.delete(problem_id=problem_id)
 
 
@@ -56,7 +103,18 @@ class AddTestcaseInput(BaseModel):
 
 
 @router.post('/problem/{problem_id}/testcase', tags=['Testcase'])
-async def add_testcase_under_problem(problem_id: int, data: AddTestcaseInput) -> int:
+@enveloped
+async def add_testcase_under_problem(problem_id: int, data: AddTestcaseInput, request: auth.Request) -> int:
+    """
+    ### 權限
+    - Class manager
+    """
+    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
+    problem = await db.problem.read(problem_id, include_hidden=True)
+    challenge = await db.challenge.read(problem.challenge_id, include_hidden=True)
+    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+        raise exc.NoPermission
+
     return await db.testcase.add(problem_id=problem_id, is_sample=data.is_sample, score=data.score,
                                  input_file=None, output_file=None,
                                  time_limit=data.time_limit, memory_limit=data.memory_limit,
@@ -75,8 +133,14 @@ class ReadTestcaseOutput:
     is_deleted: bool
 
 
-@router.get('/problem/{problem_id}/testcase', tags=['Testcase'])
-async def browse_testcase_under_problem(problem_id: int) -> Sequence[ReadTestcaseOutput]:
+async def browse_testcase_under_problem(problem_id: int, request: auth.Request) -> Sequence[ReadTestcaseOutput]:
+    """
+    ### 權限
+    - System normal
+    """
+    if not await rbac.validate(request.account.id, RoleType.normal):
+        raise exc.NoPermission
+
     testcases = await db.testcase.browse(problem_id=problem_id)
     return [ReadTestcaseOutput(
         id=testcase.id,

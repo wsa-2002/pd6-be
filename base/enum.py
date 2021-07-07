@@ -1,4 +1,9 @@
+from typing import TypeVar, Optional
+
 from .cls import OrderedMixin, StrEnum
+
+
+T = TypeVar("T")
 
 
 class RoleType(OrderedMixin, StrEnum):
@@ -6,21 +11,15 @@ class RoleType(OrderedMixin, StrEnum):
     normal = 'NORMAL'
     manager = 'MANAGER'
 
-    @property
-    def is_manager(self):
-        return self is self.manager
+    def __gt__(self: T, other: Optional[T]):
+        if other is None:
+            return True
+        return super().__gt__(other)
 
-    @property
-    def not_manager(self):
-        return self is not self.manager
-
-    @property
-    def is_guest(self):
-        return self is self.guest
-
-    @property
-    def not_guest(self):
-        return self is not self.guest
+    def __lt__(self: T, other: Optional[T]):
+        if other is None:
+            return False
+        return super().__lt__(other)
 
 
 class CourseType(StrEnum):

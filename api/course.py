@@ -6,14 +6,15 @@ from pydantic import BaseModel
 from base import do
 from base.enum import CourseType, RoleType
 import exceptions as exc
-from middleware import APIRouter, envelope, auth
+from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
 from util import rbac
 
 
 router = APIRouter(
     tags=['Course'],
-    default_response_class=envelope.JSONResponse,
+    route_class=auth.APIRoute,
+    default_response_class=response.JSONResponse,
 )
 
 
@@ -29,7 +30,12 @@ class AddCourseOutput:
 
 
 @router.post('/course')
+@enveloped
 async def add_course(data: AddCourseInput, request: auth.Request) -> AddCourseOutput:
+    """
+    ### 權限
+    - System manager
+    """
     if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
@@ -42,22 +48,34 @@ async def add_course(data: AddCourseInput, request: auth.Request) -> AddCourseOu
 
 
 @router.get('/course')
+@enveloped
 async def browse_course(request: auth.Request) -> Sequence[do.Course]:
-    if not await rbac.validate(request.account.id, RoleType.normal):
+    """
+    ### 權限
+    - System manager (hidden)
+    - System normal (not hidden)
+    """
+    system_role = await rbac.get_role(request.account.id)
+    if system_role < RoleType.normal:
         raise exc.NoPermission
 
-    show_limited = request.account.role.not_manager
-    courses = await db.course.browse(include_hidden=not show_limited, include_deleted=not show_limited)
+    courses = await db.course.browse(include_hidden=system_role is RoleType.manager)
     return courses
 
 
 @router.get('/course/{course_id}')
+@enveloped
 async def read_course(course_id: int, request: auth.Request) -> do.Course:
-    if not await rbac.validate(request.account.id, RoleType.normal):
+    """
+    ### 權限
+    - System manager (hidden)
+    - System normal (not hidden)
+    """
+    system_role = await rbac.get_role(request.account.id)
+    if system_role < RoleType.normal:
         raise exc.NoPermission
 
-    show_limited = request.account.role.not_manager
-    course = await db.course.read(course_id, include_hidden=not show_limited, include_deleted=not show_limited)
+    course = await db.course.read(course_id, include_hidden=system_role is RoleType.manager)
     return course
 
 
@@ -68,7 +86,12 @@ class EditCourseInput(BaseModel):
 
 
 @router.patch('/course/{course_id}')
+@enveloped
 async def edit_course(course_id: int, data: EditCourseInput, request: auth.Request) -> None:
+    """
+    ### 權限
+    - System manager
+    """
     if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
@@ -81,7 +104,12 @@ async def edit_course(course_id: int, data: EditCourseInput, request: auth.Reque
 
 
 @router.delete('/course/{course_id}')
+@enveloped
 async def delete_course(course_id: int, request: auth.Request) -> None:
+    """
+    ### 權限
+    - System manager
+    """
     if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
@@ -99,7 +127,12 @@ class AddClassOutput:
 
 
 @router.post('/course/{course_id}/class', tags=['Class'])
+@enveloped
 async def add_class_under_course(course_id: int, data: AddClassInput, request: auth.Request) -> AddClassOutput:
+    """
+    ### 權限
+    - System manager
+    """
     if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
@@ -113,8 +146,19 @@ async def add_class_under_course(course_id: int, data: AddClassInput, request: a
 
 
 @router.get('/course/{course_id}/class', tags=['Class'])
+@enveloped
 async def browse_class_under_course(course_id: int, request: auth.Request) -> Sequence[do.Class]:
-    if not await rbac.validate(request.account.id, RoleType.manager):
+    """
+    ### 權限
+    - Class+ manager (hidden)
+    - System normal (not hidden)
+    """
+    if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
-    return await db.class_.browse(course_id=course_id)
+    # FIXME
+    # 先包含 hidden，再篩選這個 account 能看到的 class
+    return [class_ for class_ in await db.class_.browse(course_id=course_id, include_hidden=True)
+            if (not class_.is_hidden  # not hidden => 都可以看到
+                # hidden => 要 class manager
+                or rbac.validate(request.account.id, RoleType.manager, class_id=class_.id, inherit=True))]

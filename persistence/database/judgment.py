@@ -40,7 +40,8 @@ async def browse_cases(judgment_id: int) -> Sequence[do.JudgeCase]:
             sql=fr'SELECT judgment_id, testcase_id,'
                 fr'       judge_case.status, judge_case.time_lapse, judge_case.peak_memory, judge_case.score'
                 fr'  FROM judge_case'
-                fr'       LEFT JOIN testcase ON judgment.testcase_id = testcase.id'
+                fr'       LEFT JOIN testcase'
+                fr'              ON testcase.id = judgment.testcase_id'
                 fr' WHERE judgment_id = %(judgment_id)s'
                 fr' ORDER BY testcase.is_sample DESC, testcase_id ASC',
             judgment_id=judgment_id,

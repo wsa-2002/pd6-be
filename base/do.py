@@ -60,6 +60,7 @@ class Team:
     id: int
     name: str
     class_id: int
+    label: str
     is_hidden: bool
     is_deleted: bool
 
@@ -144,7 +145,7 @@ class Submission:
     problem_id: int
     language_id: int
     content_file: str
-    content_length: str
+    content_length: int
     submit_time: datetime
 
 
