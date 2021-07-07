@@ -6,18 +6,20 @@ from pydantic import BaseModel
 from base import do
 from base.enum import RoleType
 import exceptions as exc
-from middleware import APIRouter, envelope, auth
+from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
 from util import rbac
 
 
 router = APIRouter(
     tags=['Problem'],
-    default_response_class=envelope.JSONResponse,
+    route_class=auth.APIRoute,
+    default_response_class=response.JSONResponse,
 )
 
 
 @router.get('/problem')
+@enveloped
 async def browse_problem() -> Sequence[do.Problem]:
     """
     ### 權限
@@ -29,6 +31,7 @@ async def browse_problem() -> Sequence[do.Problem]:
 
 
 @router.get('/problem/{problem_id}')
+@enveloped
 async def read_problem(problem_id: int, request: auth.Request) -> do.Problem:
     """
     ### 權限
@@ -58,6 +61,7 @@ class EditProblemInput(BaseModel):
 
 
 @router.patch('/problem/{problem_id}')
+@enveloped
 async def edit_problem(problem_id: int, data: EditProblemInput, request: auth.Request):
     """
     ### 權限
@@ -75,6 +79,7 @@ async def edit_problem(problem_id: int, data: EditProblemInput, request: auth.Re
 
 
 @router.delete('/problem/{problem_id}')
+@enveloped
 async def delete_problem(problem_id: int, request: auth.Request):
     """
     ### 權限
@@ -98,6 +103,7 @@ class AddTestcaseInput(BaseModel):
 
 
 @router.post('/problem/{problem_id}/testcase', tags=['Testcase'])
+@enveloped
 async def add_testcase_under_problem(problem_id: int, data: AddTestcaseInput, request: auth.Request) -> int:
     """
     ### 權限

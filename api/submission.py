@@ -7,18 +7,21 @@ from pydantic import BaseModel
 from base import do, enum
 from base.enum import RoleType
 import exceptions as exc
-from middleware import APIRouter, envelope, auth
+from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
+import util
 from util import rbac
 
 
 router = APIRouter(
     tags=['Submission'],
-    default_response_class=envelope.JSONResponse,
+    route_class=auth.APIRoute,
+    default_response_class=response.JSONResponse,
 )
 
 
 @router.get('/submission/language', tags=['Administrative'])
+@enveloped
 async def browse_submission_language(request: auth.Request) -> Sequence[do.SubmissionLanguage]:
     """
     ### 權限
@@ -37,6 +40,7 @@ class AddSubmissionLanguageInput(BaseModel):
 
 
 @router.post('/submission/language', tags=['Administrative'])
+@enveloped
 async def add_submission_language(data: AddSubmissionLanguageInput, request: auth.Request) -> int:
     """
     ### 權限
@@ -55,6 +59,7 @@ class EditSubmissionLanguageInput(BaseModel):
 
 
 @router.patch('/submission/language/{language_id}', tags=['Administrative'])
+@enveloped
 async def edit_submission_language(language_id: int, data: EditSubmissionLanguageInput, request: auth.Request) -> None:
     """
     ### 權限
@@ -73,12 +78,13 @@ class AddSubmissionInput(BaseModel):
 
 
 @router.post('/problem/{problem_id}/submission', tags=['Problem'])
+@enveloped
 async def submit(problem_id: int, data: AddSubmissionInput, request: auth.Request):
     """
     ### 權限
     - System normal
     """
-    submit_time = datetime.now()  # TODO: request time?
+    submit_time = util.get_request_time()
 
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
@@ -108,6 +114,7 @@ class BrowseSubmissionInput(BaseModel):
 
 
 @router.get('/submission')
+@enveloped
 async def browse_submission(data: BrowseSubmissionInput, request: auth.Request) -> Sequence[do.Submission]:
     """
     ### 權限
@@ -122,6 +129,7 @@ async def browse_submission(data: BrowseSubmissionInput, request: auth.Request) 
 
 
 @router.get('/submission/{submission_id}')
+@enveloped
 async def read_submission(submission_id: int, request: auth.Request) -> do.Submission:
     """
     ### 權限
@@ -145,6 +153,7 @@ async def read_submission(submission_id: int, request: auth.Request) -> do.Submi
 
 
 @router.get('/submission/{submission_id}/judgment', tags=['Judgment'])
+@enveloped
 async def browse_submission_judgment(submission_id: int, request: auth.Request) -> Sequence[do.Judgment]:
     """
     ### 權限

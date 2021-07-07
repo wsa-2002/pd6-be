@@ -6,8 +6,7 @@ from pydantic import BaseModel
 from base.enum import RoleType
 from config import config, app_config
 import exceptions as exc
-from middleware import envelope
-from middleware.router import APIRouter
+from middleware import APIRouter, JSONResponse, enveloped
 import persistence.database as db
 import persistence.email as email
 from util import security
@@ -46,7 +45,8 @@ class AddAccountInput(BaseModel):
     institute_email: str
 
 
-@router.post('/account', tags=['Account'], response_class=envelope.JSONResponse)
+@router.post('/account', tags=['Account'], response_class=JSONResponse)
+@enveloped
 async def add_account(data: AddAccountInput) -> None:
     # check student id and email
     if data.student_id != data.institute_email.split('@')[0]:
@@ -85,7 +85,8 @@ class LoginInput(BaseModel):
     password: str
 
 
-@router.post('/account/jwt', tags=['Account'], response_class=envelope.JSONResponse)
+@router.post('/account/jwt', tags=['Account'], response_class=JSONResponse)
+@enveloped
 async def login(data: LoginInput) -> str:
     try:
         account_id, pass_hash = await db.account.read_login_by_name(name=data.name)

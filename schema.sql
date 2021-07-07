@@ -14,7 +14,8 @@ CREATE TABLE account (
   real_name         VARCHAR   NOT NULL,
   role              role_type NOT NULL,  -- global role
   alternative_email VARCHAR,
-  is_deleted        BOOLEAN   NOT NULL  DEFAULT false
+  is_deleted        BOOLEAN   NOT NULL  DEFAULT false,
+  is_4s_hash        BOOLEAN   NOT NULL  DEFAULT false
 );
 
 CREATE TABLE institute (
@@ -62,16 +63,6 @@ CREATE TABLE course (
   is_deleted  BOOLEAN     NOT NULL  DEFAULT false
 );
 
--- 好像沒屁用
-
-CREATE TABLE course_member (
-  course_id INTEGER   NOT NULL  REFERENCES course(id),
-  member_id INTEGER   NOT NULL  REFERENCES account(id),
-  role      role_type NOT NULL,
-
-  PRIMARY KEY (course_id, member_id)
-);
-
 CREATE TABLE class (
   id          SERIAL  PRIMARY KEY,
   name        VARCHAR NOT NULL,
@@ -94,6 +85,7 @@ CREATE TABLE team (
   id          SERIAL  PRIMARY KEY,
   name        VARCHAR NOT NULL,
   class_id    INTEGER NOT NULL  REFERENCES class(id),
+  label       VARCHAR NOT NULL,
   is_hidden   BOOLEAN NOT NULL  DEFAULT false,
   is_deleted  BOOLEAN NOT NULL  DEFAULT false,
 

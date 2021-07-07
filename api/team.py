@@ -5,18 +5,20 @@ from pydantic import BaseModel
 from base import do
 from base.enum import RoleType
 import exceptions as exc
-from middleware import APIRouter, envelope, auth
+from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
 from util import rbac
 
 
 router = APIRouter(
     tags=['Team'],
-    default_response_class=envelope.JSONResponse,
+    route_class=auth.APIRoute,
+    default_response_class=response.JSONResponse,
 )
 
 
 @router.get('/team/{team_id}')
+@enveloped
 async def read_team(team_id: int, request: auth.Request) -> do.Team:
     """
     ### 權限
@@ -39,10 +41,12 @@ async def read_team(team_id: int, request: auth.Request) -> do.Team:
 class EditTeamInput(BaseModel):
     name: str = None
     class_id: int = None
+    label: str = None
     is_hidden: bool = None
 
 
 @router.patch('/team/{team_id}')
+@enveloped
 async def edit_team(team_id: int, data: EditTeamInput, request: auth.Request) -> None:
     """
     ### 權限
@@ -70,10 +74,12 @@ async def edit_team(team_id: int, data: EditTeamInput, request: auth.Request) ->
         name=data.name,
         class_id=data.class_id,
         is_hidden=data.is_hidden,
+        label=data.label,
     )
 
 
 @router.delete('/team/{team_id}')
+@enveloped
 async def delete_team(team_id: int, request: auth.Request) -> None:
     """
     ### 權限
@@ -89,6 +95,7 @@ async def delete_team(team_id: int, request: auth.Request) -> None:
 
 
 @router.get('/team/{team_id}/member')
+@enveloped
 async def browse_team_member(team_id: int, request: auth.Request) -> Sequence[do.Member]:
     """
     ### 權限
@@ -110,6 +117,7 @@ class EditMemberInput(BaseModel):
 
 
 @router.patch('/team/{team_id}/member')
+@enveloped
 async def edit_team_member(team_id: int, data: Sequence[EditMemberInput], request: auth.Request) -> None:
     """
     ### 權限
@@ -126,6 +134,7 @@ async def edit_team_member(team_id: int, data: Sequence[EditMemberInput], reques
 
 
 @router.delete('/team/{team_id}/member/{member_id}')
+@enveloped
 async def delete_team_member(team_id: int, member_id: int, request: auth.Request) -> None:
     """
     ### 權限

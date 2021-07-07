@@ -7,18 +7,20 @@ from pydantic import BaseModel
 from base import do
 from base.enum import CourseType, RoleType
 import exceptions as exc
-from middleware import APIRouter, envelope, auth
+from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
 from util import rbac
 
 
 router = APIRouter(
     tags=['Peer Review'],
-    default_response_class=envelope.JSONResponse,
+    route_class=auth.APIRoute,
+    default_response_class=response.JSONResponse,
 )
 
 
 @router.get('/peer-review/{peer_review_id}')
+@enveloped
 async def read_peer_review(peer_review_id: int, request: auth.Request) -> do.PeerReview:
     """
     ### 權限
@@ -48,6 +50,7 @@ class EditPeerReviewInput(BaseModel):
 
 
 @router.patch('/peer-review/{peer_review_id}')
+@enveloped
 async def edit_peer_review(peer_review_id: int, data: EditPeerReviewInput, request: auth.Request) -> None:
     """
     ### 權限
@@ -68,6 +71,7 @@ async def edit_peer_review(peer_review_id: int, data: EditPeerReviewInput, reque
 
 
 @router.delete('/peer-review/{peer_review_id}')
+@enveloped
 async def delete_peer_review(peer_review_id: int, request: auth.Request) -> None:
     """
     ### 權限
@@ -83,6 +87,7 @@ async def delete_peer_review(peer_review_id: int, request: auth.Request) -> None
 
 
 @router.get('/peer-review/{peer_review_id}/record')
+@enveloped
 async def browse_peer_review_record(peer_review_id: int, request: auth.Request):
     """
     ### 權限
@@ -94,6 +99,7 @@ async def browse_peer_review_record(peer_review_id: int, request: auth.Request):
 
 # 改一下這些 function name
 @router.post('/peer-review/{peer_review_id}/record')
+@enveloped
 async def assign_peer_review_record(peer_review_id: int, request: auth.Request):
     """
     發互評 (決定 A 要評誰 )
@@ -105,6 +111,7 @@ async def assign_peer_review_record(peer_review_id: int, request: auth.Request):
 
 
 @router.get('/peer-review-record/{peer_review_record_id}')
+@enveloped
 async def read_peer_review_record(peer_review_record_id: int, request: auth.Request):
     """
     ### 權限
@@ -115,6 +122,7 @@ async def read_peer_review_record(peer_review_record_id: int, request: auth.Requ
 
 
 @router.put('/peer-review-record/{peer_review_record_id}/score')
+@enveloped
 async def submit_peer_review_record_score(peer_review_record_id: int, request: auth.Request):
     """
     互評完了，交互評成績評語

@@ -2,7 +2,7 @@ from pydantic import BaseModel
 
 from base.enum import RoleType
 import exceptions as exc
-from middleware import APIRouter, envelope, auth
+from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
 from util import rbac
 
@@ -11,11 +11,13 @@ from .problem import ReadTestcaseOutput
 
 router = APIRouter(
     tags=['Testcase'],
-    default_response_class=envelope.JSONResponse,
+    route_class=auth.APIRoute,
+    default_response_class=response.JSONResponse,
 )
 
 
 @router.get('/testcase/{testcase_id}')
+@enveloped
 async def read_testcase(testcase_id: int, request: auth.Request) -> ReadTestcaseOutput:
     """
     ### 權限
@@ -46,6 +48,7 @@ class EditTestcaseInput(BaseModel):
 
 
 @router.get('/testcase/{testcase_id}/input-data')
+@enveloped
 async def read_testcase_input_data(testcase_id: int, request: auth.Request):
     """
     ### 權限
@@ -63,6 +66,7 @@ async def read_testcase_input_data(testcase_id: int, request: auth.Request):
 
 
 @router.get('/testcase/{testcase_id}/output-data')
+@enveloped
 async def read_testcase_output_data(testcase_id: int, request: auth.Request):
     """
     ### 權限
@@ -80,6 +84,7 @@ async def read_testcase_output_data(testcase_id: int, request: auth.Request):
 
 
 @router.patch('/testcase/{testcase_id}')
+@enveloped
 async def edit_testcase(testcase_id: int, data: EditTestcaseInput, request: auth.Request) -> None:
     """
     ### 權限
@@ -98,6 +103,7 @@ async def edit_testcase(testcase_id: int, data: EditTestcaseInput, request: auth
 
 
 @router.put('/testcase/{testcase_id}/input-data')
+@enveloped
 async def edit_testcase_input_data(testcase_id: int, request: auth.Request):
     """
     ### 權限
@@ -115,6 +121,7 @@ async def edit_testcase_input_data(testcase_id: int, request: auth.Request):
 
 
 @router.put('/testcase/{testcase_id}/output-data')
+@enveloped
 async def edit_testcase_output_data(testcase_id: int, request: auth.Request):
     """
     ### 權限
@@ -132,6 +139,7 @@ async def edit_testcase_output_data(testcase_id: int, request: auth.Request):
 
 
 @router.delete('/testcase/{testcase_id}')
+@enveloped
 async def delete_testcase(testcase_id: int, request: auth.Request) -> None:
     """
     ### 權限
@@ -148,6 +156,7 @@ async def delete_testcase(testcase_id: int, request: auth.Request) -> None:
 
 
 @router.delete('/testcase/{testcase_id}/input-data')
+@enveloped
 async def delete_testcase_input_data(testcase_id: int, request: auth.Request):
     """
     ### 權限
@@ -165,6 +174,7 @@ async def delete_testcase_input_data(testcase_id: int, request: auth.Request):
 
 
 @router.delete('/testcase/{testcase_id}/output-data')
+@enveloped
 async def delete_testcase_output_data(testcase_id: int, request: auth.Request):
     """
     ### 權限

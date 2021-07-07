@@ -7,14 +7,15 @@ from pydantic import BaseModel
 from base import do, enum
 from base.enum import RoleType
 import exceptions as exc
-from middleware import APIRouter, envelope, auth
+from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
 from util import rbac
 
 
 router = APIRouter(
     tags=['Challenge'],
-    default_response_class=envelope.JSONResponse,
+    route_class=auth.APIRoute,
+    default_response_class=response.JSONResponse,
 )
 
 
@@ -29,6 +30,7 @@ class AddChallengeInput(BaseModel):
 
 
 @router.post('/class/{class_id}/challenge', tags=['Course'])
+@enveloped
 async def add_challenge_under_class(class_id: int, data: AddChallengeInput, request: auth.Request) -> int:
     """
     ### 權限
@@ -45,6 +47,7 @@ async def add_challenge_under_class(class_id: int, data: AddChallengeInput, requ
 
 
 @router.get('/class/{class_id}/challenge', tags=['Course'])
+@enveloped
 async def browse_challenge_under_class(class_id: int, request: auth.Request) -> Sequence[do.Challenge]:
     """
     ### 權限
@@ -60,6 +63,7 @@ async def browse_challenge_under_class(class_id: int, request: auth.Request) -> 
 
 
 @router.get('/challenge')
+@enveloped
 async def browse_challenge(request: auth.Request) -> Sequence[do.Challenge]:
     # TODO: 這要怎麼做啊？ (權限)
     #       甚至有這個 api 的需求嗎？ XD
@@ -69,6 +73,7 @@ async def browse_challenge(request: auth.Request) -> Sequence[do.Challenge]:
 
 
 @router.get('/challenge/{challenge_id}')
+@enveloped
 async def read_challenge(challenge_id: int, request: auth.Request) -> do.Challenge:
     """
     ### 權限
@@ -97,6 +102,7 @@ class EditChallengeInput(BaseModel):
 
 
 @router.patch('/challenge/{challenge_id}')
+@enveloped
 async def edit_challenge(challenge_id: int, data: EditChallengeInput, request: auth.Request) -> None:
     """
     ### 權限
@@ -113,6 +119,7 @@ async def edit_challenge(challenge_id: int, data: EditChallengeInput, request: a
 
 
 @router.delete('/challenge/{challenge_id}')
+@enveloped
 async def delete_challenge(challenge_id: int, request: auth.Request) -> None:
     """
     ### 權限
@@ -138,6 +145,7 @@ class AddProblemInput(BaseModel):
 
 
 @router.post('/challenge/{challenge_id}/problem', tags=['Problem'])
+@enveloped
 async def add_problem_under_challenge(challenge_id: int, data: AddProblemInput, request: auth.Request) -> int:
     """
     ### 權限
@@ -170,6 +178,7 @@ class AddPeerReviewInput(BaseModel):
 
 
 @router.post('/challenge/{challenge_id}/peer-review', tags=['Peer Review'])
+@enveloped
 async def add_peer_review_under_challenge(challenge_id: int, data: AddPeerReviewInput, request: auth.Request) -> int:
     """
     ### 權限
@@ -206,6 +215,7 @@ class BrowseTaskOutput:
 
 
 @router.get('/challenge/{challenge_id}/task')
+@enveloped
 async def browse_task_under_challenge(challenge_id: int, request: auth.Request) -> BrowseTaskOutput:
     """
     ### 權限

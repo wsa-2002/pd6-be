@@ -1,3 +1,22 @@
+class _CauseMixin:
+    """
+    Allows another Exception to be registered as the cause of new Exception,
+    i.e. mimicking the `raise from` syntax (and does almost the same thing).
+    """
+    def __init__(self, *args, cause: Exception, **kwargs):
+        """
+        An optional `cause` exception can be given, mimicking the `raise from` syntax (and does almost the same thing).
+        """
+        super().__init__(*args, **kwargs)
+        self.__cause__ = cause
+
+
+class SystemException(_CauseMixin, Exception):
+    """
+    All system errors (i.e. not a PdogsException) will be raised and wrapped under this exception.
+    """
+
+
 class PdogsException(Exception):
     """
     The base exception of PDOGS; exceptions raised that are subclass of this will not be written to error log
@@ -39,13 +58,7 @@ class NotFound(PdogsException):
     """
 
 
-class IllegalInput(PdogsException):
+class IllegalInput(_CauseMixin, PdogsException):
     """
     A malformed input is given
     """
-    def __init__(self, *args, cause: Exception, **kwargs):
-        """
-        An optional `cause` exception can be given, mimicking the `raise from` syntax (and does almost the same thing).
-        """
-        super().__init__(*args, **kwargs)
-        self.__cause__ = cause
