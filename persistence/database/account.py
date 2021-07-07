@@ -56,8 +56,6 @@ async def edit(account_id: int,
     to_updates = {}
     if nickname is not ...:
         to_updates['nickname'] = nickname
-    if pass_hash is not ...:
-        to_updates['pass_hash'] = pass_hash
 
     if not to_updates:
         return
