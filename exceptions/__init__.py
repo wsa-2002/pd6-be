@@ -16,6 +16,17 @@ class LoginFailed(PdogsException):
     """
 
 
+class AccountExists(PdogsException):
+    """
+    Failed to register due to duplicate account
+    """
+
+class EmailNotMatchId(PdogsException):
+    """
+    Failed to register due to email and student id not match
+    """
+
+
 class NoPermission(PdogsException):
     """
     The requester has no permission to do the action

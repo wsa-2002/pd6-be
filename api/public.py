@@ -48,18 +48,15 @@ class AddAccountInput(BaseModel):
 
 @router.post('/account', tags=['Account'], response_class=envelope.JSONResponse)
 async def add_account(data: AddAccountInput) -> None:
-    account_id = await db.account.add(name=data.name, pass_hash=security.hash_password(data.password),
-                                      nickname=data.nickname, real_name=data.real_name, role=RoleType.guest)
-    student_card_id = await db.student_card.add(
-        account_id=account_id,
-        institute_id=data.institute_id,
-        department=data.department,
-        student_id=data.student_id,
-        email=data.institute_email,
-    )
+    # check student id and email
+    if data.student_id != data.institute_email.split('@')[0]:
+        raise exc.EmailNotMatchId
 
-    code = await db.account.add_email_verification(email=data.institute_email,
-                                                   account_id=account_id, student_card_id=student_card_id)
+    try:
+        account_id = await db.account.add(name=data.name, pass_hash=security.hash_password(data.password),
+                                            nickname=data.nickname, real_name=data.real_name, role=RoleType.guest)
+
+    code = await db.account.add_email_verification(email=data.institute_email, account_id=account_id)
     await email.verification.send(to=data.institute_email, code=code)
 
     if data.alternative_email:
