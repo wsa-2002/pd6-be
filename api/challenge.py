@@ -26,6 +26,7 @@ class AddChallengeInput(BaseModel):
     start_time: datetime
     end_time: datetime
     is_hidden: bool
+    in_problem_set: enum.ChallengeInSetType
 
 
 @router.post('/class/{class_id}/challenge', tags=['Course'])
@@ -36,7 +37,7 @@ async def add_challenge_under_class(class_id: int, data: AddChallengeInput, requ
 
     challenge_id = await db.challenge.add(
         class_id=class_id, type_=data.type, title=data.title, setter_id=request.account.id, description=data.description,
-        start_time=data.start_time, end_time=data.end_time, is_hidden=data.is_hidden,
+        start_time=data.start_time, end_time=data.end_time, is_hidden=data.is_hidden, in_problem_set=data.in_problem_set,
     )
     return challenge_id
 
@@ -76,6 +77,7 @@ class EditChallengeInput(BaseModel):
     start_time: datetime = None
     end_time: datetime = None
     is_hidden: bool = None
+    in_problem_set: enum.ChallengeInSetType = None
 
 
 @router.patch('/challenge/{challenge_id}')
@@ -85,7 +87,7 @@ async def edit_challenge(challenge_id: int, data: EditChallengeInput, request: a
 
     await db.challenge.edit(challenge_id=challenge_id, type_=data.type, title=data.title,
                             description=data.description, start_time=data.start_time, end_time=data.end_time,
-                            is_hidden=data.is_hidden)
+                            is_hidden=data.is_hidden, in_problem_set=data.in_problem_set)
 
 
 @router.delete('/challenge/{challenge_id}')

@@ -8,17 +8,17 @@ from .base import SafeExecutor
 
 
 async def add(class_id: int, type_: enum.ChallengeType, title: str, setter_id: int, description: Optional[str],
-              start_time: datetime, end_time: datetime, is_hidden: bool) -> int:
+              start_time: datetime, end_time: datetime, is_hidden: bool, in_problem_set: enum.ChallengeInSetType) -> int:
     async with SafeExecutor(
             event='Add challenge',
             sql="INSERT INTO challenge"
                 "            (class_id, type, title, setter_id, description,"
-                "             start_time, end_time, is_hidden)"
+                "             start_time, end_time, is_hidden, in_problem_set)"
                 "     VALUES (%(class_id)s, %(type)s, %(title)s, %(setter_id)s, %(description)s,"
-                "             %(start_time)s, %(end_time)s, %(is_hidden)s)"
+                "             %(start_time)s, %(end_time)s, %(is_hidden)s), %(in_problem_set)s"
                 "  RETURNING id",
             class_id=class_id, type=type_, title=title, setter_id=setter_id, description=description,
-            start_time=start_time, end_time=end_time, is_hidden=is_hidden,
+            start_time=start_time, end_time=end_time, is_hidden=is_hidden, in_problem_set=in_problem_set,
             fetch=1,
     ) as (id_,):
         return id_
@@ -41,7 +41,7 @@ async def browse(class_id: int = None, include_hidden=False, include_deleted=Fal
     async with SafeExecutor(
             event='browse challenges',
             sql=fr'SELECT id, class_id, type, title, setter_id, description, start_time, end_time,'
-                fr'       is_hidden, is_deleted'
+                fr'       is_hidden, is_deleted, in_problem_set'
                 fr'  FROM challenge'
                 fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
                 fr' ORDER BY class_id ASC, id ASC',
@@ -50,8 +50,8 @@ async def browse(class_id: int = None, include_hidden=False, include_deleted=Fal
     ) as records:
         return [do.Challenge(id=id_, class_id=class_id, type=type_, title=title, setter_id=setter_id,
                              description=description, start_time=start_time, end_time=end_time,
-                             is_hidden=is_hidden, is_deleted=is_deleted)
-                for id_, class_id, type_, title, setter_id, description, start_time, end_time, is_hidden, is_deleted
+                             is_hidden=is_hidden, is_deleted=is_deleted, in_problem_set=in_problem_set)
+                for id_, class_id, type_, title, setter_id, description, start_time, end_time, is_hidden, is_deleted, in_problem_set
                 in records]
 
 
@@ -59,17 +59,17 @@ async def read(challenge_id: int, include_hidden=False, include_deleted=False) -
     async with SafeExecutor(
             event='read challenge by id',
             sql=r'SELECT id, class_id, type, title, setter_id, description, start_time, end_time,'
-                r'is_hidden, is_deleted'
+                r'is_hidden, is_deleted, in_problem_set'
                 r'  FROM challenge'
                 r' WHERE id = %(challenge_id)s'
                 fr'{" AND NOT is_hidden" if not include_hidden else ""}'
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}',
             challenge_id=challenge_id,
             fetch=1,
-    ) as (id_, class_id, type_, title, setter_id, description, start_time, end_time, is_hidden, is_deleted):
+    ) as (id_, class_id, type_, title, setter_id, description, start_time, end_time, is_hidden, is_deleted, in_problem_set):
         return do.Challenge(id=id_, class_id=class_id, type=type_, title=title, setter_id=setter_id,
                             description=description, start_time=start_time, end_time=end_time,
-                            is_hidden=is_hidden, is_deleted=is_deleted)
+                            is_hidden=is_hidden, is_deleted=is_deleted, in_problem_set=in_problem_set)
 
 
 async def edit(challenge_id: int,
@@ -78,7 +78,8 @@ async def edit(challenge_id: int,
                description: Optional[str] = ...,
                start_time: datetime = None,
                end_time: datetime = None,
-               is_hidden: bool = None,) -> None:
+               is_hidden: bool = None,
+               in_problem_set: enum.ChallengeInSetType = None,) -> None:
     to_updates = {}
 
     if type_ is not None:
@@ -93,6 +94,8 @@ async def edit(challenge_id: int,
         to_updates['end_time'] = end_time
     if is_hidden is not None:
         to_updates['is_hidden'] = is_hidden
+    if in_problem_set is not None:
+        to_updates['in_problem_set'] = in_problem_set
 
     if not to_updates:
         return

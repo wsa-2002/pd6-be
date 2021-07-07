@@ -96,6 +96,7 @@ class Challenge:
     end_time: datetime
     is_hidden: bool
     is_deleted: bool
+    in_problem_set: enum.ChallengeInSetType
 
 
 @dataclass

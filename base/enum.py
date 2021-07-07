@@ -33,6 +33,11 @@ class ChallengeType(StrEnum):
     homework = 'HOMEWORK'
 
 
+class ChallengeInSetType(StrEnum):
+    start_time = 'START_TIME'
+    end_time = 'END_TIME'
+
+
 class TaskSelectionType(StrEnum):
     last = 'LAST'
     best = 'BEST'

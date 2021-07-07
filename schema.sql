@@ -131,17 +131,23 @@ CREATE TYPE challenge_type AS ENUM (
   'HOMEWORK'
 );
 
+CREATE TYPE challenge_in_set_type AS ENUM (
+  'START_TIME',
+  'END_TIME'
+);
+
 CREATE TABLE challenge (
-  id          SERIAL          PRIMARY KEY,
-  class_id    INTEGER         NOT NULL  REFERENCES class(id),
-  type        challenge_type  NOT NULL,
-  title       VARCHAR         NOT NULL,
-  setter_id   INTEGER         NOT NULL  REFERENCES account(id),
-  description TEXT,
-  start_time  TIMESTAMP       NOT NULL,
-  end_time    TIMESTAMP       NOT NULL,
-  is_hidden   BOOLEAN         NOT NULL  DEFAULT false,
-  is_deleted  BOOLEAN         NOT NULL  DEFAULT false,
+  id                SERIAL                  PRIMARY KEY,
+  class_id          INTEGER                 NOT NULL  REFERENCES class(id),
+  type              challenge_type          NOT NULL,
+  title             VARCHAR                 NOT NULL,
+  setter_id         INTEGER                 NOT NULL  REFERENCES account(id),
+  description       TEXT,
+  start_time        TIMESTAMP               NOT NULL,
+  end_time          TIMESTAMP               NOT NULL,
+  is_hidden         BOOLEAN                 NOT NULL  DEFAULT false,
+  is_deleted        BOOLEAN                 NOT NULL  DEFAULT false,
+  in_problem_set    challenge_in_set_type   NOT NULL,
 
   UNIQUE (class_id, title)
 );
