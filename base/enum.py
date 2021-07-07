@@ -33,7 +33,7 @@ class ChallengeType(StrEnum):
     homework = 'HOMEWORK'
 
 
-class ChallengeInSetType(StrEnum):
+class ChallengePublicizeType(StrEnum):
     start_time = 'START_TIME'
     end_time = 'END_TIME'
 

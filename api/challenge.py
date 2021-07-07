@@ -11,7 +11,6 @@ from middleware import APIRouter, envelope, auth
 import persistence.database as db
 from util import rbac
 
-
 router = APIRouter(
     tags=['Challenge'],
     default_response_class=envelope.JSONResponse,
@@ -21,12 +20,12 @@ router = APIRouter(
 class AddChallengeInput(BaseModel):
     class_id: int
     type: enum.ChallengeType
+    publicize_type: enum.ChallengePublicizeType
     title: str
     description: Optional[str]
     start_time: datetime
     end_time: datetime
     is_hidden: bool
-    in_problem_set: enum.ChallengeInSetType
 
 
 @router.post('/class/{class_id}/challenge', tags=['Course'])
@@ -36,8 +35,9 @@ async def add_challenge_under_class(class_id: int, data: AddChallengeInput, requ
         raise exc.NoPermission
 
     challenge_id = await db.challenge.add(
-        class_id=class_id, type_=data.type, title=data.title, setter_id=request.account.id, description=data.description,
-        start_time=data.start_time, end_time=data.end_time, is_hidden=data.is_hidden, in_problem_set=data.in_problem_set,
+        class_id=class_id, type_=data.type, publicize_type=data.publicize_type, title=data.title,
+        setter_id=request.account.id,
+        description=data.description, start_time=data.start_time, end_time=data.end_time, is_hidden=data.is_hidden,
     )
     return challenge_id
 
@@ -72,12 +72,12 @@ async def read_challenge(challenge_id: int, request: auth.Request) -> do.Challen
 class EditChallengeInput(BaseModel):
     # class_id: int
     type: enum.ChallengeType = None
+    publicize_type: enum.ChallengePublicizeType = None
     title: str = None
     description: Optional[str] = ...
     start_time: datetime = None
     end_time: datetime = None
     is_hidden: bool = None
-    in_problem_set: enum.ChallengeInSetType = None
 
 
 @router.patch('/challenge/{challenge_id}')
@@ -85,9 +85,9 @@ async def edit_challenge(challenge_id: int, data: EditChallengeInput, request: a
     if not await rbac.validate(request.account.id, RoleType.manager, challenge_id=challenge_id):
         raise exc.NoPermission
 
-    await db.challenge.edit(challenge_id=challenge_id, type_=data.type, title=data.title,
-                            description=data.description, start_time=data.start_time, end_time=data.end_time,
-                            is_hidden=data.is_hidden, in_problem_set=data.in_problem_set)
+    await db.challenge.edit(challenge_id=challenge_id, type_=data.type, publicize_type=data.publicize_type,
+                            title=data.title, description=data.description, start_time=data.start_time,
+                            end_time=data.end_time, is_hidden=data.is_hidden)
 
 
 @router.delete('/challenge/{challenge_id}')

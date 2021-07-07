@@ -89,6 +89,7 @@ class Challenge:
     id: int
     class_id: int
     type: enum.ChallengeType
+    publicize_type: enum.ChallengePublicizeType
     title: str
     setter_id: int
     description: Optional[str]
@@ -96,7 +97,6 @@ class Challenge:
     end_time: datetime
     is_hidden: bool
     is_deleted: bool
-    in_problem_set: enum.ChallengeInSetType
 
 
 @dataclass

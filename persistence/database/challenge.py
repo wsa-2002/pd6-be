@@ -7,18 +7,19 @@ from base import do, enum
 from .base import SafeExecutor
 
 
-async def add(class_id: int, type_: enum.ChallengeType, title: str, setter_id: int, description: Optional[str],
-              start_time: datetime, end_time: datetime, is_hidden: bool, in_problem_set: enum.ChallengeInSetType) -> int:
+async def add(class_id: int, type_: enum.ChallengeType, publicize_type: enum.ChallengePublicizeType,
+              title: str, setter_id: int, description: Optional[str],
+              start_time: datetime, end_time: datetime, is_hidden: bool) -> int:
     async with SafeExecutor(
             event='Add challenge',
             sql="INSERT INTO challenge"
-                "            (class_id, type, title, setter_id, description,"
-                "             start_time, end_time, is_hidden, in_problem_set)"
-                "     VALUES (%(class_id)s, %(type)s, %(title)s, %(setter_id)s, %(description)s,"
-                "             %(start_time)s, %(end_time)s, %(is_hidden)s), %(in_problem_set)s"
+                "            (class_id, type, publicize_type, title, setter_id,"
+                "             description, start_time, end_time, is_hidden)"
+                "     VALUES (%(class_id)s, %(type)s, %(publicize_type)s, %(title)s, %(setter_id)s,"
+                "             %(description)s, %(start_time)s, %(end_time)s, %(is_hidden)s)"
                 "  RETURNING id",
-            class_id=class_id, type=type_, title=title, setter_id=setter_id, description=description,
-            start_time=start_time, end_time=end_time, is_hidden=is_hidden, in_problem_set=in_problem_set,
+            class_id=class_id, type=type_, publicize_type=publicize_type, title=title, setter_id=setter_id,
+            description=description, start_time=start_time, end_time=end_time, is_hidden=is_hidden,
             fetch=1,
     ) as (id_,):
         return id_
@@ -40,50 +41,54 @@ async def browse(class_id: int = None, include_hidden=False, include_deleted=Fal
 
     async with SafeExecutor(
             event='browse challenges',
-            sql=fr'SELECT id, class_id, type, title, setter_id, description, start_time, end_time,'
-                fr'       is_hidden, is_deleted, in_problem_set'
+            sql=fr'SELECT id, class_id, type, publicize_type, title, setter_id, description, start_time, end_time,'
+                fr'       is_hidden, is_deleted'
                 fr'  FROM challenge'
                 fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
                 fr' ORDER BY class_id ASC, id ASC',
             **conditions,
             fetch='all',
     ) as records:
-        return [do.Challenge(id=id_, class_id=class_id, type=type_, title=title, setter_id=setter_id,
-                             description=description, start_time=start_time, end_time=end_time,
-                             is_hidden=is_hidden, is_deleted=is_deleted, in_problem_set=in_problem_set)
-                for id_, class_id, type_, title, setter_id, description, start_time, end_time, is_hidden, is_deleted, in_problem_set
+        return [do.Challenge(id=id_, class_id=class_id, type=type_, publicize_type=publicize_type, title=title,
+                             setter_id=setter_id, description=description, start_time=start_time, end_time=end_time,
+                             is_hidden=is_hidden, is_deleted=is_deleted)
+                for
+                id_, class_id, type_, publicize_type, title, setter_id, description, start_time, end_time, is_hidden, is_deleted
                 in records]
 
 
 async def read(challenge_id: int, include_hidden=False, include_deleted=False) -> do.Challenge:
     async with SafeExecutor(
             event='read challenge by id',
-            sql=r'SELECT id, class_id, type, title, setter_id, description, start_time, end_time,'
-                r'is_hidden, is_deleted, in_problem_set'
+            sql=r'SELECT id, class_id, type, publicize_type, title, setter_id, description, start_time, end_time,'
+                r'is_hidden, is_deleted'
                 r'  FROM challenge'
                 r' WHERE id = %(challenge_id)s'
                 fr'{" AND NOT is_hidden" if not include_hidden else ""}'
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}',
             challenge_id=challenge_id,
             fetch=1,
-    ) as (id_, class_id, type_, title, setter_id, description, start_time, end_time, is_hidden, is_deleted, in_problem_set):
-        return do.Challenge(id=id_, class_id=class_id, type=type_, title=title, setter_id=setter_id,
-                            description=description, start_time=start_time, end_time=end_time,
-                            is_hidden=is_hidden, is_deleted=is_deleted, in_problem_set=in_problem_set)
+    ) as (
+    id_, class_id, type_, publicize_type, title, setter_id, description, start_time, end_time, is_hidden, is_deleted):
+        return do.Challenge(id=id_, class_id=class_id, type=type_, publicize_type=publicize_type, title=title,
+                            setter_id=setter_id, description=description, start_time=start_time, end_time=end_time,
+                            is_hidden=is_hidden, is_deleted=is_deleted)
 
 
 async def edit(challenge_id: int,
                type_: enum.ChallengeType = None,
+               publicize_type: enum.ChallengePublicizeType = None,
                title: str = None,
                description: Optional[str] = ...,
                start_time: datetime = None,
                end_time: datetime = None,
-               is_hidden: bool = None,
-               in_problem_set: enum.ChallengeInSetType = None,) -> None:
+               is_hidden: bool = None, ) -> None:
     to_updates = {}
 
     if type_ is not None:
         to_updates['type'] = type_
+    if publicize_type is not None:
+        to_updates['publicize_type'] = publicize_type
     if title is not None:
         to_updates['title'] = title
     if description is not ...:
@@ -94,8 +99,6 @@ async def edit(challenge_id: int,
         to_updates['end_time'] = end_time
     if is_hidden is not None:
         to_updates['is_hidden'] = is_hidden
-    if in_problem_set is not None:
-        to_updates['in_problem_set'] = in_problem_set
 
     if not to_updates:
         return
