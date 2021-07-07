@@ -21,6 +21,6 @@ def get_request_uuid() -> Optional[uuid.UUID]:
 
 def get_request_time() -> Optional[datetime]:
     try:
-        return starlette_context.context['request_id']
+        return starlette_context.context['request_time']
     except starlette_context.errors.ContextDoesNotExistError:
         return None
