@@ -101,8 +101,7 @@ async def login(data: LoginInput) -> str:
         if not security.verify_password_4s(to_test=data.password, hashed=pass_hash):
             raise exc.LoginFailed  # Not to let user know why login failed
         else:
-            pass_hash = security.hash_password(data.password)
-            await db.account.edit_pass_hash(account_id=account_id, pass_hash=pass_hash)
+            await db.account.edit_pass_hash(account_id=account_id, pass_hash=security.hash_password(data.password))
     else:
         if not security.verify_password(to_test=data.password, hashed=pass_hash):
             raise exc.LoginFailed  # Not to let user know why login failed
