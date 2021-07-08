@@ -110,7 +110,7 @@ async def read_login_by_name(name: str, include_deleted: bool = False) -> Tuple[
         return id_, pass_hash, is_4s_hash
 
 
-async def read_login(account_id: int):
+async def read_pass_hash(account_id: int) -> str:
     async with SafeExecutor(
             event='read login by id',
             sql=fr'SELECT pass_hash'
