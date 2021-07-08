@@ -93,11 +93,11 @@ class EditPasswordInput(BaseModel):
     new_password: str
 
 
-@router.patch('/account/{account_id}')
+@router.patch('/account/{account_id}/pass_hash')
 @enveloped
 async def edit_password(account_id: int, data: EditPasswordInput, request: auth.Request):
     """
-     ### 權限
+    ### 權限
     - System Manager
     - Self
     """
@@ -107,8 +107,7 @@ async def edit_password(account_id: int, data: EditPasswordInput, request: auth.
     if not (is_manager or is_self):
         raise exc.NoPermission
 
-    account = await db.account.read(account_id=account_id)
-    account_id, pass_hash, is_4s_hash = await db.account.read_login_by_name(name=account.name)
+    pass_hash = await db.account.read_login(account_id)
 
     if not security.verify_password(to_test=data.old_password, hashed=pass_hash):
         raise exc.PasswordVerificationFailed
