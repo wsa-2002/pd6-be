@@ -98,13 +98,12 @@ class EditPasswordInput(BaseModel):
 async def edit_password(account_id: int, data: EditPasswordInput, request: auth.Request):
     """
     ### 權限
-    - System Manager
     - Self
     """
-    is_manager = await rbac.validate(request.account.id, RoleType.manager)
+
     is_self = request.account.id is account_id
 
-    if not (is_manager or is_self):
+    if not is_self:
         raise exc.NoPermission
 
     pass_hash = await db.account.read_pass_hash(account_id=account_id)
