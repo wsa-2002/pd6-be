@@ -10,7 +10,6 @@ import persistence.database as db
 import persistence.email as email
 from util import rbac
 
-
 router = APIRouter(
     tags=['Account'],
     route_class=auth.APIRoute,
@@ -87,6 +86,35 @@ async def edit_account(account_id: int, data: EditAccountInput, request: auth.Re
         await email.verification.send(to=data.alternative_email, code=code)
     else:  # 刪掉 alternative email
         await db.account.delete_alternative_email_by_id(account_id=account_id)
+
+
+class EditPasswordInput(BaseModel):
+    old_password: str
+    new_password: str
+
+
+@router.patch('/account/{account_id}')
+@enveloped
+async def edit_password(account_id: int, data: EditPasswordInput, request: auth.Request):
+    """
+     ### 權限
+    - System Manager
+    - Self
+    """
+    is_manager = await rbac.validate(request.account.id, RoleType.manager)
+    is_self = request.account.id is account_id
+
+    if not (is_manager or is_self):
+        raise exc.NoPermission
+
+    from util import security
+
+    account = await db.account.read(account_id=account_id)
+    account_id, pass_hash, is_4s_hash = await db.account.read_login_by_name(name=account.name)
+
+    if not security.verify_password(to_test=data.old_password, hashed=pass_hash):
+        raise exc.PasswordVerificationFailed
+    await db.account.edit_pass_hash(account_id=account_id, pass_hash=security.hash_password(data.new_password))
 
 
 @router.delete('/account/{account_id}')
