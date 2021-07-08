@@ -8,7 +8,7 @@ import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
 import persistence.email as email
-from util import rbac
+from util import rbac, security
 
 router = APIRouter(
     tags=['Account'],
@@ -106,8 +106,6 @@ async def edit_password(account_id: int, data: EditPasswordInput, request: auth.
 
     if not (is_manager or is_self):
         raise exc.NoPermission
-
-    from util import security
 
     account = await db.account.read(account_id=account_id)
     account_id, pass_hash, is_4s_hash = await db.account.read_login_by_name(name=account.name)
