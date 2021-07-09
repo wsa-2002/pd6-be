@@ -49,7 +49,8 @@ async def browse(class_id: int = None, include_hidden=False, include_deleted=Fal
             **conditions,
             fetch='all',
     ) as records:
-        return [do.Challenge(id=id_, class_id=class_id, type=type_, publicize_type=publicize_type, title=title,
+        return [do.Challenge(id=id_, class_id=class_id, type=enum.ChallengeType(type_),
+                             publicize_type=enum.ChallengePublicizeType(publicize_type), title=title,
                              setter_id=setter_id, description=description, start_time=start_time, end_time=end_time,
                              is_hidden=is_hidden, is_deleted=is_deleted)
                 for
@@ -70,7 +71,8 @@ async def read(challenge_id: int, include_hidden=False, include_deleted=False) -
             fetch=1,
     ) as (
     id_, class_id, type_, publicize_type, title, setter_id, description, start_time, end_time, is_hidden, is_deleted):
-        return do.Challenge(id=id_, class_id=class_id, type=type_, publicize_type=publicize_type, title=title,
+        return do.Challenge(id=id_, class_id=class_id, type=enum.ChallengeType(type_),
+                            publicize_type=enum.ChallengePublicizeType(publicize_type), title=title,
                             setter_id=setter_id, description=description, start_time=start_time, end_time=end_time,
                             is_hidden=is_hidden, is_deleted=is_deleted)
 
