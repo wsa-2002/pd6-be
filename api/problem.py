@@ -4,6 +4,7 @@ from typing import Optional, Sequence
 
 from pydantic import BaseModel
 
+import util
 from base import do
 from base.enum import RoleType, ChallengePublicizeType
 import exceptions as exc
@@ -47,7 +48,7 @@ async def read_problem(problem_id: int, request: auth.Request) -> do.Problem:
 
     publicize_time = challenge.start_time \
         if challenge.publicize_type == ChallengePublicizeType.start_time else challenge.end_time
-    is_challenge_publicized = datetime.now() >= publicize_time
+    is_challenge_publicized = util.get_request_time() >= publicize_time
 
     if not ((problem.is_hidden and is_class_manager)
             or (not problem.is_hidden and is_system_normal and is_challenge_publicized)):
