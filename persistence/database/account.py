@@ -110,6 +110,19 @@ async def read_login_by_name(name: str, include_deleted: bool = False) -> Tuple[
         return id_, pass_hash, is_4s_hash
 
 
+async def read_pass_hash(account_id: int, include_4s_hash: bool = False) -> str:
+    async with SafeExecutor(
+            event='read pass hash',
+            sql=fr'SELECT pass_hash'
+                fr'  FROM account'
+                fr' WHERE id = %(account_id)s'
+                fr'{" AND NOT is_4s_hash" if not include_4s_hash else ""}',
+            account_id=account_id,
+            fetch=1,
+    ) as (pass_hash, ):
+        return pass_hash
+
+
 async def add_email_verification(email: str, account_id: int, student_card_id: Optional[int]) -> str:
     async with SafeExecutor(
             event='create email verification',

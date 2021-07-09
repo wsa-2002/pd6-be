@@ -51,3 +51,9 @@ class IllegalInput(_CauseMixin, PdogsException):
     """
     A malformed input is given
     """
+
+
+class PasswordVerificationFailed(PdogsException):
+    """
+    Wrong old_password while changing password
+    """
