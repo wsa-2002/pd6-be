@@ -11,7 +11,7 @@ async def add(name: str, course_id: int, is_hidden: bool) -> int:
     async with SafeExecutor(
             event='add class',
             sql=r'INSERT INTO class'
-                r'            (name, type, is_hidden)'
+                r'            (name, course_id, is_hidden)'
                 r'     VALUES (%(name)s, %(course_id)s, %(is_hidden)s)'
                 r'  RETURNING id',
             name=name,
