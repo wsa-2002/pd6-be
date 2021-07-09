@@ -1,15 +1,16 @@
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Optional, Sequence
 
 from pydantic import BaseModel
 
+import util
 from base import do
-from base.enum import RoleType
+from base.enum import RoleType, ChallengePublicizeType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
 from util import rbac
-
 
 router = APIRouter(
     tags=['Problem'],
@@ -45,7 +46,12 @@ async def read_problem(problem_id: int, request: auth.Request) -> do.Problem:
     is_system_normal = await rbac.validate(request.account.id, RoleType.normal)
     is_class_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)
 
-    if not (problem.is_hidden and is_class_manager or not problem.is_hidden and is_system_normal):
+    publicize_time = (challenge.start_time if challenge.publicize_type == ChallengePublicizeType.start_time
+                      else challenge.end_time)
+    is_challenge_publicized = util.get_request_time() >= publicize_time
+
+    if not ((problem.is_hidden and is_class_manager)
+            or (not problem.is_hidden and is_system_normal and is_challenge_publicized)):
         raise exc.NoPermission
 
     return problem
