@@ -45,11 +45,9 @@ async def read_problem(problem_id: int, request: auth.Request) -> do.Problem:
     is_system_normal = await rbac.validate(request.account.id, RoleType.normal)
     is_class_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)
 
-    publicize_time = challenge.start_time
-    if challenge.publicize_type == ChallengePublicizeType.end_time:
-        publicize_time = challenge.end_time
-
-    is_challenge_publicized = True if datetime.now() >= publicize_time else False
+    publicize_time = challenge.start_time \
+        if challenge.publicize_type == ChallengePublicizeType.start_time else challenge.end_time
+    is_challenge_publicized = datetime.now() >= publicize_time
 
     if not ((problem.is_hidden and is_class_manager)
             or (not problem.is_hidden and is_system_normal and is_challenge_publicized)):
