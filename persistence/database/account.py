@@ -116,7 +116,7 @@ async def read_pass_hash(account_id: int, include_4s_hash: bool = False) -> str:
             sql=fr'SELECT pass_hash'
                 fr'  FROM account'
                 fr' WHERE id = %(account_id)s'
-                fr'{" AND NOT is_deleted" if not include_4s_hash else ""}',
+                fr'{" AND NOT is_4s_hash" if not include_4s_hash else ""}',
             account_id=account_id,
             fetch=1,
     ) as (pass_hash, ):
