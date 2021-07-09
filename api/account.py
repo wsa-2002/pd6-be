@@ -106,7 +106,7 @@ async def edit_password(account_id: int, data: EditPasswordInput, request: auth.
     if not is_self:
         raise exc.NoPermission
 
-    pass_hash = await db.account.read_pass_hash(account_id=account_id)
+    pass_hash = await db.account.read_pass_hash(account_id=account_id, include_4s_hash=False)
 
     if not security.verify_password(to_test=data.old_password, hashed=pass_hash):
         raise exc.PasswordVerificationFailed
