@@ -12,7 +12,7 @@ async def add(name: str, course_id: int, is_hidden: bool) -> int:
             event='add class',
             sql=r'INSERT INTO class'
                 r'            (name, type, is_hidden)'
-                r'     VALUES (%(name)s, %(course_id)s), %(is_hidden)s))'
+                r'     VALUES (%(name)s, %(course_id)s, %(is_hidden)s)'
                 r'  RETURNING id',
             name=name,
             course_id=course_id,
@@ -103,8 +103,8 @@ async def edit(class_id: int,
     async with SafeExecutor(
             event='edit class by id',
             sql=fr'UPDATE class'
-                fr' WHERE id = %(class_id)s'
-                fr'   SET {set_sql}',
+                fr'   SET {set_sql}'
+                fr' WHERE id = %(class_id)s',
             class_id=class_id,
             **to_updates,
     ):
@@ -131,7 +131,7 @@ async def add_member(class_id: int, member_id: int, role: RoleType):
             event='add member to class',
             sql=r'INSERT INTO class_member'
                 r'            (class_id, member_id, role)'
-                r'     VALUES (%(class_id)s, %(member_id)s), %(role)s))',
+                r'     VALUES (%(class_id)s, %(member_id)s, %(role)s)',
             class_id=class_id,
             member_id=member_id,
             role=role,
@@ -181,11 +181,11 @@ async def edit_member(class_id: int, member_id: int, role: RoleType):
     async with SafeExecutor(
             event='set class member',
             sql=r'UPDATE class_member'
-                r' WHERE class_id = %(class_id)s AND member_id = %(member_id)s'
-                r'   SET role = %(role)s',
+                r'   SET role = %(role)s'
+                r' WHERE class_id = %(class_id)s AND member_id = %(member_id)s',
+            role=role,
             class_id=class_id,
             member_id=member_id,
-            role=role,
     ):
         pass
 

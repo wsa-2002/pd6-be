@@ -81,8 +81,8 @@ async def edit(announcement_id: int, title: str = None, content: str = None,
     async with SafeExecutor(
             event='update announcement by id',
             sql=fr'UPDATE announcement'
-                fr' WHERE id = %(announcement_id)s'
-                fr'   SET {set_sql}',
+                fr'   SET {set_sql}'
+                fr' WHERE id = %(announcement_id)s',
             announcement_id=announcement_id,
             **to_updates,
     ):
