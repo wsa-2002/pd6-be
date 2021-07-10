@@ -65,12 +65,14 @@ async def browse_problem_set(request_time: datetime, include_hidden=False, inclu
                 fr'  FROM problem'
                 fr'       INNER JOIN challenge'
                 fr'               ON challenge.id = problem.challenge_id'
-                fr' WHERE challenge.publicize_type = "START_TIME" AND challenge.start_time <= %(request_time)s'
-                fr'    OR challenge.publicize_type = "END_TIME" AND challenge.end_time <= %(request_time)s'
+                fr' WHERE challenge.publicize_type = %(start_time)s AND challenge.start_time <= %(request_time)s'
+                fr'    OR challenge.publicize_type = %(end_time)s AND challenge.end_time <= %(request_time)s'
                 fr'{" AND NOT problem.is_hidden" if not include_hidden else ""}'
                 fr'{" AND NOT problem.is_deleted" if not include_deleted else ""}'
                 fr' ORDER BY problem.id ASC',
             request_time=request_time,
+            start_time=enum.ChallengePublicizeType.start_time,
+            end_time=enum.ChallengePublicizeType.end_time,
             fetch='all',
     ) as records:
         return [do.Problem(id=id_,
