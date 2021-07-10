@@ -60,8 +60,9 @@ async def browse_problem_set(request_time: datetime, include_hidden=False, inclu
         -> Sequence[do.Problem]:
     async with SafeExecutor(
             event='browse problem set',
-            sql=fr'SELECT id, challenge_id, challenge_label, selection_type, title, setter_id, full_score, '
-                fr'       description, source, hint, is_hidden, is_deleted'
+            sql=fr'SELECT problem.id, problem.challenge_id, problem.challenge_label, problem.selection_type, '
+                fr'       problem.title, problem.setter_id, problem.full_score, problem.description, '
+                fr'       problem.source, problem.hint, problem.is_hidden, problem.is_deleted'
                 fr'  FROM problem'
                 fr'       INNER JOIN challenge'
                 fr'               ON challenge.id = problem.challenge_id'
