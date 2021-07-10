@@ -31,6 +31,20 @@ async def browse_problem() -> Sequence[do.Problem]:
     return await db.problem.browse()
 
 
+@router.get('/problem')
+@enveloped
+async def browse_problem_set(request: auth.Request) -> Sequence[do.Problem]:
+    """
+    ### 權限
+    - System normal (not hidden)
+    """
+    system_role = await rbac.get_role(request.account.id)
+    if not system_role >= RoleType.normal:
+        raise exc.NoPermission
+
+    return await db.problem.browse_problem_set(request_time=util.get_request_time())
+
+
 @router.get('/problem/{problem_id}')
 @enveloped
 async def read_problem(problem_id: int, request: auth.Request) -> do.Problem:
