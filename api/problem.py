@@ -21,14 +21,16 @@ router = APIRouter(
 
 @router.get('/problem')
 @enveloped
-async def browse_problem() -> Sequence[do.Problem]:
+async def browse_problem_set(request: auth.Request) -> Sequence[do.Problem]:
     """
     ### 權限
     - System normal (not hidden)
-    - Class manager (hidden)
     """
-    # TODO: browse including managed class??
-    return await db.problem.browse()
+    system_role = await rbac.get_role(request.account.id)
+    if not system_role >= RoleType.normal:
+        raise exc.NoPermission
+
+    return await db.problem.browse_problem_set(request_time=util.get_request_time())
 
 
 @router.get('/problem/{problem_id}')
