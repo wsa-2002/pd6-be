@@ -21,18 +21,6 @@ router = APIRouter(
 
 @router.get('/problem')
 @enveloped
-async def browse_problem() -> Sequence[do.Problem]:
-    """
-    ### 權限
-    - System normal (not hidden)
-    - Class manager (hidden)
-    """
-    # TODO: browse including managed class??
-    return await db.problem.browse()
-
-
-@router.get('/problem')
-@enveloped
 async def browse_problem_set(request: auth.Request) -> Sequence[do.Problem]:
     """
     ### 權限
