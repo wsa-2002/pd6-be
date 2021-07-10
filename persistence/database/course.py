@@ -12,7 +12,7 @@ async def add(name: str, course_type: CourseType, is_hidden: bool) -> int:
             event='create course',
             sql=r'INSERT INTO course'
                 r'            (name, type, is_hidden)'
-                r'     VALUES (%(name)s, %(course_type)s), %(is_hidden)s))'
+                r'     VALUES (%(name)s, %(course_type)s, %(is_hidden)s)'
                 r'  RETURNING id',
             name=name,
             course_type=course_type,
