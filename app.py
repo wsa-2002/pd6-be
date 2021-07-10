@@ -13,11 +13,15 @@ with open('logging.yaml', 'r') as conf:
 
 from config import app_config
 from middleware import api
+from util import api_doc
 
 app = api.FastAPI(
     title=app_config.title,
     docs_url=app_config.docs_url,
     redoc_url=app_config.redoc_url,
+    description=f"""{api_doc.to_collapsible(title='<h2>Documentation</h2>',
+                                            content=api_doc.to_collapsible(title="**Error codes**",
+                                                                           content=api_doc.gen_err_doc()))}""",
 )
 
 
