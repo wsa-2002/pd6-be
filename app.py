@@ -51,8 +51,8 @@ async def app_shutdown():
 import middleware.auth
 app.add_middleware(middleware.auth.Middleware)
 
-import middleware.logging
-app.middleware('http')(middleware.logging.middleware)
+# import middleware.logging
+# app.middleware('http')(middleware.logging.middleware)
 
 import middleware.tracker
 app.middleware('http')(middleware.tracker.middleware)

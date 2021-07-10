@@ -97,12 +97,11 @@ async def edit(student_card_id: int,
 
 
 async def delete(student_card_id: int) -> None:
+    # HARD DELETE!!!
     async with SafeExecutor(
-            event='soft delete student_card',
-            sql=fr'UPDATE student_card'
-                fr'   SET is_deleted = %(is_deleted)s'
+            event='hard delete student_card',
+            sql=fr'DELETE FROM student_card'
                 fr' WHERE id = %(student_card_id)s',
             student_card_id=student_card_id,
-            is_deleted=True,
     ):
         return

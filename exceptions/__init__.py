@@ -40,6 +40,13 @@ class AccountExists(PdogsException):
     Failed to register due to duplicate account
     """
 
+
+class StudentCardExists(PdogsException):
+    """
+    Student card already exists
+    """
+
+
 class EmailNotMatchId(PdogsException):
     """
     Failed to register due to email and student id not match

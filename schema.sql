@@ -8,7 +8,7 @@ CREATE TYPE role_type AS ENUM (
 
 CREATE TABLE account (
   id                SERIAL    PRIMARY KEY,
-  name              VARCHAR   NOT NULL,
+  name              VARCHAR   NOT NULL UNIQUE,
   pass_hash         VARCHAR   NOT NULL,
   nickname          VARCHAR   NOT NULL,
   real_name         VARCHAR   NOT NULL,
@@ -38,11 +38,13 @@ CREATE TABLE student_card (
 );
 
 CREATE TABLE email_verification (
-  code            UUID    PRIMARY KEY DEFAULT gen_random_uuid(),
-  email           VARCHAR NOT NULL,
-  account_id      INTEGER NOT NULL  REFERENCES account(id),
-  student_card_id INTEGER           REFERENCES student_card(id),
-  is_consumed     BOOLEAN NOT NULL  DEFAULT false
+  code         UUID    PRIMARY KEY DEFAULT gen_random_uuid(),
+  email        VARCHAR NOT NULL,
+  account_id   INTEGER NOT NULL REFERENCES account(id),
+  institute_id INTEGER          REFERENCES institute(id),
+  department   VARCHAR,
+  student_id   VARCHAR,
+  is_consumed  BOOLEAN NOT NULL   DEFAULT false
 );
 
 
@@ -261,6 +263,7 @@ CREATE TABLE peer_review_record (
   peer_review_id  INTEGER   NOT NULL  REFERENCES peer_review(id),
   grader_id       INTEGER   NOT NULL  REFERENCES account(id),
   receiver_id     INTEGER   NOT NULL  REFERENCES account(id),
+  submission_id   INTEGER   NOT NULL  REFERENCES submission(id),
   -- 因為分配的同時就會 create record，所以下面是 NULLABLE (批改完才會填入)
   score           INTEGER,
   comment         TEXT,
