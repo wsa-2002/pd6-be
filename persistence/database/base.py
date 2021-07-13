@@ -47,7 +47,7 @@ class SafeConnection:
     Note that asyncpg does not support keyword-bounded arguments; only positional arguments are allowed.
     """
     def __init__(self, event: str):
-        # self._start_time = datetime.now()
+        self._start_time = datetime.now()
         self._event = event
         self._conn: asyncpg.connection.Connection = None  # acquire in __aenter__
 
@@ -58,7 +58,7 @@ class SafeConnection:
 
     async def __aexit__(self, exc_type, exc_value, traceback):
         await pool_handler.pool.release(self._conn)
-        exec_time_ms = (datetime.now() - start_time).total_seconds() * 1000
+        exec_time_ms = (datetime.now() - self._start_time).total_seconds() * 1000
         log.info(f"Ended {self.__class__.__name__}: {self._event} after {exec_time_ms} ms")
 
 

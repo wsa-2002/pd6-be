@@ -69,8 +69,8 @@ async def read(challenge_id: int, include_hidden=False, include_deleted=False) -
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}',
             challenge_id=challenge_id,
             fetch=1,
-    ) as (
-    id_, class_id, type_, publicize_type, title, setter_id, description, start_time, end_time, is_hidden, is_deleted):
+    ) as (id_, class_id, type_, publicize_type, title, setter_id, description, start_time, end_time,
+          is_hidden, is_deleted):
         return do.Challenge(id=id_, class_id=class_id, type=enum.ChallengeType(type_),
                             publicize_type=enum.ChallengePublicizeType(publicize_type), title=title,
                             setter_id=setter_id, description=description, start_time=start_time, end_time=end_time,
