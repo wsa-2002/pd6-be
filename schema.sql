@@ -32,7 +32,6 @@ CREATE TABLE student_card (
   department    VARCHAR NOT NULL,
   student_id    VARCHAR NOT NULL,
   email         VARCHAR NOT NULL  UNIQUE,
-  is_deleted    BOOLEAN NOT NULL  DEFAULT false,
 
   UNIQUE (institute_id, student_id)
 );

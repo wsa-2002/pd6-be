@@ -65,8 +65,7 @@ async def add_account(data: AddAccountInput) -> None:
 
     if data.alternative_email:
         # Alternative email 不直接寫進去，等 verify 的時候再寫進 db
-        code = await db.account.add_email_verification(email=data.alternative_email, account_id=account_id,
-                                                       institute_id=None, department=None, student_id=None)
+        code = await db.account.add_email_verification(email=data.alternative_email, account_id=account_id)
         await email.verification.send(to=data.alternative_email, code=code)
 
 

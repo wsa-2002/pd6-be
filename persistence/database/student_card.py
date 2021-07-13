@@ -24,35 +24,45 @@ async def add(account_id: int, institute_id: int, department: str, student_id: s
         return id_
 
 
-async def read(student_card_id: int, *, include_deleted: bool = False) -> do.StudentCard:
+async def read(student_card_id: int) -> do.StudentCard:
     async with SafeExecutor(
             event='get student card by id',
             sql=fr'SELECT id, institute_id, department, student_id, email, is_deleted'
                 fr'  FROM student_card'
-                fr' WHERE id = %(student_card)s'
-                fr'{" AND NOT is_deleted" if not include_deleted else ""}',
+                fr' WHERE id = %(student_card)s',
             student_card=student_card_id,
             fetch=1,
-    ) as (id_, institute_id, department, student_id, email, is_deleted):
+    ) as (id_, institute_id, department, student_id, email):
         return do.StudentCard(id=id_, institute_id=institute_id, department=department, student_id=student_id,
-                              email=email, is_deleted=is_deleted)
+                              email=email)
 
 
-async def browse(account_id: int, *, include_deleted: bool = False) -> Sequence[do.StudentCard]:
+async def browse(account_id: int) -> Sequence[do.StudentCard]:
     async with SafeExecutor(
             event='browse student card by account id',
-            sql=fr'SELECT student_card.id, institute_id, department, student_id, email, is_deleted'
+            sql=fr'SELECT student_card.id, institute_id, department, student_id, email'
                 fr'  FROM student_card, account_student_card'
                 fr' WHERE student_card.id = account_student_card.student_card_id'
-                fr'   AND account_student_card.account_id = %(account_id)s'
-                fr'{" AND NOT is_deleted" if not include_deleted else ""}',
+                fr'   AND account_student_card.account_id = %(account_id)s',
             account_id=account_id,
             fetch='all',
     ) as records:
         return [do.StudentCard(id=id_, institute_id=institute_id, department=department, student_id=student_id,
-                               email=email, is_deleted=is_deleted)
-                for (id_, institute_id, department, student_id, email, is_deleted) in records]
+                               email=email)
+                for (id_, institute_id, department, student_id, email) in records]
 
+async def check_duplicate(institute_id: int, student_id: str) -> bool:
+    async with SafeExecutor(
+            event='check duplicate student card by institute_id and student_id',
+            sql=fr'SELECT count(*)'
+                fr'  FROM student_card'
+                fr' WHERE institute_id = %(institute_id)s'
+                fr'   AND student_id = %(student_id)s',
+            institute_id=institute_id,
+            student_id=student_id,
+            fetch='1',
+    ) as (cnt,):
+        return cnt > 0
 
 async def read_owner_id(student_card_id: int, *, include_deleted: bool = False) -> int:
     async with SafeExecutor(
@@ -67,18 +77,11 @@ async def read_owner_id(student_card_id: int, *, include_deleted: bool = False) 
         return id_
 
 
-async def edit(student_card_id: int,
-               institute_id: int = None, department: str = None, student_id: str = None, email: str = None) -> None:
+async def edit(student_card_id: int, department: str = None) -> None:
     to_updates = {}
 
-    if institute_id is not None:
-        to_updates['institute_id'] = institute_id
     if department is not None:
         to_updates['department'] = department
-    if student_id is not None:
-        to_updates['student_id'] = student_id
-    if email is not None:
-        to_updates['email'] = email
 
     if not to_updates:
         return
@@ -95,13 +98,13 @@ async def edit(student_card_id: int,
     ):
         pass
 
-
-async def delete(student_card_id: int) -> None:
-    # HARD DELETE!!!
-    async with SafeExecutor(
-            event='hard delete student_card',
-            sql=fr'DELETE FROM student_card'
-                fr' WHERE id = %(student_card_id)s',
-            student_card_id=student_card_id,
-    ):
-        return
+# No Delete for student_card!!!!!
+# async def delete(student_card_id: int) -> None:
+#     # HARD DELETE!!!
+#     async with SafeExecutor(
+#             event='hard delete student_card',
+#             sql=fr'DELETE FROM student_card'
+#                 fr' WHERE id = %(student_card_id)s',
+#             student_card_id=student_card_id,
+#     ):
+#         return

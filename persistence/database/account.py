@@ -123,17 +123,21 @@ async def read_pass_hash(account_id: int, include_4s_hash: bool = False) -> str:
         return pass_hash
 
 
-async def add_email_verification(email: str, account_id: int, institute_id: int, department: str, student_id: str) -> str:
-    async with SafeExecutor(
-        event='check if student card already exists',
-        sql=r'SELECT is_deleted FROM student_card'
-            r' WHERE institute_id = %(institute_id)s AND student_id = %(student_id)s',
-        institute_id=institute_id,
-        student_id=student_id,
-        fetch=1,
-    ) as (is_deleted):
-        if not is_deleted: # already exists
-            raise exc.StudentCardExists
+async def add_email_verification(email: str, account_id: int, institute_id: int = None, department: str = None, student_id: str = None) -> str:
+    # check whether student card already exists
+    if institute_id and student_id:
+        async with SafeExecutor(
+                event='check duplicate student card by institute_id and student_id',
+                sql=fr'SELECT count(*)'
+                    fr'  FROM student_card'
+                    fr' WHERE institute_id = %(institute_id)s'
+                    fr'   AND student_id = %(student_id)s',
+                institute_id=institute_id,
+                student_id=student_id,
+                fetch='1',
+        ) as (cnt,):
+            if cnt > 0:
+                raise exceptions.StudentCardExists
 
     async with SafeExecutor(
             event='create email verification',

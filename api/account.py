@@ -81,8 +81,7 @@ async def edit_account(account_id: int, data: EditAccountInput, request: auth.Re
     await db.account.edit(account_id=account_id, nickname=data.nickname)
 
     if data.alternative_email:  # 加或改 alternative email
-        code = await db.account.add_email_verification(email=data.alternative_email, account_id=account_id,
-                                                       student_card_id=None)
+        code = await db.account.add_email_verification(email=data.alternative_email, account_id=account_id)
         await email.verification.send(to=data.alternative_email, code=code)
     else:  # 刪掉 alternative email
         await db.account.delete_alternative_email_by_id(account_id=account_id)
