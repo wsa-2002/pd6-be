@@ -1,15 +1,16 @@
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Optional, Sequence
 
 from pydantic import BaseModel
 
+import util
 from base import do
-from base.enum import RoleType
+from base.enum import RoleType, ChallengePublicizeType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
 from util import rbac
-
 
 router = APIRouter(
     tags=['Problem'],
@@ -20,14 +21,16 @@ router = APIRouter(
 
 @router.get('/problem')
 @enveloped
-async def browse_problem() -> Sequence[do.Problem]:
+async def browse_problem_set(request: auth.Request) -> Sequence[do.Problem]:
     """
     ### 權限
     - System normal (not hidden)
-    - Class manager (hidden)
     """
-    # TODO: browse including managed class??
-    return await db.problem.browse()
+    system_role = await rbac.get_role(request.account.id)
+    if not system_role >= RoleType.normal:
+        raise exc.NoPermission
+
+    return await db.problem.browse_problem_set(request_time=util.get_request_time())
 
 
 @router.get('/problem/{problem_id}')
@@ -45,7 +48,12 @@ async def read_problem(problem_id: int, request: auth.Request) -> do.Problem:
     is_system_normal = await rbac.validate(request.account.id, RoleType.normal)
     is_class_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)
 
-    if not (problem.is_hidden and is_class_manager or not problem.is_hidden and is_system_normal):
+    publicize_time = (challenge.start_time if challenge.publicize_type == ChallengePublicizeType.start_time
+                      else challenge.end_time)
+    is_challenge_publicized = util.get_request_time() >= publicize_time
+
+    if not ((problem.is_hidden and is_class_manager)
+            or (not problem.is_hidden and is_system_normal and is_challenge_publicized)):
         raise exc.NoPermission
 
     return problem

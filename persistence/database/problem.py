@@ -1,4 +1,5 @@
 from typing import Optional, Sequence
+from datetime import datetime
 
 import log
 from base import do, enum
@@ -42,6 +43,37 @@ async def browse(include_hidden=False, include_deleted=False) -> Sequence[do.Pro
                 fr'  FROM problem'
                 fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
                 fr' ORDER BY id ASC',
+            fetch='all',
+    ) as records:
+        return [do.Problem(id=id_,
+                           challenge_id=challenge_id, challenge_label=challenge_label,
+                           selection_type=enum.TaskSelectionType(selection_type),
+                           title=title, setter_id=setter_id,
+                           full_score=full_score, description=description, source=source, hint=hint,
+                           is_hidden=is_hidden, is_deleted=is_deleted)
+                for (id_, challenge_id, challenge_label, selection_type, title, setter_id, full_score,
+                     description, source, hint, is_hidden, is_deleted)
+                in records]
+
+
+async def browse_problem_set(request_time: datetime, include_hidden=False, include_deleted=False) \
+        -> Sequence[do.Problem]:
+    async with SafeExecutor(
+            event='browse problem set',
+            sql=fr'SELECT problem.id, problem.challenge_id, problem.challenge_label, problem.selection_type, '
+                fr'       problem.title, problem.setter_id, problem.full_score, problem.description, '
+                fr'       problem.source, problem.hint, problem.is_hidden, problem.is_deleted'
+                fr'  FROM problem'
+                fr'       INNER JOIN challenge'
+                fr'               ON challenge.id = problem.challenge_id'
+                fr' WHERE challenge.publicize_type = %(start_time)s AND challenge.start_time <= %(request_time)s'
+                fr'    OR challenge.publicize_type = %(end_time)s AND challenge.end_time <= %(request_time)s'
+                fr'{" AND NOT problem.is_hidden" if not include_hidden else ""}'
+                fr'{" AND NOT problem.is_deleted" if not include_deleted else ""}'
+                fr' ORDER BY problem.id ASC',
+            request_time=request_time,
+            start_time=enum.ChallengePublicizeType.start_time,
+            end_time=enum.ChallengePublicizeType.end_time,
             fetch='all',
     ) as records:
         return [do.Problem(id=id_,

@@ -97,17 +97,30 @@ async def delete_alternative_email_by_id(account_id: int) -> None:
         return
 
 
-async def read_login_by_name(name: str, include_deleted: bool = False) -> Tuple[int, str]:
+async def read_login_by_name(name: str, include_deleted: bool = False) -> Tuple[int, str, bool]:
     async with SafeExecutor(
             event='read account login by name',
-            sql=fr'SELECT id, pass_hash'
+            sql=fr'SELECT id, pass_hash, is_4s_hash'
                 fr'  FROM account'
                 fr' WHERE name = %(name)s'
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}',
             name=name,
             fetch=1,
-    ) as (id_, pass_hash):
-        return id_, pass_hash
+    ) as (id_, pass_hash, is_4s_hash):
+        return id_, pass_hash, is_4s_hash
+
+
+async def read_pass_hash(account_id: int, include_4s_hash: bool = False) -> str:
+    async with SafeExecutor(
+            event='read pass hash',
+            sql=fr'SELECT pass_hash'
+                fr'  FROM account'
+                fr' WHERE id = %(account_id)s'
+                fr'{" AND NOT is_4s_hash" if not include_4s_hash else ""}',
+            account_id=account_id,
+            fetch=1,
+    ) as (pass_hash, ):
+        return pass_hash
 
 
 async def add_email_verification(email: str, account_id: int, institute_id: int, department: str, student_id: str) -> str:
@@ -185,3 +198,16 @@ async def verify_email(code: str) -> None:
                                    r'   SET alternative_email = $1'
                                    r' WHERE id = $2',
                                    email, account_id)
+
+
+async def edit_pass_hash(account_id: int, pass_hash: str):
+    async with SafeExecutor(
+            event='change password hash',
+            sql=fr'UPDATE account'
+                fr'   SET pass_hash = %(pass_hash)s, is_4s_hash = %(is_4s_hash)s'
+                fr' WHERE id = %(account_id)s',
+            pass_hash=pass_hash,
+            is_4s_hash=False,
+            account_id=account_id,
+    ):
+        pass

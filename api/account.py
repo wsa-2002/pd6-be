@@ -8,8 +8,7 @@ import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
 import persistence.email as email
-from util import rbac
-
+from util import rbac, security
 
 router = APIRouter(
     tags=['Account'],
@@ -87,6 +86,31 @@ async def edit_account(account_id: int, data: EditAccountInput, request: auth.Re
         await email.verification.send(to=data.alternative_email, code=code)
     else:  # 刪掉 alternative email
         await db.account.delete_alternative_email_by_id(account_id=account_id)
+
+
+class EditPasswordInput(BaseModel):
+    old_password: str
+    new_password: str
+
+
+@router.put('/account/{account_id}/pass_hash')
+@enveloped
+async def edit_password(account_id: int, data: EditPasswordInput, request: auth.Request):
+    """
+    ### 權限
+    - Self
+    """
+
+    is_self = request.account.id is account_id
+
+    if not is_self:
+        raise exc.NoPermission
+
+    pass_hash = await db.account.read_pass_hash(account_id=account_id, include_4s_hash=False)
+
+    if not security.verify_password(to_test=data.old_password, hashed=pass_hash):
+        raise exc.PasswordVerificationFailed
+    await db.account.edit_pass_hash(account_id=account_id, pass_hash=security.hash_password(data.new_password))
 
 
 @router.delete('/account/{account_id}')
