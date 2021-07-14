@@ -10,7 +10,7 @@ import exceptions as exc
 from base.enum import RoleType
 from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
-from util import rbac
+from util import rbac, email
 
 router = APIRouter(
     tags=['Student Card'],
@@ -39,6 +39,12 @@ async def add_student_card_to_account(account_id: int, data: AddStudentCardInput
 
     if not (is_manager or is_self):
         raise exc.NoPermission
+
+    if not email.is_valid_email(data.institute_email):
+        raise exc.InvalidEmail
+    
+    if not await email.verify_email(data.institute_email, data.institute_id, data.student_id):
+        raise exc.EmailNotMatch
 
     code = await db.account.add_email_verification(email=data.institute_email, account_id=account_id,
                                                    institute_id=data.institute_id, department=data.department, student_id=data.student_id)

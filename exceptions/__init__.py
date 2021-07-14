@@ -47,9 +47,15 @@ class StudentCardExists(PdogsException):
     """
 
 
-class EmailNotMatchId(PdogsException):
+class InvalidEmail(PdogsException):
     """
-    Failed to register due to email and student id not match
+    Email is not valid
+    """
+
+
+class EmailNotMatch(PdogsException):
+    """
+    Failed to register due to email and student info not match
     """
 
 

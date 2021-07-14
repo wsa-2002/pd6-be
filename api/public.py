@@ -9,7 +9,7 @@ import exceptions as exc
 from middleware import APIRouter, JSONResponse, enveloped
 import persistence.database as db
 import persistence.email as email
-from util import security
+from util import security, email
 import asyncpg
 
 
@@ -49,18 +49,20 @@ class AddAccountInput(BaseModel):
 @router.post('/account', tags=['Account'], response_class=JSONResponse)
 @enveloped
 async def add_account(data: AddAccountInput) -> None:
-    # check student id and email
-    if data.student_id != data.institute_email.split('@')[0]:
-        raise exc.EmailNotMatchId
+    if not email.is_valid_email(data.institute_email):
+        raise exc.InvalidEmail
+
+    if not await email.verify_email(data.institute_email, data.institute_id, data.student_id):
+        raise exc.EmailNotMatch
 
     try:
         account_id = await db.account.add(name=data.name, pass_hash=security.hash_password(data.password),
-                                            nickname=data.nickname, real_name=data.real_name, role=RoleType.guest)
+                                          nickname=data.nickname, real_name=data.real_name, role=RoleType.guest)
     except asyncpg.exceptions.UniqueViolationError:
         raise exc.AccountExists
 
     code = await db.account.add_email_verification(email=data.institute_email, account_id=account_id,
-                                                    institute_id=data.institute_id, department=data.department, student_id=data.student_id)
+                                                   institute_id=data.institute_id, department=data.department, student_id=data.student_id)
     await email.verification.send(to=data.institute_email, code=code)
 
     if data.alternative_email:
