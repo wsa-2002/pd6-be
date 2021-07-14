@@ -142,6 +142,7 @@ async def delete_class_member(class_id: int, member_id: int, request: auth.Reque
 
 class AddTeamInput(BaseModel):
     name: str
+    label: str
     is_hidden: bool
 
 
@@ -163,6 +164,7 @@ async def add_team_under_class(class_id: int, data: AddTeamInput, request: auth.
     team_id = await db.team.add(
         name=data.name,
         class_id=class_id,
+        label=data.label,
         is_hidden=data.is_hidden,
     )
 
