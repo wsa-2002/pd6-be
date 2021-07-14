@@ -20,7 +20,7 @@ async def verify_email(institute_email: str, institute_id: int, student_id: str)
             return False
         
         # check domain
-        if institute.email_domain != institute_email.split('@')[1]:
+        if institute_email.split('@')[1] != institute.email_domain:
             return False
 
         return True
