@@ -37,13 +37,13 @@ CREATE TABLE student_card (
 );
 
 CREATE TABLE email_verification (
-  code         UUID    PRIMARY KEY DEFAULT gen_random_uuid(),
-  email        VARCHAR NOT NULL,
-  account_id   INTEGER NOT NULL REFERENCES account(id),
-  institute_id INTEGER          REFERENCES institute(id),
-  department   VARCHAR,
-  student_id   VARCHAR,
-  is_consumed  BOOLEAN NOT NULL   DEFAULT false
+  code          UUID    PRIMARY KEY DEFAULT gen_random_uuid(),
+  email         VARCHAR NOT NULL,
+  account_id    INTEGER NOT NULL  REFERENCES account(id),
+  institute_id  INTEGER           REFERENCES institute(id),
+  department    VARCHAR,
+  student_id    VARCHAR,
+  is_consumed   BOOLEAN NOT NULL  DEFAULT false
 );
 
 

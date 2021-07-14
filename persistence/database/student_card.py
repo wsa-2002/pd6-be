@@ -51,6 +51,7 @@ async def browse(account_id: int) -> Sequence[do.StudentCard]:
                                email=email)
                 for (id_, institute_id, department, student_id, email) in records]
 
+
 async def check_duplicate(institute_id: int, student_id: str) -> bool:
     async with SafeExecutor(
             event='check duplicate student card by institute_id and student_id',
@@ -63,6 +64,7 @@ async def check_duplicate(institute_id: int, student_id: str) -> bool:
             fetch='1',
     ) as (cnt,):
         return cnt > 0
+
 
 async def read_owner_id(student_card_id: int, *, include_deleted: bool = False) -> int:
     async with SafeExecutor(
@@ -97,14 +99,3 @@ async def edit(student_card_id: int, department: str = None) -> None:
             **to_updates,
     ):
         pass
-
-# No Delete for student_card!!!!!
-# async def delete(student_card_id: int) -> None:
-#     # HARD DELETE!!!
-#     async with SafeExecutor(
-#             event='hard delete student_card',
-#             sql=fr'DELETE FROM student_card'
-#                 fr' WHERE id = %(student_card_id)s',
-#             student_card_id=student_card_id,
-#     ):
-#         return
