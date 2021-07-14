@@ -43,7 +43,7 @@ async def add_student_card_to_account(account_id: int, data: AddStudentCardInput
     if not email.is_valid_email(data.institute_email):
         raise exc.InvalidEmail
     
-    if not await email.verify_email(data.institute_email, data.institute_id, data.student_id):
+    if not await email.verify_institute_email(data.institute_email, data.institute_id, data.student_id):
         raise exc.EmailNotMatch
 
     code = await db.account.add_email_verification(email=data.institute_email, account_id=account_id,

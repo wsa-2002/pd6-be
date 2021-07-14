@@ -52,7 +52,7 @@ async def add_account(data: AddAccountInput) -> None:
     if not email.is_valid_email(data.institute_email):
         raise exc.InvalidEmail
 
-    if not await email.verify_email(data.institute_email, data.institute_id, data.student_id):
+    if not await email.verify_institute_email(data.institute_email, data.institute_id, data.student_id):
         raise exc.EmailNotMatch
 
     try:
