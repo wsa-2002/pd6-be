@@ -59,7 +59,7 @@ async def add_account(data: AddAccountInput) -> None:
         raise exc.EmailNotMatch
     
     if data.alternative_email and not validator.is_valid_email(data.alternative_email):
-            raise exc.InvalidEmail
+        raise exc.InvalidEmail
 
     try:
         account_id = await db.account.add(name=data.name, pass_hash=security.hash_password(data.password),
