@@ -67,10 +67,10 @@ async def add_account(data: AddAccountInput) -> None:
     except asyncpg.exceptions.UniqueViolationError:
         raise exc.AccountExists
 
-    full_email = data.institute_email_prefix + institute.email_domain
-    code = await db.account.add_email_verification(email=full_email, account_id=account_id,
+    institute_email = f"{data.institute_email_prefix}@{institute.email_domain}"
+    code = await db.account.add_email_verification(email=institute_email, account_id=account_id,
                                                    institute_id=data.institute_id, department=data.department, student_id=data.student_id)
-    await email.verification.send(to=full_email, code=code)
+    await email.verification.send(to=institute_email, code=code)
 
     if data.alternative_email:
         # Alternative email 不直接寫進去，等 verify 的時候再寫進 db
