@@ -170,20 +170,6 @@ async def verify_email(code: str) -> None:
                 raise exceptions.NotFound
 
             if student_id:  # student card email
-                try:
-                    student_card_id = await conn.fetchrow(
-                        r'SELECT id FROM student_card'
-                        r' WHERE student_id = $1'
-                        r'   AND institute_id = $2',
-                        student_id, institute_id)
-                    await conn.execute(r'UPDATE student_card'
-                                       r'   SET is_deleted = $1'
-                                       r' WHERE id = $2',
-                                       False, student_card_id)
-                    return
-                except TypeError:
-                    pass
-
                 await conn.execute(r'INSERT INTO student_card'
                                 r'            (account_id, institute_id, department, student_id, email)'
                                 r'     VALUES ($1, $2, $3, $4, $5)',
