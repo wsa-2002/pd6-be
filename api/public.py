@@ -9,7 +9,7 @@ import exceptions as exc
 from middleware import APIRouter, JSONResponse, enveloped
 import persistence.database as db
 import persistence.email as email
-from util import security, email
+from util import security, validator
 import asyncpg
 
 
@@ -43,17 +43,23 @@ class AddAccountInput(BaseModel):
     institute_id: int
     department: str
     student_id: str
-    institute_email: str
+    institute_email_prefix: str
 
 
 @router.post('/account', tags=['Account'], response_class=JSONResponse)
 @enveloped
 async def add_account(data: AddAccountInput) -> None:
-    if not email.is_valid_email(data.institute_email):
-        raise exc.InvalidEmail
+    # 要先檢查以免創立了帳號後才出事
+    try:
+        institute = await db.institute.read(data.institute_id, include_disabled=False)
+    except exc.NotFound:
+        raise exc.InvalidInstitute
 
-    if not await email.verify_institute_email(data.institute_email, data.institute_id, data.student_id):
+    if data.student_id != data.institute_email_prefix:
         raise exc.EmailNotMatch
+    
+    if data.alternative_email and not validator.is_valid_email(data.alternative_email):
+            raise exc.InvalidEmail
 
     try:
         account_id = await db.account.add(name=data.name, pass_hash=security.hash_password(data.password),
@@ -61,9 +67,10 @@ async def add_account(data: AddAccountInput) -> None:
     except asyncpg.exceptions.UniqueViolationError:
         raise exc.AccountExists
 
-    code = await db.account.add_email_verification(email=data.institute_email, account_id=account_id,
+    full_email = data.institute_email_prefix + institute.email_domain
+    code = await db.account.add_email_verification(email=full_email, account_id=account_id,
                                                    institute_id=data.institute_id, department=data.department, student_id=data.student_id)
-    await email.verification.send(to=data.institute_email, code=code)
+    await email.verification.send(to=full_email, code=code)
 
     if data.alternative_email:
         # Alternative email 不直接寫進去，等 verify 的時候再寫進 db

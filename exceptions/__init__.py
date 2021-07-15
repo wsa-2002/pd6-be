@@ -53,6 +53,12 @@ class InvalidEmail(PdogsException):
     """
 
 
+class InvalidInstitute(PdogsException):
+    """
+    Intitute is not valid (not exist or disabled)
+    """
+
+
 class EmailNotMatch(PdogsException):
     """
     Failed to register due to email and student info not match

@@ -40,10 +40,9 @@ async def read(student_card_id: int) -> do.StudentCard:
 async def browse(account_id: int) -> Sequence[do.StudentCard]:
     async with SafeExecutor(
             event='browse student card by account id',
-            sql=fr'SELECT student_card.id, institute_id, department, student_id, email'
-                fr'  FROM student_card, account_student_card'
-                fr' WHERE student_card.id = account_student_card.student_card_id'
-                fr'   AND account_student_card.account_id = %(account_id)s',
+            sql=fr'SELECT id, institute_id, department, student_id, email'
+                fr'  FROM student_card'
+                fr' WHERE account_id = %(account_id)s',
             account_id=account_id,
             fetch='all',
     ) as records:
