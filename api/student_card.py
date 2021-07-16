@@ -46,7 +46,7 @@ async def add_student_card_to_account(account_id: int, data: AddStudentCardInput
     except exc.NotFound:
         raise exc.InvalidInstitute
 
-    if student_id != institute_email_prefix:
+    if data.student_id != data.institute_email_prefix:
         raise exc.EmailNotMatch
     
     institute_email = f"{data.institute_email_prefix}@{institute.email_domain}"
