@@ -123,16 +123,33 @@ async def read_pass_hash(account_id: int, include_4s_hash: bool = False) -> str:
         return pass_hash
 
 
-async def add_email_verification(email: str, account_id: int, student_card_id: Optional[int]) -> str:
+async def add_email_verification(email: str, account_id: int, institute_id: int = None, department: str = None, student_id: str = None) -> str:
+    # check whether student card already exists
+    if institute_id and student_id:
+        async with SafeExecutor(
+                event='check duplicate student card by institute_id and student_id',
+                sql=fr'SELECT count(*)'
+                    fr'  FROM student_card'
+                    fr' WHERE institute_id = %(institute_id)s'
+                    fr'   AND student_id = %(student_id)s',
+                institute_id=institute_id,
+                student_id=student_id,
+                fetch='1',
+        ) as (cnt,):
+            if cnt > 0:
+                raise exceptions.StudentCardExists
+
     async with SafeExecutor(
             event='create email verification',
             sql=r'INSERT INTO email_verification'
-                r'            (email, account_id, student_card_id)'
-                r'     VALUES (%(email)s, %(account_id)s, %(student_card_id)s)'
+                r'            (email, account_id, institute_id, department, student_id)'
+                r'     VALUES (%(email)s, %(account_id)s, %(institute_id)s, %(department)s, %(student_id)s)'
                 r'  RETURNING code',
             email=email,
             account_id=account_id,
-            student_card_id=student_card_id,
+            institute_id=institute_id,
+            department=department,
+            student_id=student_id,
             fetch=1,
     ) as (code,):
         return code
@@ -142,22 +159,21 @@ async def verify_email(code: str) -> None:
     async with SafeConnection(event='Verify email') as conn:
         async with conn.transaction():
             try:
-                email, account_id, student_card_id = await conn.fetchrow(
+                email, account_id, institute_id, department, student_id = await conn.fetchrow(
                     r'UPDATE email_verification'
                     r'   SET is_consumed = $1'
                     r' WHERE code = $2'
                     r'   AND is_consumed = $3'
-                    r' RETURNING email, account_id, student_card_id',
+                    r' RETURNING email, account_id, institute_id, department, student_id',
                     True, code, False)
             except TypeError:
                 raise exceptions.NotFound
 
-            if student_card_id:  # student card email
-                # TODO FIXME: should be replaced (no more is_enabled for student card)
-                await conn.execute(r'UPDATE student_card'
-                                   r'   SET is_enabled = $1'
-                                   r' WHERE id = $2',
-                                   True, student_card_id)
+            if student_id:  # student card email
+                await conn.execute(r'INSERT INTO student_card'
+                                r'            (account_id, institute_id, department, student_id, email)'
+                                r'     VALUES ($1, $2, $3, $4, $5)',
+                                account_id, institute_id, department, student_id, email)
                 await conn.execute(r'UPDATE account'
                                    r'   SET is_enabled = $1'
                                    r' WHERE id = $2',

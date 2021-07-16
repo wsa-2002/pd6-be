@@ -8,7 +8,7 @@ import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
 import persistence.email as email
-from util import rbac, security
+from util import rbac, security, validator
 
 router = APIRouter(
     tags=['Account'],
@@ -77,15 +77,17 @@ async def edit_account(account_id: int, data: EditAccountInput, request: auth.Re
     if not (is_manager or is_self):
         raise exc.NoPermission
 
-    # 不檢查 if data.nickname，因為 nickname 可以被刪掉 (設成 None)
-    await db.account.edit(account_id=account_id, nickname=data.nickname)
-
+    # 先 update email 因為如果失敗就整個失敗
     if data.alternative_email:  # 加或改 alternative email
-        code = await db.account.add_email_verification(email=data.alternative_email, account_id=account_id,
-                                                       student_card_id=None)
+        if not validator.is_valid_email(data.alternative_email):
+            raise exc.InvalidEmail
+        code = await db.account.add_email_verification(email=data.alternative_email, account_id=account_id)
         await email.verification.send(to=data.alternative_email, code=code)
     else:  # 刪掉 alternative email
         await db.account.delete_alternative_email_by_id(account_id=account_id)
+    
+    # 不檢查 if data.nickname，因為 nickname 可以被刪掉 (設成 None)
+    await db.account.edit(account_id=account_id, nickname=data.nickname)
 
 
 class EditPasswordInput(BaseModel):

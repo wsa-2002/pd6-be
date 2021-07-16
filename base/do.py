@@ -34,7 +34,6 @@ class StudentCard:
     department: str
     student_id: str
     email: str
-    is_deleted: bool
 
 
 @dataclass

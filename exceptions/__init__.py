@@ -35,6 +35,36 @@ class LoginFailed(PdogsException):
     """
 
 
+class AccountExists(PdogsException):
+    """
+    Failed to register due to duplicate account
+    """
+
+
+class StudentCardExists(PdogsException):
+    """
+    Student card already exists
+    """
+
+
+class InvalidEmail(PdogsException):
+    """
+    Email is not valid
+    """
+
+
+class InvalidInstitute(PdogsException):
+    """
+    Intitute is not valid (not exist or disabled)
+    """
+
+
+class EmailNotMatch(PdogsException):
+    """
+    Failed to register due to email and student info not match
+    """
+
+
 class NoPermission(PdogsException):
     """
     The requester has no permission to do the action
