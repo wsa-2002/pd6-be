@@ -1,0 +1,10 @@
+starlette-context
+fastapi==0.63.0  # version fixed due to complete re-overriding fastapi objects
+pydantic  # version fixed by fastapi
+asyncpg
+pyjwt
+python-dotenv
+passlib
+argon2-cffi  # required for passlib.hash.argon2
+aiosmtplib
+pyyaml
