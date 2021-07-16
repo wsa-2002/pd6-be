@@ -24,29 +24,29 @@ async def add(name: str, pass_hash: str, nickname: str, real_name: str, role: Ro
 async def browse(include_deleted: bool = False) -> Sequence[do.Account]:
     async with SafeExecutor(
             event='browse account',
-            sql=fr'SELECT id, name, nickname, real_name, role_id, is_deleted, alternative_email'
+            sql=fr'SELECT id, name, nickname, real_name, role, is_deleted, alternative_email'
                 fr'  FROM account'
                 fr'{" WHERE NOT is_deleted" if not include_deleted else ""}'
                 fr' ORDER BY id ASC',
             fetch='all',
     ) as records:
-        return [do.Account(id=id_, name=name, nickname=nickname, real_name=real_name, role=role_id,
+        return [do.Account(id=id_, name=name, nickname=nickname, real_name=real_name, role=RoleType(role),
                            is_deleted=is_deleted, alternative_email=alternative_email)
-                for (id_, name, nickname, real_name, role_id, is_deleted, is_hidden, alternative_email)
+                for (id_, name, nickname, real_name, role, is_deleted, alternative_email)
                 in records]
 
 
 async def read(account_id: int, *, include_deleted: bool = False) -> do.Account:
     async with SafeExecutor(
             event='read account info',
-            sql=fr'SELECT id, name, nickname, real_name, role_id, is_deleted, alternative_email'
+            sql=fr'SELECT id, name, nickname, real_name, role, is_deleted, alternative_email'
                 fr'  FROM account'
                 fr' WHERE id = %(account_id)s'
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}',
             account_id=account_id,
             fetch=1,
-    ) as (id_, name, nickname, real_name, role_id, is_deleted, is_hidden, alternative_email):
-        return do.Account(id=id_, name=name, nickname=nickname, real_name=real_name, role=role_id,
+    ) as (id_, name, nickname, real_name, role, is_deleted, alternative_email):
+        return do.Account(id=id_, name=name, nickname=nickname, real_name=real_name, role=RoleType(role),
                           is_deleted=is_deleted, alternative_email=alternative_email)
 
 
