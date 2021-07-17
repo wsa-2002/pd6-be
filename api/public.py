@@ -118,3 +118,28 @@ async def login(data: LoginInput) -> str:
     # Get jwt
     login_token = security.encode_jwt(account_id=account_id, expire=config.login_expire)
     return login_token
+
+
+# @validated_dataclass
+class ForgetPasswordInput(BaseModel):
+    email: str
+
+
+@router.post('/account/forget-password', tags=['Account'], response_class=JSONResponse)
+@enveloped
+async def forget_password(data: ForgetPasswordInput) -> None:
+    account_id = await db.account.read_id_by_email(data.email)
+
+    code = await db.account.add_email_verification(email=data.email, account_id=account_id)
+    await email.forget_password.send(to=data.email, code=code)
+
+
+# @validated_dataclass
+class ResetPasswordInput(BaseModel):
+    code: str
+    password: str
+
+
+@router.post('/account/reset-password', tags=['Account'], response_class=JSONResponse)
+async def email_verification(data: ResetPasswordInput) -> None:
+    await db.account.reset_password(code=data.code, password_hash=security.hash_password(data.password))

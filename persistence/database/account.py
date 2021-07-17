@@ -110,6 +110,31 @@ async def read_login_by_name(name: str, include_deleted: bool = False) -> Tuple[
         return id_, pass_hash, is_4s_hash
 
 
+async def read_id_by_email(email: str) -> int:
+    try: # institute_email
+        async with SafeExecutor(
+                event='read account by institute_email',
+                sql=fr'SELECT account_id'
+                    fr'  FROM student_card'
+                    fr' WHERE email = %(email)s',
+                email=email,
+                fetch=1,
+        ) as (id_,):
+             return id_
+
+    except: # alternative_email
+        async with SafeExecutor(
+                event='read account by alternative_email',
+                sql=fr'SELECT id'
+                    fr'  FROM account'
+                    fr' WHERE alternative_email = %(email)s'
+                    fr' AND NOT is_deleted',
+                email=email,
+                fetch=1,
+        ) as (id_,):
+             return id_
+
+
 async def read_pass_hash(account_id: int, include_4s_hash: bool = False) -> str:
     async with SafeExecutor(
             event='read pass hash',
@@ -201,3 +226,23 @@ async def edit_pass_hash(account_id: int, pass_hash: str):
             account_id=account_id,
     ):
         pass
+
+
+async def reset_password(code: str, password_hash: str) -> None:
+    async with SafeConnection(event='reset password') as conn:
+        async with conn.transaction():
+            try:
+                email, account_id, institute_id, department, student_id = await conn.fetchrow(
+                    r'UPDATE email_verification'
+                    r'   SET is_consumed = $1'
+                    r' WHERE code = $2'
+                    r'   AND is_consumed = $3'
+                    r' RETURNING email, account_id, institute_id, department, student_id',
+                    True, code, False)
+            except TypeError:
+                raise exceptions.NotFound
+
+            await conn.execute(r'UPDATE account'
+                               r'   SET pass_hash = $1, is_4s_hash = $2'
+                               r' WHERE id = $3',
+                               password_hash, False, account_id)
