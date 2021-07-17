@@ -122,7 +122,7 @@ async def read_id_by_email(email: str) -> int:
         ) as (id_,):
              return id_
 
-    except: # alternative_email
+    except exc.NotFound: # alternative_email
         async with SafeExecutor(
                 event='read account by alternative_email',
                 sql=fr'SELECT id'

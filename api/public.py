@@ -31,7 +31,7 @@ async def default_page():
 """
 
 
-# @validated_dataclass
+@validated_dataclass
 class AddAccountInput(BaseModel):
     # Account
     name: str
@@ -91,7 +91,7 @@ async def email_verification(code: str):
         return 'Your email has been verified.'
 
 
-# @validated_dataclass
+@validated_dataclass
 class LoginInput(BaseModel):
     name: str
     password: str
@@ -120,7 +120,7 @@ async def login(data: LoginInput) -> str:
     return login_token
 
 
-# @validated_dataclass
+@validated_dataclass
 class ForgetPasswordInput(BaseModel):
     email: str
 
@@ -134,12 +134,12 @@ async def forget_password(data: ForgetPasswordInput) -> None:
     await email.forget_password.send(to=data.email, code=code)
 
 
-# @validated_dataclass
+@validated_dataclass
 class ResetPasswordInput(BaseModel):
     code: str
     password: str
 
 
 @router.post('/account/reset-password', tags=['Account'], response_class=JSONResponse)
-async def email_verification(data: ResetPasswordInput) -> None:
+async def reset_password(data: ResetPasswordInput) -> None:
     await db.account.reset_password(code=data.code, password_hash=security.hash_password(data.password))
