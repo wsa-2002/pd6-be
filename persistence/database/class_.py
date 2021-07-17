@@ -199,3 +199,6 @@ async def delete_member(class_id: int, member_id: int):
             member_id=member_id,
     ):
         pass
+
+
+async def browse_cm_emails

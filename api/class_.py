@@ -8,6 +8,7 @@ from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
+import persistence.email as email
 from util import rbac
 
 
@@ -124,6 +125,8 @@ async def edit_class_member(class_id: int, data: Sequence[EditClassMemberInput],
         raise exc.NoPermission
 
     for (member_id, role) in data:
+        if role == RoleType.manager: # 新增manager
+            email.notification.notify_cm_change(, member_id, class_id, request.account.id)
         await db.class_.edit_member(class_id=class_id, member_id=member_id, role=role)
 
 
