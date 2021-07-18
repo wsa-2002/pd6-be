@@ -31,7 +31,6 @@ async def default_page():
 """
 
 
-# @validated_dataclass
 class AddAccountInput(BaseModel):
     # Account
     name: str
@@ -69,7 +68,8 @@ async def add_account(data: AddAccountInput) -> None:
 
     institute_email = f"{data.institute_email_prefix}@{institute.email_domain}"
     code = await db.account.add_email_verification(email=institute_email, account_id=account_id,
-                                                   institute_id=data.institute_id, department=data.department, student_id=data.student_id)
+                                                   institute_id=data.institute_id, department=data.department,
+                                                   student_id=data.student_id)
     await email.verification.send(to=institute_email, code=code)
 
     if data.alternative_email:
@@ -91,7 +91,6 @@ async def email_verification(code: str):
         return 'Your email has been verified.'
 
 
-# @validated_dataclass
 class LoginInput(BaseModel):
     name: str
     password: str
@@ -118,3 +117,26 @@ async def login(data: LoginInput) -> str:
     # Get jwt
     login_token = security.encode_jwt(account_id=account_id, expire=config.login_expire)
     return login_token
+
+
+class ForgetPasswordInput(BaseModel):
+    email: str
+
+
+@router.post('/account/forget-password', tags=['Account'], response_class=JSONResponse)
+@enveloped
+async def forget_password(data: ForgetPasswordInput) -> None:
+    account_id = await db.account.read_id_by_email(data.email)
+
+    code = await db.account.add_email_verification(email=data.email, account_id=account_id)
+    await email.forget_password.send(to=data.email, code=code)
+
+
+class ResetPasswordInput(BaseModel):
+    code: str
+    password: str
+
+
+@router.post('/account/reset-password', tags=['Account'], response_class=JSONResponse)
+async def reset_password(data: ResetPasswordInput) -> None:
+    await db.account.reset_password(code=data.code, password_hash=security.hash_password(data.password))
