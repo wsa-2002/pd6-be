@@ -1,4 +1,4 @@
-from typing import Optional, Tuple, Sequence
+from typing import Tuple, Sequence
 
 from base import do
 from base.enum import RoleType
@@ -7,14 +7,14 @@ import exceptions as exc
 from .base import SafeExecutor, SafeConnection
 
 
-async def add(name: str, pass_hash: str, nickname: str, real_name: str, role: RoleType) -> int:
+async def add(username: str, pass_hash: str, nickname: str, real_name: str, role: RoleType) -> int:
     async with SafeExecutor(
             event='add account',
             sql=r'INSERT INTO account'
-                r'            (name, pass_hash, nickname, real_name, role)'
-                r'     VALUES (%(name)s, %(pass_hash)s, %(nickname)s, %(real_name)s, %(role)s)'
+                r'            (username, pass_hash, nickname, real_name, role)'
+                r'     VALUES (%(username)s, %(pass_hash)s, %(nickname)s, %(real_name)s, %(role)s)'
                 r'  RETURNING id',
-            name=name, pass_hash=pass_hash, nickname=nickname, real_name=real_name, role=role,
+            username=username, pass_hash=pass_hash, nickname=nickname, real_name=real_name, role=role,
             fetch=1,
     ) as (account_id,):
         return account_id
@@ -23,29 +23,29 @@ async def add(name: str, pass_hash: str, nickname: str, real_name: str, role: Ro
 async def browse(include_deleted: bool = False) -> Sequence[do.Account]:
     async with SafeExecutor(
             event='browse account',
-            sql=fr'SELECT id, name, nickname, real_name, role, is_deleted, alternative_email'
+            sql=fr'SELECT id, username, nickname, real_name, role, is_deleted, alternative_email'
                 fr'  FROM account'
                 fr'{" WHERE NOT is_deleted" if not include_deleted else ""}'
                 fr' ORDER BY id ASC',
             fetch='all',
     ) as records:
-        return [do.Account(id=id_, name=name, nickname=nickname, real_name=real_name, role=RoleType(role),
+        return [do.Account(id=id_, username=username, nickname=nickname, real_name=real_name, role=RoleType(role),
                            is_deleted=is_deleted, alternative_email=alternative_email)
-                for (id_, name, nickname, real_name, role, is_deleted, alternative_email)
+                for (id_, username, nickname, real_name, role, is_deleted, alternative_email)
                 in records]
 
 
 async def read(account_id: int, *, include_deleted: bool = False) -> do.Account:
     async with SafeExecutor(
             event='read account info',
-            sql=fr'SELECT id, name, nickname, real_name, role, is_deleted, alternative_email'
+            sql=fr'SELECT id, username, nickname, real_name, role, is_deleted, alternative_email'
                 fr'  FROM account'
                 fr' WHERE id = %(account_id)s'
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}',
             account_id=account_id,
             fetch=1,
-    ) as (id_, name, nickname, real_name, role, is_deleted, alternative_email):
-        return do.Account(id=id_, name=name, nickname=nickname, real_name=real_name, role=RoleType(role),
+    ) as (id_, username, nickname, real_name, role, is_deleted, alternative_email):
+        return do.Account(id=id_, username=username, nickname=nickname, real_name=real_name, role=RoleType(role),
                           is_deleted=is_deleted, alternative_email=alternative_email)
 
 
@@ -96,14 +96,14 @@ async def delete_alternative_email_by_id(account_id: int) -> None:
         return
 
 
-async def read_login_by_name(name: str, include_deleted: bool = False) -> Tuple[int, str, bool]:
+async def read_login_by_username(username: str, include_deleted: bool = False) -> Tuple[int, str, bool]:
     async with SafeExecutor(
-            event='read account login by name',
+            event='read account login by username',
             sql=fr'SELECT id, pass_hash, is_4s_hash'
                 fr'  FROM account'
-                fr' WHERE name = %(name)s'
+                fr' WHERE username = %(username)s'
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}',
-            name=name,
+            username=username,
             fetch=1,
     ) as (id_, pass_hash, is_4s_hash):
         return id_, pass_hash, is_4s_hash

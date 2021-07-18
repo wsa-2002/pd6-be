@@ -1,6 +1,3 @@
-# TODO: Rewrite this whole stuff?
-
-from dataclasses import dataclass
 from typing import Sequence
 
 from pydantic import BaseModel

@@ -10,7 +10,6 @@ from middleware import APIRouter, JSONResponse, enveloped
 import persistence.database as db
 import persistence.email as email
 from util import security, validator
-import asyncpg
 
 
 router = APIRouter(tags=['Public'])
@@ -33,7 +32,7 @@ async def default_page():
 
 class AddAccountInput(BaseModel):
     # Account
-    name: str
+    username: str
     password: str
     nickname: str
     real_name: str
@@ -64,7 +63,7 @@ async def add_account(data: AddAccountInput) -> None:
         raise exc.account.StudentCardExists
 
     try:
-        account_id = await db.account.add(name=data.name, pass_hash=security.hash_password(data.password),
+        account_id = await db.account.add(username=data.username, pass_hash=security.hash_password(data.password),
                                           nickname=data.nickname, real_name=data.real_name, role=RoleType.guest)
     except exc.persistence.UniqueViolationError:
         raise exc.account.UsernameExists
@@ -95,7 +94,7 @@ async def email_verification(code: str):
 
 
 class LoginInput(BaseModel):
-    name: str
+    username: str
     password: str
 
 
@@ -103,7 +102,7 @@ class LoginInput(BaseModel):
 @enveloped
 async def login(data: LoginInput) -> str:
     try:
-        account_id, pass_hash, is_4s_hash = await db.account.read_login_by_name(name=data.name)
+        account_id, pass_hash, is_4s_hash = await db.account.read_login_by_username(username=data.username)
     except exc.persistence.NotFound:
         raise exc.account.LoginFailed  # Not to let user know why login failed
 
