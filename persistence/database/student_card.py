@@ -1,6 +1,5 @@
 from typing import Sequence
 
-import log
 from base import do
 
 from .base import SafeExecutor
@@ -51,7 +50,7 @@ async def browse(account_id: int) -> Sequence[do.StudentCard]:
                 for (id_, institute_id, department, student_id, email) in records]
 
 
-async def check_duplicate(institute_id: int, student_id: str) -> bool:
+async def is_duplicate(institute_id: int, student_id: str) -> bool:
     async with SafeExecutor(
             event='check duplicate student card by institute_id and student_id',
             sql=fr'SELECT count(*)'
