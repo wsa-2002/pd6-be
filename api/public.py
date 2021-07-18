@@ -52,20 +52,20 @@ async def add_account(data: AddAccountInput) -> None:
     # 要先檢查以免創立了帳號後才出事
     try:
         institute = await db.institute.read(data.institute_id, include_disabled=False)
-    except exc.NotFound:
-        raise exc.InvalidInstitute
+    except exc.persistence.NotFound:
+        raise exc.account.InvalidInstitute
 
     if data.student_id != data.institute_email_prefix:
-        raise exc.EmailNotMatch
+        raise exc.account.StudentIdNotMatchEmail
     
     if data.alternative_email and not validator.is_valid_email(data.alternative_email):
-        raise exc.InvalidEmail
+        raise exc.account.InvalidEmail
 
     try:
         account_id = await db.account.add(name=data.name, pass_hash=security.hash_password(data.password),
                                           nickname=data.nickname, real_name=data.real_name, role=RoleType.guest)
-    except asyncpg.exceptions.UniqueViolationError:
-        raise exc.AccountExists
+    except exc.persistence.UniqueViolationError:
+        raise exc.account.UsernameExists
 
     institute_email = f"{data.institute_email_prefix}@{institute.email_domain}"
     code = await db.account.add_email_verification(email=institute_email, account_id=account_id,
@@ -85,7 +85,7 @@ async def add_account(data: AddAccountInput) -> None:
 async def email_verification(code: str):
     try:
         await db.account.verify_email(code=code)
-    except exc.NotFound:
+    except exc.persistence.NotFound:
         return 'Your verification code is not valid.'
     else:
         return 'Your email has been verified.'
@@ -102,18 +102,18 @@ class LoginInput(BaseModel):
 async def login(data: LoginInput) -> str:
     try:
         account_id, pass_hash, is_4s_hash = await db.account.read_login_by_name(name=data.name)
-    except exc.NotFound:
-        raise exc.LoginFailed  # Not to let user know why login failed
+    except exc.persistence.NotFound:
+        raise exc.account.LoginFailed  # Not to let user know why login failed
 
     # Verify
     if is_4s_hash:
         if not security.verify_password_4s(to_test=data.password, hashed=pass_hash):
-            raise exc.LoginFailed  # Not to let user know why login failed
+            raise exc.account.LoginFailed  # Not to let user know why login failed
         else:
             await db.account.edit_pass_hash(account_id=account_id, pass_hash=security.hash_password(data.password))
     else:
         if not security.verify_password(to_test=data.password, hashed=pass_hash):
-            raise exc.LoginFailed  # Not to let user know why login failed
+            raise exc.account.LoginFailed  # Not to let user know why login failed
 
     # Get jwt
     login_token = security.encode_jwt(account_id=account_id, expire=config.login_expire)

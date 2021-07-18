@@ -137,7 +137,7 @@ async def add_email_verification(email: str, account_id: int, institute_id: int 
                 fetch='1',
         ) as (cnt,):
             if cnt > 0:
-                raise exceptions.StudentCardExists
+                raise exceptions.account.StudentCardExists
 
     async with SafeExecutor(
             event='create email verification',
@@ -167,7 +167,7 @@ async def verify_email(code: str) -> None:
                     r' RETURNING email, account_id, institute_id, department, student_id',
                     True, code, False)
             except TypeError:
-                raise exceptions.NotFound
+                raise exceptions.persistence.NotFound
 
             if student_id:  # student card email
                 await conn.execute(r'INSERT INTO student_card'
