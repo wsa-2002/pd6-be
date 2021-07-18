@@ -60,6 +60,9 @@ async def add_account(data: AddAccountInput) -> None:
     if data.alternative_email and not validator.is_valid_email(data.alternative_email):
         raise exc.account.InvalidEmail
 
+    if db.student_card.is_duplicate(institute.id, data.student_id):
+        raise exc.account.StudentCardExists
+
     try:
         account_id = await db.account.add(name=data.name, pass_hash=security.hash_password(data.password),
                                           nickname=data.nickname, real_name=data.real_name, role=RoleType.guest)
