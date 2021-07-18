@@ -30,6 +30,7 @@ def pyformat2psql(query: str, named_args: Dict[str, Any]) -> Tuple[str, List[Any
 from typing import Dict
 
 import asyncpg
+import asyncpg.exceptions
 
 import exceptions as exc
 
@@ -116,10 +117,12 @@ class SafeExecutor:
             log.info(f"Ended {self.__class__.__name__}: {self._event} after {exec_time_ms} ms")
 
             if not results:
-                raise exc.NotFound
+                raise exc.persistence.NotFound
 
             return results
 
     async def __aexit__(self, exc_type, exc_value, traceback):
         if self._fetch == 'one' or self._fetch == 1 and exc_type is TypeError:  # Handles TypeError: value unpack
-            raise exc.NotFound
+            raise exc.persistence.NotFound
+        if exc_type is asyncpg.exceptions.UniqueViolationError:
+            raise exc.persistence.UniqueViolationError(cause=exc_value)

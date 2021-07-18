@@ -19,7 +19,7 @@ class SystemException(_CauseMixin, Exception):
 
 class PdogsException(Exception):
     """
-    The base exception of PDOGS; exceptions raised that are subclass of this will not be written to error log
+    The base exception of PDOGS; exceptions raised that are subclass of this will NOT be written to error log
     """
 
 
@@ -29,51 +29,9 @@ class LoginExpired(PdogsException):
     """
 
 
-class LoginFailed(PdogsException):
-    """
-    Failed to login, perhaps due to wrong password or wrong account
-    """
-
-
-class AccountExists(PdogsException):
-    """
-    Failed to register due to duplicate account
-    """
-
-
-class StudentCardExists(PdogsException):
-    """
-    Student card already exists
-    """
-
-
-class InvalidEmail(PdogsException):
-    """
-    Email is not valid
-    """
-
-
-class InvalidInstitute(PdogsException):
-    """
-    Intitute is not valid (not exist or disabled)
-    """
-
-
-class EmailNotMatch(PdogsException):
-    """
-    Failed to register due to email and student info not match
-    """
-
-
 class NoPermission(PdogsException):
     """
     The requester has no permission to do the action
-    """
-
-
-class NotFound(PdogsException):
-    """
-    Data not found, e.g. asked data not found in database
     """
 
 
@@ -83,7 +41,8 @@ class IllegalInput(_CauseMixin, PdogsException):
     """
 
 
-class PasswordVerificationFailed(PdogsException):
-    """
-    Wrong old_password while changing password
-    """
+# For import usage
+from . import (
+    account,
+    persistence,
+)

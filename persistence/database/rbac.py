@@ -44,7 +44,7 @@ async def any_class_role(member_id: int, role: RoleType) -> bool:
                 fetch=1,
         ):
             pass
-    except exceptions.NotFound:
+    except exceptions.persistence.NotFound:
         return False
     else:
         return True

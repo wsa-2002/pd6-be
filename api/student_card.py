@@ -43,11 +43,11 @@ async def add_student_card_to_account(account_id: int, data: AddStudentCardInput
 
     try:
         institute = await db.institute.read(data.institute_id, include_disabled=False)
-    except exc.NotFound:
-        raise exc.InvalidInstitute
+    except exc.persistence.NotFound:
+        raise exc.account.InvalidInstitute
 
     if data.student_id != data.institute_email_prefix:
-        raise exc.EmailNotMatch
+        raise exc.account.StudentIdNotMatchEmail
     
     institute_email = f"{data.institute_email_prefix}@{institute.email_domain}"
     code = await db.account.add_email_verification(email=institute_email, account_id=account_id,
