@@ -115,3 +115,24 @@ async def edit_student_card(student_card_id: int, data: EditStudentCardInput, re
         student_card_id=student_card_id,
         department=data.department,
     )
+
+
+@router.patch('/student-card/{student_card_id}/default')
+@enveloped
+async def make_student_card_default(student_card_id: int, request: auth.Request) -> None:
+    """
+    ### 權限
+    - System manager
+    - Self
+    """
+    is_manager = await rbac.validate(request.account.id, RoleType.manager)
+    owner_id = await db.student_card.read_owner_id(student_card_id=student_card_id)
+    is_self = request.account.id is owner_id
+
+    if not (is_manager or is_self):
+        raise exc.NoPermission
+
+    await db.student_card.make_default(
+        account_id=owner_id,
+        student_card_id=student_card_id,
+    )

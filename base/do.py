@@ -34,6 +34,7 @@ class StudentCard:
     department: str
     student_id: str
     email: str
+    is_default: bool
 
 
 @dataclass

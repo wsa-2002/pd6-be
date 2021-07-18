@@ -180,14 +180,15 @@ async def verify_email(code: str) -> None:
                 raise exc.persistence.NotFound
 
             if student_id:  # student card email
+                await conn.execute(r'UPDATE student_card'
+                                   r'   SET is_default = $1'
+                                   r' WHERE account_id = $2'
+                                   r'   AND is_default = $3',
+                                   False, account_id, True)
                 await conn.execute(r'INSERT INTO student_card'
-                                   r'            (account_id, institute_id, department, student_id, email)'
-                                   r'     VALUES ($1, $2, $3, $4, $5)',
-                                   account_id, institute_id, department, student_id, email)
-                await conn.execute(r'UPDATE account'
-                                   r'   SET is_enabled = $1'
-                                   r' WHERE id = $2',
-                                   True, account_id)
+                                   r'            (account_id, institute_id, department, student_id, email, is_default)'
+                                   r'     VALUES ($1, $2, $3, $4, $5, $6)',
+                                   account_id, institute_id, department, student_id, email, True)
                 await conn.execute(r'UPDATE account'
                                    r'   SET role = $1'
                                    r' WHERE id = $2'
