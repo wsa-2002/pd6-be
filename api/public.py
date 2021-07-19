@@ -1,4 +1,5 @@
 from typing import Optional
+from dataclasses import dataclass
 
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
@@ -95,7 +96,8 @@ class LoginInput(BaseModel):
     password: str
 
 
-class LoginOutput(BaseModel):
+@dataclass
+class LoginOutput:
     token: str
     account_id: int
 
