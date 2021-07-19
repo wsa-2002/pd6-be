@@ -98,19 +98,3 @@ async def edit(student_card_id: int, department: str = None) -> None:
             **to_updates,
     ):
         pass
-
-
-async def make_default(account_id: int, student_card_id: int) -> None:
-    async with SafeExecutor(
-            event='make student_card default',
-            sql=r'UPDATE student_card'
-                r'   SET is_default ='
-                r'  CASE'
-                r'      WHEN id = %(student_card_id)s THEN true'
-                r'      ELSE false'
-                r'  END'
-                r' WHERE account_id = %(account_id)s',
-            account_id=account_id,
-            student_card_id=student_card_id,
-    ):
-        return

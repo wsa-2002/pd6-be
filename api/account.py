@@ -130,3 +130,31 @@ async def delete_account(account_id: int, request: auth.Request) -> None:
         raise exc.NoPermission
 
     await db.account.delete(account_id)
+
+
+class DefaultStudentCardInput(BaseModel):
+    student_card_id: int
+
+
+@router.put('/account/{account_id}/default-student-card')
+@enveloped
+async def make_student_card_default(account_id: int, data: DefaultStudentCardInput, request: auth.Request) -> None:
+    """
+    ### 權限
+    - System manager
+    - Self
+    """
+    is_manager = await rbac.validate(request.account.id, RoleType.manager)
+    owner_id = await db.student_card.read_owner_id(student_card_id=data.student_card_id)
+    if account_id != owner_id:
+        raise exc.account.StudentCardDoesNotBelong
+
+    is_self = request.account.id is owner_id
+
+    if not (is_manager or is_self):
+        raise exc.NoPermission
+
+    await db.account.set_default_student_card(
+        account_id=account_id,
+        student_card_id=data.student_card_id,
+    )

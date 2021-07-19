@@ -232,3 +232,18 @@ async def reset_password(code: str, password_hash: str) -> None:
                                r'   SET pass_hash = $1, is_4s_hash = $2'
                                r' WHERE id = $3',
                                password_hash, False, account_id)
+
+
+async def set_default_student_card(account_id: int, student_card_id: int) -> None:
+    async with SafeExecutor(
+            event='set default student_card for account',
+            sql=r'UPDATE student_card'
+                r'   SET is_default = CASE'
+                r'                        WHEN id = %(student_card_id)s THEN true'
+                r'                        ELSE false'
+                r'                    END'
+                r' WHERE account_id = %(account_id)s',
+            account_id=account_id,
+            student_card_id=student_card_id,
+    ):
+        return
