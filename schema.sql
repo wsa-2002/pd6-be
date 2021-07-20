@@ -8,7 +8,7 @@ CREATE TYPE role_type AS ENUM (
 
 CREATE TABLE account (
   id                SERIAL    PRIMARY KEY,
-  name              VARCHAR   NOT NULL UNIQUE,
+  username          VARCHAR   NOT NULL UNIQUE,
   pass_hash         VARCHAR   NOT NULL,
   nickname          VARCHAR   NOT NULL,
   real_name         VARCHAR   NOT NULL,

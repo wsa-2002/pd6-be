@@ -20,7 +20,7 @@ router = APIRouter(
 @dataclass
 class ReadAccountOutput:
     id: int
-    name: str
+    username: str
     nickname: str
     role: str
     real_name: str
@@ -48,7 +48,7 @@ async def read_account(account_id: int, request: auth.Request) -> ReadAccountOut
     target_account = await db.account.read(account_id)
     result = ReadAccountOutput(
         id=target_account.id,
-        name=target_account.name,
+        username=target_account.username,
         nickname=target_account.nickname,
         role=target_account.role,
         real_name=target_account.real_name if view_personal else None,

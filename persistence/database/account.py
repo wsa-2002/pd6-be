@@ -1,21 +1,20 @@
-from typing import Optional, Tuple, Sequence
+from typing import Tuple, Sequence
 
 from base import do
 from base.enum import RoleType
-import exceptions
-import log
+import exceptions as exc
 
 from .base import SafeExecutor, SafeConnection
 
 
-async def add(name: str, pass_hash: str, nickname: str, real_name: str, role: RoleType) -> int:
+async def add(username: str, pass_hash: str, nickname: str, real_name: str, role: RoleType) -> int:
     async with SafeExecutor(
             event='add account',
             sql=r'INSERT INTO account'
-                r'            (name, pass_hash, nickname, real_name, role)'
-                r'     VALUES (%(name)s, %(pass_hash)s, %(nickname)s, %(real_name)s, %(role)s)'
+                r'            (username, pass_hash, nickname, real_name, role)'
+                r'     VALUES (%(username)s, %(pass_hash)s, %(nickname)s, %(real_name)s, %(role)s)'
                 r'  RETURNING id',
-            name=name, pass_hash=pass_hash, nickname=nickname, real_name=real_name, role=role,
+            username=username, pass_hash=pass_hash, nickname=nickname, real_name=real_name, role=role,
             fetch=1,
     ) as (account_id,):
         return account_id
@@ -24,29 +23,29 @@ async def add(name: str, pass_hash: str, nickname: str, real_name: str, role: Ro
 async def browse(include_deleted: bool = False) -> Sequence[do.Account]:
     async with SafeExecutor(
             event='browse account',
-            sql=fr'SELECT id, name, nickname, real_name, role, is_deleted, alternative_email'
+            sql=fr'SELECT id, username, nickname, real_name, role, is_deleted, alternative_email'
                 fr'  FROM account'
                 fr'{" WHERE NOT is_deleted" if not include_deleted else ""}'
                 fr' ORDER BY id ASC',
             fetch='all',
     ) as records:
-        return [do.Account(id=id_, name=name, nickname=nickname, real_name=real_name, role=RoleType(role),
+        return [do.Account(id=id_, username=username, nickname=nickname, real_name=real_name, role=RoleType(role),
                            is_deleted=is_deleted, alternative_email=alternative_email)
-                for (id_, name, nickname, real_name, role, is_deleted, alternative_email)
+                for (id_, username, nickname, real_name, role, is_deleted, alternative_email)
                 in records]
 
 
 async def read(account_id: int, *, include_deleted: bool = False) -> do.Account:
     async with SafeExecutor(
             event='read account info',
-            sql=fr'SELECT id, name, nickname, real_name, role, is_deleted, alternative_email'
+            sql=fr'SELECT id, username, nickname, real_name, role, is_deleted, alternative_email'
                 fr'  FROM account'
                 fr' WHERE id = %(account_id)s'
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}',
             account_id=account_id,
             fetch=1,
-    ) as (id_, name, nickname, real_name, role, is_deleted, alternative_email):
-        return do.Account(id=id_, name=name, nickname=nickname, real_name=real_name, role=RoleType(role),
+    ) as (id_, username, nickname, real_name, role, is_deleted, alternative_email):
+        return do.Account(id=id_, username=username, nickname=nickname, real_name=real_name, role=RoleType(role),
                           is_deleted=is_deleted, alternative_email=alternative_email)
 
 
@@ -97,21 +96,21 @@ async def delete_alternative_email_by_id(account_id: int) -> None:
         return
 
 
-async def read_login_by_name(name: str, include_deleted: bool = False) -> Tuple[int, str, bool]:
+async def read_login_by_username(username: str, include_deleted: bool = False) -> Tuple[int, str, bool]:
     async with SafeExecutor(
-            event='read account login by name',
+            event='read account login by username',
             sql=fr'SELECT id, pass_hash, is_4s_hash'
                 fr'  FROM account'
-                fr' WHERE name = %(name)s'
+                fr' WHERE username = %(username)s'
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}',
-            name=name,
+            username=username,
             fetch=1,
     ) as (id_, pass_hash, is_4s_hash):
         return id_, pass_hash, is_4s_hash
 
 
 async def read_id_by_email(email: str) -> int:
-    try: # institute_email
+    try:  # institute_email
         async with SafeExecutor(
                 event='read account by institute_email',
                 sql=fr'SELECT account_id'
@@ -120,9 +119,9 @@ async def read_id_by_email(email: str) -> int:
                 email=email,
                 fetch=1,
         ) as (id_,):
-             return id_
+            return id_
 
-    except exc.NotFound: # alternative_email
+    except exc.persistence.NotFound:  # alternative_email
         async with SafeExecutor(
                 event='read account by alternative_email',
                 sql=fr'SELECT id'
@@ -132,7 +131,7 @@ async def read_id_by_email(email: str) -> int:
                 email=email,
                 fetch=1,
         ) as (id_,):
-             return id_
+            return id_
 
 
 async def read_pass_hash(account_id: int, include_4s_hash: bool = False) -> str:
@@ -144,26 +143,12 @@ async def read_pass_hash(account_id: int, include_4s_hash: bool = False) -> str:
                 fr'{" AND NOT is_4s_hash" if not include_4s_hash else ""}',
             account_id=account_id,
             fetch=1,
-    ) as (pass_hash, ):
+    ) as (pass_hash,):
         return pass_hash
 
 
-async def add_email_verification(email: str, account_id: int, institute_id: int = None, department: str = None, student_id: str = None) -> str:
-    # check whether student card already exists
-    if institute_id and student_id:
-        async with SafeExecutor(
-                event='check duplicate student card by institute_id and student_id',
-                sql=fr'SELECT count(*)'
-                    fr'  FROM student_card'
-                    fr' WHERE institute_id = %(institute_id)s'
-                    fr'   AND student_id = %(student_id)s',
-                institute_id=institute_id,
-                student_id=student_id,
-                fetch='1',
-        ) as (cnt,):
-            if cnt > 0:
-                raise exceptions.account.StudentCardExists
-
+async def add_email_verification(email: str, account_id: int, institute_id: int = None, department: str = None,
+                                 student_id: str = None) -> str:
     async with SafeExecutor(
             event='create email verification',
             sql=r'INSERT INTO email_verification'
@@ -192,13 +177,13 @@ async def verify_email(code: str) -> None:
                     r' RETURNING email, account_id, institute_id, department, student_id',
                     True, code, False)
             except TypeError:
-                raise exceptions.persistence.NotFound
+                raise exc.persistence.NotFound
 
             if student_id:  # student card email
                 await conn.execute(r'INSERT INTO student_card'
-                                r'            (account_id, institute_id, department, student_id, email)'
-                                r'     VALUES ($1, $2, $3, $4, $5)',
-                                account_id, institute_id, department, student_id, email)
+                                   r'            (account_id, institute_id, department, student_id, email)'
+                                   r'     VALUES ($1, $2, $3, $4, $5)',
+                                   account_id, institute_id, department, student_id, email)
                 await conn.execute(r'UPDATE account'
                                    r'   SET is_enabled = $1'
                                    r' WHERE id = $2',
@@ -240,7 +225,7 @@ async def reset_password(code: str, password_hash: str) -> None:
                     r' RETURNING email, account_id, institute_id, department, student_id',
                     True, code, False)
             except TypeError:
-                raise exceptions.NotFound
+                raise exc.persistence.NotFound
 
             await conn.execute(r'UPDATE account'
                                r'   SET pass_hash = $1, is_4s_hash = $2'
