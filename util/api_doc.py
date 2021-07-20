@@ -16,14 +16,17 @@ def to_collapsible(content="", title=""):
 
 def gen_err_doc():
     import exceptions
+    from exceptions import account, persistence
+
+    modules = (exceptions, account, persistence)
 
     return f"""
 ### Exceptions
 {to_collapsible(title=f"`{exceptions.SystemException.__name__}`: {exceptions.SystemException.__doc__}", 
-                content=_gen_err_doc((exceptions,), exceptions.SystemException))}
+                content=_gen_err_doc(modules, exceptions.SystemException))}
 
 {to_collapsible(title=f"`{exceptions.PdogsException.__name__}`: {exceptions.PdogsException.__doc__}", 
-                content=_gen_err_doc((exceptions,), exceptions.PdogsException))}
+                content=_gen_err_doc(modules, exceptions.PdogsException))}
 """
 
 
