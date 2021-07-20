@@ -154,7 +154,7 @@ async def make_student_card_default(account_id: int, data: DefaultStudentCardInp
     if not (is_manager or is_self):
         raise exc.NoPermission
 
-    await db.account.set_default_student_card(
+    await db.account.edit_default_student_card(
         account_id=account_id,
         student_card_id=data.student_card_id,
     )
