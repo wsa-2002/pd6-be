@@ -20,7 +20,7 @@ router = APIRouter(
 @dataclass
 class ReadAccountOutput:
     id: int
-    name: str
+    username: str
     nickname: str
     role: str
     real_name: str
@@ -48,7 +48,7 @@ async def read_account(account_id: int, request: auth.Request) -> ReadAccountOut
     target_account = await db.account.read(account_id)
     result = ReadAccountOutput(
         id=target_account.id,
-        name=target_account.name,
+        username=target_account.username,
         nickname=target_account.nickname,
         role=target_account.role,
         real_name=target_account.real_name if view_personal else None,
@@ -80,12 +80,12 @@ async def edit_account(account_id: int, data: EditAccountInput, request: auth.Re
     # 先 update email 因為如果失敗就整個失敗
     if data.alternative_email:  # 加或改 alternative email
         if not validator.is_valid_email(data.alternative_email):
-            raise exc.InvalidEmail
+            raise exc.account.InvalidEmail
         code = await db.account.add_email_verification(email=data.alternative_email, account_id=account_id)
         await email.verification.send(to=data.alternative_email, code=code)
     else:  # 刪掉 alternative email
         await db.account.delete_alternative_email_by_id(account_id=account_id)
-    
+
     # 不檢查 if data.nickname，因為 nickname 可以被刪掉 (設成 None)
     await db.account.edit(account_id=account_id, nickname=data.nickname)
 
@@ -111,7 +111,7 @@ async def edit_password(account_id: int, data: EditPasswordInput, request: auth.
     pass_hash = await db.account.read_pass_hash(account_id=account_id, include_4s_hash=False)
 
     if not security.verify_password(to_test=data.old_password, hashed=pass_hash):
-        raise exc.PasswordVerificationFailed
+        raise exc.account.PasswordVerificationFailed
     await db.account.edit_pass_hash(account_id=account_id, pass_hash=security.hash_password(data.new_password))
 
 

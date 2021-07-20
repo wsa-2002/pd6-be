@@ -34,4 +34,5 @@ smtp_handler = SMTPHandler()
 from . import (
     verification,
     notification,
+    forget_password,
 )

@@ -11,20 +11,20 @@ async def get_role(account_id: int, *, class_id: int = None, team_id: int = None
         log.info("Get team role...")
         try:
             return await db.rbac.read_team_role_by_account_id(team_id=team_id, account_id=account_id)
-        except exc.NotFound:
+        except exc.persistence.NotFound:
             return None
 
     if class_id is not None:
         log.info("Get class role...")
         try:
             return await db.rbac.read_class_role_by_account_id(class_id=class_id, account_id=account_id)
-        except exc.NotFound:
+        except exc.persistence.NotFound:
             return None
 
     log.info("Get global role...")
     try:
         return await db.rbac.read_global_role_by_account_id(account_id=account_id)
-    except exc.NotFound:
+    except exc.persistence.NotFound:
         return None
 
 
@@ -51,7 +51,7 @@ async def validate(account_id: int, min_role: RoleType, *,
             log.info(f"Retrieved {team_role=}")
             if team_role < min_role:
                 raise PermissionError
-        except (exc.NotFound, PermissionError):
+        except (exc.persistence.NotFound, PermissionError):
             if not inherit:
                 log.info("Team role not satisfied, check fail")
                 return False  # no inherit -> only check for team-level
@@ -69,7 +69,7 @@ async def validate(account_id: int, min_role: RoleType, *,
             log.info(f"Retrieved {class_role=}")
             if class_role < min_role:
                 raise PermissionError
-        except (exc.NotFound, PermissionError):
+        except (exc.persistence.NotFound, PermissionError):
             if not inherit:
                 log.info("Class role not satisfied, check fail")
                 return False  # no inherit -> only check for class-level
@@ -84,7 +84,7 @@ async def validate(account_id: int, min_role: RoleType, *,
         global_role = await db.rbac.read_global_role_by_account_id(account_id=account_id)
         if global_role < min_role:
             raise PermissionError
-    except (exc.NotFound, PermissionError):
+    except (exc.persistence.NotFound, PermissionError):
         log.info("Global role not satisfied, check fail")
         return False
     else:
