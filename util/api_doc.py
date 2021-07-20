@@ -1,17 +1,50 @@
 from textwrap import indent
 
 
-def to_collapsible(content="", title=""):
-    return f"""
-<details>
-<summary>{title}</summary>
-</p>
-
-{content.strip()}
-
-</p>
+def to_collapsible(content="", title="", open_=False):
+    content = content.strip('\n')
+    content_indent = ' ' * (len(content) - len(content.lstrip(' ')))
+    return f"""<details{f" open" if open_ else ""}><summary>{title}</summary>
+{content_indent}</p>
+{content_indent}
+{content}
+{content_indent}
+{content_indent}</p>
 </details>
 """
+
+
+def all_docs():
+    return f"""
+{to_collapsible(title="**Error codes**", content=gen_err_doc())}
+{to_collapsible(title="**Enums**", content=gen_enum_doc())}
+""".strip()
+
+
+def _get_members(module, base_cls):
+    import inspect
+    return inspect.getmembers(module, lambda obj: inspect.isclass(obj)
+                                                  and issubclass(obj, base_cls)
+                                                  and obj is not base_cls)
+
+
+def gen_enum_doc():
+    return f"""
+{_gen_enum_doc()}
+"""
+
+
+def _gen_enum_doc():
+    """
+    [collapsible] Enum Cls:
+        - enum val1
+        - enum val2
+    """
+    from base import enum
+    return '\n'.join('- ' + to_collapsible(title=f"`{name}`",
+                                           content="\n".join(indent(f"- `{enum_obj._value_}`: {enum_obj._name_}", '  ')
+                                                             for enum_obj in enum_cls))
+                     for name, enum_cls in _get_members(enum, enum.StrEnum))
 
 
 def gen_err_doc():
@@ -21,11 +54,10 @@ def gen_err_doc():
     modules = (exceptions, account, persistence)
 
     return f"""
-### Exceptions
-{to_collapsible(title=f"`{exceptions.SystemException.__name__}`: {exceptions.SystemException.__doc__}", 
+{to_collapsible(title=f"`{exceptions.SystemException.__name__}`: {exceptions.SystemException.__doc__}",
                 content=_gen_err_doc(modules, exceptions.SystemException))}
 
-{to_collapsible(title=f"`{exceptions.PdogsException.__name__}`: {exceptions.PdogsException.__doc__}", 
+{to_collapsible(title=f"`{exceptions.PdogsException.__name__}`: {exceptions.PdogsException.__doc__}",
                 content=_gen_err_doc(modules, exceptions.PdogsException))}
 """
 
@@ -33,17 +65,9 @@ def gen_err_doc():
 def _gen_err_doc(modules, base_cls):
     item_docs = []
     for module in modules:
-        item_doc = _gen_err_items(module, base_cls)
+        item_doc = '\n'.join(f"- `{name}`: {cls.__doc__}"
+                             for name, cls in _get_members(module, base_cls))
         if item_doc:
             item_docs.append(f"#### {module.__name__.split('.', maxsplit=1)[-1].title()}\n{indent(item_doc, '  ')}")
 
     return '\n'.join(item_docs)
-
-
-def _gen_err_items(exc_module, base_cls):
-    import inspect
-    return '\n'.join(f"- `{name}`: {base_cls.__doc__}"
-                     for name, base_cls
-                     in inspect.getmembers(exc_module, lambda obj: inspect.isclass(obj)
-                                                                   and issubclass(obj, base_cls)
-                                                                   and obj is not base_cls))
