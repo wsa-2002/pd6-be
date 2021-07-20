@@ -144,11 +144,11 @@ async def make_student_card_default(account_id: int, data: DefaultStudentCardInp
     - System manager
     - Self
     """
-    is_manager = await rbac.validate(request.account.id, RoleType.manager)
     owner_id = await db.student_card.read_owner_id(student_card_id=data.student_card_id)
     if account_id != owner_id:
         raise exc.account.StudentCardDoesNotBelong
 
+    is_manager = await rbac.validate(request.account.id, RoleType.manager)
     is_self = request.account.id is owner_id
 
     if not (is_manager or is_self):
