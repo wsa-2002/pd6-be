@@ -24,6 +24,12 @@ class StudentCardExists(PdogsException):
     """
 
 
+class StudentCardDoesNotBelong(PdogsException):
+    """
+    Student card does not belong to this account
+    """
+
+
 class InvalidEmail(PdogsException):
     """
     Email is not valid
