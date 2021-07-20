@@ -1,4 +1,5 @@
 from typing import Optional
+from dataclasses import dataclass
 
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
@@ -98,9 +99,15 @@ class LoginInput(BaseModel):
     password: str
 
 
+@dataclass
+class LoginOutput:
+    token: str
+    account_id: int
+
+
 @router.post('/account/jwt', tags=['Account'], response_class=JSONResponse)
 @enveloped
-async def login(data: LoginInput) -> str:
+async def login(data: LoginInput) -> LoginOutput:
     try:
         account_id, pass_hash, is_4s_hash = await db.account.read_login_by_username(username=data.username)
     except exc.persistence.NotFound:
@@ -118,7 +125,7 @@ async def login(data: LoginInput) -> str:
 
     # Get jwt
     login_token = security.encode_jwt(account_id=account_id, expire=config.login_expire)
-    return login_token
+    return LoginOutput(token=login_token, account_id=account_id)
 
 
 class ForgetPasswordInput(BaseModel):
