@@ -125,8 +125,9 @@ async def edit_class_member(class_id: int, data: Sequence[EditClassMemberInput],
         raise exc.NoPermission
 
     for (member_id, role) in data:
-        if role == RoleType.manager: # 新增manager
-            email.notification.notify_cm_change(, member_id, class_id, request.account.id)
+        if role == RoleType.manager and not await rbac.validate(member_id, RoleType.manager,
+                                                                class_id=class_id, inherit=True):  # add CM
+            await email.notification.notify_cm_change([], member_id, class_id, request.account.id)
         await db.class_.edit_member(class_id=class_id, member_id=member_id, role=role)
 
 
