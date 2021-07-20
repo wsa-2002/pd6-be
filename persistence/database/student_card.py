@@ -15,12 +15,12 @@ async def add(account_id: int, institute_id: int, department: str, student_id: s
                                r'   AND is_default = $3',
                                False, account_id, True)
 
-            id_ = await conn.fetchrow(r'INSERT INTO student_card'
-                                      r'            (account_id, institute_id, department, student_id, email,'
-                                      r'             is_default)'
-                                      r'     VALUES ($1, $2, $3, $4, $5, $6)'
-                                      r'  RETURNING id',
-                                      account_id, institute_id, department, student_id, email, True)
+            (id_,) = await conn.fetchrow(r'INSERT INTO student_card'
+                                         r'            (account_id, institute_id, department, student_id, email,'
+                                         r'             is_default)'
+                                         r'     VALUES ($1, $2, $3, $4, $5, $6)'
+                                         r'  RETURNING id',
+                                         account_id, institute_id, department, student_id, email, True)
 
             return id_
 
@@ -70,8 +70,8 @@ async def read_owner_id(student_card_id: int) -> int:
     async with SafeExecutor(
             event='get student owner id by student card id',
             sql=fr'SELECT account_id'
-                fr'  FROM account_student_card'
-                fr' WHERE student_card_id = %(student_card_id)s',
+                fr'  FROM student_card'
+                fr' WHERE id = %(student_card_id)s',
             student_card_id=student_card_id,
             fetch=1,
     ) as (id_,):
