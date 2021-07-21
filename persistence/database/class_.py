@@ -210,7 +210,7 @@ async def browse_member_emails(class_id: int, role: RoleType = None) -> Sequence
 
     async with SafeExecutor(
             event='browse class member emails',
-            sql=fr'SELECT student_card.institute_email'
+            sql=fr'SELECT student_card.email'
                 fr'  FROM class_member, student_card'
                 fr' WHERE class_member.member_id = student_card.student_id'
                 fr'   AND student_card.is_default = true'
