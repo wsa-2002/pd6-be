@@ -9,9 +9,9 @@ from typing import Sequence
 async def send(to: str = None, msg: str = "", bcc: str = None, subject='PDOGS Notification'):
     message = EmailMessage()
     message["From"] = f"{smtp_config.username}@{smtp_config.host}"
-    if to:
+    if to is not None:
         message["To"] = to
-    if bcc:
+    if bcc is not None:
         message["Bcc"] = bcc
     message["Subject"] = subject
     message.set_content(msg)
