@@ -212,7 +212,7 @@ async def browse_member_emails(class_id: int, role: RoleType = None) -> Sequence
             event='browse class member emails',
             sql=fr'SELECT student_card.email'
                 fr'  FROM class_member, student_card'
-                fr' WHERE class_member.member_id = student_card.student_id'
+                fr' WHERE class_member.member_id = student_card.account_id'
                 fr'   AND student_card.is_default = true'
                 fr'   AND class_member.class_id = %(class_id)s'
                 fr'   {"AND class_member.role = %(role)s" if role is not None else ""}',
