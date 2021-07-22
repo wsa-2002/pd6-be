@@ -23,6 +23,7 @@ class Account:
 class Institute:
     id: int
     name: str
+    full_name: str
     email_domain: str
     is_disabled: bool
 

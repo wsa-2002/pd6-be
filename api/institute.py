@@ -20,6 +20,7 @@ router = APIRouter(
 
 class AddInstituteInput(BaseModel):
     name: str
+    full_name: str
     email_domain: str
     is_disabled: bool
 
@@ -39,7 +40,7 @@ async def add_institute(data: AddInstituteInput, request: auth.Request) -> AddIn
     if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
-    institute_id = await db.institute.add(name=data.name, email_domain=data.email_domain, is_disabled=data.is_disabled)
+    institute_id = await db.institute.add(name=data.name, full_name=data.full_name, email_domain=data.email_domain, is_disabled=data.is_disabled)
     return AddInstituteOutput(id=institute_id)
 
 
@@ -65,6 +66,7 @@ async def read_institute(institute_id: int) -> do.Institute:
 
 class EditInstituteInput(BaseModel):
     name: str = None
+    full_name: str = None
     email_domain: str = None
     is_disabled: bool = None
 
@@ -82,6 +84,7 @@ async def edit_institute(institute_id: int, data: EditInstituteInput, request: a
     await db.institute.edit(
         institute_id=institute_id,
         name=data.name,
+        full_name=data.full_name,
         email_domain=data.email_domain,
         is_disabled=data.is_disabled,
     )

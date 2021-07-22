@@ -21,6 +21,7 @@ CREATE TABLE account (
 CREATE TABLE institute (
   id            SERIAL  PRIMARY KEY,
   name          VARCHAR NOT NULL  UNIQUE,
+  full_name     VARCHAR NOT NULL  UNIQUE,
   email_domain  VARCHAR NOT NULL  UNIQUE,
   is_disabled   BOOLEAN NOT NULL  DEFAULT false
 );
