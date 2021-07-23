@@ -14,7 +14,7 @@ class S3UploadOutput:
 
 async def upload_input(testcase_id: int, file: UploadFile) -> S3UploadOutput:
     bucket = 'testcase'
-    key = f'{testcase_id}/input-data/{util.get_request_uuid}/{file.filename}'
+    key = f'{testcase_id}/input-data/{util.get_request_uuid()}/{file.filename}'
     async with s3_handler.client as client:
         await client.upload_fileobj(file, bucket, key)
         return S3UploadOutput(bucket=bucket, key=key)
@@ -22,7 +22,7 @@ async def upload_input(testcase_id: int, file: UploadFile) -> S3UploadOutput:
 
 async def upload_output(testcase_id: int, file: UploadFile) -> S3UploadOutput:
     bucket = 'testcase'
-    key = f'{testcase_id}/output-data/{util.get_request_uuid}/{file.filename}'
+    key = f'{testcase_id}/output-data/{util.get_request_uuid()}/{file.filename}'
     async with s3_handler.client as client:
         await client.upload_fileobj(file, bucket, key)
         return S3UploadOutput(bucket=bucket, key=key)
