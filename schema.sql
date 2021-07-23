@@ -182,6 +182,12 @@ CREATE TABLE testcase (
   is_deleted    BOOLEAN NOT NULL  DEFAULT false
 );
 
+CREATE TABLE s3_file (
+  id      SERIAL  PRIMARY KEY,
+  bucket  VARCHAR NOT NULL,
+  key     VARCHAR NOT NULL
+);
+
 
 -- submission management
 

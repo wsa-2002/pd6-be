@@ -31,5 +31,8 @@ s3_handler = S3Handler()
 
 # For import usage
 from . import (
-    file,
+    testcase,
+    essay,
+    supportive_file,
+    image,
 )

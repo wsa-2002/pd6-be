@@ -130,6 +130,13 @@ class Testcase:
 
 
 @dataclass
+class S3File:
+    id: int
+    bucket: str
+    key: str
+
+
+@dataclass
 class SubmissionLanguage:
     id: int
     name: str
