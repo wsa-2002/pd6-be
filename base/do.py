@@ -22,7 +22,7 @@ class Account:
 @dataclass
 class Institute:
     id: int
-    name: str
+    abbreviated_name: str
     full_name: str
     email_domain: str
     is_disabled: bool
