@@ -49,6 +49,9 @@ class AddAccountInput(BaseModel):
 @enveloped
 async def add_account(data: AddAccountInput) -> None:
     # 要先檢查以免創立了帳號後才出事
+    for c in '`#$%&*\\/?':
+        if c in data.username:
+            raise exc.account.IllegalCharacter
     try:
         institute = await db.institute.read(data.institute_id, include_disabled=False)
     except exc.persistence.NotFound:
