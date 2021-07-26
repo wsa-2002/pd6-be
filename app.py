@@ -41,6 +41,10 @@ async def app_startup():
     from persistence.email import smtp_handler
     await smtp_handler.initialize(smtp_config=smtp_config)
 
+    from config import s3_config
+    from persistence.s3 import s3_handler
+    await s3_handler.initialize(s3_config=s3_config)
+
 
 @app.on_event('shutdown')
 async def app_shutdown():
@@ -49,6 +53,9 @@ async def app_shutdown():
 
     from persistence.email import smtp_handler
     await smtp_handler.close()
+
+    from persistence.s3 import s3_handler
+    await s3_handler.close()
 
 
 # Add middlewares
