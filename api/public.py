@@ -1,4 +1,5 @@
 from typing import Optional
+from dataclasses import dataclass
 
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
@@ -10,7 +11,6 @@ from middleware import APIRouter, JSONResponse, enveloped
 import persistence.database as db
 import persistence.email as email
 from util import security, validator
-import asyncpg
 
 
 router = APIRouter(tags=['Public'])
@@ -33,7 +33,7 @@ async def default_page():
 
 class AddAccountInput(BaseModel):
     # Account
-    name: str
+    username: str
     password: str
     nickname: str
     real_name: str
@@ -60,8 +60,11 @@ async def add_account(data: AddAccountInput) -> None:
     if data.alternative_email and not validator.is_valid_email(data.alternative_email):
         raise exc.account.InvalidEmail
 
+    if db.student_card.is_duplicate(institute.id, data.student_id):
+        raise exc.account.StudentCardExists
+
     try:
-        account_id = await db.account.add(name=data.name, pass_hash=security.hash_password(data.password),
+        account_id = await db.account.add(username=data.username, pass_hash=security.hash_password(data.password),
                                           nickname=data.nickname, real_name=data.real_name, role=RoleType.guest)
     except exc.persistence.UniqueViolationError:
         raise exc.account.UsernameExists
@@ -92,15 +95,21 @@ async def email_verification(code: str):
 
 
 class LoginInput(BaseModel):
-    name: str
+    username: str
     password: str
+
+
+@dataclass
+class LoginOutput:
+    token: str
+    account_id: int
 
 
 @router.post('/account/jwt', tags=['Account'], response_class=JSONResponse)
 @enveloped
-async def login(data: LoginInput) -> str:
+async def login(data: LoginInput) -> LoginOutput:
     try:
-        account_id, pass_hash, is_4s_hash = await db.account.read_login_by_name(name=data.name)
+        account_id, pass_hash, is_4s_hash = await db.account.read_login_by_username(username=data.username)
     except exc.persistence.NotFound:
         raise exc.account.LoginFailed  # Not to let user know why login failed
 
@@ -116,7 +125,7 @@ async def login(data: LoginInput) -> str:
 
     # Get jwt
     login_token = security.encode_jwt(account_id=account_id, expire=config.login_expire)
-    return login_token
+    return LoginOutput(token=login_token, account_id=account_id)
 
 
 class ForgetPasswordInput(BaseModel):

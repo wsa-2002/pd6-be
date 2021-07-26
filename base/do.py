@@ -11,7 +11,7 @@ from base import enum
 @dataclass
 class Account:
     id: int
-    name: str
+    username: str
     nickname: str
     real_name: str
     role: enum.RoleType
@@ -34,6 +34,7 @@ class StudentCard:
     department: str
     student_id: str
     email: str
+    is_default: bool
 
 
 @dataclass

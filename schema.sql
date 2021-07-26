@@ -8,7 +8,7 @@ CREATE TYPE role_type AS ENUM (
 
 CREATE TABLE account (
   id                SERIAL    PRIMARY KEY,
-  name              VARCHAR   NOT NULL UNIQUE,
+  username          VARCHAR   NOT NULL UNIQUE,
   pass_hash         VARCHAR   NOT NULL,
   nickname          VARCHAR   NOT NULL,
   real_name         VARCHAR   NOT NULL,
@@ -32,6 +32,7 @@ CREATE TABLE student_card (
   department    VARCHAR NOT NULL,
   student_id    VARCHAR NOT NULL,
   email         VARCHAR NOT NULL  UNIQUE,
+  is_default    BOOLEAN NOT NULL  DEFAULT false,
 
   UNIQUE (institute_id, student_id)
 );
