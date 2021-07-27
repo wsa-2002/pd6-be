@@ -15,6 +15,8 @@ from util import security, validator
 
 router = APIRouter(tags=['Public'])
 
+prohibited_chars = '`#$%&*\\/?'
+
 
 @router.get("/", status_code=418, response_class=HTMLResponse)
 async def default_page():
@@ -49,9 +51,9 @@ class AddAccountInput(BaseModel):
 @enveloped
 async def add_account(data: AddAccountInput) -> None:
     # 要先檢查以免創立了帳號後才出事
-    for c in '`#$%&*\\/?':
-        if c in data.username:
-            raise exc.account.IllegalCharacter
+    if any(char in data.username for char in prohibited_chars):
+        raise exc.account.IllegalCharacter
+
     try:
         institute = await db.institute.read(data.institute_id, include_disabled=False)
     except exc.persistence.NotFound:
