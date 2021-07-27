@@ -1,4 +1,4 @@
-from fastapi import UploadFile
+from fastapi import File, UploadFile
 
 import util
 from . import s3_handler

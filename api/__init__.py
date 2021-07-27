@@ -28,6 +28,7 @@ def register_routers(app: fastapi.FastAPI):
 
         announcement,
         system,
+        testcase_s3,
     )
 
     app.include_router(public.router)
@@ -52,3 +53,4 @@ def register_routers(app: fastapi.FastAPI):
 
     app.include_router(announcement.router)
     app.include_router(system.router)
+    app.include_router(testcase_s3.router)
