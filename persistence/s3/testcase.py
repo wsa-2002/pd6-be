@@ -47,8 +47,3 @@ async def delete(s3_file_id: int) -> None:
 async def download(key: str, filename: str) -> None:
     bucket = await s3_handler.get_bucket(_BUCKET_NAME)
     await bucket.download_file(key, filename)
-
-
-
-
-
