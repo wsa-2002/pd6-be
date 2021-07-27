@@ -61,8 +61,7 @@ class PD4SConfig:
 
 
 class S3Config:
-    host = env_values.get('S3_HOST')
-    port = env_values.get('S3_PORT')
+    endpoint = env_values.get('S3_ENDPOINT')
     access_key = env_values.get('S3_ACCESS_KEY')
     secret_key = env_values.get('S3_SECRET_KEY')
 
