@@ -1,11 +1,17 @@
-from fastapi import UploadFile
+import typing
+import uuid
 
-import util
 from . import s3_handler
 
 
-async def upload_input(testcase_id: int, file: UploadFile) -> None:
-    key = f'{testcase_id}/input-data/{util.get_request_uuid()}/{file.filename}'
-    async with s3_handler.resource as res:
-        bucket = await res.Bucket('testcase')
-        await bucket.upload_fileobj(file.file, key)
+_BUCKET_NAME = 'testcase'
+
+
+async def upload_input(file: typing.IO, filename: str, testcase_id: int) -> typing.Sequence[str, str]:
+    """
+    :return: bucket name and key
+    """
+    bucket = await s3_handler.get_bucket(_BUCKET_NAME)
+    key = f'{testcase_id}/input-data/{uuid.uuid4()}/{filename}'
+    await bucket.upload_fileobj(file, key)
+    return _BUCKET_NAME, key
