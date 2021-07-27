@@ -26,7 +26,7 @@ async def notify_cm_change(tos: Sequence[str], account_ids: Sequence[int], class
     msg = fr"""
 Class Manager Has Been Updated:
 Class ID: {class_id}
-Added CMs: {', '.join(account_ids)}
+Added CMs: {', '.join([str(account_id) for account_id in account_ids])}
 Operator: {operator_id}        
 """
     subject = "PDOGS Notification (Class Manager Updates)"

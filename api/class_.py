@@ -127,7 +127,7 @@ async def edit_class_member(class_id: int, data: Sequence[EditClassMemberInput],
     for item in data:
         await db.class_.edit_member(class_id=class_id, member_id=item.member_id, role=item.role)
 
-    updated_class_managers = [member for member in data if member.role is RoleType.manager]
+    updated_class_managers = [member.member_id for member in data if member.role is RoleType.manager]
     if updated_class_managers:
         class_manager_emails = await db.class_.browse_member_emails(class_id, RoleType.manager)
         await email.notification.notify_cm_change(class_manager_emails, updated_class_managers,
