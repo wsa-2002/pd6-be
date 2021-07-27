@@ -12,6 +12,12 @@ class LoginFailed(PdogsException):
     """
 
 
+class IllegalCharacter(PdogsException):
+    """
+    Illegal character in input
+    """
+
+
 class UsernameExists(PdogsException):
     """
     Failed to register due to duplicate username
