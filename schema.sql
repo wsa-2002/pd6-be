@@ -171,16 +171,16 @@ CREATE TABLE problem (
 );
 
 CREATE TABLE testcase (
-  id            SERIAL  PRIMARY KEY,
-  problem_id    INTEGER NOT NULL  REFERENCES problem(id),
-  is_sample     BOOLEAN NOT NULL,
-  score         INTEGER NOT NULL, -- 保留設定扣分測資的空間
-  input_file    VARCHAR,
-  output_file   VARCHAR,
-  time_limit    INTEGER NOT NULL, -- ms
-  memory_limit  INTEGER NOT NULL, -- kb
-  is_disabled   BOOLEAN NOT NULL  DEFAULT false,
-  is_deleted    BOOLEAN NOT NULL  DEFAULT false
+  id              SERIAL  PRIMARY KEY,
+  problem_id      INTEGER NOT NULL  REFERENCES problem(id),
+  is_sample       BOOLEAN NOT NULL,
+  score           INTEGER NOT NULL, -- 保留設定扣分測資的空間
+  input_file_id   INTEGER REFERENCES s3_file(id),
+  output_file_id  INTEGER REFERENCES s3_file(id),
+  time_limit      INTEGER NOT NULL, -- ms
+  memory_limit    INTEGER NOT NULL, -- kb
+  is_disabled     BOOLEAN NOT NULL  DEFAULT false,
+  is_deleted      BOOLEAN NOT NULL  DEFAULT false
 );
 
 CREATE TABLE s3_file (
