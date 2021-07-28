@@ -1,10 +1,8 @@
-from dataclasses import dataclass
-from datetime import datetime
-from typing import Optional, Sequence
+from typing import Sequence
 
 from pydantic import BaseModel
 
-from base import do, enum
+from base import do
 from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth
@@ -90,8 +88,8 @@ async def submit(problem_id: int, data: AddSubmissionInput, request: auth.Reques
         raise exc.NoPermission
 
     # Validate problem
-    problem = await db.problem.read(problem_id, include_hidden=True)
-    challenge = await db.challenge.read(problem.challenge_id, include_hidden=True)
+    problem = await db.problem.read(problem_id)
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True)
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
@@ -143,8 +141,8 @@ async def read_submission(submission_id: int, request: auth.Request) -> do.Submi
         return submission
 
     # 可以看自己管理的 class 的
-    problem = await db.problem.read(problem_id=submission.problem_id, include_hidden=True)
-    challenge = await db.challenge.read(problem.challenge_id, include_hidden=True)
+    problem = await db.problem.read(problem_id=submission.problem_id)
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True)
     class_role = await rbac.get_role(request.account.id, class_id=challenge.class_id)
     if class_role >= RoleType.manager:
         return submission

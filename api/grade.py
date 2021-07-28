@@ -43,7 +43,7 @@ async def browse_class_grade(class_id: int, request: auth.Request) -> Sequence[d
     - Self (not hidden)
     """
     if await rbac.validate(request.account.id, RoleType.manager, class_id=class_id):  # Class manager
-        return await db.grade.browse(class_id=class_id, include_hidden=True)
+        return await db.grade.browse(class_id=class_id)
     else:  # Self
         return await db.grade.browse(class_id=class_id, receiver_id=request.account.id)
 
@@ -70,12 +70,12 @@ async def get_grade(grade_id: int, request: auth.Request) -> do.Grade:
     - Self (not hidden)
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    grade = await db.grade.read(grade_id=grade_id, include_hidden=True)
+    grade = await db.grade.read(grade_id=grade_id)
 
     is_class_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=grade.class_id)
     is_self = request.account.id is grade.receiver_id
 
-    if not (grade.is_hidden and is_class_manager or not grade.is_hidden and is_self):
+    if not (is_class_manager or is_self):
         raise exc.NoPermission
 
     return grade
@@ -85,7 +85,6 @@ class EditGradeInput(BaseModel):
     title: str = None
     score: Optional[int] = ...
     comment: Optional[str] = ...
-    is_hidden: bool = None
 
 
 @router.patch('/grade/{grade_id}')
@@ -96,14 +95,14 @@ async def edit_grade(grade_id: int, data: EditGradeInput, request: auth.Request)
     - Class manager
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    grade = await db.grade.read(grade_id=grade_id, include_hidden=True)
+    grade = await db.grade.read(grade_id=grade_id)
 
     is_class_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=grade.class_id)
     if not is_class_manager:
         raise exc.NoPermission
 
     await db.grade.edit(grade_id=grade_id, title=data.title, score=data.score, comment=data.comment,
-                        update_time=util.get_request_time(), is_hidden=data.is_hidden)  # TODO: request.time?
+                        update_time=util.get_request_time())  # TODO: request.time?
 
 
 @router.delete('/grade/{grade_id}')
@@ -114,7 +113,7 @@ async def delete_grade(grade_id: int, request: auth.Request):
     - Class manager
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    grade = await db.grade.read(grade_id=grade_id, include_hidden=True)
+    grade = await db.grade.read(grade_id=grade_id)
 
     is_class_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=grade.class_id)
     if not is_class_manager:

@@ -80,7 +80,6 @@ async def read_course(course_id: int, request: auth.Request) -> do.Course:
 class EditCourseInput(BaseModel):
     name: str = None
     type: CourseType = None
-    is_hidden: bool = None
 
 
 @router.patch('/course/{course_id}')
@@ -151,6 +150,4 @@ async def browse_class_under_course(course_id: int, request: auth.Request) -> Se
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
-    # FIXME
-    # 先包含 hidden，再篩選這個 account 能看到的 class
-    return db.class_.browse(course_id=course_id)
+    return await db.class_.browse(course_id=course_id)
