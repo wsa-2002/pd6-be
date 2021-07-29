@@ -66,7 +66,7 @@ async def download_testcase_input_data(testcase_id: int, request: auth.Request) 
         raise exc.NoPermission
 
     input_file = await db.s3_file.read(s3_file_id=testcase.input_file_id)
-    url = f'{s3_config.endpoint}/{input_file.bucket}/{input_file.key}'
+    url = f'{s3_config.endpoint}/minio/{input_file.bucket}/{input_file.key}'
     return url
 
 
@@ -87,7 +87,7 @@ async def download_testcase_output_data(testcase_id: int, request: auth.Request)
         raise exc.NoPermission
 
     output_file = await db.s3_file.read(s3_file_id=testcase.output_file_id)
-    url = f'{s3_config.endpoint}/{output_file.bucket}/{output_file.key}'
+    url = f'{s3_config.endpoint}/minio/{output_file.bucket}/{output_file.key}'
     return url
 
 
