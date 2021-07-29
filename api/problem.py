@@ -52,7 +52,7 @@ async def read_problem(problem_id: int, request: auth.Request) -> do.Problem:
                       else challenge.end_time)
     is_challenge_publicized = util.get_request_time() >= publicize_time
 
-    if not (is_class_manager or (is_system_normal and not is_challenge_publicized)):
+    if not (is_class_manager or (is_system_normal and is_challenge_publicized)):
         raise exc.NoPermission
 
     return problem

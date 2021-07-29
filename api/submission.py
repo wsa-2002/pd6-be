@@ -3,7 +3,7 @@ from typing import Sequence
 from pydantic import BaseModel
 
 from base import do
-from base.enum import RoleType
+from base.enum import RoleType, ChallengePublicizeType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
@@ -80,7 +80,8 @@ class AddSubmissionInput(BaseModel):
 async def submit(problem_id: int, data: AddSubmissionInput, request: auth.Request):
     """
     ### 權限
-    - System normal
+    - System Manager (all)
+    - System normal (non scheduled)
     """
     submit_time = util.get_request_time()
 
@@ -90,7 +91,13 @@ async def submit(problem_id: int, data: AddSubmissionInput, request: auth.Reques
     # Validate problem
     problem = await db.problem.read(problem_id)
     challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True)
-    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+
+    publicize_time = (challenge.start_time if challenge.publicize_type == ChallengePublicizeType.start_time
+                      else challenge.end_time)
+    is_challenge_publicized = submit_time >= publicize_time
+
+    if not (await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)
+            or is_challenge_publicized):
         raise exc.NoPermission
 
     # Validate language

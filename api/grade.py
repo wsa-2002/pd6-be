@@ -39,8 +39,8 @@ async def import_class_grade(class_id: int, request: auth.Request):
 async def browse_class_grade(class_id: int, request: auth.Request) -> Sequence[do.Grade]:
     """
     ### 權限
-    - Class manager (hidden)
-    - Self (not hidden)
+    - Class manager (all)
+    - Class normal (self)
     """
     if await rbac.validate(request.account.id, RoleType.manager, class_id=class_id):  # Class manager
         return await db.grade.browse(class_id=class_id)
@@ -66,8 +66,8 @@ async def browse_account_grade(account_id: int, request: auth.Request) -> Sequen
 async def get_grade(grade_id: int, request: auth.Request) -> do.Grade:
     """
     ### 權限
-    - Class manager (hidden)
-    - Self (not hidden)
+    - Class manager (all)
+    - Class normal (self)
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     grade = await db.grade.read(grade_id=grade_id)

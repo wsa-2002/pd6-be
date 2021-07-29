@@ -5,6 +5,8 @@ from base import do, enum
 
 from .base import SafeExecutor
 
+import util
+
 
 async def add(class_id: int, type_: enum.ChallengeType, publicize_type: enum.ChallengePublicizeType,
               title: str, setter_id: int, description: Optional[str],
@@ -35,7 +37,7 @@ async def browse(class_id: int = None,
         filters.append("NOT is_deleted")
 
     if not include_scheduled:  # only show start_time < now
-        now = datetime.now()
+        now = util.get_request_time()
         filters.append(f"start_time <= {now}")
 
     cond_sql = ' AND '.join(list(fr"{field_name} = %({field_name})s" for field_name in conditions)

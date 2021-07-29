@@ -7,6 +7,7 @@ from base.enum import CourseType, RoleType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
+import util
 from util import rbac
 from datetime import datetime
 
@@ -31,7 +32,7 @@ async def read_peer_review(peer_review_id: int, request: auth.Request) -> do.Pee
     challenge = await db.challenge.read(peer_review.challenge_id, include_scheduled=True)
     class_role = await rbac.get_role(request.account.id, class_id=challenge.class_id)
 
-    is_scheduled = challenge.start_time > datetime.now()
+    is_scheduled = challenge.start_time > util.get_request_time()
 
     if not (is_scheduled and class_role >= RoleType.manager  # hidden => need manager
             or not is_scheduled and class_role >= RoleType.normal):  # not hidden => need normal

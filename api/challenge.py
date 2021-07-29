@@ -9,6 +9,7 @@ from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
+import util
 from util import rbac
 
 router = APIRouter(
@@ -56,7 +57,7 @@ async def browse_challenge_under_class(class_id: int, request: auth.Request) -> 
     """
     class_role = await rbac.get_role(request.account.id, class_id=class_id)
 
-    if class_role < RoleType.Normal:
+    if class_role < RoleType.normal:
         raise exc.NoPermission
 
     return await db.challenge.browse(class_id=class_id, include_scheduled=class_role == RoleType.manager)
@@ -84,7 +85,8 @@ async def read_challenge(challenge_id: int, request: auth.Request) -> do.Challen
     challenge = await db.challenge.read(challenge_id=challenge_id, include_scheduled=True)
     class_role = await rbac.get_role(request.account.id, class_id=challenge.class_id)
 
-    if class_role < RoleType.normal or (class_role < RoleType.manager and datetime.now() < challenge.start_time):
+    if class_role < RoleType.normal \
+            or (class_role < RoleType.manager and util.get_request_time() < challenge.start_time):
         raise exc.NoPermission
 
     return challenge
