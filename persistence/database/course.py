@@ -29,7 +29,7 @@ async def browse(*, include_deleted=False) -> Sequence[do.Course]:
 
     async with SafeExecutor(
             event='get all courses',
-            sql=fr'SELECT id, name, type'
+            sql=fr'SELECT id, name, type, is_deleted'
                 fr'  FROM course'
                 fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
                 fr' ORDER BY id ASC',
