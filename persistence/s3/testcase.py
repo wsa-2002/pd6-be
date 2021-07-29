@@ -3,7 +3,6 @@ from typing import Tuple
 import uuid
 
 from . import s3_handler
-import persistence.database as db
 
 
 _BUCKET_NAME = 'testcase'
@@ -38,9 +37,8 @@ async def update(file: typing.IO, key: str) -> Tuple[str, str]:
     return _BUCKET_NAME, key
 
 
-async def delete(s3_file_id: int) -> None:
-    s3_file = await db.s3_file.read(s3_file_id=s3_file_id)
-    to_delete_file = await s3_handler.resource.Object(s3_file.bucket, s3_file.key)
+async def delete(bucket: str, key: str) -> None:
+    to_delete_file = await s3_handler.resource.Object(bucket, key)
     await to_delete_file.delete()
 
 

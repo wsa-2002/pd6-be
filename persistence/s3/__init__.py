@@ -44,6 +44,7 @@ class S3Handler(metaclass=mcs.Singleton):
 
 s3_handler = S3Handler()
 
+
 # For import usage
 from . import (
     testcase,
