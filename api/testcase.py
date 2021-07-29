@@ -1,14 +1,15 @@
+from fastapi import File, UploadFile
 from pydantic import BaseModel
 
 from base.enum import RoleType
+from config import s3_config
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
 import persistence.s3 as s3
-from util import rbac
-from fastapi import UploadFile, File
+from util import rbac, url
+
 from .problem import ReadTestcaseOutput
-from config import s3_config
 
 
 router = APIRouter(
@@ -51,44 +52,46 @@ class EditTestcaseInput(BaseModel):
 
 @router.get('/testcase/{testcase_id}/input-data')
 @enveloped
-async def download_testcase_input_data(testcase_id: int, request: auth.Request) -> str:
+async def read_testcase_input_data(testcase_id: int, request: auth.Request) -> str:
     """
     ### 權限
-    - System Normal(Sample)
-    - Class Manager(All)
+    - System Normal (Sample)
+    - Class Manager (All)
+
+    This api will return a url which can directly download the file from s3-file-service.
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     testcase = await db.testcase.read(testcase_id)
     problem = await db.problem.read(testcase.problem_id, include_hidden=True)
     challenge = await db.challenge.read(problem.challenge_id, include_hidden=True)
-    if not await (rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)
-                  or (testcase.is_sample and rbac.validate(request.account.id, RoleType.normal))):
+    if not (await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)
+            or (testcase.is_sample and await rbac.validate(request.account.id, RoleType.normal))):
         raise exc.NoPermission
 
     input_file = await db.s3_file.read(s3_file_id=testcase.input_file_id)
-    url = f'{s3_config.endpoint}/minio/{input_file.bucket}/{input_file.key}'
-    return url
+    return url.joiner(s3_config.endpoint, 'minio', input_file.bucket, input_file.key)
 
 
 @router.get('/testcase/{testcase_id}/output-data')
 @enveloped
-async def download_testcase_output_data(testcase_id: int, request: auth.Request) -> str:
+async def read_testcase_output_data(testcase_id: int, request: auth.Request) -> str:
     """
     ### 權限
-    - System Normal(Sample)
-    - Class Manager(All)
+    - System Normal (Sample)
+    - Class Manager (All)
+
+    This api will return a url which can directly download the file from s3-file-service.
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     testcase = await db.testcase.read(testcase_id)
     problem = await db.problem.read(testcase.problem_id, include_hidden=True)
     challenge = await db.challenge.read(problem.challenge_id, include_hidden=True)
-    if not await (rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)
-                  or (testcase.is_sample and rbac.validate(request.account.id, RoleType.normal))):
+    if not (await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)
+            or (testcase.is_sample and await rbac.validate(request.account.id, RoleType.normal))):
         raise exc.NoPermission
 
     output_file = await db.s3_file.read(s3_file_id=testcase.output_file_id)
-    url = f'{s3_config.endpoint}/minio/{output_file.bucket}/{output_file.key}'
-    return url
+    return url.joiner(s3_config.endpoint, 'minio', output_file.bucket, output_file.key)
 
 
 @router.patch('/testcase/{testcase_id}')
@@ -124,9 +127,9 @@ async def upload_testcase_input_data(testcase_id: int, request: auth.Request, in
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
-    # 流程: 先upload到s3取得bucket, key
-    #       bucket, key進s3_file db得到file id
-    #       file_id進testcase db
+    # 流程: 先 upload 到 s3 取得 bucket, key
+    #       bucket, key 進 s3_file db 得到 file id
+    #       file_id 進 testcase db
     bucket, key = await s3.testcase.upload_input(file=input_file.file,
                                                  filename=input_file.filename,
                                                  testcase_id=testcase_id)
@@ -149,9 +152,9 @@ async def upload_testcase_output_data(testcase_id: int, request: auth.Request, o
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
-    # 流程: 先upload到s3取得bucket, key
-    #       bucket, key進s3_file db得到file id
-    #       file_id進testcase db
+    # 流程: 先 upload 到 s3 取得 bucket, key
+    #       bucket, key 進 s3_file db 得到 file id
+    #       file_id 進 testcase db
     bucket, key = await s3.testcase.upload_output(file=output_file.file,
                                                   filename=output_file.filename,
                                                   testcase_id=testcase_id)
