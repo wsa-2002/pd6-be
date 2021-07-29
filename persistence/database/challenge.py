@@ -72,7 +72,7 @@ async def read(challenge_id: int, include_scheduled: bool = False, include_delet
                 fr'{f" AND start_time <= %(cur_time)s" if not include_scheduled else ""}'
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}',
             challenge_id=challenge_id,
-            cur_time=datetime.now(),
+            cur_time=util.get_request_time(),
             fetch=1,
     ) as (id_, class_id, type_, publicize_type, title, setter_id, description, start_time, end_time, is_deleted):
         return do.Challenge(id=id_, class_id=class_id, type=enum.ChallengeType(type_),

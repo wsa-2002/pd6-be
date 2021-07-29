@@ -5,11 +5,13 @@ from base import do
 
 from .base import SafeExecutor
 
+import util
+
 
 async def add(receiver_id: int, grader_id: int, class_id: int, title: str, score: Optional[int], comment: Optional[str],
               update_time: datetime = None) -> int:
     if update_time is None:
-        update_time = datetime.now()
+        update_time = util.get_request_time()
 
     async with SafeExecutor(
             event='Add grade',
@@ -78,7 +80,7 @@ async def read(grade_id: int, include_deleted=False) -> do.Grade:
 async def edit(grade_id: int, title: str = None, score: Optional[int] = ..., comment: Optional[str] = ...,
                update_time: datetime = None) -> None:
     if update_time is None:
-        update_time = datetime.now()
+        update_time = util.get_request_time()
 
     to_updates = {}
 
