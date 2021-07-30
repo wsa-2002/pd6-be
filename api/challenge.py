@@ -52,15 +52,15 @@ async def add_challenge_under_class(class_id: int, data: AddChallengeInput, requ
 async def browse_challenge_under_class(class_id: int, request: auth.Request) -> Sequence[do.Challenge]:
     """
     ### 權限
-    - Class manager (hidden)
-    - Class guest (not hidden)
+    - Class manager (all)
+    - Class guest+normal (not scheduled)
     """
     class_role = await rbac.get_role(request.account.id, class_id=class_id)
 
-    if class_role < RoleType.normal:
+    if class_role < RoleType.guest:
         raise exc.NoPermission
 
-    return await db.challenge.browse(class_id=class_id, include_scheduled=class_role == RoleType.manager)
+    return await db.challenge.browse(class_id=class_id, include_scheduled=(class_role == RoleType.manager))
 
 
 @router.get('/challenge')
@@ -78,14 +78,14 @@ async def browse_challenge(request: auth.Request) -> Sequence[do.Challenge]:
 async def read_challenge(challenge_id: int, request: auth.Request) -> do.Challenge:
     """
     ### 權限
-    - Class manager (hidden)
-    - Class guest (not hidden)
+    - Class manager (all)
+    - Class guest+normal (not scheduled)
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     challenge = await db.challenge.read(challenge_id=challenge_id, include_scheduled=True)
     class_role = await rbac.get_role(request.account.id, class_id=challenge.class_id)
 
-    if class_role < RoleType.normal \
+    if class_role < RoleType.guest \
             or (class_role < RoleType.manager and util.get_request_time() < challenge.start_time):
         raise exc.NoPermission
 
