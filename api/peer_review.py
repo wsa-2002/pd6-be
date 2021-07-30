@@ -9,7 +9,6 @@ from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
 import util
 from util import rbac
-from datetime import datetime
 
 
 router = APIRouter(
