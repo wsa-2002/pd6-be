@@ -62,7 +62,6 @@ CREATE TABLE course (
   id          SERIAL      PRIMARY KEY,
   name        VARCHAR     NOT NULL  UNIQUE,
   type        course_type NOT NULL,
-  is_hidden   BOOLEAN     NOT NULL  DEFAULT false,
   is_deleted  BOOLEAN     NOT NULL  DEFAULT false
 );
 
@@ -70,7 +69,6 @@ CREATE TABLE class (
   id          SERIAL  PRIMARY KEY,
   name        VARCHAR NOT NULL,
   course_id   INTEGER NOT NULL  REFERENCES course(id),
-  is_hidden   BOOLEAN NOT NULL  DEFAULT false,
   is_deleted  BOOLEAN NOT NULL  DEFAULT false,
 
   UNIQUE (course_id, name)
@@ -89,7 +87,6 @@ CREATE TABLE team (
   name        VARCHAR NOT NULL,
   class_id    INTEGER NOT NULL  REFERENCES class(id),
   label       VARCHAR NOT NULL,
-  is_hidden   BOOLEAN NOT NULL  DEFAULT false,
   is_deleted  BOOLEAN NOT NULL  DEFAULT false,
 
   UNIQUE (class_id, name)
@@ -112,7 +109,6 @@ CREATE TABLE grade (
   score       INTEGER,
   comment     TEXT,
   update_time TIMESTAMP NOT NULL,
-  is_hidden   BOOLEAN   NOT NULL  DEFAULT false,
   is_deleted  BOOLEAN   NOT NULL  DEFAULT false,
 
   UNIQUE (receiver_id, title)
@@ -141,7 +137,6 @@ CREATE TABLE challenge (
   description       TEXT,
   start_time        TIMESTAMP                   NOT NULL,
   end_time          TIMESTAMP                   NOT NULL,
-  is_hidden         BOOLEAN                     NOT NULL  DEFAULT false,
   is_deleted        BOOLEAN                     NOT NULL  DEFAULT false,
 
   UNIQUE (class_id, title)
@@ -167,7 +162,6 @@ CREATE TABLE problem (
   description     TEXT,
   source          TEXT,
   hint            TEXT,
-  is_hidden       BOOLEAN             NOT NULL  DEFAULT false,
   is_deleted      BOOLEAN             NOT NULL  DEFAULT false
 );
 
@@ -258,7 +252,6 @@ CREATE TABLE peer_review (
   max_review_count  INTEGER   NOT NULL,  -- 一個人最多改幾份
   start_time        TIMESTAMP NOT NULL,
   end_time          TIMESTAMP NOT NULL,
-  is_hidden         BOOLEAN   NOT NULL  DEFAULT false,
   is_deleted        BOOLEAN   NOT NULL  DEFAULT false
 );
 

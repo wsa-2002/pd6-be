@@ -1,6 +1,4 @@
-from dataclasses import dataclass
 from datetime import datetime
-from typing import Sequence
 
 from pydantic import BaseModel
 
@@ -9,6 +7,7 @@ from base.enum import CourseType, RoleType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
+import util
 from util import rbac
 
 
@@ -28,12 +27,14 @@ async def read_peer_review(peer_review_id: int, request: auth.Request) -> do.Pee
     - Class normal (not hidden)
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    peer_review = await db.peer_review.read(peer_review_id, include_hidden=True)
-    challenge = await db.challenge.read(peer_review.challenge_id, include_hidden=True)
+    peer_review = await db.peer_review.read(peer_review_id)
+    challenge = await db.challenge.read(peer_review.challenge_id, include_scheduled=True)
     class_role = await rbac.get_role(request.account.id, class_id=challenge.class_id)
 
-    if not (peer_review.is_hidden and class_role >= RoleType.manager  # hidden => need manager
-            or not peer_review.is_hidden and class_role >= RoleType.normal):  # not hidden => need normal
+    is_scheduled = challenge.start_time > util.get_request_time()
+
+    if not (is_scheduled and class_role >= RoleType.manager  # hidden => need manager
+            or not is_scheduled and class_role >= RoleType.normal):  # not hidden => need normal
         raise exc.NoPermission
 
     return peer_review
@@ -46,7 +47,6 @@ class EditPeerReviewInput(BaseModel):
     max_review_count: int = None
     start_time: datetime = None
     end_time: datetime = None
-    is_hidden: bool = None
 
 
 @router.patch('/peer-review/{peer_review_id}')
@@ -57,8 +57,8 @@ async def edit_peer_review(peer_review_id: int, data: EditPeerReviewInput, reque
     - Class manager
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    peer_review = await db.peer_review.read(peer_review_id, include_hidden=True)
-    challenge = await db.challenge.read(peer_review.challenge_id, include_hidden=True)
+    peer_review = await db.peer_review.read(peer_review_id)
+    challenge = await db.challenge.read(peer_review.challenge_id, include_scheduled=True)
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
@@ -66,8 +66,7 @@ async def edit_peer_review(peer_review_id: int, data: EditPeerReviewInput, reque
                                      description=data.description,
                                      min_score=data.min_score, max_score=data.max_score,
                                      max_review_count=data.max_review_count,
-                                     start_time=data.start_time, end_time=data.end_time,
-                                     is_hidden=data.is_hidden)
+                                     start_time=data.start_time, end_time=data.end_time)
 
 
 @router.delete('/peer-review/{peer_review_id}')
@@ -78,8 +77,8 @@ async def delete_peer_review(peer_review_id: int, request: auth.Request) -> None
     - Class manager
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    peer_review = await db.peer_review.read(peer_review_id, include_hidden=True)
-    challenge = await db.challenge.read(peer_review.challenge_id, include_hidden=True)
+    peer_review = await db.peer_review.read(peer_review_id)
+    challenge = await db.challenge.read(peer_review.challenge_id, include_scheduled=True)
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 

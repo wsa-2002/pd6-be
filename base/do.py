@@ -43,7 +43,6 @@ class Course:
     id: int
     name: str
     type: enum.CourseType
-    is_hidden: bool
     is_deleted: bool
 
 
@@ -52,7 +51,6 @@ class Class:
     id: int
     name: str
     course_id: int
-    is_hidden: bool
     is_deleted: bool
 
 
@@ -62,7 +60,6 @@ class Team:
     name: str
     class_id: int
     label: str
-    is_hidden: bool
     is_deleted: bool
 
 
@@ -82,7 +79,6 @@ class Grade:
     score: Optional[int]
     comment: Optional[str]
     update_time: datetime
-    is_hidden: bool
     is_deleted: bool
 
 
@@ -97,7 +93,6 @@ class Challenge:
     description: Optional[str]
     start_time: datetime
     end_time: datetime
-    is_hidden: bool
     is_deleted: bool
 
 
@@ -113,7 +108,6 @@ class Problem:
     description: Optional[str]
     source: Optional[str]
     hint: Optional[str]
-    is_hidden: bool
     is_deleted: bool
 
 
@@ -184,7 +178,6 @@ class PeerReview:
     max_review_count: int
     start_time: datetime
     end_time: datetime
-    is_hidden: bool
     is_deleted: bool
 
 

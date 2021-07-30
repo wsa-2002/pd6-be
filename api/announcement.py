@@ -52,7 +52,7 @@ async def browse_announcement(request: auth.Request) -> Sequence[do.Announcement
     if not system_role >= RoleType.guest:
         raise exc.NoPermission
 
-    return await db.announcement.browse(show_hidden=system_role >= RoleType.manager)
+    return await db.announcement.browse(include_scheduled=system_role >= RoleType.manager)
 
 
 @router.get('/announcement/{announcement_id}')
@@ -67,7 +67,7 @@ async def read_announcement(announcement_id: int, request: auth.Request) -> do.A
     if not system_role >= RoleType.guest:
         raise exc.NoPermission
 
-    return await db.announcement.read(announcement_id, show_hidden=system_role >= RoleType.manager)
+    return await db.announcement.read(announcement_id, include_scheduled=system_role >= RoleType.manager)
 
 
 class EditAnnouncementInput(BaseModel):
