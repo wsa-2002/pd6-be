@@ -96,8 +96,8 @@ async def submit(problem_id: int, data: AddSubmissionInput, request: auth.Reques
                       else challenge.end_time)
     is_challenge_publicized = submit_time >= publicize_time
 
-    if not (is_challenge_publicized or
-            await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)):
+    if not (is_challenge_publicized
+            or await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)):
         raise exc.NoPermission
 
     # Validate language
