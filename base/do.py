@@ -22,7 +22,8 @@ class Account:
 @dataclass
 class Institute:
     id: int
-    name: str
+    abbreviated_name: str
+    full_name: str
     email_domain: str
     is_disabled: bool
 
@@ -42,7 +43,6 @@ class Course:
     id: int
     name: str
     type: enum.CourseType
-    is_hidden: bool
     is_deleted: bool
 
 
@@ -51,7 +51,6 @@ class Class:
     id: int
     name: str
     course_id: int
-    is_hidden: bool
     is_deleted: bool
 
 
@@ -61,7 +60,6 @@ class Team:
     name: str
     class_id: int
     label: str
-    is_hidden: bool
     is_deleted: bool
 
 
@@ -81,7 +79,6 @@ class Grade:
     score: Optional[int]
     comment: Optional[str]
     update_time: datetime
-    is_hidden: bool
     is_deleted: bool
 
 
@@ -96,7 +93,6 @@ class Challenge:
     description: Optional[str]
     start_time: datetime
     end_time: datetime
-    is_hidden: bool
     is_deleted: bool
 
 
@@ -112,7 +108,6 @@ class Problem:
     description: Optional[str]
     source: Optional[str]
     hint: Optional[str]
-    is_hidden: bool
     is_deleted: bool
 
 
@@ -122,8 +117,8 @@ class Testcase:
     problem_id: int
     is_sample: bool
     score: int
-    input_file: Optional[str]
-    output_file: Optional[str]
+    input_file_id: Optional[int]
+    output_file_id: Optional[int]
     time_limit: int
     memory_limit: int
     is_disabled: bool
@@ -190,7 +185,6 @@ class PeerReview:
     max_review_count: int
     start_time: datetime
     end_time: datetime
-    is_hidden: bool
     is_deleted: bool
 
 

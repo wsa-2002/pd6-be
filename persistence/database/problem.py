@@ -1,7 +1,6 @@
 from typing import Optional, Sequence
 from datetime import datetime
 
-import log
 from base import do, enum
 
 from .base import SafeExecutor
@@ -9,28 +8,27 @@ from .base import SafeExecutor
 
 async def add(challenge_id: int, challenge_label: str, selection_type: enum.TaskSelectionType,
               title: str, setter_id: int, full_score: int, description: Optional[str],
-              source: Optional[str], hint: Optional[str], is_hidden: bool) -> int:
+              source: Optional[str], hint: Optional[str]) -> int:
     async with SafeExecutor(
             event='Add problem',
             sql="INSERT INTO problem"
                 "            (challenge_id, challenge_label, selection_type,"
                 "             title, setter_id, full_score, description,"
-                "             source, hint, is_hidden)"
+                "             source, hint)"
                 "     VALUES (%(title)s, %(setter_id)s, %(full_score)s, %(description)s,"
-                "             %(source)s, %(hint)s, %(is_hidden)s)"
+                "             %(source)s, %(hint)s)"
                 "  RETURNING id",
             challenge_id=challenge_id, challenge_label=challenge_label, selection_type=selection_type,
             title=title, setter_id=setter_id, full_score=full_score, description=description,
-            source=source, hint=hint, is_hidden=is_hidden,
+            source=source, hint=hint,
             fetch=1,
     ) as (id_,):
         return id_
 
 
-async def browse(include_hidden=False, include_deleted=False) -> Sequence[do.Problem]:
+async def browse(include_scheduled: bool = False, include_deleted=False) -> Sequence[do.Problem]:
     filters = []
-    if not include_hidden:
-        filters.append("NOT is_hidden")
+
     if not include_deleted:
         filters.append("NOT is_deleted")
 
@@ -39,7 +37,7 @@ async def browse(include_hidden=False, include_deleted=False) -> Sequence[do.Pro
     async with SafeExecutor(
             event='browse problems',
             sql=fr'SELECT id, challenge_id, challenge_label, selection_type, title, setter_id, full_score, '
-                fr'       description, source, hint, is_hidden, is_deleted'
+                fr'       description, source, hint, is_deleted'
                 fr'  FROM problem'
                 fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
                 fr' ORDER BY id ASC',
@@ -50,25 +48,24 @@ async def browse(include_hidden=False, include_deleted=False) -> Sequence[do.Pro
                            selection_type=enum.TaskSelectionType(selection_type),
                            title=title, setter_id=setter_id,
                            full_score=full_score, description=description, source=source, hint=hint,
-                           is_hidden=is_hidden, is_deleted=is_deleted)
+                           is_deleted=is_deleted)
                 for (id_, challenge_id, challenge_label, selection_type, title, setter_id, full_score,
-                     description, source, hint, is_hidden, is_deleted)
+                     description, source, hint, is_deleted)
                 in records]
 
 
-async def browse_problem_set(request_time: datetime, include_hidden=False, include_deleted=False) \
+async def browse_problem_set(request_time: datetime, include_deleted=False) \
         -> Sequence[do.Problem]:
     async with SafeExecutor(
             event='browse problem set',
             sql=fr'SELECT problem.id, problem.challenge_id, problem.challenge_label, problem.selection_type, '
                 fr'       problem.title, problem.setter_id, problem.full_score, problem.description, '
-                fr'       problem.source, problem.hint, problem.is_hidden, problem.is_deleted'
+                fr'       problem.source, problem.hint, problem.is_deleted'
                 fr'  FROM problem'
                 fr'       INNER JOIN challenge'
                 fr'               ON challenge.id = problem.challenge_id'
                 fr' WHERE challenge.publicize_type = %(start_time)s AND challenge.start_time <= %(request_time)s'
                 fr'    OR challenge.publicize_type = %(end_time)s AND challenge.end_time <= %(request_time)s'
-                fr'{" AND NOT problem.is_hidden" if not include_hidden else ""}'
                 fr'{" AND NOT problem.is_deleted" if not include_deleted else ""}'
                 fr' ORDER BY problem.id ASC',
             request_time=request_time,
@@ -81,20 +78,19 @@ async def browse_problem_set(request_time: datetime, include_hidden=False, inclu
                            selection_type=enum.TaskSelectionType(selection_type),
                            title=title, setter_id=setter_id,
                            full_score=full_score, description=description, source=source, hint=hint,
-                           is_hidden=is_hidden, is_deleted=is_deleted)
+                           is_deleted=is_deleted)
                 for (id_, challenge_id, challenge_label, selection_type, title, setter_id, full_score,
-                     description, source, hint, is_hidden, is_deleted)
+                     description, source, hint, is_deleted)
                 in records]
 
 
-async def browse_by_challenge(challenge_id: int, include_hidden=False, include_deleted=False) -> Sequence[do.Problem]:
+async def browse_by_challenge(challenge_id: int, include_deleted=False) -> Sequence[do.Problem]:
     async with SafeExecutor(
             event='browse problems with challenge id',
             sql=fr'SELECT id, challenge_id, challenge_label, selection_type, title, setter_id, full_score, '
-                fr'       description, source, hint, is_hidden, is_deleted'
+                fr'       description, source, hint, is_deleted'
                 fr'  FROM problem'
                 fr' WHERE challenge_id = %(challenge_id)s'
-                fr'{" AND NOT is_hidden" if not include_hidden else ""}'
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}'
                 fr' ORDER BY id ASC',
             challenge_id=challenge_id,
@@ -105,31 +101,30 @@ async def browse_by_challenge(challenge_id: int, include_hidden=False, include_d
                            selection_type=enum.TaskSelectionType(selection_type),
                            title=title, setter_id=setter_id,
                            full_score=full_score, description=description, source=source, hint=hint,
-                           is_hidden=is_hidden, is_deleted=is_deleted)
+                           is_deleted=is_deleted)
                 for (id_, challenge_id, challenge_label, selection_type, title, setter_id, full_score,
-                     description, source, hint, is_hidden, is_deleted)
+                     description, source, hint, is_deleted)
                 in records]
 
 
-async def read(problem_id: int, include_hidden=False, include_deleted=False) -> do.Problem:
+async def read(problem_id: int, include_deleted=False) -> do.Problem:
     async with SafeExecutor(
             event='read problem by id',
             sql=fr'SELECT id, challenge_id, challenge_label, selection_type, title, setter_id, full_score, '
-                fr'       description, source, hint, is_hidden, is_deleted'
+                fr'       description, source, hint, is_deleted'
                 fr'  FROM problem'
                 fr' WHERE id = %(problem_id)s'
-                fr'{" AND NOT is_hidden" if not include_hidden else ""}'
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}',
             problem_id=problem_id,
             fetch=1,
     ) as (id_, challenge_id, challenge_label, selection_type, title, setter_id, full_score,
-          description, source, hint, is_hidden, is_deleted):
+          description, source, hint, is_deleted):
         return do.Problem(id=id_,
                           challenge_id=challenge_id, challenge_label=challenge_label,
                           selection_type=enum.TaskSelectionType(selection_type),
                           title=title, setter_id=setter_id,
                           full_score=full_score, description=description, source=source, hint=hint,
-                          is_hidden=is_hidden, is_deleted=is_deleted)
+                          is_deleted=is_deleted)
 
 
 async def edit(problem_id: int,
@@ -139,8 +134,7 @@ async def edit(problem_id: int,
                full_score: int = None,
                description: Optional[str] = ...,
                source: Optional[str] = ...,
-               hint: Optional[str] = ...,
-               is_hidden: bool = None,) -> None:
+               hint: Optional[str] = ...,) -> None:
     to_updates = {}
 
     if challenge_label is not None:
@@ -157,8 +151,6 @@ async def edit(problem_id: int,
         to_updates['source'] = source
     if hint is not ...:
         to_updates['hint'] = hint
-    if is_hidden is not None:
-        to_updates['is_hidden'] = is_hidden
 
     if not to_updates:
         return
