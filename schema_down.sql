@@ -1,3 +1,8 @@
+-- S3-file management
+
+DROP TABLE IF EXISTS s3_file;
+
+
 -- System
 
 DROP TABLE IF EXISTS access_log;

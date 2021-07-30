@@ -1,3 +1,14 @@
+
+
+-- s3-file management
+
+CREATE TABLE s3_file (
+  id      SERIAL  PRIMARY KEY,
+  bucket  VARCHAR NOT NULL,
+  key     VARCHAR NOT NULL
+);
+
+
 -- account control
 
 CREATE TYPE role_type AS ENUM (
@@ -176,12 +187,6 @@ CREATE TABLE testcase (
   memory_limit    INTEGER NOT NULL, -- kb
   is_disabled     BOOLEAN NOT NULL  DEFAULT false,
   is_deleted      BOOLEAN NOT NULL  DEFAULT false
-);
-
-CREATE TABLE s3_file (
-  id      SERIAL  PRIMARY KEY,
-  bucket  VARCHAR NOT NULL,
-  key     VARCHAR NOT NULL
 );
 
 

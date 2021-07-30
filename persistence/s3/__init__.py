@@ -37,12 +37,9 @@ class S3Handler(metaclass=mcs.Singleton):
             self._buckets[bucket_name] = bucket
             return bucket
 
-    @property
-    def resource(self):
-        return self._resource
-
 
 s3_handler = S3Handler()
+
 
 # For import usage
 from . import (
