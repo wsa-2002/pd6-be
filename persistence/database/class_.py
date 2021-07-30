@@ -202,9 +202,7 @@ async def delete_member(class_id: int, member_id: int):
 
 
 async def browse_member_emails(class_id: int, role: RoleType = None) -> Sequence[str]:
-    conditions = {
-        'class_id': class_id
-    }
+    conditions = {}
     if role is not None:
         conditions['role'] = role
 
@@ -216,6 +214,7 @@ async def browse_member_emails(class_id: int, role: RoleType = None) -> Sequence
                 fr'   AND student_card.is_default = true'
                 fr'   AND class_member.class_id = %(class_id)s'
                 fr' {"AND class_member.role = %(role)s" if role is not None else ""}',
+            class_id=class_id,
             **conditions,
             fetch='all',
     ) as records:
