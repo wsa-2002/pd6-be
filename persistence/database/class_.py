@@ -191,3 +191,23 @@ async def delete_member(class_id: int, member_id: int):
             member_id=member_id,
     ):
         pass
+
+
+async def browse_member_emails(class_id: int, role: RoleType = None) -> Sequence[str]:
+    conditions = {}
+    if role is not None:
+        conditions['role'] = role
+
+    async with SafeExecutor(
+            event='browse class member emails',
+            sql=fr'SELECT student_card.email'
+                fr'  FROM class_member, student_card'
+                fr' WHERE class_member.member_id = student_card.account_id'
+                fr'   AND student_card.is_default = true'
+                fr'   AND class_member.class_id = %(class_id)s'
+                fr' {"AND class_member.role = %(role)s" if role is not None else ""}',
+            class_id=class_id,
+            **conditions,
+            fetch='all',
+    ) as records:
+        return [institute_email for institute_email, in records]

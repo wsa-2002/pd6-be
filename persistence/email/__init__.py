@@ -33,5 +33,6 @@ smtp_handler = SMTPHandler()
 # For import usage
 from . import (
     verification,
+    notification,
     forget_password,
 )
