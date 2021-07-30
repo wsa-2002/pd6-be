@@ -215,7 +215,7 @@ async def browse_member_emails(class_id: int, role: RoleType = None) -> Sequence
                 fr' WHERE class_member.member_id = student_card.account_id'
                 fr'   AND student_card.is_default = true'
                 fr'   AND class_member.class_id = %(class_id)s'
-                fr'   {"AND class_member.role = %(role)s" if role is not None else ""}',
+                fr' {"AND class_member.role = %(role)s" if role is not None else ""}',
             **conditions,
             fetch='all',
     ) as records:
