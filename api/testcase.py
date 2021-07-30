@@ -62,8 +62,9 @@ async def read_testcase_input_data(testcase_id: int, request: auth.Request) -> s
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     testcase = await db.testcase.read(testcase_id)
-    problem = await db.problem.read(testcase.problem_id, include_hidden=True)
-    challenge = await db.challenge.read(problem.challenge_id, include_hidden=True)
+
+    problem = await db.problem.read(testcase.problem_id)
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True)
     if not (await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)
             or (testcase.is_sample and await rbac.validate(request.account.id, RoleType.normal))):
         raise exc.NoPermission
@@ -84,8 +85,9 @@ async def read_testcase_output_data(testcase_id: int, request: auth.Request) -> 
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     testcase = await db.testcase.read(testcase_id)
-    problem = await db.problem.read(testcase.problem_id, include_hidden=True)
-    challenge = await db.challenge.read(problem.challenge_id, include_hidden=True)
+<<<<<<< api/testcase.py
+    problem = await db.problem.read(testcase.problem_id)
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True)
     if not (await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)
             or (testcase.is_sample and await rbac.validate(request.account.id, RoleType.normal))):
         raise exc.NoPermission
@@ -103,8 +105,8 @@ async def edit_testcase(testcase_id: int, data: EditTestcaseInput, request: auth
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     testcase = await db.testcase.read(testcase_id)
-    problem = await db.problem.read(testcase.problem_id, include_hidden=True)
-    challenge = await db.challenge.read(problem.challenge_id, include_hidden=True)
+    problem = await db.problem.read(testcase.problem_id)
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True)
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
@@ -122,8 +124,8 @@ async def upload_testcase_input_data(testcase_id: int, request: auth.Request, in
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     testcase = await db.testcase.read(testcase_id)
-    problem = await db.problem.read(testcase.problem_id, include_hidden=True)
-    challenge = await db.challenge.read(problem.challenge_id, include_hidden=True)
+    problem = await db.problem.read(testcase.problem_id)
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True)
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
@@ -147,8 +149,8 @@ async def upload_testcase_output_data(testcase_id: int, request: auth.Request, o
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     testcase = await db.testcase.read(testcase_id)
-    problem = await db.problem.read(testcase.problem_id, include_hidden=True)
-    challenge = await db.challenge.read(problem.challenge_id, include_hidden=True)
+    problem = await db.problem.read(testcase.problem_id)
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True)
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
@@ -172,8 +174,8 @@ async def delete_testcase(testcase_id: int, request: auth.Request) -> None:
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     testcase = await db.testcase.read(testcase_id)
-    problem = await db.problem.read(testcase.problem_id, include_hidden=True)
-    challenge = await db.challenge.read(problem.challenge_id, include_hidden=True)
+    problem = await db.problem.read(testcase.problem_id)
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True)
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
@@ -189,8 +191,8 @@ async def delete_testcase_input_data(testcase_id: int, request: auth.Request):
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     testcase = await db.testcase.read(testcase_id)
-    problem = await db.problem.read(testcase.problem_id, include_hidden=True)
-    challenge = await db.challenge.read(problem.challenge_id, include_hidden=True)
+    problem = await db.problem.read(testcase.problem_id)
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True)
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
@@ -206,8 +208,8 @@ async def delete_testcase_output_data(testcase_id: int, request: auth.Request):
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     testcase = await db.testcase.read(testcase_id)
-    problem = await db.problem.read(testcase.problem_id, include_hidden=True)
-    challenge = await db.challenge.read(problem.challenge_id, include_hidden=True)
+    problem = await db.problem.read(testcase.problem_id)
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True)
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 

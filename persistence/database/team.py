@@ -1,36 +1,32 @@
 from typing import Sequence
 
-import log
 from base import do
 from base.enum import RoleType
 
 from .base import SafeExecutor
 
 
-async def add(name: str, class_id: int, label: str, is_hidden: bool) -> int:
+async def add(name: str, class_id: int, label: str) -> int:
     async with SafeExecutor(
             event='add team',
             sql=r'INSERT INTO team'
-                r'            (name, class_id, label, is_hidden)'
-                r'     VALUES (%(name)s, %(class_id)s, %(label)s, %(is_hidden)s)'
+                r'            (name, class_id, label)'
+                r'     VALUES (%(name)s, %(class_id)s, %(label)s)'
                 r'  RETURNING id',
             name=name,
             class_id=class_id,
             label=label,
-            is_hidden=is_hidden,
             fetch=1,
     ) as (team_id,):
         return team_id
 
 
-async def browse(class_id: int = None, include_hidden=False, include_deleted=False) -> Sequence[do.Team]:
+async def browse(class_id: int = None, include_deleted=False) -> Sequence[do.Team]:
     conditions = {}
     if class_id is not None:
         conditions['class_id'] = class_id
 
     filters = []
-    if not include_hidden:
-        filters.append("NOT is_hidden")
     if not include_deleted:
         filters.append("NOT is_deleted")
 
@@ -39,41 +35,37 @@ async def browse(class_id: int = None, include_hidden=False, include_deleted=Fal
 
     async with SafeExecutor(
             event='browse teams',
-            sql=fr'SELECT id, name, class_id, is_hidden, is_deleted, label'
+            sql=fr'SELECT id, name, class_id, is_deleted, label'
                 fr'  FROM team'
                 fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
                 fr' ORDER BY class_id ASC, id ASC',
             **conditions,
             fetch='all',
     ) as records:
-        return [do.Team(id=id_, name=name, class_id=class_id, is_hidden=is_hidden, is_deleted=is_deleted, label=label)
-                for (id_, name, class_id, is_hidden, is_deleted, label) in records]
+        return [do.Team(id=id_, name=name, class_id=class_id, is_deleted=is_deleted, label=label)
+                for (id_, name, class_id, is_deleted, label) in records]
 
 
-async def read(team_id: int, *, include_hidden=False, include_deleted=False) -> do.Team:
+async def read(team_id: int, *, include_deleted=False) -> do.Team:
     async with SafeExecutor(
             event='get team by id',
-            sql=fr'SELECT id, name, class_id, is_hidden, is_deleted, label'
+            sql=fr'SELECT id, name, class_id, is_deleted, label'
                 fr'  FROM team'
                 fr' WHERE id = %(team_id)s'
-                fr'{" AND NOT is_hidden" if not include_hidden else ""}'
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}',
             team_id=team_id,
             fetch=1,
-    ) as (id_, name, class_id, is_hidden, is_deleted, label):
-        return do.Team(id=id_, name=name, class_id=class_id, is_hidden=is_hidden, is_deleted=is_deleted, label=label)
+    ) as (id_, name, class_id, is_deleted, label):
+        return do.Team(id=id_, name=name, class_id=class_id, is_deleted=is_deleted, label=label)
 
 
-async def edit(team_id: int,
-               name: str = None, class_id: int = None, is_hidden: bool = None, label: str = None):
+async def edit(team_id: int, name: str = None, class_id: int = None, label: str = None):
     to_updates = {}
 
     if name is not None:
         to_updates['name'] = name
     if class_id is not None:
         to_updates['class_id'] = class_id
-    if is_hidden is not None:
-        to_updates['is_hidden'] = is_hidden
     if label is not None:
         to_updates['label'] = label
 

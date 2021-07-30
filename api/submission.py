@@ -1,11 +1,9 @@
-from dataclasses import dataclass
-from datetime import datetime
-from typing import Optional, Sequence
+from typing import Sequence
 
 from pydantic import BaseModel
 
-from base import do, enum
-from base.enum import RoleType
+from base import do
+from base.enum import RoleType, ChallengePublicizeType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
@@ -82,7 +80,8 @@ class AddSubmissionInput(BaseModel):
 async def submit(problem_id: int, data: AddSubmissionInput, request: auth.Request):
     """
     ### 權限
-    - System normal
+    - System Manager (all)
+    - System normal (non scheduled)
     """
     submit_time = util.get_request_time()
 
@@ -90,9 +89,15 @@ async def submit(problem_id: int, data: AddSubmissionInput, request: auth.Reques
         raise exc.NoPermission
 
     # Validate problem
-    problem = await db.problem.read(problem_id, include_hidden=True)
-    challenge = await db.challenge.read(problem.challenge_id, include_hidden=True)
-    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    problem = await db.problem.read(problem_id)
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True)
+
+    publicize_time = (challenge.start_time if challenge.publicize_type == ChallengePublicizeType.start_time
+                      else challenge.end_time)
+    is_challenge_publicized = submit_time >= publicize_time
+
+    if not (is_challenge_publicized
+            or await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)):
         raise exc.NoPermission
 
     # Validate language
@@ -143,8 +148,8 @@ async def read_submission(submission_id: int, request: auth.Request) -> do.Submi
         return submission
 
     # 可以看自己管理的 class 的
-    problem = await db.problem.read(problem_id=submission.problem_id, include_hidden=True)
-    challenge = await db.challenge.read(problem.challenge_id, include_hidden=True)
+    problem = await db.problem.read(problem_id=submission.problem_id)
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True)
     class_role = await rbac.get_role(request.account.id, class_id=challenge.class_id)
     if class_role >= RoleType.manager:
         return submission

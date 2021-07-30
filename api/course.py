@@ -21,7 +21,6 @@ router = APIRouter(
 class AddCourseInput(BaseModel):
     name: str
     type: CourseType
-    is_hidden: bool
 
 
 @dataclass
@@ -42,7 +41,6 @@ async def add_course(data: AddCourseInput, request: auth.Request) -> AddCourseOu
     course_id = await db.course.add(
         name=data.name,
         course_type=data.type,
-        is_hidden=data.is_hidden,
     )
     return AddCourseOutput(id=course_id)
 
@@ -59,7 +57,7 @@ async def browse_course(request: auth.Request) -> Sequence[do.Course]:
     if system_role < RoleType.normal:
         raise exc.NoPermission
 
-    courses = await db.course.browse(include_hidden=system_role is RoleType.manager)
+    courses = await db.course.browse()
     return courses
 
 
@@ -75,14 +73,13 @@ async def read_course(course_id: int, request: auth.Request) -> do.Course:
     if system_role < RoleType.normal:
         raise exc.NoPermission
 
-    course = await db.course.read(course_id, include_hidden=system_role is RoleType.manager)
+    course = await db.course.read(course_id)
     return course
 
 
 class EditCourseInput(BaseModel):
     name: str = None
     type: CourseType = None
-    is_hidden: bool = None
 
 
 @router.patch('/course/{course_id}')
@@ -99,7 +96,6 @@ async def edit_course(course_id: int, data: EditCourseInput, request: auth.Reque
         course_id=course_id,
         name=data.name,
         course_type=data.type,
-        is_hidden=data.is_hidden,
     )
 
 
@@ -118,7 +114,6 @@ async def delete_course(course_id: int, request: auth.Request) -> None:
 
 class AddClassInput(BaseModel):
     name: str
-    is_hidden: bool
 
 
 @dataclass
@@ -139,7 +134,6 @@ async def add_class_under_course(course_id: int, data: AddClassInput, request: a
     class_id = await db.class_.add(
         name=data.name,
         course_id=course_id,
-        is_hidden=data.is_hidden,
     )
 
     return AddClassOutput(id=class_id)
@@ -156,9 +150,4 @@ async def browse_class_under_course(course_id: int, request: auth.Request) -> Se
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
-    # FIXME
-    # 先包含 hidden，再篩選這個 account 能看到的 class
-    return [class_ for class_ in await db.class_.browse(course_id=course_id, include_hidden=True)
-            if (not class_.is_hidden  # not hidden => 都可以看到
-                # hidden => 要 class manager
-                or rbac.validate(request.account.id, RoleType.manager, class_id=class_.id, inherit=True))]
+    return await db.class_.browse(course_id=course_id)
