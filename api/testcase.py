@@ -69,7 +69,7 @@ async def read_testcase_input_data(testcase_id: int, request: auth.Request) -> s
         raise exc.NoPermission
 
     input_file = await db.s3_file.read(s3_file_id=testcase.input_file_id)
-    return url.joiner(s3_config.endpoint, 'minio', input_file.bucket, input_file.key)
+    return url.join_s3(s3_file=input_file)
 
 
 @router.get('/testcase/{testcase_id}/output-data')
@@ -91,7 +91,7 @@ async def read_testcase_output_data(testcase_id: int, request: auth.Request) -> 
         raise exc.NoPermission
 
     output_file = await db.s3_file.read(s3_file_id=testcase.output_file_id)
-    return url.joiner(s3_config.endpoint, 'minio', output_file.bucket, output_file.key)
+    return url.join_s3(s3_file=output_file)
 
 
 @router.patch('/testcase/{testcase_id}')
@@ -132,7 +132,7 @@ async def upload_testcase_input_data(testcase_id: int, request: auth.Request, in
     #       file_id 進 testcase db
     bucket, key = await s3.testcase.upload_input(file=input_file.file,
                                                  filename=input_file.filename,
-                                                 testcase_id=testcase_id)
+                                                 testcase_id=testcase.id)
 
     file_id = await db.s3_file.add(bucket=bucket, key=key)
     await db.testcase.edit(testcase_id=testcase_id, input_file_id=file_id)
@@ -157,7 +157,8 @@ async def upload_testcase_output_data(testcase_id: int, request: auth.Request, o
     #       file_id 進 testcase db
     bucket, key = await s3.testcase.upload_output(file=output_file.file,
                                                   filename=output_file.filename,
-                                                  testcase_id=testcase_id)
+                                                  testcase_id=testcase.id)
+
     file_id = await db.s3_file.add(bucket=bucket, key=key)
     await db.testcase.edit(testcase_id=testcase_id, output_file_id=file_id)
 
