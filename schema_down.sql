@@ -42,6 +42,8 @@ DROP TABLE IF EXISTS challenge;
 
 DROP TYPE IF EXISTS challenge_type;
 
+DROP TYPE IF EXISTS challenge_publicize_type;
+
 
 -- Course management
 
