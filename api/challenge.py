@@ -53,7 +53,7 @@ async def browse_challenge_under_class(class_id: int, request: auth.Request) -> 
     """
     ### 權限
     - Class manager (all)
-    - Class guest+normal (not scheduled)
+    - Class guest (not scheduled)
     """
     class_role = await rbac.get_role(request.account.id, class_id=class_id)
 
@@ -79,7 +79,7 @@ async def read_challenge(challenge_id: int, request: auth.Request) -> do.Challen
     """
     ### 權限
     - Class manager (all)
-    - Class guest+normal (not scheduled)
+    - Class guest (not scheduled)
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     challenge = await db.challenge.read(challenge_id=challenge_id, include_scheduled=True)
