@@ -9,4 +9,4 @@ argon2-cffi  # required for passlib.hash.argon2
 aiosmtplib
 pyyaml
 aioboto3
-python-multipart
+python-multipart  # required for fastapi.UploadFile
