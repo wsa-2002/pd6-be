@@ -58,6 +58,7 @@ from . import (
     testcase,
     submission,
     judgment,
+    s3_file,
 
     peer_review,
     peer_review_record,

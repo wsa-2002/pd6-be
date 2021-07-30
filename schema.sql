@@ -1,3 +1,14 @@
+
+
+-- s3-file management
+
+CREATE TABLE s3_file (
+  id      SERIAL  PRIMARY KEY,
+  bucket  VARCHAR NOT NULL,
+  key     VARCHAR NOT NULL
+);
+
+
 -- account control
 
 CREATE TYPE role_type AS ENUM (
@@ -8,7 +19,7 @@ CREATE TYPE role_type AS ENUM (
 
 CREATE TABLE account (
   id                SERIAL    PRIMARY KEY,
-  name              VARCHAR   NOT NULL UNIQUE,
+  username          VARCHAR   NOT NULL UNIQUE,
   pass_hash         VARCHAR   NOT NULL,
   nickname          VARCHAR   NOT NULL,
   real_name         VARCHAR   NOT NULL,
@@ -19,10 +30,11 @@ CREATE TABLE account (
 );
 
 CREATE TABLE institute (
-  id            SERIAL  PRIMARY KEY,
-  name          VARCHAR NOT NULL  UNIQUE,
-  email_domain  VARCHAR NOT NULL  UNIQUE,
-  is_disabled   BOOLEAN NOT NULL  DEFAULT false
+  id                SERIAL  PRIMARY KEY,
+  abbreviated_name  VARCHAR NOT NULL  UNIQUE,
+  full_name         VARCHAR NOT NULL  UNIQUE,
+  email_domain      VARCHAR NOT NULL  UNIQUE,
+  is_disabled       BOOLEAN NOT NULL  DEFAULT false
 );
 
 CREATE TABLE student_card (
@@ -32,6 +44,7 @@ CREATE TABLE student_card (
   department    VARCHAR NOT NULL,
   student_id    VARCHAR NOT NULL,
   email         VARCHAR NOT NULL  UNIQUE,
+  is_default    BOOLEAN NOT NULL  DEFAULT false,
 
   UNIQUE (institute_id, student_id)
 );
@@ -60,7 +73,6 @@ CREATE TABLE course (
   id          SERIAL      PRIMARY KEY,
   name        VARCHAR     NOT NULL  UNIQUE,
   type        course_type NOT NULL,
-  is_hidden   BOOLEAN     NOT NULL  DEFAULT false,
   is_deleted  BOOLEAN     NOT NULL  DEFAULT false
 );
 
@@ -68,7 +80,6 @@ CREATE TABLE class (
   id          SERIAL  PRIMARY KEY,
   name        VARCHAR NOT NULL,
   course_id   INTEGER NOT NULL  REFERENCES course(id),
-  is_hidden   BOOLEAN NOT NULL  DEFAULT false,
   is_deleted  BOOLEAN NOT NULL  DEFAULT false,
 
   UNIQUE (course_id, name)
@@ -87,7 +98,6 @@ CREATE TABLE team (
   name        VARCHAR NOT NULL,
   class_id    INTEGER NOT NULL  REFERENCES class(id),
   label       VARCHAR NOT NULL,
-  is_hidden   BOOLEAN NOT NULL  DEFAULT false,
   is_deleted  BOOLEAN NOT NULL  DEFAULT false,
 
   UNIQUE (class_id, name)
@@ -110,7 +120,6 @@ CREATE TABLE grade (
   score       INTEGER,
   comment     TEXT,
   update_time TIMESTAMP NOT NULL,
-  is_hidden   BOOLEAN   NOT NULL  DEFAULT false,
   is_deleted  BOOLEAN   NOT NULL  DEFAULT false,
 
   UNIQUE (receiver_id, title)
@@ -139,7 +148,6 @@ CREATE TABLE challenge (
   description       TEXT,
   start_time        TIMESTAMP                   NOT NULL,
   end_time          TIMESTAMP                   NOT NULL,
-  is_hidden         BOOLEAN                     NOT NULL  DEFAULT false,
   is_deleted        BOOLEAN                     NOT NULL  DEFAULT false,
 
   UNIQUE (class_id, title)
@@ -165,21 +173,20 @@ CREATE TABLE problem (
   description     TEXT,
   source          TEXT,
   hint            TEXT,
-  is_hidden       BOOLEAN             NOT NULL  DEFAULT false,
   is_deleted      BOOLEAN             NOT NULL  DEFAULT false
 );
 
 CREATE TABLE testcase (
-  id            SERIAL  PRIMARY KEY,
-  problem_id    INTEGER NOT NULL  REFERENCES problem(id),
-  is_sample     BOOLEAN NOT NULL,
-  score         INTEGER NOT NULL, -- 保留設定扣分測資的空間
-  input_file    VARCHAR,
-  output_file   VARCHAR,
-  time_limit    INTEGER NOT NULL, -- ms
-  memory_limit  INTEGER NOT NULL, -- kb
-  is_disabled   BOOLEAN NOT NULL  DEFAULT false,
-  is_deleted    BOOLEAN NOT NULL  DEFAULT false
+  id              SERIAL  PRIMARY KEY,
+  problem_id      INTEGER NOT NULL  REFERENCES problem(id),
+  is_sample       BOOLEAN NOT NULL,
+  score           INTEGER NOT NULL, -- 保留設定扣分測資的空間
+  input_file_id   INTEGER REFERENCES s3_file(id),
+  output_file_id  INTEGER REFERENCES s3_file(id),
+  time_limit      INTEGER NOT NULL, -- ms
+  memory_limit    INTEGER NOT NULL, -- kb
+  is_disabled     BOOLEAN NOT NULL  DEFAULT false,
+  is_deleted      BOOLEAN NOT NULL  DEFAULT false
 );
 
 
@@ -256,7 +263,6 @@ CREATE TABLE peer_review (
   max_review_count  INTEGER   NOT NULL,  -- 一個人最多改幾份
   start_time        TIMESTAMP NOT NULL,
   end_time          TIMESTAMP NOT NULL,
-  is_hidden         BOOLEAN   NOT NULL  DEFAULT false,
   is_deleted        BOOLEAN   NOT NULL  DEFAULT false
 );
 

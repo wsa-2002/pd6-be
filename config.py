@@ -60,6 +60,12 @@ class PD4SConfig:
     pd4s_salt = env_values.get('PD4S_SALT')
 
 
+class S3Config:
+    endpoint = env_values.get('S3_ENDPOINT')
+    access_key = env_values.get('S3_ACCESS_KEY')
+    secret_key = env_values.get('S3_SECRET_KEY')
+
+
 # default config objects
 config = Config()
 service_config = ServiceConfig()
@@ -68,3 +74,4 @@ db_config = DBConfig()
 smtp_config = SMTPConfig()
 logger_config = LoggerConfig()
 pd4s_config = PD4SConfig()
+s3_config = S3Config()

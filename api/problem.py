@@ -42,8 +42,8 @@ async def read_problem(problem_id: int, request: auth.Request) -> do.Problem:
     - System normal (not hidden)
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    problem = await db.problem.read(problem_id, include_hidden=True)
-    challenge = await db.challenge.read(problem.challenge_id, include_hidden=True)
+    problem = await db.problem.read(problem_id)
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True)
 
     is_system_normal = await rbac.validate(request.account.id, RoleType.normal)
     is_class_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)
@@ -52,8 +52,7 @@ async def read_problem(problem_id: int, request: auth.Request) -> do.Problem:
                       else challenge.end_time)
     is_challenge_publicized = util.get_request_time() >= publicize_time
 
-    if not ((problem.is_hidden and is_class_manager)
-            or (not problem.is_hidden and is_system_normal and is_challenge_publicized)):
+    if not (is_class_manager or (is_system_normal and is_challenge_publicized)):
         raise exc.NoPermission
 
     return problem
@@ -65,7 +64,6 @@ class EditProblemInput(BaseModel):
     description: Optional[str] = ...
     source: Optional[str] = ...
     hint: Optional[str] = ...
-    is_hidden: bool = None
 
 
 @router.patch('/problem/{problem_id}')
@@ -76,14 +74,14 @@ async def edit_problem(problem_id: int, data: EditProblemInput, request: auth.Re
     - Class manager
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    problem = await db.problem.read(problem_id, include_hidden=True)
-    challenge = await db.challenge.read(problem.challenge_id, include_hidden=True)
+    problem = await db.problem.read(problem_id)
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True)
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
     return await db.problem.edit(problem_id, title=data.title, full_score=data.full_score,
                                  description=data.description, source=data.source,
-                                 hint=data.hint, is_hidden=data.is_hidden)
+                                 hint=data.hint)
 
 
 @router.delete('/problem/{problem_id}')
@@ -94,8 +92,8 @@ async def delete_problem(problem_id: int, request: auth.Request):
     - Class manager
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    problem = await db.problem.read(problem_id, include_hidden=True)
-    challenge = await db.challenge.read(problem.challenge_id, include_hidden=True)
+    problem = await db.problem.read(problem_id)
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True)
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
@@ -118,13 +116,13 @@ async def add_testcase_under_problem(problem_id: int, data: AddTestcaseInput, re
     - Class manager
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    problem = await db.problem.read(problem_id, include_hidden=True)
-    challenge = await db.challenge.read(problem.challenge_id, include_hidden=True)
+    problem = await db.problem.read(problem_id)
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True)
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
     return await db.testcase.add(problem_id=problem_id, is_sample=data.is_sample, score=data.score,
-                                 input_file=None, output_file=None,
+                                 input_file_id=None, output_file_id=None,
                                  time_limit=data.time_limit, memory_limit=data.memory_limit,
                                  is_disabled=data.is_disabled)
 

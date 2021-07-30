@@ -1,6 +1,3 @@
-# TODO: Rewrite this whole stuff?
-
-from dataclasses import dataclass
 from typing import Sequence
 
 from pydantic import BaseModel
@@ -43,15 +40,19 @@ async def add_student_card_to_account(account_id: int, data: AddStudentCardInput
 
     try:
         institute = await db.institute.read(data.institute_id, include_disabled=False)
-    except exc.NotFound:
-        raise exc.InvalidInstitute
+    except exc.persistence.NotFound:
+        raise exc.account.InvalidInstitute
 
     if data.student_id != data.institute_email_prefix:
-        raise exc.EmailNotMatch
-    
+        raise exc.account.StudentIdNotMatchEmail
+
+    if db.student_card.is_duplicate(institute.id, data.student_id):
+        raise exc.account.StudentCardExists
+
     institute_email = f"{data.institute_email_prefix}@{institute.email_domain}"
     code = await db.account.add_email_verification(email=institute_email, account_id=account_id,
-                                                   institute_id=data.institute_id, department=data.department, student_id=data.student_id)
+                                                   institute_id=data.institute_id, department=data.department,
+                                                   student_id=data.student_id)
     await email.verification.send(to=institute_email, code=code)
 
 
