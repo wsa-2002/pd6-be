@@ -149,3 +149,12 @@ class ResetPasswordInput(BaseModel):
 @router.post('/account/reset-password', tags=['Account'], response_class=JSONResponse)
 async def reset_password(data: ResetPasswordInput) -> None:
     await db.account.reset_password(code=data.code, password_hash=security.hash_password(data.password))
+
+
+from fastapi import File, UploadFile
+import persistence.s3 as s3
+@router.post('/testcase/{testcase_id}/input-data')
+@enveloped
+async def upload_testcase(filename: str, testcase_id: int, file: UploadFile = File(...)) -> None:
+    bucket, key = await s3.testcase.upload_input(file=file.file, filename=filename, testcase_id=testcase_id)
+    await db.s3_file.add(bucket=bucket, key=key)
