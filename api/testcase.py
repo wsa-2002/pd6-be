@@ -85,7 +85,7 @@ async def read_testcase_output_data(testcase_id: int, request: auth.Request) -> 
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     testcase = await db.testcase.read(testcase_id)
-<<<<<<< api/testcase.py
+
     problem = await db.problem.read(testcase.problem_id)
     challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True)
     if not (await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)
