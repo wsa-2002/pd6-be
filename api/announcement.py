@@ -3,6 +3,7 @@ from typing import Sequence
 
 from pydantic import BaseModel
 
+import util
 from base import do
 import exceptions as exc
 from base.enum import RoleType
@@ -52,7 +53,8 @@ async def browse_announcement(request: auth.Request) -> Sequence[do.Announcement
     if not system_role >= RoleType.guest:
         raise exc.NoPermission
 
-    return await db.announcement.browse(include_scheduled=system_role >= RoleType.manager)
+    return await db.announcement.browse(include_scheduled=system_role >= RoleType.manager,
+                                        ref_time=util.get_request_time())
 
 
 @router.get('/announcement/{announcement_id}')
@@ -67,7 +69,9 @@ async def read_announcement(announcement_id: int, request: auth.Request) -> do.A
     if not system_role >= RoleType.guest:
         raise exc.NoPermission
 
-    return await db.announcement.read(announcement_id, include_scheduled=system_role >= RoleType.manager)
+    return await db.announcement.read(announcement_id,
+                                      include_scheduled=system_role >= RoleType.manager,
+                                      ref_time=util.get_request_time())
 
 
 class EditAnnouncementInput(BaseModel):

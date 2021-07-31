@@ -43,7 +43,7 @@ async def read_problem(problem_id: int, request: auth.Request) -> do.Problem:
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     problem = await db.problem.read(problem_id)
-    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True)
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=util.get_request_time())
 
     is_system_normal = await rbac.validate(request.account.id, RoleType.normal)
     is_class_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)
@@ -75,7 +75,7 @@ async def edit_problem(problem_id: int, data: EditProblemInput, request: auth.Re
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     problem = await db.problem.read(problem_id)
-    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True)
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=util.get_request_time())
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
@@ -93,7 +93,7 @@ async def delete_problem(problem_id: int, request: auth.Request):
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     problem = await db.problem.read(problem_id)
-    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True)
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=util.get_request_time())
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
@@ -117,7 +117,7 @@ async def add_testcase_under_problem(problem_id: int, data: AddTestcaseInput, re
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     problem = await db.problem.read(problem_id)
-    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True)
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=util.get_request_time())
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 

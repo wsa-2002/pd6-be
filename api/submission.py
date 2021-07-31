@@ -90,7 +90,7 @@ async def submit(problem_id: int, data: AddSubmissionInput, request: auth.Reques
 
     # Validate problem
     problem = await db.problem.read(problem_id)
-    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True)
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=util.get_request_time())
 
     publicize_time = (challenge.start_time if challenge.publicize_type == ChallengePublicizeType.start_time
                       else challenge.end_time)
@@ -149,7 +149,7 @@ async def read_submission(submission_id: int, request: auth.Request) -> do.Submi
 
     # 可以看自己管理的 class 的
     problem = await db.problem.read(problem_id=submission.problem_id)
-    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True)
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=util.get_request_time())
     class_role = await rbac.get_role(request.account.id, class_id=challenge.class_id)
     if class_role >= RoleType.manager:
         return submission

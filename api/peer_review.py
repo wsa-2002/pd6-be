@@ -28,7 +28,7 @@ async def read_peer_review(peer_review_id: int, request: auth.Request) -> do.Pee
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     peer_review = await db.peer_review.read(peer_review_id)
-    challenge = await db.challenge.read(peer_review.challenge_id, include_scheduled=True)
+    challenge = await db.challenge.read(peer_review.challenge_id, include_scheduled=True, ref_time=util.get_request_time())
     class_role = await rbac.get_role(request.account.id, class_id=challenge.class_id)
 
     is_scheduled = challenge.start_time > util.get_request_time()
@@ -58,7 +58,7 @@ async def edit_peer_review(peer_review_id: int, data: EditPeerReviewInput, reque
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     peer_review = await db.peer_review.read(peer_review_id)
-    challenge = await db.challenge.read(peer_review.challenge_id, include_scheduled=True)
+    challenge = await db.challenge.read(peer_review.challenge_id, include_scheduled=True, ref_time=util.get_request_time())
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
@@ -78,7 +78,7 @@ async def delete_peer_review(peer_review_id: int, request: auth.Request) -> None
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     peer_review = await db.peer_review.read(peer_review_id)
-    challenge = await db.challenge.read(peer_review.challenge_id, include_scheduled=True)
+    challenge = await db.challenge.read(peer_review.challenge_id, include_scheduled=True, ref_time=util.get_request_time())
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
