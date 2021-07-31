@@ -6,8 +6,6 @@ from base import do
 
 from .base import SafeExecutor
 
-import util
-
 
 async def add(peer_review_id: int, grader_id: int, receiver_id: int) -> int:
     """
@@ -25,11 +23,8 @@ async def add(peer_review_id: int, grader_id: int, receiver_id: int) -> int:
         return id_
 
 
-async def edit_score(peer_review_record_id: int, score: int, comment: str, submit_time: datetime = None) -> None:
+async def edit_score(peer_review_record_id: int, score: int, comment: str, submit_time: datetime) -> None:
     """Allows only full edit!"""
-    if submit_time is None:
-        submit_time = util.get_request_time()
-
     async with SafeExecutor(
             event='Add (submit) peer review record (score)',
             sql="UPDATE peer_review_record"

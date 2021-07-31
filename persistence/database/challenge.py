@@ -5,8 +5,6 @@ from base import do, enum
 
 from .base import SafeExecutor
 
-import util
-
 
 async def add(class_id: int, type_: enum.ChallengeType, publicize_type: enum.ChallengePublicizeType,
               title: str, setter_id: int, description: Optional[str],
@@ -26,8 +24,8 @@ async def add(class_id: int, type_: enum.ChallengeType, publicize_type: enum.Cha
         return id_
 
 
-async def browse(class_id: int = None,
-                 include_scheduled: bool = False, include_deleted: bool = False) -> Sequence[do.Challenge]:
+async def browse(class_id: int = None, include_scheduled: bool = False, ref_time: datetime = None,
+                 include_deleted: bool = False) -> Sequence[do.Challenge]:
     conditions = {}
     if class_id is not None:
         conditions['class_id'] = class_id
@@ -36,9 +34,10 @@ async def browse(class_id: int = None,
     if not include_deleted:
         filters.append("NOT is_deleted")
 
-    if not include_scheduled:  # only show start_time < now
-        now = util.get_request_time()
-        filters.append(f"start_time <= {now}")
+    if not include_scheduled:  # only show start_time < ref_time
+        if not ref_time:
+            raise ValueError
+        filters.append(f"start_time <= %(ref_time)s")
 
     cond_sql = ' AND '.join(list(fr"{field_name} = %({field_name})s" for field_name in conditions)
                             + filters)
@@ -50,6 +49,7 @@ async def browse(class_id: int = None,
                 fr'  FROM challenge'
                 fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
                 fr' ORDER BY class_id ASC, id ASC',
+            ref_time=ref_time,
             **conditions,
             fetch='all',
     ) as records:
@@ -62,17 +62,18 @@ async def browse(class_id: int = None,
                 in records]
 
 
-async def read(challenge_id: int, include_scheduled: bool = False, include_deleted: bool = False) -> do.Challenge:
+async def read(challenge_id: int, include_scheduled: bool = False, ref_time: datetime = None,
+               include_deleted: bool = False) -> do.Challenge:
     async with SafeExecutor(
             event='read challenge by id',
             sql=r'SELECT id, class_id, type, publicize_type, title, setter_id, description, start_time, end_time,'
                 r'       is_deleted'
                 r'  FROM challenge'
                 r' WHERE id = %(challenge_id)s'
-                fr'{f" AND start_time <= %(cur_time)s" if not include_scheduled else ""}'
+                fr'{f" AND start_time <= %(ref_time)s" if not include_scheduled else ""}'
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}',
             challenge_id=challenge_id,
-            cur_time=util.get_request_time(),
+            ref_time=ref_time,
             fetch=1,
     ) as (id_, class_id, type_, publicize_type, title, setter_id, description, start_time, end_time, is_deleted):
         return do.Challenge(id=id_, class_id=class_id, type=enum.ChallengeType(type_),

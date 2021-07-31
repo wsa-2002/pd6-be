@@ -5,14 +5,9 @@ from base import do
 
 from .base import SafeExecutor
 
-import util
-
 
 async def add(receiver_id: int, grader_id: int, class_id: int, title: str, score: Optional[int], comment: Optional[str],
-              update_time: datetime = None) -> int:
-    if update_time is None:
-        update_time = util.get_request_time()
-
+              update_time: datetime) -> int:
     async with SafeExecutor(
             event='Add grade',
             sql=r'INSERT INTO grade'
@@ -77,12 +72,11 @@ async def read(grade_id: int, include_deleted=False) -> do.Grade:
                         is_deleted=is_deleted)
 
 
-async def edit(grade_id: int, title: str = None, score: Optional[int] = ..., comment: Optional[str] = ...,
-               update_time: datetime = None) -> None:
-    if update_time is None:
-        update_time = util.get_request_time()
-
-    to_updates = {}
+async def edit(grade_id: int, update_time: datetime, title: str = None, score: Optional[int] = ...,
+               comment: Optional[str] = ...) -> None:
+    to_updates = {
+        'update_time': update_time,
+    }
 
     if title is not None:
         to_updates['title'] = title
@@ -90,8 +84,6 @@ async def edit(grade_id: int, title: str = None, score: Optional[int] = ..., com
         to_updates['score'] = score
     if comment is not ...:
         to_updates['comment'] = comment
-    if update_time is not None:
-        to_updates['update_time'] = update_time
 
     if not to_updates:
         return
