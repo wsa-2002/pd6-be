@@ -12,8 +12,8 @@ from util import rbac
 
 router = APIRouter(
     tags=['Judgment'],
-    route_class=auth.APIRoute,
     default_response_class=response.JSONResponse,
+    dependencies=auth.doc_dependencies,
 )
 
 

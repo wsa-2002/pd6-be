@@ -272,7 +272,7 @@ def get_request_handler(
 
 class APIRoute(fastapi.routing.APIRoute):
     def get_route_handler(self) -> Callable[[fastapi.routing.Request], fastapi.routing.Coroutine[Any, Any, Response]]:
-        return get_request_handler(
+        original_route_handler = get_request_handler(
             dependant=self.dependant,
             body_field=self.body_field,
             status_code=self.status_code,
@@ -286,3 +286,10 @@ class APIRoute(fastapi.routing.APIRoute):
             response_model_exclude_none=self.response_model_exclude_none,
             dependency_overrides_provider=self.dependency_overrides_provider,
         )
+
+        async def custom_route_handler(request: fastapi.Request) -> fastapi.Response:
+            from . import Request
+            request = Request(request.scope, request.receive)
+            return await original_route_handler(request)
+
+        return custom_route_handler
