@@ -18,16 +18,6 @@ router = APIRouter(
 )
 
 
-@dataclass
-class BrowseAccountOutput:
-    id: int
-    student_id: str
-    real_name: str
-    username: str
-    nickname: str
-    alternative_email: Optional[str]
-
-
 @router.get('/account')
 @enveloped
 async def browse_account(request: Request) -> Sequence[do.BrowseAccountOutput]:
