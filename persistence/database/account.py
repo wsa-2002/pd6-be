@@ -20,18 +20,21 @@ async def add(username: str, pass_hash: str, nickname: str, real_name: str, role
         return account_id
 
 
-async def browse(include_deleted: bool = False) -> Sequence[do.Account]:
+async def browse(include_deleted: bool = False) -> Sequence[do.BrowseAccountOutput]:
     async with SafeExecutor(
             event='browse account',
-            sql=fr'SELECT id, username, nickname, real_name, role, is_deleted, alternative_email'
+            sql=fr'SELECT account.id, student_card.student_id, account.real_name,'
+                fr'       account.username, account.nickname, account.alternative_email'
                 fr'  FROM account'
-                fr'{" WHERE NOT is_deleted" if not include_deleted else ""}'
-                fr' ORDER BY id ASC',
+                fr'       INNER JOIN student_card'
+                fr'               ON student_card.account_id = account.id'
+                fr'{" WHERE NOT account.is_deleted" if not include_deleted else ""}'
+                fr' ORDER BY account.id ASC',
             fetch='all',
     ) as records:
-        return [do.Account(id=id_, username=username, nickname=nickname, real_name=real_name, role=RoleType(role),
-                           is_deleted=is_deleted, alternative_email=alternative_email)
-                for (id_, username, nickname, real_name, role, is_deleted, alternative_email)
+        return [do.BrowseAccountOutput(id=id_, student_id=student_id, real_name=real_name, username=username,
+                                       nickname=nickname, alternative_email=alternative_email)
+                for (id_, student_id, real_name, username, nickname, alternative_email)
                 in records]
 
 
