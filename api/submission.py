@@ -72,13 +72,13 @@ async def edit_submission_language(language_id: int, data: EditSubmissionLanguag
                                              name=data.name, version=data.version, is_disabled=data.is_disabled)
 
 
-class SubmitInput(BaseModel):
+class SubmissionInput(BaseModel):
     language_id: int
 
 
 @router.post('/problem/{problem_id}/submission', tags=['Problem'])
 @enveloped
-async def submit(problem_id: int, data: SubmitInput, request: Request, content_file: UploadFile = File(...)):
+async def submit(problem_id: int, data: SubmissionInput, request: Request, content_file: UploadFile = File(...)):
     """
     ### 權限
     - System Manager (all)
