@@ -5,21 +5,21 @@ from pydantic import BaseModel
 from base import do
 from base.enum import RoleType
 import exceptions as exc
-from middleware import APIRouter, response, enveloped, auth
+from middleware import APIRouter, response, enveloped, auth, Request
 import persistence.database as db
 from util import rbac
 
 
 router = APIRouter(
     tags=['Team'],
-    route_class=auth.APIRoute,
     default_response_class=response.JSONResponse,
+    dependencies=auth.doc_dependencies,
 )
 
 
 @router.get('/team/{team_id}')
 @enveloped
-async def read_team(team_id: int, request: auth.Request) -> do.Team:
+async def read_team(team_id: int, request: Request) -> do.Team:
     """
     ### 權限
     - Class normal (not hidden)
@@ -43,7 +43,7 @@ class EditTeamInput(BaseModel):
 
 @router.patch('/team/{team_id}')
 @enveloped
-async def edit_team(team_id: int, data: EditTeamInput, request: auth.Request) -> None:
+async def edit_team(team_id: int, data: EditTeamInput, request: Request) -> None:
     """
     ### 權限
     - Class manager
@@ -68,7 +68,7 @@ async def edit_team(team_id: int, data: EditTeamInput, request: auth.Request) ->
 
 @router.delete('/team/{team_id}')
 @enveloped
-async def delete_team(team_id: int, request: auth.Request) -> None:
+async def delete_team(team_id: int, request: Request) -> None:
     """
     ### 權限
     - Class manager
@@ -84,7 +84,7 @@ async def delete_team(team_id: int, request: auth.Request) -> None:
 
 @router.get('/team/{team_id}/member')
 @enveloped
-async def browse_team_member(team_id: int, request: auth.Request) -> Sequence[do.Member]:
+async def browse_team_member(team_id: int, request: Request) -> Sequence[do.Member]:
     """
     ### 權限
     - Class normal
@@ -105,7 +105,7 @@ class EditMemberInput(BaseModel):
 
 @router.patch('/team/{team_id}/member')
 @enveloped
-async def edit_team_member(team_id: int, data: Sequence[EditMemberInput], request: auth.Request) -> None:
+async def edit_team_member(team_id: int, data: Sequence[EditMemberInput], request: Request) -> None:
     """
     ### 權限
     - Class manager
@@ -122,7 +122,7 @@ async def edit_team_member(team_id: int, data: Sequence[EditMemberInput], reques
 
 @router.delete('/team/{team_id}/member/{member_id}')
 @enveloped
-async def delete_team_member(team_id: int, member_id: int, request: auth.Request) -> None:
+async def delete_team_member(team_id: int, member_id: int, request: Request) -> None:
     """
     ### 權限
     - Class manager

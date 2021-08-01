@@ -3,12 +3,13 @@ class _CauseMixin:
     Allows another Exception to be registered as the cause of new Exception,
     i.e. mimicking the `raise from` syntax (and does almost the same thing).
     """
-    def __init__(self, *args, cause: Exception, **kwargs):
+    def __init__(self, *args, cause: Exception = None, **kwargs):
         """
         An optional `cause` exception can be given, mimicking the `raise from` syntax (and does almost the same thing).
         """
         super().__init__(*args, **kwargs)
-        self.__cause__ = cause
+        if cause is not None:
+            self.__cause__ = cause
 
 
 class SystemException(_CauseMixin, Exception):

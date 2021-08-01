@@ -5,15 +5,15 @@ from pydantic import BaseModel
 
 from base.enum import RoleType
 import exceptions as exc
-from middleware import APIRouter, response, enveloped, auth
+from middleware import APIRouter, response, enveloped, auth, Request
 import persistence.database as db
 import persistence.email as email
 from util import rbac, security, validator
 
 router = APIRouter(
     tags=['Account'],
-    route_class=auth.APIRoute,
     default_response_class=response.JSONResponse,
+    dependencies=auth.doc_dependencies,
 )
 
 
@@ -29,7 +29,7 @@ class ReadAccountOutput:
 
 @router.get('/account/{account_id}')
 @enveloped
-async def read_account(account_id: int, request: auth.Request) -> ReadAccountOutput:
+async def read_account(account_id: int, request: Request) -> ReadAccountOutput:
     """
     ### 權限
     - System Manager
@@ -65,7 +65,7 @@ class EditAccountInput(BaseModel):
 
 @router.patch('/account/{account_id}')
 @enveloped
-async def edit_account(account_id: int, data: EditAccountInput, request: auth.Request) -> None:
+async def edit_account(account_id: int, data: EditAccountInput, request: Request) -> None:
     """
     ### 權限
     - System Manager
@@ -97,7 +97,7 @@ class EditPasswordInput(BaseModel):
 
 @router.put('/account/{account_id}/pass_hash')
 @enveloped
-async def edit_password(account_id: int, data: EditPasswordInput, request: auth.Request):
+async def edit_password(account_id: int, data: EditPasswordInput, request: Request):
     """
     ### 權限
     - Self
@@ -117,7 +117,7 @@ async def edit_password(account_id: int, data: EditPasswordInput, request: auth.
 
 @router.delete('/account/{account_id}')
 @enveloped
-async def delete_account(account_id: int, request: auth.Request) -> None:
+async def delete_account(account_id: int, request: Request) -> None:
     """
     ### 權限
     - System manager
@@ -138,7 +138,7 @@ class DefaultStudentCardInput(BaseModel):
 
 @router.put('/account/{account_id}/default-student-card')
 @enveloped
-async def make_student_card_default(account_id: int, data: DefaultStudentCardInput, request: auth.Request) -> None:
+async def make_student_card_default(account_id: int, data: DefaultStudentCardInput, request: Request) -> None:
     """
     ### 權限
     - System manager

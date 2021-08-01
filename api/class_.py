@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from base import do
 from base.enum import RoleType
 import exceptions as exc
-from middleware import APIRouter, response, enveloped, auth
+from middleware import APIRouter, response, enveloped, auth, Request
 import persistence.database as db
 import persistence.email as email
 from util import rbac
@@ -14,14 +14,14 @@ from util import rbac
 
 router = APIRouter(
     tags=['Class'],
-    route_class=auth.APIRoute,
     default_response_class=response.JSONResponse,
+    dependencies=auth.doc_dependencies,
 )
 
 
 @router.get('/class')
 @enveloped
-async def browse_class(request: auth.Request) -> Sequence[do.Class]:
+async def browse_class(request: Request) -> Sequence[do.Class]:
     """
     ### 權限
     - system normal: all
@@ -34,7 +34,7 @@ async def browse_class(request: auth.Request) -> Sequence[do.Class]:
 
 @router.get('/class/{class_id}')
 @enveloped
-async def read_class(class_id: int, request: auth.Request) -> do.Class:
+async def read_class(class_id: int, request: Request) -> do.Class:
     """
     ### 權限
     - System normal: all
@@ -52,7 +52,7 @@ class EditClassInput(BaseModel):
 
 @router.patch('/class/{class_id}')
 @enveloped
-async def edit_class(class_id: int, data: EditClassInput, request: auth.Request) -> None:
+async def edit_class(class_id: int, data: EditClassInput, request: Request) -> None:
     """
     ### 權限
     - Class+ manager
@@ -69,7 +69,7 @@ async def edit_class(class_id: int, data: EditClassInput, request: auth.Request)
 
 @router.delete('/class/{class_id}')
 @enveloped
-async def delete_class(class_id: int, request: auth.Request) -> None:
+async def delete_class(class_id: int, request: Request) -> None:
     """
     ### 權限
     - System manager
@@ -82,7 +82,7 @@ async def delete_class(class_id: int, request: auth.Request) -> None:
 
 @router.get('/class/{class_id}/member')
 @enveloped
-async def browse_class_member(class_id: int, request: auth.Request) -> Sequence[do.Member]:
+async def browse_class_member(class_id: int, request: Request) -> Sequence[do.Member]:
     """
     ### 權限
     - Class normal
@@ -102,7 +102,7 @@ class EditClassMemberInput(BaseModel):
 
 @router.patch('/class/{class_id}/member')
 @enveloped
-async def edit_class_member(class_id: int, data: Sequence[EditClassMemberInput], request: auth.Request) -> None:
+async def edit_class_member(class_id: int, data: Sequence[EditClassMemberInput], request: Request) -> None:
     """
     ### 權限
     - Class+ manager
@@ -122,7 +122,7 @@ async def edit_class_member(class_id: int, data: Sequence[EditClassMemberInput],
 
 @router.delete('/class/{class_id}/member/{member_id}')
 @enveloped
-async def delete_class_member(class_id: int, member_id: int, request: auth.Request) -> None:
+async def delete_class_member(class_id: int, member_id: int, request: Request) -> None:
     """
     ### 權限
     - Class+ manager
@@ -145,7 +145,7 @@ class AddTeamOutput:
 
 @router.post('/class/{class_id}/team', tags=['Team'])
 @enveloped
-async def add_team_under_class(class_id: int, data: AddTeamInput, request: auth.Request) -> AddTeamOutput:
+async def add_team_under_class(class_id: int, data: AddTeamInput, request: Request) -> AddTeamOutput:
     """
     ### 權限
     - Class manager
@@ -164,7 +164,7 @@ async def add_team_under_class(class_id: int, data: AddTeamInput, request: auth.
 
 @router.get('/class/{class_id}/team', tags=['Team'])
 @enveloped
-async def browse_team_under_class(class_id: int, request: auth.Request) -> Sequence[do.Team]:
+async def browse_team_under_class(class_id: int, request: Request) -> Sequence[do.Team]:
     """
     ### 權限
     - Class normal: all
