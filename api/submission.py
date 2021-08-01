@@ -10,7 +10,7 @@ from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
 import persistence.s3 as s3
 import util
-from util import rbac
+from util import rbac, url
 
 router = APIRouter(
     tags=['Submission'],
@@ -116,6 +116,8 @@ async def submit(problem_id: int, language_id: int, request: auth.Request, conte
                              content_file_id=content_file_id,
                              content_length=len(content_file.file.read()))
 
+    return submission_id
+
 
 class BrowseSubmissionInput(BaseModel):
     # TODO: add more
@@ -159,6 +161,34 @@ async def read_submission(submission_id: int, request: auth.Request) -> do.Submi
     class_role = await rbac.get_role(request.account.id, class_id=challenge.class_id)
     if class_role >= RoleType.manager:
         return submission
+
+    raise exc.NoPermission
+
+
+@router.get('/submission/{submission_id}/content')
+@enveloped
+async def read_submission_file(submission_id: int, request: auth.Request) -> str:
+    """
+    ### 權限
+    - Self
+    - Class manager
+
+    This api will return a url which can directly download the file from s3-file-service.
+    """
+    submission = await db.submission.read(submission_id=submission_id)
+
+    # 可以看自己的
+    if submission.account_id is request.account.id:
+        file = await db.s3_file.read(s3_file_id=submission.content_file_id)
+        return url.join_s3(file)
+
+    # 可以看自己管理的 class 的
+    problem = await db.problem.read(problem_id=submission.problem_id)
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=util.get_request_time())
+    class_role = await rbac.get_role(request.account.id, class_id=challenge.class_id)
+    if class_role >= RoleType.manager:
+        file = await db.s3_file.read(s3_file_id=submission.content_file_id)
+        return url.join_s3(file)
 
     raise exc.NoPermission
 
