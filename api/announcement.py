@@ -3,18 +3,19 @@ from typing import Sequence
 
 from pydantic import BaseModel
 
+import util
 from base import do
 import exceptions as exc
 from base.enum import RoleType
-from middleware import APIRouter, response, enveloped, auth
+from middleware import APIRouter, response, enveloped, auth, Request
 import persistence.database as db
 from util import rbac
 
 
 router = APIRouter(
     tags=['Announcement'],
-    route_class=auth.APIRoute,
     default_response_class=response.JSONResponse,
+    dependencies=auth.doc_dependencies,
 )
 
 
@@ -28,7 +29,7 @@ class AddAnnouncementInput(BaseModel):
 
 @router.post('/announcement')
 @enveloped
-async def add_announcement(data: AddAnnouncementInput, request: auth.Request) -> int:
+async def add_announcement(data: AddAnnouncementInput, request: Request) -> int:
     """
     ### 權限
     - System manager
@@ -42,7 +43,7 @@ async def add_announcement(data: AddAnnouncementInput, request: auth.Request) ->
 
 @router.get('/announcement')
 @enveloped
-async def browse_announcement(request: auth.Request) -> Sequence[do.Announcement]:
+async def browse_announcement(request: Request) -> Sequence[do.Announcement]:
     """
     ### 權限
     - System manager (all)
@@ -52,12 +53,12 @@ async def browse_announcement(request: auth.Request) -> Sequence[do.Announcement
     if not system_role >= RoleType.guest:
         raise exc.NoPermission
 
-    return await db.announcement.browse(include_scheduled=system_role >= RoleType.manager)
+    return await db.announcement.browse(include_scheduled=system_role >= RoleType.manager, ref_time=request.time)
 
 
 @router.get('/announcement/{announcement_id}')
 @enveloped
-async def read_announcement(announcement_id: int, request: auth.Request) -> do.Announcement:
+async def read_announcement(announcement_id: int, request: Request) -> do.Announcement:
     """
     ### 權限
     - System manager (all)
@@ -67,7 +68,8 @@ async def read_announcement(announcement_id: int, request: auth.Request) -> do.A
     if not system_role >= RoleType.guest:
         raise exc.NoPermission
 
-    return await db.announcement.read(announcement_id, include_scheduled=system_role >= RoleType.manager)
+    return await db.announcement.read(announcement_id,
+                                      include_scheduled=system_role >= RoleType.manager, ref_time=request.time)
 
 
 class EditAnnouncementInput(BaseModel):
@@ -79,7 +81,7 @@ class EditAnnouncementInput(BaseModel):
 
 @router.patch('/announcement/{announcement_id}')
 @enveloped
-async def edit_announcement(announcement_id: int, data: EditAnnouncementInput, request: auth.Request) -> None:
+async def edit_announcement(announcement_id: int, data: EditAnnouncementInput, request: Request) -> None:
     """
     ### 權限
     - System manager
@@ -93,7 +95,7 @@ async def edit_announcement(announcement_id: int, data: EditAnnouncementInput, r
 
 @router.delete('/announcement/{announcement_id}')
 @enveloped
-async def delete_announcement(announcement_id: int, request: auth.Request) -> None:
+async def delete_announcement(announcement_id: int, request: Request) -> None:
     """
     ### 權限
     - System manager

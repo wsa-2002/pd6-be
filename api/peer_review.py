@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from base import do
 from base.enum import CourseType, RoleType
 import exceptions as exc
-from middleware import APIRouter, response, enveloped, auth
+from middleware import APIRouter, response, enveloped, auth, Request
 import persistence.database as db
 import util
 from util import rbac
@@ -13,14 +13,14 @@ from util import rbac
 
 router = APIRouter(
     tags=['Peer Review'],
-    route_class=auth.APIRoute,
     default_response_class=response.JSONResponse,
+    dependencies=auth.doc_dependencies,
 )
 
 
 @router.get('/peer-review/{peer_review_id}')
 @enveloped
-async def read_peer_review(peer_review_id: int, request: auth.Request) -> do.PeerReview:
+async def read_peer_review(peer_review_id: int, request: Request) -> do.PeerReview:
     """
     ### 權限
     - Class manager (hidden)
@@ -28,10 +28,10 @@ async def read_peer_review(peer_review_id: int, request: auth.Request) -> do.Pee
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     peer_review = await db.peer_review.read(peer_review_id)
-    challenge = await db.challenge.read(peer_review.challenge_id, include_scheduled=True)
+    challenge = await db.challenge.read(peer_review.challenge_id, include_scheduled=True, ref_time=request.time)
     class_role = await rbac.get_role(request.account.id, class_id=challenge.class_id)
 
-    is_scheduled = challenge.start_time > util.get_request_time()
+    is_scheduled = challenge.start_time > request.time
 
     if not (is_scheduled and class_role >= RoleType.manager  # hidden => need manager
             or not is_scheduled and class_role >= RoleType.normal):  # not hidden => need normal
@@ -51,14 +51,14 @@ class EditPeerReviewInput(BaseModel):
 
 @router.patch('/peer-review/{peer_review_id}')
 @enveloped
-async def edit_peer_review(peer_review_id: int, data: EditPeerReviewInput, request: auth.Request) -> None:
+async def edit_peer_review(peer_review_id: int, data: EditPeerReviewInput, request: Request) -> None:
     """
     ### 權限
     - Class manager
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     peer_review = await db.peer_review.read(peer_review_id)
-    challenge = await db.challenge.read(peer_review.challenge_id, include_scheduled=True)
+    challenge = await db.challenge.read(peer_review.challenge_id, include_scheduled=True, ref_time=request.time)
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
@@ -71,14 +71,14 @@ async def edit_peer_review(peer_review_id: int, data: EditPeerReviewInput, reque
 
 @router.delete('/peer-review/{peer_review_id}')
 @enveloped
-async def delete_peer_review(peer_review_id: int, request: auth.Request) -> None:
+async def delete_peer_review(peer_review_id: int, request: Request) -> None:
     """
     ### 權限
     - Class manager
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     peer_review = await db.peer_review.read(peer_review_id)
-    challenge = await db.challenge.read(peer_review.challenge_id, include_scheduled=True)
+    challenge = await db.challenge.read(peer_review.challenge_id, include_scheduled=True, ref_time=request.time)
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
@@ -87,7 +87,7 @@ async def delete_peer_review(peer_review_id: int, request: auth.Request) -> None
 
 @router.get('/peer-review/{peer_review_id}/record')
 @enveloped
-async def browse_peer_review_record(peer_review_id: int, request: auth.Request):
+async def browse_peer_review_record(peer_review_id: int, request: Request):
     """
     ### 權限
     - Class manager (full)
@@ -99,7 +99,7 @@ async def browse_peer_review_record(peer_review_id: int, request: auth.Request):
 # 改一下這些 function name
 @router.post('/peer-review/{peer_review_id}/record')
 @enveloped
-async def assign_peer_review_record(peer_review_id: int, request: auth.Request):
+async def assign_peer_review_record(peer_review_id: int, request: Request):
     """
     發互評 (決定 A 要評誰 )
 
@@ -111,7 +111,7 @@ async def assign_peer_review_record(peer_review_id: int, request: auth.Request):
 
 @router.get('/peer-review-record/{peer_review_record_id}')
 @enveloped
-async def read_peer_review_record(peer_review_record_id: int, request: auth.Request):
+async def read_peer_review_record(peer_review_record_id: int, request: Request):
     """
     ### 權限
     - Class manager (full)
@@ -122,7 +122,7 @@ async def read_peer_review_record(peer_review_record_id: int, request: auth.Requ
 
 @router.put('/peer-review-record/{peer_review_record_id}/score')
 @enveloped
-async def submit_peer_review_record_score(peer_review_record_id: int, request: auth.Request):
+async def submit_peer_review_record_score(peer_review_record_id: int, request: Request):
     """
     互評完了，交互評成績評語
 

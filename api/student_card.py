@@ -5,15 +5,16 @@ from pydantic import BaseModel
 from base import do
 import exceptions as exc
 from base.enum import RoleType
-from middleware import APIRouter, response, enveloped, auth
+from middleware import APIRouter, response, enveloped, auth, Request
 import persistence.database as db
 import persistence.email as email
 from util import rbac
 
+
 router = APIRouter(
     tags=['Student Card'],
-    route_class=auth.APIRoute,
     default_response_class=response.JSONResponse,
+    dependencies=auth.doc_dependencies,
 )
 
 
@@ -26,7 +27,7 @@ class AddStudentCardInput(BaseModel):
 
 @router.post('/account/{account_id}/student-card', tags=['Account'])
 @enveloped
-async def add_student_card_to_account(account_id: int, data: AddStudentCardInput, request: auth.Request) -> None:
+async def add_student_card_to_account(account_id: int, data: AddStudentCardInput, request: Request) -> None:
     """
     ### 權限
     - System manager
@@ -58,7 +59,7 @@ async def add_student_card_to_account(account_id: int, data: AddStudentCardInput
 
 @router.get('/account/{account_id}/student-card', tags=['Account'])
 @enveloped
-async def browse_account_student_card(account_id: int, request: auth.Request) -> Sequence[do.StudentCard]:
+async def browse_account_student_card(account_id: int, request: Request) -> Sequence[do.StudentCard]:
     """
     ### 權限
     - System manager
@@ -75,7 +76,7 @@ async def browse_account_student_card(account_id: int, request: auth.Request) ->
 
 @router.get('/student-card/{student_card_id}')
 @enveloped
-async def read_student_card(student_card_id: int, request: auth.Request) -> do.StudentCard:
+async def read_student_card(student_card_id: int, request: Request) -> do.StudentCard:
     """
     ### 權限
     - System manager
@@ -98,7 +99,7 @@ class EditStudentCardInput(BaseModel):
 
 @router.patch('/student-card/{student_card_id}')
 @enveloped
-async def edit_student_card(student_card_id: int, data: EditStudentCardInput, request: auth.Request) -> None:
+async def edit_student_card(student_card_id: int, data: EditStudentCardInput, request: Request) -> None:
     """
     ### 權限
     - System manager

@@ -6,8 +6,6 @@ from base import do
 
 from .base import SafeExecutor
 
-import util
-
 
 async def add(title: str, content: str, author_id: int, post_time: datetime, expire_time: datetime) \
         -> int:
@@ -23,10 +21,16 @@ async def add(title: str, content: str, author_id: int, post_time: datetime, exp
         return announcement_id
 
 
-async def browse(include_scheduled: bool, include_deleted=False) -> Sequence[do.Announcement]:
+async def browse(include_scheduled: bool, ref_time: datetime = None, include_deleted=False) \
+        -> Sequence[do.Announcement]:
+    """
+    ref_time must be given if include_scheduled is False
+    """
     filters = []
     if not include_scheduled:
-        filters.append("post_time <= %(cur_time)s AND expire_time > %(cur_time)s")
+        if not ref_time:
+            raise ValueError
+        filters.append("post_time <= %(ref_time)s AND expire_time > %(ref_time)s")
     if not include_deleted:
         filters.append("NOT is_deleted")
 
@@ -38,7 +42,7 @@ async def browse(include_scheduled: bool, include_deleted=False) -> Sequence[do.
                 fr'  FROM announcement'
                 fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
                 fr' ORDER BY id ASC',
-            cur_time=util.get_request_time(),
+            ref_time=ref_time,
             fetch='all',
     ) as records:
         return [do.Announcement(id=id_, title=title, content=content, author_id=author_id,
@@ -46,16 +50,22 @@ async def browse(include_scheduled: bool, include_deleted=False) -> Sequence[do.
                 for (id_, title, content, author_id, post_time, expire_time, is_deleted) in records]
 
 
-async def read(announcement_id: int, include_scheduled: bool, include_deleted=False) -> do.Announcement:
+async def read(announcement_id: int, include_scheduled: bool, ref_time: datetime = None, include_deleted=False) \
+        -> do.Announcement:
+    """
+    ref_time must be given if include_scheduled is False
+    """
+    if not include_scheduled and not ref_time:
+        raise ValueError
     async with SafeExecutor(
             event='get all announcements',
             sql=fr'SELECT id, title, content, author_id, post_time, expire_time, is_deleted'
                 fr'  FROM announcement'
                 fr' WHERE id = %(announcement_id)s'
-                fr'{" AND post_time <= %(cur_time)s AND expire_time > %(cur_time)s" if not include_scheduled else ""}'
+                fr'{" AND post_time <= %(ref_time)s AND expire_time > %(ref_time)s" if not include_scheduled else ""}'
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}',
             announcement_id=announcement_id,
-            cur_time=util.get_request_time(),
+            ref_time=ref_time,
             fetch=1,
     ) as (id_, title, content, author_id, post_time, expire_time, is_deleted):
         return do.Announcement(id=id_, title=title, content=content, author_id=author_id,
