@@ -12,6 +12,7 @@ import persistence.s3 as s3
 import util
 from util import rbac, url
 
+
 router = APIRouter(
     tags=['Submission'],
     default_response_class=response.JSONResponse,
@@ -71,9 +72,13 @@ async def edit_submission_language(language_id: int, data: EditSubmissionLanguag
                                              name=data.name, version=data.version, is_disabled=data.is_disabled)
 
 
+class SubmitInput(BaseModel):
+    language_id: int
+
+
 @router.post('/problem/{problem_id}/submission', tags=['Problem'])
 @enveloped
-async def submit(problem_id: int, language_id: int, request: Request, content_file: UploadFile = File(...)):
+async def submit(problem_id: int, data: SubmitInput, request: Request, content_file: UploadFile = File(...)):
     """
     ### 權限
     - System Manager (all)
@@ -97,12 +102,12 @@ async def submit(problem_id: int, language_id: int, request: Request, content_fi
         raise exc.NoPermission
 
     # Validate language
-    language = await db.submission.read_language(language_id)
+    language = await db.submission.read_language(data.language_id)
     if language.is_disabled:
         raise exc.IllegalInput
 
     submission_id = await db.submission.add(account_id=request.account.id, problem_id=problem.id,
-                                            language_id=language_id,
+                                            language_id=data.language_id,
                                             content_file_id=None, content_length=None,
                                             submit_time=submit_time)
 

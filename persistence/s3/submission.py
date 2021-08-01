@@ -4,6 +4,7 @@ import uuid
 
 from . import s3_handler
 
+
 _BUCKET_NAME = 'submission'
 
 
