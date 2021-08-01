@@ -1,5 +1,6 @@
 from typing import Sequence
 
+from fastapi import File, UploadFile
 from pydantic import BaseModel
 
 from base import do
@@ -7,9 +8,9 @@ from base.enum import RoleType, ChallengePublicizeType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
+import persistence.s3 as s3
 import util
 from util import rbac
-
 
 router = APIRouter(
     tags=['Submission'],
@@ -70,14 +71,9 @@ async def edit_submission_language(language_id: int, data: EditSubmissionLanguag
                                              name=data.name, version=data.version, is_disabled=data.is_disabled)
 
 
-class AddSubmissionInput(BaseModel):
-    language_id: int
-    content_file: str  # TODO
-
-
 @router.post('/problem/{problem_id}/submission', tags=['Problem'])
 @enveloped
-async def submit(problem_id: int, data: AddSubmissionInput, request: auth.Request):
+async def submit(problem_id: int, language_id: int, request: auth.Request, content_file: UploadFile = File(...)):
     """
     ### 權限
     - System Manager (all)
@@ -101,14 +97,24 @@ async def submit(problem_id: int, data: AddSubmissionInput, request: auth.Reques
         raise exc.NoPermission
 
     # Validate language
-    language = await db.submission.read_language(data.language_id)
+    language = await db.submission.read_language(language_id)
     if language.is_disabled:
         raise exc.IllegalInput
 
-    return await db.submission.add(account_id=request.account.id, problem_id=problem.id,
-                                   language_id=data.language_id,
-                                   content_file=data.content_file, content_length=len(data.content_file),
-                                   submit_time=submit_time)
+    submission_id = await db.submission.add(account_id=request.account.id, problem_id=problem.id,
+                                            language_id=language_id,
+                                            content_file_id=None, content_length=None,
+                                            submit_time=submit_time)
+
+    bucket, key = await s3.submission.upload(file=content_file.file,
+                                             filename=content_file.filename,
+                                             submission_id=submission_id)
+
+    content_file_id = await db.s3_file.add(bucket=bucket, key=key)
+
+    await db.submission.edit(submission_id=submission_id,
+                             content_file_id=content_file_id,
+                             content_file_length=len(content_file.file.read()))
 
 
 class BrowseSubmissionInput(BaseModel):
