@@ -95,10 +95,11 @@ async def add(account_id: int, problem_id: int, language_id: int,
         return id_
 
 
-async def edit(submission_id: int, content_file_id: int, content_file_length: int):
-    to_updates = {'content_file_id': content_file_id, 'content_file_length': content_file_length}
+async def edit(submission_id: int, content_file_id: int, content_length: int):
+    to_updates = {'content_file_id': content_file_id, 'content_length': content_length}
 
     set_sql = ', '.join(fr"{field_name} = %({field_name})s" for field_name in to_updates)
+
     async with SafeExecutor(
             event='add file id and length',
             sql=fr'UPDATE submission'
@@ -107,6 +108,7 @@ async def edit(submission_id: int, content_file_id: int, content_file_length: in
             submission_id=submission_id,
     ):
         pass
+
 
 # TODO: more filters
 async def browse(account_id: int = None, problem_id: int = None, language_id: int = None) \

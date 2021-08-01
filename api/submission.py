@@ -114,7 +114,7 @@ async def submit(problem_id: int, language_id: int, request: auth.Request, conte
 
     await db.submission.edit(submission_id=submission_id,
                              content_file_id=content_file_id,
-                             content_file_length=len(content_file.file.read()))
+                             content_length=len(content_file.file.read()))
 
 
 class BrowseSubmissionInput(BaseModel):
