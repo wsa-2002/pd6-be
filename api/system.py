@@ -3,7 +3,7 @@ from typing import Sequence
 from base import do
 from base.enum import RoleType
 import exceptions as exc
-from middleware import APIRouter, response, enveloped, auth
+from middleware import APIRouter, response, enveloped, auth, Request
 import persistence.database as db
 from util import rbac
 
@@ -12,14 +12,14 @@ import fastapi.responses
 
 router = APIRouter(
     tags=['System'],
-    route_class=auth.APIRoute,
     default_response_class=response.JSONResponse,
+    dependencies=auth.doc_dependencies,
 )
 
 
 @router.get('/access-log')
 @enveloped
-async def browse_access_log(offset: int, limit: int, req: auth.Request) -> Sequence[do.AccessLog]:
+async def browse_access_log(offset: int, limit: int, req: Request) -> Sequence[do.AccessLog]:
     """
     ### 權限
     - Class+ manager

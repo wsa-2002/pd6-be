@@ -8,20 +8,21 @@ import util
 from base import do
 from base.enum import RoleType, ChallengePublicizeType
 import exceptions as exc
-from middleware import APIRouter, response, enveloped, auth
+from middleware import APIRouter, response, enveloped, auth, Request
 import persistence.database as db
 from util import rbac
 
+
 router = APIRouter(
     tags=['Problem'],
-    route_class=auth.APIRoute,
     default_response_class=response.JSONResponse,
+    dependencies=auth.doc_dependencies,
 )
 
 
 @router.get('/problem')
 @enveloped
-async def browse_problem_set(request: auth.Request) -> Sequence[do.Problem]:
+async def browse_problem_set(request: Request) -> Sequence[do.Problem]:
     """
     ### 權限
     - System normal (not hidden)
@@ -30,12 +31,12 @@ async def browse_problem_set(request: auth.Request) -> Sequence[do.Problem]:
     if not system_role >= RoleType.normal:
         raise exc.NoPermission
 
-    return await db.problem.browse_problem_set(request_time=util.get_request_time())
+    return await db.problem.browse_problem_set(request_time=request.time)
 
 
 @router.get('/problem/{problem_id}')
 @enveloped
-async def read_problem(problem_id: int, request: auth.Request) -> do.Problem:
+async def read_problem(problem_id: int, request: Request) -> do.Problem:
     """
     ### 權限
     - Class manager (hidden)
@@ -43,14 +44,14 @@ async def read_problem(problem_id: int, request: auth.Request) -> do.Problem:
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     problem = await db.problem.read(problem_id)
-    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=util.get_request_time())
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
 
     is_system_normal = await rbac.validate(request.account.id, RoleType.normal)
     is_class_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)
 
     publicize_time = (challenge.start_time if challenge.publicize_type == ChallengePublicizeType.start_time
                       else challenge.end_time)
-    is_challenge_publicized = util.get_request_time() >= publicize_time
+    is_challenge_publicized = request.time >= publicize_time
 
     if not (is_class_manager or (is_system_normal and is_challenge_publicized)):
         raise exc.NoPermission
@@ -68,14 +69,14 @@ class EditProblemInput(BaseModel):
 
 @router.patch('/problem/{problem_id}')
 @enveloped
-async def edit_problem(problem_id: int, data: EditProblemInput, request: auth.Request):
+async def edit_problem(problem_id: int, data: EditProblemInput, request: Request):
     """
     ### 權限
     - Class manager
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     problem = await db.problem.read(problem_id)
-    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=util.get_request_time())
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
@@ -86,14 +87,14 @@ async def edit_problem(problem_id: int, data: EditProblemInput, request: auth.Re
 
 @router.delete('/problem/{problem_id}')
 @enveloped
-async def delete_problem(problem_id: int, request: auth.Request):
+async def delete_problem(problem_id: int, request: Request):
     """
     ### 權限
     - Class manager
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     problem = await db.problem.read(problem_id)
-    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=util.get_request_time())
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
@@ -110,14 +111,14 @@ class AddTestcaseInput(BaseModel):
 
 @router.post('/problem/{problem_id}/testcase', tags=['Testcase'])
 @enveloped
-async def add_testcase_under_problem(problem_id: int, data: AddTestcaseInput, request: auth.Request) -> int:
+async def add_testcase_under_problem(problem_id: int, data: AddTestcaseInput, request: Request) -> int:
     """
     ### 權限
     - Class manager
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     problem = await db.problem.read(problem_id)
-    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=util.get_request_time())
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
@@ -139,7 +140,7 @@ class ReadTestcaseOutput:
     is_deleted: bool
 
 
-async def browse_testcase_under_problem(problem_id: int, request: auth.Request) -> Sequence[ReadTestcaseOutput]:
+async def browse_testcase_under_problem(problem_id: int, request: Request) -> Sequence[ReadTestcaseOutput]:
     """
     ### 權限
     - System normal

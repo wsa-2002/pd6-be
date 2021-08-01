@@ -5,22 +5,24 @@ import uuid
 import starlette_context
 import starlette_context.errors
 
+from . import common
+
 
 async def middleware(request, call_next):
-    starlette_context.context['request_id'] = uuid.uuid1()
-    starlette_context.context['request_time'] = datetime.now()
+    starlette_context.context[common.REQUEST_UUID] = uuid.uuid1()
+    starlette_context.context[common.REQUEST_TIME] = datetime.now()
     return await call_next(request)
 
 
 def get_request_uuid() -> Optional[uuid.UUID]:
     try:
-        return starlette_context.context['request_id']
+        return starlette_context.context[common.REQUEST_UUID]
     except starlette_context.errors.ContextDoesNotExistError:
         return None
 
 
 def get_request_time() -> Optional[datetime]:
     try:
-        return starlette_context.context['request_time']
+        return starlette_context.context[common.REQUEST_TIME]
     except starlette_context.errors.ContextDoesNotExistError:
         return None

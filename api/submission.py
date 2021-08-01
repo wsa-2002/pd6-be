@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from base import do
 from base.enum import RoleType, ChallengePublicizeType
 import exceptions as exc
-from middleware import APIRouter, response, enveloped, auth
+from middleware import APIRouter, response, enveloped, auth, Request
 import persistence.database as db
 import persistence.s3 as s3
 import util
@@ -14,14 +14,14 @@ from util import rbac, url
 
 router = APIRouter(
     tags=['Submission'],
-    route_class=auth.APIRoute,
     default_response_class=response.JSONResponse,
+    dependencies=auth.doc_dependencies,
 )
 
 
 @router.get('/submission/language', tags=['Administrative'])
 @enveloped
-async def browse_submission_language(request: auth.Request) -> Sequence[do.SubmissionLanguage]:
+async def browse_submission_language(request: Request) -> Sequence[do.SubmissionLanguage]:
     """
     ### 權限
     - System normal
@@ -40,7 +40,7 @@ class AddSubmissionLanguageInput(BaseModel):
 
 @router.post('/submission/language', tags=['Administrative'])
 @enveloped
-async def add_submission_language(data: AddSubmissionLanguageInput, request: auth.Request) -> int:
+async def add_submission_language(data: AddSubmissionLanguageInput, request: Request) -> int:
     """
     ### 權限
     - System manager
@@ -59,7 +59,7 @@ class EditSubmissionLanguageInput(BaseModel):
 
 @router.patch('/submission/language/{language_id}', tags=['Administrative'])
 @enveloped
-async def edit_submission_language(language_id: int, data: EditSubmissionLanguageInput, request: auth.Request) -> None:
+async def edit_submission_language(language_id: int, data: EditSubmissionLanguageInput, request: Request) -> None:
     """
     ### 權限
     - System manager
@@ -73,20 +73,20 @@ async def edit_submission_language(language_id: int, data: EditSubmissionLanguag
 
 @router.post('/problem/{problem_id}/submission', tags=['Problem'])
 @enveloped
-async def submit(problem_id: int, language_id: int, request: auth.Request, content_file: UploadFile = File(...)):
+async def submit(problem_id: int, language_id: int, request: Request, content_file: UploadFile = File(...)):
     """
     ### 權限
     - System Manager (all)
     - System normal (non scheduled)
     """
-    submit_time = util.get_request_time()
+    submit_time = request.time
 
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
     # Validate problem
     problem = await db.problem.read(problem_id)
-    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=util.get_request_time())
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
 
     publicize_time = (challenge.start_time if challenge.publicize_type == ChallengePublicizeType.start_time
                       else challenge.end_time)
@@ -128,7 +128,7 @@ class BrowseSubmissionInput(BaseModel):
 
 @router.get('/submission')
 @enveloped
-async def browse_submission(data: BrowseSubmissionInput, request: auth.Request) -> Sequence[do.Submission]:
+async def browse_submission(data: BrowseSubmissionInput, request: Request) -> Sequence[do.Submission]:
     """
     ### 權限
     - Self
@@ -143,7 +143,7 @@ async def browse_submission(data: BrowseSubmissionInput, request: auth.Request) 
 
 @router.get('/submission/{submission_id}')
 @enveloped
-async def read_submission(submission_id: int, request: auth.Request) -> do.Submission:
+async def read_submission(submission_id: int, request: Request) -> do.Submission:
     """
     ### 權限
     - Self
@@ -157,7 +157,7 @@ async def read_submission(submission_id: int, request: auth.Request) -> do.Submi
 
     # 可以看自己管理的 class 的
     problem = await db.problem.read(problem_id=submission.problem_id)
-    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=util.get_request_time())
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
     class_role = await rbac.get_role(request.account.id, class_id=challenge.class_id)
     if class_role >= RoleType.manager:
         return submission
@@ -167,7 +167,7 @@ async def read_submission(submission_id: int, request: auth.Request) -> do.Submi
 
 @router.get('/submission/{submission_id}/content')
 @enveloped
-async def read_submission_file(submission_id: int, request: auth.Request) -> str:
+async def read_submission_file(submission_id: int, request: Request) -> str:
     """
     ### 權限
     - Self
@@ -195,7 +195,7 @@ async def read_submission_file(submission_id: int, request: auth.Request) -> str
 
 @router.get('/submission/{submission_id}/judgment', tags=['Judgment'])
 @enveloped
-async def browse_submission_judgment(submission_id: int, request: auth.Request) -> Sequence[do.Judgment]:
+async def browse_submission_judgment(submission_id: int, request: Request) -> Sequence[do.Judgment]:
     """
     ### 權限
     - Self (latest)

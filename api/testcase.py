@@ -2,9 +2,8 @@ from fastapi import File, UploadFile
 from pydantic import BaseModel
 
 from base.enum import RoleType
-from config import s3_config
 import exceptions as exc
-from middleware import APIRouter, response, enveloped, auth
+from middleware import APIRouter, response, enveloped, auth, Request
 import persistence.database as db
 import persistence.s3 as s3
 import util
@@ -15,14 +14,14 @@ from .problem import ReadTestcaseOutput
 
 router = APIRouter(
     tags=['Testcase'],
-    route_class=auth.APIRoute,
     default_response_class=response.JSONResponse,
+    dependencies=auth.doc_dependencies,
 )
 
 
 @router.get('/testcase/{testcase_id}')
 @enveloped
-async def read_testcase(testcase_id: int, request: auth.Request) -> ReadTestcaseOutput:
+async def read_testcase(testcase_id: int, request: Request) -> ReadTestcaseOutput:
     """
     ### 權限
     - System normal
@@ -53,7 +52,7 @@ class EditTestcaseInput(BaseModel):
 
 @router.get('/testcase/{testcase_id}/input-data')
 @enveloped
-async def read_testcase_input_data(testcase_id: int, request: auth.Request) -> str:
+async def read_testcase_input_data(testcase_id: int, request: Request) -> str:
     """
     ### 權限
     - System Normal (Sample)
@@ -65,7 +64,7 @@ async def read_testcase_input_data(testcase_id: int, request: auth.Request) -> s
     testcase = await db.testcase.read(testcase_id)
 
     problem = await db.problem.read(testcase.problem_id)
-    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=util.get_request_time())
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
     if not (await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)
             or (testcase.is_sample and await rbac.validate(request.account.id, RoleType.normal))):
         raise exc.NoPermission
@@ -76,7 +75,7 @@ async def read_testcase_input_data(testcase_id: int, request: auth.Request) -> s
 
 @router.get('/testcase/{testcase_id}/output-data')
 @enveloped
-async def read_testcase_output_data(testcase_id: int, request: auth.Request) -> str:
+async def read_testcase_output_data(testcase_id: int, request: Request) -> str:
     """
     ### 權限
     - System Normal (Sample)
@@ -88,7 +87,7 @@ async def read_testcase_output_data(testcase_id: int, request: auth.Request) -> 
     testcase = await db.testcase.read(testcase_id)
 
     problem = await db.problem.read(testcase.problem_id)
-    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=util.get_request_time())
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
     if not (await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)
             or (testcase.is_sample and await rbac.validate(request.account.id, RoleType.normal))):
         raise exc.NoPermission
@@ -99,7 +98,7 @@ async def read_testcase_output_data(testcase_id: int, request: auth.Request) -> 
 
 @router.patch('/testcase/{testcase_id}')
 @enveloped
-async def edit_testcase(testcase_id: int, data: EditTestcaseInput, request: auth.Request) -> None:
+async def edit_testcase(testcase_id: int, data: EditTestcaseInput, request: Request) -> None:
     """
     ### 權限
     - Class manager
@@ -107,7 +106,7 @@ async def edit_testcase(testcase_id: int, data: EditTestcaseInput, request: auth
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     testcase = await db.testcase.read(testcase_id)
     problem = await db.problem.read(testcase.problem_id)
-    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=util.get_request_time())
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
@@ -118,7 +117,7 @@ async def edit_testcase(testcase_id: int, data: EditTestcaseInput, request: auth
 
 @router.put('/testcase/{testcase_id}/input-data')
 @enveloped
-async def upload_testcase_input_data(testcase_id: int, request: auth.Request, input_file: UploadFile = File(...)):
+async def upload_testcase_input_data(testcase_id: int, request: Request, input_file: UploadFile = File(...)):
     """
     ### 權限
     - Class manager
@@ -126,7 +125,7 @@ async def upload_testcase_input_data(testcase_id: int, request: auth.Request, in
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     testcase = await db.testcase.read(testcase_id)
     problem = await db.problem.read(testcase.problem_id)
-    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=util.get_request_time())
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
@@ -143,7 +142,7 @@ async def upload_testcase_input_data(testcase_id: int, request: auth.Request, in
 
 @router.put('/testcase/{testcase_id}/output-data')
 @enveloped
-async def upload_testcase_output_data(testcase_id: int, request: auth.Request, output_file: UploadFile = File(...)):
+async def upload_testcase_output_data(testcase_id: int, request: Request, output_file: UploadFile = File(...)):
     """
     ### 權限
     - Class manager
@@ -151,7 +150,7 @@ async def upload_testcase_output_data(testcase_id: int, request: auth.Request, o
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     testcase = await db.testcase.read(testcase_id)
     problem = await db.problem.read(testcase.problem_id)
-    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=util.get_request_time())
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
@@ -168,7 +167,7 @@ async def upload_testcase_output_data(testcase_id: int, request: auth.Request, o
 
 @router.delete('/testcase/{testcase_id}')
 @enveloped
-async def delete_testcase(testcase_id: int, request: auth.Request) -> None:
+async def delete_testcase(testcase_id: int, request: Request) -> None:
     """
     ### 權限
     - Class manager
@@ -176,7 +175,7 @@ async def delete_testcase(testcase_id: int, request: auth.Request) -> None:
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     testcase = await db.testcase.read(testcase_id)
     problem = await db.problem.read(testcase.problem_id)
-    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=util.get_request_time())
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
@@ -185,7 +184,7 @@ async def delete_testcase(testcase_id: int, request: auth.Request) -> None:
 
 @router.delete('/testcase/{testcase_id}/input-data')
 @enveloped
-async def delete_testcase_input_data(testcase_id: int, request: auth.Request):
+async def delete_testcase_input_data(testcase_id: int, request: Request):
     """
     ### 權限
     - Class manager
@@ -193,7 +192,7 @@ async def delete_testcase_input_data(testcase_id: int, request: auth.Request):
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     testcase = await db.testcase.read(testcase_id)
     problem = await db.problem.read(testcase.problem_id)
-    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=util.get_request_time())
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
@@ -202,7 +201,7 @@ async def delete_testcase_input_data(testcase_id: int, request: auth.Request):
 
 @router.delete('/testcase/{testcase_id}/output-data')
 @enveloped
-async def delete_testcase_output_data(testcase_id: int, request: auth.Request):
+async def delete_testcase_output_data(testcase_id: int, request: Request):
     """
     ### 權限
     - Class manager
@@ -210,7 +209,7 @@ async def delete_testcase_output_data(testcase_id: int, request: auth.Request):
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     testcase = await db.testcase.read(testcase_id)
     problem = await db.problem.read(testcase.problem_id)
-    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=util.get_request_time())
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
