@@ -106,7 +106,7 @@ async def edit(submission_id: int, content_file_id: int, content_length: int):
                 fr'   SET {set_sql}'
                 fr' WHERE id  = %(submission_id)s',
             submission_id=submission_id,
-            **to_updates
+            **to_updates,
     ):
         pass
 
