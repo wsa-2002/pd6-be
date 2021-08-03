@@ -28,7 +28,8 @@ async def browse(include_deleted: bool = False) -> Sequence[do.BrowseAccountOutp
                 fr'  FROM account'
                 fr'       INNER JOIN student_card'
                 fr'               ON student_card.account_id = account.id'
-                fr'{" WHERE NOT account.is_deleted" if not include_deleted else ""}'
+                fr' WHERE student_card.is_default'
+                fr'{" AND NOT account.is_deleted" if not include_deleted else ""}'
                 fr' ORDER BY account.id ASC',
             fetch='all',
     ) as records:
