@@ -3,7 +3,7 @@ from typing import Optional, Sequence
 
 from pydantic import BaseModel
 
-from base import do
+from base import do, vo
 from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
@@ -20,7 +20,7 @@ router = APIRouter(
 
 @router.get('/account')
 @enveloped
-async def browse_account(request: Request) -> Sequence[do.BrowseAccountOutput]:
+async def browse_account_with_student_card(request: Request) -> Sequence[vo.BrowseAccountOutput]:
     """
     ### 權限
     - System Manager
@@ -29,8 +29,8 @@ async def browse_account(request: Request) -> Sequence[do.BrowseAccountOutput]:
     if not is_manager:
         raise exc.NoPermission
 
-    accounts = await db.account.browse()
-    return accounts
+    accounts_with_student_card = await db.account.browse_account_with_student_card()
+    return accounts_with_student_card
 
 
 @dataclass

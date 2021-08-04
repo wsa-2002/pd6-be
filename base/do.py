@@ -20,16 +20,6 @@ class Account:
 
 
 @dataclass
-class BrowseAccountOutput:
-    id: int
-    student_id: str
-    real_name: str
-    username: str
-    nickname: str
-    alternative_email: Optional[str]
-
-
-@dataclass
 class Institute:
     id: int
     abbreviated_name: str
