@@ -61,7 +61,7 @@ async def is_duplicate(institute_id: int, student_id: str) -> bool:
                 fr'   AND student_id = %(student_id)s',
             institute_id=institute_id,
             student_id=student_id,
-            fetch='1',
+            fetch=1,
     ) as (cnt,):
         return cnt > 0
 
