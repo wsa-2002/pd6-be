@@ -20,7 +20,7 @@ async def add(username: str, pass_hash: str, nickname: str, real_name: str, role
         return account_id
 
 
-async def browse_account_with_student_card(include_deleted: bool = False) -> Sequence[vo.BrowseAccountOutput]:
+async def browse_account_with_student_card(include_deleted: bool = False) -> Sequence[vo.BrowseAccountWithStudentCard]:
     async with SafeExecutor(
             event='browse account',
             sql=fr'SELECT account.id, student_card.student_id, account.real_name,'
@@ -33,7 +33,7 @@ async def browse_account_with_student_card(include_deleted: bool = False) -> Seq
                 fr' ORDER BY account.id ASC',
             fetch='all',
     ) as records:
-        return [vo.BrowseAccountOutput(id=id_, student_id=student_id, real_name=real_name, username=username,
+        return [vo.BrowseAccountWithStudentCard(id=id_, student_id=student_id, real_name=real_name, username=username,
                                        nickname=nickname, alternative_email=alternative_email)
                 for (id_, student_id, real_name, username, nickname, alternative_email)
                 in records]
