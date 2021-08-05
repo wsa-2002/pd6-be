@@ -1,6 +1,5 @@
 from typing import Sequence, Collection, Tuple
 
-import log
 from base import do, vo
 from base.enum import RoleType
 
@@ -156,7 +155,7 @@ async def browse_members(class_id: int) -> Sequence[do.Member]:
         return [do.Member(member_id=id_, role=RoleType(role_str)) for id_, role_str in records]
 
 
-async def browse_members_with_accounts(class_id: int) -> Sequence[vo.BrowseClassMemberOutput]:
+async def browse_members_with_accounts(class_id: int) -> Sequence[vo.BrowseMemberWithStudentCard]:
     async with SafeExecutor(
             event='browse class members',
             sql=fr'SELECT account.id, account.username, account.real_name,'
@@ -172,8 +171,8 @@ async def browse_members_with_accounts(class_id: int) -> Sequence[vo.BrowseClass
             is_default=True,
             fetch='all'
     ) as records:
-        return [vo.BrowseClassMemberOutput(id=id_, username=username, student_id=student_id, real_name=real_name,
-                                           institute=institute, role=RoleType(role_str))
+        return [vo.BrowseMemberWithStudentCard(id=id_, username=username, student_id=student_id, real_name=real_name,
+                                               institute=institute, role=RoleType(role_str))
                 for id_, username, real_name, institute, student_id, role_str in records]
 
 

@@ -82,7 +82,7 @@ async def delete_class(class_id: int, request: Request) -> None:
 
 @router.get('/class/{class_id}/member')
 @enveloped
-async def browse_class_member(class_id: int, request: Request) -> Sequence[vo.BrowseClassMemberOutput]:
+async def browse_class_member(class_id: int, request: Request) -> Sequence[vo.BrowseMemberWithStudentCard]:
     """
     ### 權限
     - Class normal
