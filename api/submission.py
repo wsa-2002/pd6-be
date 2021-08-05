@@ -12,7 +12,6 @@ import persistence.s3 as s3
 import util
 from util import rbac, url
 
-
 router = APIRouter(
     tags=['Submission'],
     default_response_class=response.JSONResponse,
@@ -106,21 +105,16 @@ async def submit(problem_id: int, data: SubmissionInput, request: Request, conte
     if language.is_disabled:
         raise exc.IllegalInput
 
-    submission_id = await db.submission.add(account_id=request.account.id, problem_id=problem.id,
-                                            language_id=data.language_id,
-                                            content_file_id=None, content_length=None,
-                                            submit_time=submit_time)
-
     bucket, key = await s3.submission.upload(file=content_file.file,
-                                             filename=content_file.filename,
-                                             submission_id=submission_id)
+                                             filename=content_file.filename)
 
     content_file_id = await db.s3_file.add(bucket=bucket, key=key)
 
-    await db.submission.edit(submission_id=submission_id,
-                             content_file_id=content_file_id,
-                             content_length=len(content_file.file.read()))
-
+    submission_id = await db.submission.add(account_id=request.account.id, problem_id=problem.id,
+                                            language_id=data.language_id,
+                                            content_file_id=content_file_id,
+                                            content_length=len(content_file.file.read()),
+                                            submit_time=submit_time)
     return submission_id
 
 
