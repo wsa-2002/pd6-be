@@ -44,6 +44,7 @@ pool_handler = PoolHandler()
 # For import usage
 from . import (
     account,
+    account_vo,
     institute,
     student_card,
     rbac,

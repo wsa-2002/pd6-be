@@ -20,7 +20,7 @@ router = APIRouter(
 
 @router.get('/account')
 @enveloped
-async def browse_account_with_student_card(request: Request) -> Sequence[vo.BrowseAccountWithStudentCard]:
+async def browse_account_with_student_card(request: Request) -> Sequence[vo.AccountWithStudentCard]:
     """
     ### 權限
     - System Manager
@@ -29,7 +29,7 @@ async def browse_account_with_student_card(request: Request) -> Sequence[vo.Brow
     if not is_manager:
         raise exc.NoPermission
 
-    return await db.account.browse_account_with_student_card()
+    return await db.account_vo.browse_account_with_student_card()
 
 
 @dataclass
