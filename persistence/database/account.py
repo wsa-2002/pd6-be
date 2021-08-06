@@ -1,6 +1,6 @@
-from typing import Tuple, Sequence
+from typing import Tuple
 
-from base import do, vo
+from base import do
 from base.enum import RoleType
 import exceptions as exc
 
