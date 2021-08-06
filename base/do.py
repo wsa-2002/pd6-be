@@ -146,7 +146,7 @@ class Submission:
     account_id: int
     problem_id: int
     language_id: int
-    content_file: str
+    content_file_id: int
     content_length: int
     submit_time: datetime
 
