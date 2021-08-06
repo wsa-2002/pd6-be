@@ -2,6 +2,8 @@ import datetime
 import enum
 import typing
 
+import pydantic.datetime_parse
+
 
 T = typing.TypeVar("T")
 
@@ -54,11 +56,34 @@ class NoTimezoneIsoDatetime(datetime.datetime):
         yield cls.validate
 
     @classmethod
-    def validate(cls, dt):
-        return cls.fromisoformat(dt)
+    def validate(cls, value):
+        """
+        Stolen from pydantic's datetime parser
+        """
+        if isinstance(value, pydantic.datetime_parse.datetime):
+            return value
 
-    @classmethod
-    def __modify_schema__(cls, field_schema):
-        field_schema.update(
-            examples=['2021-08-06T21:18:13.877994'],
-        )
+        if isinstance(value, bytes):
+            value = value.decode()
+
+        match = pydantic.datetime_parse.datetime_re.match(value)
+        if match is None:
+            raise pydantic.datetime_parse.errors.DateTimeError()
+
+        kw = match.groupdict()
+        if kw['microsecond']:
+            kw['microsecond'] = kw['microsecond'].ljust(6, '0')
+
+        tzinfo = pydantic.datetime_parse._parse_timezone(kw.pop('tzinfo'), pydantic.datetime_parse.errors.DateTimeError)
+        kw_ = {k: int(v) for k, v in kw.items() if v is not None}
+        kw_['tzinfo'] = tzinfo
+
+        try:
+            converted = pydantic.datetime_parse.datetime(**kw_)
+        except ValueError:
+            raise pydantic.datetime_parse.errors.DateTimeError()
+
+        # Edited here: forces timezone to convert to utc
+        if converted.tzinfo is not None:
+            return converted.astimezone(tz=datetime.timezone.utc).replace(tzinfo=None)
+        return converted
