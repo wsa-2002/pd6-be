@@ -5,7 +5,7 @@ from base import vo
 from .base import SafeExecutor
 
 
-async def browse_account_with_default_student_id(include_deleted: bool = False) -> Sequence[vo.AccountWithStudentId]:
+async def browse_account_with_default_student_id(include_deleted: bool = False) -> Sequence[vo.AccountWithDefaultStudentId]:
     async with SafeExecutor(
             event='browse account',
             sql=fr'SELECT account.id, student_card.student_id, account.real_name,'
@@ -18,7 +18,7 @@ async def browse_account_with_default_student_id(include_deleted: bool = False) 
                 fr' ORDER BY account.id ASC',
             fetch='all',
     ) as records:
-        return [vo.AccountWithStudentId(id=id_, student_id=student_id, real_name=real_name,
-                                        username=username, nickname=nickname, alternative_email=alternative_email)
+        return [vo.AccountWithDefaultStudentId(id=id_, student_id=student_id, real_name=real_name,
+                                               username=username, nickname=nickname, alternative_email=alternative_email)
                 for (id_, student_id, real_name, username, nickname, alternative_email)
                 in records]

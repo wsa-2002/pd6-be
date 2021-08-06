@@ -20,7 +20,7 @@ router = APIRouter(
 
 @router.get('/account')
 @enveloped
-async def browse_account_with_default_student_id(request: Request) -> Sequence[vo.AccountWithStudentId]:
+async def browse_account_with_default_student_id(request: Request) -> Sequence[vo.AccountWithDefaultStudentId]:
     """
     ### 權限
     - System Manager
