@@ -87,11 +87,7 @@ async def edit_account(account_id: int, data: EditAccountInput, request: Request
     else:  # 刪掉 alternative email
         await db.account.delete_alternative_email_by_id(account_id=account_id)
 
-    # 不檢查 if data.nickname，因為 nickname 可以被刪掉 (設成 None)
-    if data.real_name:
-        await db.account.edit(account_id=account_id, nickname=data.nickname, real_name=data.real_name)
-    else:
-        await db.account.edit(account_id=account_id, nickname=data.nickname)
+    await db.account.edit(account_id=account_id, nickname=data.nickname, real_name=data.real_name)
 
 
 class EditPasswordInput(BaseModel):
