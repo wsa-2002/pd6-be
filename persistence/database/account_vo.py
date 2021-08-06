@@ -7,7 +7,7 @@ from .base import SafeExecutor
 
 async def browse_account_with_default_student_id(include_deleted: bool = False) -> Sequence[vo.AccountWithDefaultStudentId]:
     async with SafeExecutor(
-            event='browse account',
+            event='browse account with default student id',
             sql=fr'SELECT account.id, student_card.student_id, account.real_name,'
                 fr'       account.username, account.nickname, account.alternative_email'
                 fr'  FROM account'
