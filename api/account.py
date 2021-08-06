@@ -61,6 +61,7 @@ async def read_account(account_id: int, request: Request) -> ReadAccountOutput:
 class EditAccountInput(BaseModel):
     nickname: str = None
     alternative_email: str = None
+    real_name: str = None
 
 
 @router.patch('/account/{account_id}')
@@ -74,7 +75,7 @@ async def edit_account(account_id: int, data: EditAccountInput, request: Request
     is_manager = await rbac.validate(request.account.id, RoleType.manager)
     is_self = request.account.id is account_id
 
-    if not (is_manager or is_self):
+    if not ((is_self and not data.real_name) or is_manager):
         raise exc.NoPermission
 
     # 先 update email 因為如果失敗就整個失敗
@@ -87,7 +88,10 @@ async def edit_account(account_id: int, data: EditAccountInput, request: Request
         await db.account.delete_alternative_email_by_id(account_id=account_id)
 
     # 不檢查 if data.nickname，因為 nickname 可以被刪掉 (設成 None)
-    await db.account.edit(account_id=account_id, nickname=data.nickname)
+    if data.real_name:
+        await db.account.edit(account_id=account_id, nickname=data.nickname, real_name=data.real_name)
+    else:
+        await db.account.edit(account_id=account_id, nickname=data.nickname)
 
 
 class EditPasswordInput(BaseModel):
