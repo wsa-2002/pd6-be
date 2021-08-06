@@ -42,7 +42,6 @@ class AddAccountInput(BaseModel):
     alternative_email: Optional[str] = ...
     # Student card
     institute_id: int
-    department: str
     student_id: str
     institute_email_prefix: str
 
@@ -76,7 +75,7 @@ async def add_account(data: AddAccountInput) -> None:
 
     institute_email = f"{data.institute_email_prefix}@{institute.email_domain}"
     code = await db.account.add_email_verification(email=institute_email, account_id=account_id,
-                                                   institute_id=data.institute_id, department=data.department,
+                                                   institute_id=data.institute_id, department='',
                                                    student_id=data.student_id)
     await email.verification.send(to=institute_email, code=code)
 
