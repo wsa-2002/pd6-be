@@ -20,8 +20,8 @@ async def browse_members_with_accounts(class_id: int) -> Sequence[vo.BrowseMembe
                 fr'   AND student_card.is_default = %(is_default)s',
             class_id=class_id,
             is_default=True,
-            fetch='all'
+            fetch='all',
     ) as records:
-        return [vo.BrowseMemberWithStudentCard(id=id_, username=username, student_id=student_id, real_name=real_name,
-                                               institute=institute, role=RoleType(role_str))
+        return [vo.MemberWithStudentCard(id=id_, username=username, student_id=student_id, real_name=real_name,
+                                         institute=institute, role=RoleType(role_str))
                 for id_, username, real_name, institute, student_id, role_str in records]

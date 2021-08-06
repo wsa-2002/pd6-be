@@ -7,7 +7,7 @@ from base import enum
 
 
 @dataclass
-class BrowseMemberWithStudentCard:
+class MemberWithStudentCard:
     id: int
     username: str
     student_id: str
