@@ -6,7 +6,7 @@ from base.enum import RoleType
 from .base import SafeExecutor
 
 
-async def browse_members_with_accounts(class_id: int) -> Sequence[vo.BrowseMemberWithStudentCard]:
+async def browse_members_with_studentCard(class_id: int) -> Sequence[vo.BrowseMemberWithStudentCard]:
     async with SafeExecutor(
             event='browse class members',
             sql=fr'SELECT account.id, account.username, account.real_name,'

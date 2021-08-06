@@ -92,7 +92,7 @@ async def browse_class_member(class_id: int, request: Request) -> Sequence[vo.Me
             and not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id, inherit=True)):
         raise exc.NoPermission
 
-    return await db.class_vo.browse_members_with_accounts(class_id=class_id)
+    return await db.class_vo.browse_members_with_studentCard(class_id=class_id)
 
 
 class EditClassMemberInput(BaseModel):
