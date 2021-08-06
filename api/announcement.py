@@ -5,8 +5,9 @@ from pydantic import BaseModel
 
 import util
 from base import do
-import exceptions as exc
+from base.cls import NoTimezoneIsoDatetime
 from base.enum import RoleType
+import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
 import persistence.database as db
 from util import rbac
@@ -23,8 +24,8 @@ class AddAnnouncementInput(BaseModel):
     title: str
     content: str
     author_id: int
-    post_time: datetime
-    expire_time: datetime
+    post_time: NoTimezoneIsoDatetime
+    expire_time: NoTimezoneIsoDatetime
 
 
 @router.post('/announcement')
@@ -75,8 +76,8 @@ async def read_announcement(announcement_id: int, request: Request) -> do.Announ
 class EditAnnouncementInput(BaseModel):
     title: str = None
     content: str = None
-    post_time: datetime = None
-    expire_time: datetime = None
+    post_time: NoTimezoneIsoDatetime = None
+    expire_time: NoTimezoneIsoDatetime = None
 
 
 @router.patch('/announcement/{announcement_id}')
