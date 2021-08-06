@@ -8,7 +8,7 @@ from base import enum
 
 
 @dataclass
-class AccountWithStudentCard:
+class AccountWithStudentId:
     id: int
     student_id: str
     real_name: str
