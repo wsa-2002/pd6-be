@@ -11,7 +11,7 @@ async def send(to: str, code: str, subject='PDOGS Email Verification'):
     message["To"] = to
     message["Subject"] = subject
     message.set_content(fr"""
-Please verify your email with the following url:
+Please verify_password your email with the following url:
 {service_config.url}/email-verification?code={code}
 """)
 

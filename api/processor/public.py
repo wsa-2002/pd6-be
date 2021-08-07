@@ -2,11 +2,11 @@ from typing import Optional
 from dataclasses import dataclass
 
 from fastapi.responses import HTMLResponse
+import pydantic
 from pydantic import BaseModel
 
 import exceptions as exc
 from middleware import APIRouter, JSONResponse, enveloped
-from util import validator
 
 from .. import service
 
@@ -28,7 +28,7 @@ class AddAccountInput(BaseModel):
     password: str
     nickname: str
     real_name: str
-    alternative_email: Optional[str] = ...
+    alternative_email: Optional[pydantic.EmailStr] = ...
     # Student card
     institute_id: int
     student_id: str
@@ -49,9 +49,6 @@ async def add_account(data: AddAccountInput) -> None:
 
     if data.student_id != data.institute_email_prefix:
         raise exc.account.StudentIdNotMatchEmail
-
-    if data.alternative_email and not validator.is_valid_email(data.alternative_email):
-        raise exc.account.InvalidEmail
 
     if service.student_card.is_duplicate(institute.id, data.student_id):
         raise exc.account.StudentCardExists
