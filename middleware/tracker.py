@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Optional
 import uuid
 
+import fastapi
 import starlette_context
 import starlette_context.errors
 
@@ -9,9 +10,11 @@ from . import common
 
 
 async def middleware(request, call_next):
-    starlette_context.context[common.REQUEST_UUID] = uuid.uuid1()
+    starlette_context.context[common.REQUEST_UUID] = request_uuid = uuid.uuid1()
     starlette_context.context[common.REQUEST_TIME] = datetime.now()
-    return await call_next(request)
+    response: fastapi.Response = await call_next(request)
+    response.headers['X-Request-ID'] = str(request_uuid)
+    return response
 
 
 def get_request_uuid() -> Optional[uuid.UUID]:

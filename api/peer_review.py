@@ -3,6 +3,7 @@ from datetime import datetime
 from pydantic import BaseModel
 
 from base import do
+from base.cls import NoTimezoneIsoDatetime
 from base.enum import CourseType, RoleType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
@@ -45,8 +46,8 @@ class EditPeerReviewInput(BaseModel):
     min_score: int = None
     max_score: int = None
     max_review_count: int = None
-    start_time: datetime = None
-    end_time: datetime = None
+    start_time: NoTimezoneIsoDatetime = None
+    end_time: NoTimezoneIsoDatetime = None
 
 
 @router.patch('/peer-review/{peer_review_id}')

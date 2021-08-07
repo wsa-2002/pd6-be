@@ -5,6 +5,7 @@ from typing import Optional, Sequence
 from pydantic import BaseModel
 
 from base import do, enum
+from base.cls import NoTimezoneIsoDatetime
 from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
@@ -25,8 +26,8 @@ class AddChallengeInput(BaseModel):
     publicize_type: enum.ChallengePublicizeType
     title: str
     description: Optional[str]
-    start_time: datetime
-    end_time: datetime
+    start_time: NoTimezoneIsoDatetime
+    end_time: NoTimezoneIsoDatetime
 
 
 @router.post('/class/{class_id}/challenge', tags=['Course'])
@@ -98,8 +99,8 @@ class EditChallengeInput(BaseModel):
     publicize_type: enum.ChallengePublicizeType = None
     title: str = None
     description: Optional[str] = ...
-    start_time: datetime = None
-    end_time: datetime = None
+    start_time: NoTimezoneIsoDatetime = None
+    end_time: NoTimezoneIsoDatetime = None
 
 
 @router.patch('/challenge/{challenge_id}')
@@ -172,8 +173,8 @@ class AddPeerReviewInput(BaseModel):
     min_score: int
     max_score: int
     max_review_count: int
-    start_time: datetime
-    end_time: datetime
+    start_time: NoTimezoneIsoDatetime
+    end_time: NoTimezoneIsoDatetime
 
 
 @router.post('/challenge/{challenge_id}/peer-review', tags=['Peer Review'])

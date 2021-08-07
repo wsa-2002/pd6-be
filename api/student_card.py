@@ -21,7 +21,6 @@ router = APIRouter(
 class AddStudentCardInput(BaseModel):
     institute_id: int
     institute_email_prefix: str
-    department: str
     student_id: str
 
 
@@ -52,7 +51,7 @@ async def add_student_card_to_account(account_id: int, data: AddStudentCardInput
 
     institute_email = f"{data.institute_email_prefix}@{institute.email_domain}"
     code = await db.account.add_email_verification(email=institute_email, account_id=account_id,
-                                                   institute_id=data.institute_id, department=data.department,
+                                                   institute_id=data.institute_id, department='',
                                                    student_id=data.student_id)
     await email.verification.send(to=institute_email, code=code)
 
@@ -90,29 +89,3 @@ async def read_student_card(student_card_id: int, request: Request) -> do.Studen
         raise exc.NoPermission
 
     return await db.student_card.read(student_card_id=student_card_id)
-
-
-# can only edit department!
-class EditStudentCardInput(BaseModel):
-    department: str = None
-
-
-@router.patch('/student-card/{student_card_id}')
-@enveloped
-async def edit_student_card(student_card_id: int, data: EditStudentCardInput, request: Request) -> None:
-    """
-    ### 權限
-    - System manager
-    - Self
-    """
-    is_manager = await rbac.validate(request.account.id, RoleType.manager)
-    owner_id = await db.student_card.read_owner_id(student_card_id=student_card_id)
-    is_self = request.account.id is owner_id
-
-    if not (is_manager or is_self):
-        raise exc.NoPermission
-
-    await db.student_card.edit(
-        student_card_id=student_card_id,
-        department=data.department,
-    )

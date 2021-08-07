@@ -133,8 +133,7 @@ async def upload_testcase_input_data(testcase_id: int, request: Request, input_f
     #       bucket, key 進 s3_file db 得到 file id
     #       file_id 進 testcase db
     bucket, key = await s3.testcase.upload_input(file=input_file.file,
-                                                 filename=input_file.filename,
-                                                 testcase_id=testcase.id)
+                                                 filename=input_file.filename)
 
     file_id = await db.s3_file.add(bucket=bucket, key=key)
     await db.testcase.edit(testcase_id=testcase_id, input_file_id=file_id)
@@ -158,8 +157,7 @@ async def upload_testcase_output_data(testcase_id: int, request: Request, output
     #       bucket, key 進 s3_file db 得到 file id
     #       file_id 進 testcase db
     bucket, key = await s3.testcase.upload_output(file=output_file.file,
-                                                  filename=output_file.filename,
-                                                  testcase_id=testcase.id)
+                                                  filename=output_file.filename)
 
     file_id = await db.s3_file.add(bucket=bucket, key=key)
     await db.testcase.edit(testcase_id=testcase_id, output_file_id=file_id)

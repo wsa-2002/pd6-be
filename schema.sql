@@ -206,7 +206,7 @@ CREATE TABLE submission (
   account_id      INTEGER   NOT NULL  REFERENCES account(id),
   problem_id      INTEGER   NOT NULL  REFERENCES problem(id),
   language_id     INTEGER   NOT NULL  REFERENCES submission_language(id),
-  content_file    VARCHAR   NOT NULL,
+  content_file_id INTEGER   NOT NULL  REFERENCES s3_file(id),
   content_length  INTEGER   NOT NULL,
   submit_time     TIMESTAMP NOT NULL
 );

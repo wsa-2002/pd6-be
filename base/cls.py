@@ -1,8 +1,9 @@
+import datetime
 import enum
-from typing import TypeVar
+import typing
 
 
-T = TypeVar("T")
+T = typing.TypeVar("T")
 
 
 class StrEnum(str, enum.Enum):
@@ -42,3 +43,22 @@ class OrderedMixin:
         items = tuple(reversed(self.__class__))
         self_index = items.index(self)
         return items[self_index-1] if self_index else items[0]
+
+
+class NoTimezoneIsoDatetime(datetime.datetime):
+    """
+    A pydantic-compatible custom class to represent and validate ISO-format datetime without timezone info
+    """
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, dt):
+        return cls.fromisoformat(dt)
+
+    @classmethod
+    def __modify_schema__(cls, field_schema):
+        field_schema.update(
+            examples=['2021-08-06T21:18:13.877994'],
+        )

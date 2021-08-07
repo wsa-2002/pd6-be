@@ -34,11 +34,12 @@ async def read(account_id: int, *, include_deleted: bool = False) -> do.Account:
                           is_deleted=is_deleted, alternative_email=alternative_email)
 
 
-# Uses ellipsis (...) as default value for values that can be set to None
-async def edit(account_id: int,
-               nickname: str = ...) -> None:
+async def edit(account_id: int, real_name: str = None, nickname: str = None) -> None:
     to_updates = {}
-    if nickname is not ...:
+
+    if real_name is not None:
+        to_updates['real_name'] = real_name
+    if nickname is not None:
         to_updates['nickname'] = nickname
 
     if not to_updates:
