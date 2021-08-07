@@ -4,10 +4,9 @@ from dataclasses import dataclass
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
-from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, JSONResponse, enveloped
-from util import security, validator
+from util import validator
 
 from .. import service
 
@@ -58,8 +57,8 @@ async def add_account(data: AddAccountInput) -> None:
         raise exc.account.StudentCardExists
 
     try:
-        account_id = await service.account.add(username=data.username, pass_hash=security.hash_password(data.password),
-                                               nickname=data.nickname, real_name=data.real_name, role=RoleType.guest)
+        account_id = await service.account.add(username=data.username, password=data.password,
+                                               nickname=data.nickname, real_name=data.real_name)
     except exc.persistence.UniqueViolationError:
         raise exc.account.UsernameExists
 

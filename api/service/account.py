@@ -1,10 +1,15 @@
+from base import enum
 import exceptions as exc
 import persistence.database as db
 import persistence.email as email
 from util import security, validator
 
 
-add = db.account.add
+async def add(username: str, password: str, nickname: str, real_name: str, role=enum.RoleType.guest):
+    return await db.account.add(username=username, pass_hash=security.hash_password(password),
+                                nickname=nickname, real_name=real_name, role=role)
+
+
 browse_account_with_default_student_id = db.account_vo.browse_account_with_default_student_id
 read = db.account.read
 
