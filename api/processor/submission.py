@@ -7,8 +7,6 @@ from base import do
 from base.enum import RoleType, ChallengePublicizeType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
-import persistence.s3 as s3
-import util
 from util import rbac, url
 
 from .. import service
