@@ -50,7 +50,6 @@ async def add_student_card_to_account(account_id: int, data: AddStudentCardInput
         raise exc.account.StudentCardExists
 
     institute_email = f"{data.institute_email_prefix}@{institute.email_domain}"
-
     await service.student_card.add(account_id=account_id, institute_email=institute_email,
                                    institute_id=institute.id, student_id=data.student_id)
 

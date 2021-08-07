@@ -1,22 +1,15 @@
-from typing import Sequence
-
-from base import do, vo
 import exceptions as exc
 import persistence.database as db
 import persistence.email as email
 from util import security, validator
 
 
-async def browse_with_default_student_id() -> Sequence[vo.AccountWithDefaultStudentId]:
-    return await db.account_vo.browse_account_with_default_student_id()
+add = db.account.add
+browse_account_with_default_student_id = db.account_vo.browse_account_with_default_student_id
+read = db.account.read
 
-
-async def read(account_id: int) -> do.Account:
-    return await db.account.read(account_id)
-
-
-async def edit_general(account_id: int, nickname: str = None, real_name: str = None):
-    await db.account.edit(account_id=account_id, nickname=nickname, real_name=real_name)
+edit_general = db.account.edit
+edit_default_student_card = db.account.edit_default_student_card
 
 
 async def edit_alternative_email(account_id: int, alternative_email: str = None) -> None:
@@ -42,12 +35,5 @@ async def force_edit_password(account_id: int, new_password: str):
     await db.account.edit_pass_hash(account_id=account_id, pass_hash=security.hash_password(new_password))
 
 
-async def delete(account_id: int) -> None:
-    await db.account.delete(account_id)
-
-
-async def edit_default_student_card(account_id: int, student_card_id: int) -> None:
-    await db.account.edit_default_student_card(
-        account_id=account_id,
-        student_card_id=student_card_id,
-    )
+verify_email = db.account.verify_email
+delete = db.account.delete
