@@ -76,7 +76,7 @@ class SubmissionInput(BaseModel):
 
 @router.post('/problem/{problem_id}/submission', tags=['Problem'])
 @enveloped
-async def submit(problem_id: int, data: SubmissionInput, request: Request, content_file: UploadFile = File(...)):
+async def submit(problem_id: int, data: SubmissionInput, request: Request, content_file: UploadFile = File(...)) -> int:
     """
     ### 權限
     - System Manager (all)
