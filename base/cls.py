@@ -2,6 +2,8 @@ import datetime
 import enum
 import typing
 
+import pydantic.datetime_parse
+
 
 T = typing.TypeVar("T")
 
@@ -54,11 +56,12 @@ class NoTimezoneIsoDatetime(datetime.datetime):
         yield cls.validate
 
     @classmethod
-    def validate(cls, dt):
-        return cls.fromisoformat(dt)
+    def validate(cls, value):
+        converted = pydantic.datetime_parse.parse_datetime(value)
 
-    @classmethod
-    def __modify_schema__(cls, field_schema):
-        field_schema.update(
-            examples=['2021-08-06T21:18:13.877994'],
-        )
+        # forces timezone to be None
+        if converted.tzinfo is not None:
+            # Uses utc as default timezone
+            converted = converted.astimezone(tz=datetime.timezone.utc).replace(tzinfo=None)
+
+        return converted
