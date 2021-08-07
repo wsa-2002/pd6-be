@@ -76,5 +76,5 @@ app.add_middleware(starlette_context.middleware.RawContextMiddleware)
 
 
 # Register routers
-from api import register_routers
+from api.processor import register_routers
 register_routers(app)

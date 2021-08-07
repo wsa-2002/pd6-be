@@ -1,13 +1,9 @@
 from typing import Sequence
 
-from pydantic import BaseModel
-
 from base import do, enum
-from base.enum import RoleType
-import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth
-import persistence.database as db
-from util import rbac
+
+from .. import service
 
 
 router = APIRouter(
@@ -35,7 +31,7 @@ async def read_judgment(judgment_id: int) -> do.Judgment:
     - Self (latest)
     - Class manager (all)
     """
-    return await db.judgment.read(judgment_id=judgment_id)
+    return await service.judgment.read(judgment_id=judgment_id)
 
 
 @router.get('/judgment/{judgment_id}/judge-case')
@@ -46,4 +42,4 @@ async def browse_judgment_judge_case(judgment_id: int) -> Sequence[do.JudgeCase]
     - Self (latest)
     - Class manager (all)
     """
-    return await db.judgment.browse_cases(judgment_id=judgment_id)
+    return await service.judgment.browse_cases(judgment_id=judgment_id)

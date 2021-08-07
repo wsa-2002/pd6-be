@@ -7,9 +7,10 @@ from base import do, vo
 from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
-import persistence.database as db
 import persistence.email as email
 from util import rbac
+
+from .. import service
 
 
 router = APIRouter(
@@ -29,7 +30,7 @@ async def browse_class(request: Request) -> Sequence[do.Class]:
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
-    return await db.class_.browse()
+    return await service.class_.browse()
 
 
 @router.get('/class/{class_id}')
@@ -42,7 +43,7 @@ async def read_class(class_id: int, request: Request) -> do.Class:
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
-    return await db.class_.read(class_id=class_id)
+    return await service.class_.read(class_id=class_id)
 
 
 class EditClassInput(BaseModel):
@@ -60,7 +61,7 @@ async def edit_class(class_id: int, data: EditClassInput, request: Request) -> N
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id, inherit=True):
         raise exc.NoPermission
 
-    await db.class_.edit(
+    await service.class_.edit(
         class_id=class_id,
         name=data.name,
         course_id=data.course_id,
@@ -77,7 +78,7 @@ async def delete_class(class_id: int, request: Request) -> None:
     if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
-    await db.class_.delete(class_id)
+    await service.class_.delete(class_id)
 
 
 @router.get('/class/{class_id}/member')
@@ -92,7 +93,7 @@ async def browse_class_member(class_id: int, request: Request) -> Sequence[vo.Me
             and not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id, inherit=True)):
         raise exc.NoPermission
 
-    return await db.class_vo.browse_member_with_student_card(class_id=class_id)
+    return await service.class_.browse_member_with_student_card(class_id=class_id)
 
 
 class EditClassMemberInput(BaseModel):
@@ -111,11 +112,11 @@ async def edit_class_member(class_id: int, data: Sequence[EditClassMemberInput],
         raise exc.NoPermission
 
     for item in data:
-        await db.class_.edit_member(class_id=class_id, member_id=item.member_id, role=item.role)
+        await service.class_.edit_member(class_id=class_id, member_id=item.member_id, role=item.role)
 
     updated_class_managers = [member.member_id for member in data if member.role is RoleType.manager]
     if updated_class_managers:
-        class_manager_emails = await db.class_.browse_member_emails(class_id, RoleType.manager)
+        class_manager_emails = await service.class_.browse_member_emails(class_id, RoleType.manager)
         await email.notification.notify_cm_change(class_manager_emails, updated_class_managers,
                                                   class_id, request.account.id)
 
@@ -130,7 +131,7 @@ async def delete_class_member(class_id: int, member_id: int, request: Request) -
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id, inherit=True):
         raise exc.NoPermission
 
-    await db.class_.delete_member(class_id=class_id, member_id=member_id)
+    await service.class_.delete_member(class_id=class_id, member_id=member_id)
 
 
 class AddTeamInput(BaseModel):
@@ -153,7 +154,7 @@ async def add_team_under_class(class_id: int, data: AddTeamInput, request: Reque
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
 
-    team_id = await db.team.add(
+    team_id = await service.team.add(
         name=data.name,
         class_id=class_id,
         label=data.label,
@@ -173,4 +174,4 @@ async def browse_team_under_class(class_id: int, request: Request) -> Sequence[d
     if class_role < RoleType.normal:
         raise exc.NoPermission
 
-    return await db.team.browse(class_id=class_id)
+    return await service.team.browse(class_id=class_id)

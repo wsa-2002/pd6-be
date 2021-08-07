@@ -3,13 +3,14 @@ from typing import Optional, Sequence
 
 from pydantic import BaseModel
 
-from base import do, vo
+from base import vo
 from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
-import persistence.database as db
-import persistence.email as email
-from util import rbac, security, validator
+from util import rbac
+
+from .. import service
+
 
 router = APIRouter(
     tags=['Account'],
@@ -29,7 +30,7 @@ async def browse_account_with_default_student_id(request: Request) -> Sequence[v
     if not is_manager:
         raise exc.NoPermission
 
-    return await db.account_vo.browse_account_with_default_student_id()
+    return await service.account.browse_with_default_student_id()
 
 
 @dataclass
@@ -60,7 +61,7 @@ async def read_account(account_id: int, request: Request) -> ReadAccountOutput:
 
     view_personal = is_self or is_manager
 
-    target_account = await db.account.read(account_id)
+    target_account = await service.account.read(account_id)
     result = ReadAccountOutput(
         id=target_account.id,
         username=target_account.username,
@@ -93,16 +94,9 @@ async def edit_account(account_id: int, data: EditAccountInput, request: Request
     if not ((is_self and not data.real_name) or is_manager):
         raise exc.NoPermission
 
-    # 先 update email 因為如果失敗就整個失敗
-    if data.alternative_email:  # 加或改 alternative email
-        if not validator.is_valid_email(data.alternative_email):
-            raise exc.account.InvalidEmail
-        code = await db.account.add_email_verification(email=data.alternative_email, account_id=account_id)
-        await email.verification.send(to=data.alternative_email, code=code)
-    else:  # 刪掉 alternative email
-        await db.account.delete_alternative_email_by_id(account_id=account_id)
+    await service.account.edit_alternative_email(account_id=account_id, alternative_email=data.alternative_email)
 
-    await db.account.edit(account_id=account_id, nickname=data.nickname, real_name=data.real_name)
+    await service.account.edit_general(account_id=account_id, nickname=data.nickname, real_name=data.real_name)
 
 
 class EditPasswordInput(BaseModel):
@@ -119,18 +113,16 @@ async def edit_password(account_id: int, data: EditPasswordInput, request: Reque
     - Self (need old password)
     """
 
-    is_manager = await rbac.validate(request.account.id, RoleType.manager)
     is_self = request.account.id is account_id
-
-    if not (is_self or is_manager):
-        raise exc.NoPermission
     if is_self:
-        if not data.old_password:
-            raise exc.account.PasswordVerificationFailed
-        pass_hash = await db.account.read_pass_hash(account_id=account_id, include_4s_hash=False)
-        if not security.verify_password(to_test=data.old_password, hashed=pass_hash):
-            raise exc.account.PasswordVerificationFailed
-    await db.account.edit_pass_hash(account_id=account_id, pass_hash=security.hash_password(data.new_password))
+        return await service.account.edit_password(account_id=account_id,
+                                                   old_password=data.old_password, new_password=data.new_password)
+
+    is_manager = await rbac.validate(request.account.id, RoleType.manager)
+    if is_manager:
+        return await service.account.force_edit_password(account_id=account_id, new_password=data.new_password)
+
+    raise exc.NoPermission
 
 
 @router.delete('/account/{account_id}')
@@ -147,7 +139,7 @@ async def delete_account(account_id: int, request: Request) -> None:
     if not (is_manager or is_self):
         raise exc.NoPermission
 
-    await db.account.delete(account_id)
+    await service.account.delete(account_id=account_id)
 
 
 class DefaultStudentCardInput(BaseModel):
@@ -162,7 +154,7 @@ async def make_student_card_default(account_id: int, data: DefaultStudentCardInp
     - System manager
     - Self
     """
-    owner_id = await db.student_card.read_owner_id(student_card_id=data.student_card_id)
+    owner_id = await service.student_card.read_owner_id(student_card_id=data.student_card_id)
     if account_id != owner_id:
         raise exc.account.StudentCardDoesNotBelong
 
@@ -172,7 +164,4 @@ async def make_student_card_default(account_id: int, data: DefaultStudentCardInp
     if not (is_manager or is_self):
         raise exc.NoPermission
 
-    await db.account.edit_default_student_card(
-        account_id=account_id,
-        student_card_id=data.student_card_id,
-    )
+    await service.account.edit_default_student_card(account_id=account_id, student_card_id=data.student_card_id)

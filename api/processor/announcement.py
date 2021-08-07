@@ -1,17 +1,15 @@
-from datetime import datetime
 from typing import Sequence
 
 from pydantic import BaseModel
 
-import util
 from base import do
 from base.cls import NoTimezoneIsoDatetime
 from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
-import persistence.database as db
 from util import rbac
 
+from .. import service
 
 router = APIRouter(
     tags=['Announcement'],
@@ -38,8 +36,8 @@ async def add_announcement(data: AddAnnouncementInput, request: Request) -> int:
     if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
-    return await db.announcement.add(title=data.title, content=data.content, author_id=request.account.id,
-                                     post_time=data.post_time, expire_time=data.expire_time)
+    return await service.announcement.add(title=data.title, content=data.content, author_id=request.account.id,
+                                          post_time=data.post_time, expire_time=data.expire_time)
 
 
 @router.get('/announcement')
@@ -54,7 +52,7 @@ async def browse_announcement(request: Request) -> Sequence[do.Announcement]:
     if not system_role >= RoleType.guest:
         raise exc.NoPermission
 
-    return await db.announcement.browse(include_scheduled=system_role >= RoleType.manager, ref_time=request.time)
+    return await service.announcement.browse(include_scheduled=system_role >= RoleType.manager, ref_time=request.time)
 
 
 @router.get('/announcement/{announcement_id}')
@@ -69,8 +67,8 @@ async def read_announcement(announcement_id: int, request: Request) -> do.Announ
     if not system_role >= RoleType.guest:
         raise exc.NoPermission
 
-    return await db.announcement.read(announcement_id,
-                                      include_scheduled=system_role >= RoleType.manager, ref_time=request.time)
+    return await service.announcement.read(announcement_id,
+                                           include_scheduled=system_role >= RoleType.manager, ref_time=request.time)
 
 
 class EditAnnouncementInput(BaseModel):
@@ -90,8 +88,8 @@ async def edit_announcement(announcement_id: int, data: EditAnnouncementInput, r
     if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
-    return await db.announcement.edit(announcement_id=announcement_id, title=data.title, content=data.content,
-                                      post_time=data.post_time, expire_time=data.expire_time)
+    return await service.announcement.edit(announcement_id=announcement_id, title=data.title, content=data.content,
+                                           post_time=data.post_time, expire_time=data.expire_time)
 
 
 @router.delete('/announcement/{announcement_id}')
@@ -104,4 +102,4 @@ async def delete_announcement(announcement_id: int, request: Request) -> None:
     if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
-    return await db.announcement.delete(announcement_id=announcement_id)
+    return await service.announcement.delete(announcement_id=announcement_id)
