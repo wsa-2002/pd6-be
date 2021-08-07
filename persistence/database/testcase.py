@@ -3,7 +3,7 @@ from typing import Sequence, Optional
 import log
 from base import do
 
-from .base import SafeExecutor
+from .base import SafeExecutor, SafeConnection
 
 
 async def add(problem_id: int, is_sample: bool, score: int, input_file_id: Optional[int], output_file_id: Optional[int],
@@ -137,3 +137,20 @@ async def delete_output_data(testcase_id: int) -> None:
             testcase_id=testcase_id,
     ):
         pass
+
+
+async def delete_cascade_from_problem(problem_id: int, cascading_conn=None) -> None:
+    if cascading_conn:
+        await _delete_cascade_from_problem(problem_id, conn=cascading_conn)
+        return
+
+    async with SafeConnection(event=f'cascade delete testcase from problem {problem_id=}') as conn:
+        async with conn.transaction():
+            await _delete_cascade_from_problem(problem_id, conn=conn)
+
+
+async def _delete_cascade_from_problem(problem_id: int, conn) -> None:
+    await conn.execute(r'UPDATE testcase'
+                       r'   SET is_deleted = $1'
+                       r' WHERE problem_id = $2',
+                       True, problem_id)

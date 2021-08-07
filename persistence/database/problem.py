@@ -3,7 +3,8 @@ from datetime import datetime
 
 from base import do, enum
 
-from .base import SafeExecutor
+from . import testcase
+from .base import SafeExecutor, SafeConnection
 
 
 async def add(challenge_id: int, challenge_label: str, selection_type: enum.TaskSelectionType,
@@ -178,3 +179,31 @@ async def delete(problem_id: int) -> None:
             is_deleted=True,
     ):
         pass
+
+
+async def delete_cascade(problem_id: int) -> None:
+    async with SafeConnection(event=f'cascade delete from problem {problem_id}') as conn:
+        async with conn.transaction():
+            await testcase.delete_cascade_from_problem(problem_id=problem_id, cascading_conn=conn)
+
+            await conn.execute(fr'UPDATE problem'
+                               fr'   SET is_deleted = $1'
+                               fr' WHERE id = $2',
+                               True, problem_id)
+
+
+async def delete_cascade_from_challenge(challenge_id: int, cascading_conn=None) -> None:
+    if cascading_conn:
+        await _delete_cascade_from_challenge(challenge_id, conn=cascading_conn)
+        return
+
+    async with SafeConnection(event=f'cascade delete problem from challenge {challenge_id=}') as conn:
+        async with conn.transaction():
+            await _delete_cascade_from_challenge(challenge_id, conn=conn)
+
+
+async def _delete_cascade_from_challenge(challenge_id: int, conn) -> None:
+    await conn.execute(r'UPDATE problem'
+                       r'   SET is_deleted = $1'
+                       r' WHERE challenge_id = $2',
+                       True, challenge_id)

@@ -3,7 +3,7 @@ from typing import Sequence
 from base import do
 from base.enum import RoleType
 
-from .base import SafeExecutor
+from .base import SafeExecutor, SafeConnection
 
 
 async def add(name: str, class_id: int, label: str) -> int:
@@ -95,6 +95,23 @@ async def delete(team_id: int) -> None:
             is_deleted=True,
     ):
         pass
+
+
+async def delete_cascade_from_class(class_id: int, cascading_conn=None) -> None:
+    if cascading_conn:
+        await _delete_cascade_from_class(class_id, conn=cascading_conn)
+        return
+
+    async with SafeConnection(event=f'cascade delete team from class {class_id=}') as conn:
+        async with conn.transaction():
+            await _delete_cascade_from_class(class_id, conn=conn)
+
+
+async def _delete_cascade_from_class(class_id: int, conn) -> None:
+    await conn.execute(r'UPDATE team'
+                       r'   SET is_deleted = $1'
+                       r' WHERE class_id = $2',
+                       True, class_id)
 
 
 # === member control
