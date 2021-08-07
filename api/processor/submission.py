@@ -70,20 +70,14 @@ async def edit_submission_language(language_id: int, data: EditSubmissionLanguag
                                                   name=data.name, version=data.version, is_disabled=data.is_disabled)
 
 
-class SubmissionInput(BaseModel):
-    language_id: int
-
-
 @router.post('/problem/{problem_id}/submission', tags=['Problem'])
 @enveloped
-async def submit(problem_id: int, data: SubmissionInput, request: Request, content_file: UploadFile = File(...)) -> int:
+async def submit(problem_id: int, language_id: int, request: Request, content_file: UploadFile = File(...)) -> int:
     """
     ### 權限
     - System Manager (all)
     - System normal (non scheduled)
     """
-    submit_time = request.time
-
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
@@ -93,20 +87,20 @@ async def submit(problem_id: int, data: SubmissionInput, request: Request, conte
 
     publicize_time = (challenge.start_time if challenge.publicize_type == ChallengePublicizeType.start_time
                       else challenge.end_time)
-    is_challenge_publicized = submit_time >= publicize_time
+    is_challenge_publicized = request.time >= publicize_time
 
     if not (is_challenge_publicized
             or await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)):
         raise exc.NoPermission
 
     # Validate language
-    language = await service.submission.read_language(data.language_id)
+    language = await service.submission.read_language(language_id)
     if language.is_disabled:
         raise exc.IllegalInput
 
     submission_id = await service.submission.add(file=content_file.file, filename=content_file.filename,
                                                  account_id=request.account.id, problem_id=problem.id,
-                                                 language_id=data.language_id, submit_time=submit_time)
+                                                 language_id=language.id, submit_time=request.time)
 
     return submission_id
 
