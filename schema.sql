@@ -71,7 +71,7 @@ CREATE TYPE course_type AS ENUM (
 
 CREATE TABLE course (
   id          SERIAL      PRIMARY KEY,
-  name        VARCHAR     NOT NULL  UNIQUE,
+  name        VARCHAR     NOT NULL,
   type        course_type NOT NULL,
   is_deleted  BOOLEAN     NOT NULL  DEFAULT false
 );
@@ -80,9 +80,7 @@ CREATE TABLE class (
   id          SERIAL  PRIMARY KEY,
   name        VARCHAR NOT NULL,
   course_id   INTEGER NOT NULL  REFERENCES course(id),
-  is_deleted  BOOLEAN NOT NULL  DEFAULT false,
-
-  UNIQUE (course_id, name)
+  is_deleted  BOOLEAN NOT NULL  DEFAULT false
 );
 
 CREATE TABLE class_member (
@@ -98,9 +96,7 @@ CREATE TABLE team (
   name        VARCHAR NOT NULL,
   class_id    INTEGER NOT NULL  REFERENCES class(id),
   label       VARCHAR NOT NULL,
-  is_deleted  BOOLEAN NOT NULL  DEFAULT false,
-
-  UNIQUE (class_id, name)
+  is_deleted  BOOLEAN NOT NULL  DEFAULT false
 );
 
 CREATE TABLE team_member (
@@ -120,9 +116,7 @@ CREATE TABLE grade (
   score       INTEGER,
   comment     TEXT,
   update_time TIMESTAMP NOT NULL,
-  is_deleted  BOOLEAN   NOT NULL  DEFAULT false,
-
-  UNIQUE (receiver_id, title)
+  is_deleted  BOOLEAN   NOT NULL  DEFAULT false
 );
 
 
@@ -148,9 +142,7 @@ CREATE TABLE challenge (
   description       TEXT,
   start_time        TIMESTAMP                   NOT NULL,
   end_time          TIMESTAMP                   NOT NULL,
-  is_deleted        BOOLEAN                     NOT NULL  DEFAULT false,
-
-  UNIQUE (class_id, title)
+  is_deleted        BOOLEAN                     NOT NULL  DEFAULT false
 );
 
 CREATE TYPE task_selection_type AS ENUM (
@@ -167,7 +159,7 @@ CREATE TABLE problem (
   challenge_id    INTEGER             NOT NULL  REFERENCES challenge(id),
   challenge_label VARCHAR             NOT NULL,  -- 題號：1 2 3 or 2-a or 3-1 or A B C
   selection_type  task_selection_type NOT NULL,
-  title           VARCHAR             NOT NULL  UNIQUE,
+  title           VARCHAR             NOT NULL,
   setter_id       INTEGER             NOT NULL  REFERENCES account(id),
   full_score      INTEGER             NOT NULL,
   description     TEXT,
