@@ -30,4 +30,4 @@ async def edit_output(testcase_id: int, file: typing.IO, filename: str) -> None:
 
 
 delete_input_data = db.testcase.delete_input_data
-delete_output_data = db.testcase.delete_input_data
+delete_output_data = db.testcase.delete_output_data
