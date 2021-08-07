@@ -30,7 +30,7 @@ async def browse_account_with_default_student_id(request: Request) -> Sequence[v
     if not is_manager:
         raise exc.NoPermission
 
-    return await service.account.browse_with_default_student_id()
+    return await service.account.browse_account_with_default_student_id()
 
 
 @dataclass
