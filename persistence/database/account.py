@@ -1,4 +1,4 @@
-from typing import Tuple, Sequence
+from typing import Tuple
 
 from base import do
 from base.enum import RoleType
@@ -18,21 +18,6 @@ async def add(username: str, pass_hash: str, nickname: str, real_name: str, role
             fetch=1,
     ) as (account_id,):
         return account_id
-
-
-async def browse(include_deleted: bool = False) -> Sequence[do.Account]:
-    async with SafeExecutor(
-            event='browse account',
-            sql=fr'SELECT id, username, nickname, real_name, role, is_deleted, alternative_email'
-                fr'  FROM account'
-                fr'{" WHERE NOT is_deleted" if not include_deleted else ""}'
-                fr' ORDER BY id ASC',
-            fetch='all',
-    ) as records:
-        return [do.Account(id=id_, username=username, nickname=nickname, real_name=real_name, role=RoleType(role),
-                           is_deleted=is_deleted, alternative_email=alternative_email)
-                for (id_, username, nickname, real_name, role, is_deleted, alternative_email)
-                in records]
 
 
 async def read(account_id: int, *, include_deleted: bool = False) -> do.Account:

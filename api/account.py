@@ -1,8 +1,9 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Sequence
 
 from pydantic import BaseModel
 
+from base import do, vo
 from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
@@ -15,6 +16,20 @@ router = APIRouter(
     default_response_class=response.JSONResponse,
     dependencies=auth.doc_dependencies,
 )
+
+
+@router.get('/account')
+@enveloped
+async def browse_account_with_default_student_id(request: Request) -> Sequence[vo.AccountWithDefaultStudentId]:
+    """
+    ### 權限
+    - System Manager
+    """
+    is_manager = await rbac.validate(request.account.id, RoleType.manager)
+    if not is_manager:
+        raise exc.NoPermission
+
+    return await db.account_vo.browse_account_with_default_student_id()
 
 
 @dataclass
