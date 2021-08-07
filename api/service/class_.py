@@ -9,5 +9,5 @@ delete = db.class_.delete
 
 edit_member = db.class_.edit_member
 browse_member_emails = db.class_.browse_member_emails
-browse_member_with_student_card = db.class_vo.browse_member_with_student_card
+browse_member_account_with_student_card_and_institute = db.class_vo.browse_member_account_with_student_card_and_institute
 delete_member = db.class_.delete_member

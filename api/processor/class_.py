@@ -3,7 +3,7 @@ from typing import Sequence
 
 from pydantic import BaseModel
 
-from base import do, vo
+from base import do, enum
 from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
@@ -81,9 +81,19 @@ async def delete_class(class_id: int, request: Request) -> None:
     await service.class_.delete(class_id)
 
 
+@dataclass
+class BrowseClassMemberOutput:
+    member_id: int
+    role: enum.RoleType
+    username: str
+    real_name: str
+    student_id: str
+    institute_abbreviated_name: str
+
+
 @router.get('/class/{class_id}/member')
 @enveloped
-async def browse_class_member(class_id: int, request: Request) -> Sequence[vo.MemberWithStudentCard]:
+async def browse_class_member(class_id: int, request: Request) -> Sequence[BrowseClassMemberOutput]:
     """
     ### 權限
     - Class normal
@@ -93,7 +103,14 @@ async def browse_class_member(class_id: int, request: Request) -> Sequence[vo.Me
             and not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id, inherit=True)):
         raise exc.NoPermission
 
-    return await service.class_.browse_member_with_student_card(class_id=class_id)
+    results = await service.class_.browse_member_account_with_student_card_and_institute(class_id=class_id,
+                                                                                         include_deleted=False)
+
+    return [BrowseClassMemberOutput(member_id=member.member_id, role=member.role,
+                                    username=account.username, real_name=account.real_name,
+                                    student_id=student_card.student_id,
+                                    institute_abbreviated_name=institute.abbreviated_name)
+            for member, account, student_card, institute in results]
 
 
 class EditClassMemberInput(BaseModel):

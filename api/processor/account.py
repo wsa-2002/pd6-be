@@ -3,7 +3,6 @@ from typing import Optional, Sequence
 
 from pydantic import BaseModel
 
-from base import vo
 from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
@@ -19,9 +18,21 @@ router = APIRouter(
 )
 
 
+@dataclass
+class BrowseAccountOutput:
+    id: int
+    username: str
+    nickname: str
+    role: str
+    real_name: str
+    alternative_email: Optional[str]
+
+    student_id: str
+
+
 @router.get('/account')
 @enveloped
-async def browse_account_with_default_student_id(request: Request) -> Sequence[vo.AccountWithDefaultStudentId]:
+async def browse_account_with_default_student_id(request: Request) -> Sequence[BrowseAccountOutput]:
     """
     ### 權限
     - System Manager
@@ -30,7 +41,11 @@ async def browse_account_with_default_student_id(request: Request) -> Sequence[v
     if not is_manager:
         raise exc.NoPermission
 
-    return await service.account.browse_account_with_default_student_id()
+    result = await service.account.browse_with_default_student_card()
+    return [BrowseAccountOutput(id=account.id, username=account.username, nickname=account.nickname,
+                                role=account.role, real_name=account.real_name,
+                                alternative_email=account.alternative_email, student_id=student_card.student_id)
+            for account, student_card in result]
 
 
 @dataclass
