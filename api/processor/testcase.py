@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
-from util import rbac, url
+from .util import url, rbac
 
 from .. import service
 from .problem import ReadTestcaseOutput

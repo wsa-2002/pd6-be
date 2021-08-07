@@ -12,11 +12,11 @@ with open('logging.yaml', 'r') as conf:
 # Create the FastAPI application
 
 from config import app_config
-from middleware import api
-from util import api_doc
+from middleware.api import FastAPI
+from api import api_doc
 from version import version
 
-app = api.FastAPI(
+app = FastAPI(
     title=app_config.title,
     version=version,
     docs_url=app_config.docs_url,

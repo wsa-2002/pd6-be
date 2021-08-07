@@ -2,7 +2,7 @@ from base import enum
 import exceptions as exc
 import persistence.database as db
 import persistence.email as email
-from util import security, validator
+import security
 
 
 async def add(username: str, password: str, nickname: str, real_name: str, role=enum.RoleType.guest):
@@ -20,8 +20,6 @@ edit_default_student_card = db.account.edit_default_student_card
 async def edit_alternative_email(account_id: int, alternative_email: str = None) -> None:
     # 先 update email 因為如果失敗就整個失敗
     if alternative_email:  # 加或改 alternative email
-        if not validator.is_valid_email(alternative_email):
-            raise exc.account.InvalidEmail
         code = await db.account.add_email_verification(email=alternative_email, account_id=account_id)
         await email.verification.send(to=alternative_email, code=code)
     else:  # 刪掉 alternative email
