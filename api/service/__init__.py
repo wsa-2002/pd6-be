@@ -20,7 +20,7 @@ from . import (
     peer_review,
 
     announcement,
-    system,
+    access_log,
 
     s3_file,
 )
