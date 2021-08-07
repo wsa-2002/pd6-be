@@ -1,6 +1,5 @@
 from typing import Sequence, Collection, Tuple
 
-import log
 from base import do
 from base.enum import RoleType
 

@@ -3,7 +3,7 @@ from typing import Sequence
 
 from pydantic import BaseModel
 
-from base import do
+from base import do, vo
 from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
@@ -82,7 +82,7 @@ async def delete_class(class_id: int, request: Request) -> None:
 
 @router.get('/class/{class_id}/member')
 @enveloped
-async def browse_class_member(class_id: int, request: Request) -> Sequence[do.Member]:
+async def browse_class_member(class_id: int, request: Request) -> Sequence[vo.MemberWithStudentCard]:
     """
     ### 權限
     - Class normal
@@ -92,7 +92,7 @@ async def browse_class_member(class_id: int, request: Request) -> Sequence[do.Me
             and not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id, inherit=True)):
         raise exc.NoPermission
 
-    return await db.class_.browse_members(class_id=class_id)
+    return await db.class_vo.browse_member_with_student_card(class_id=class_id)
 
 
 class EditClassMemberInput(BaseModel):

@@ -50,6 +50,7 @@ from . import (
 
     course,
     class_,
+    class_vo,
     team,
     grade,
     challenge,
