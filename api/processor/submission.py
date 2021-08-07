@@ -7,10 +7,9 @@ from base import do
 from base.enum import RoleType, ChallengePublicizeType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
-import persistence.database as db
-import persistence.s3 as s3
-import util
 from util import rbac, url
+
+from .. import service
 
 router = APIRouter(
     tags=['Submission'],
@@ -29,7 +28,7 @@ async def browse_submission_language(request: Request) -> Sequence[do.Submission
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
-    return await db.submission.browse_language()
+    return await service.submission.browse_language()
 
 
 class AddSubmissionLanguageInput(BaseModel):
@@ -48,7 +47,7 @@ async def add_submission_language(data: AddSubmissionLanguageInput, request: Req
     if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
-    return await db.submission.add_language(name=data.name, version=data.version, is_disabled=data.is_disabled)
+    return await service.submission.add_language(name=data.name, version=data.version, is_disabled=data.is_disabled)
 
 
 class EditSubmissionLanguageInput(BaseModel):
@@ -67,8 +66,8 @@ async def edit_submission_language(language_id: int, data: EditSubmissionLanguag
     if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
-    return await db.submission.edit_language(language_id,
-                                             name=data.name, version=data.version, is_disabled=data.is_disabled)
+    return await service.submission.edit_language(language_id,
+                                                  name=data.name, version=data.version, is_disabled=data.is_disabled)
 
 
 class SubmissionInput(BaseModel):
@@ -77,7 +76,7 @@ class SubmissionInput(BaseModel):
 
 @router.post('/problem/{problem_id}/submission', tags=['Problem'])
 @enveloped
-async def submit(problem_id: int, data: SubmissionInput, request: Request, content_file: UploadFile = File(...)):
+async def submit(problem_id: int, data: SubmissionInput, request: Request, content_file: UploadFile = File(...)) -> int:
     """
     ### 權限
     - System Manager (all)
@@ -89,8 +88,8 @@ async def submit(problem_id: int, data: SubmissionInput, request: Request, conte
         raise exc.NoPermission
 
     # Validate problem
-    problem = await db.problem.read(problem_id)
-    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
+    problem = await service.problem.read(problem_id)
+    challenge = await service.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
 
     publicize_time = (challenge.start_time if challenge.publicize_type == ChallengePublicizeType.start_time
                       else challenge.end_time)
@@ -101,20 +100,14 @@ async def submit(problem_id: int, data: SubmissionInput, request: Request, conte
         raise exc.NoPermission
 
     # Validate language
-    language = await db.submission.read_language(data.language_id)
+    language = await service.submission.read_language(data.language_id)
     if language.is_disabled:
         raise exc.IllegalInput
 
-    bucket, key = await s3.submission.upload(file=content_file.file,
-                                             filename=content_file.filename)
+    submission_id = await service.submission.add(file=content_file.file, filename=content_file.filename,
+                                                 account_id=request.account.id, problem_id=problem.id,
+                                                 language_id=data.language_id, submit_time=submit_time)
 
-    content_file_id = await db.s3_file.add(bucket=bucket, key=key)
-
-    submission_id = await db.submission.add(account_id=request.account.id, problem_id=problem.id,
-                                            language_id=data.language_id,
-                                            content_file_id=content_file_id,
-                                            content_length=len(content_file.file.read()),
-                                            submit_time=submit_time)
     return submission_id
 
 
@@ -133,7 +126,7 @@ async def browse_submission(data: BrowseSubmissionInput, request: Request) -> Se
     - Self
     - Class manager
     """
-    return await db.submission.browse(
+    return await service.submission.browse(
         account_id=request.account.id,  # TODO: 現在只有開放看自己的
         problem_id=data.problem_id,
         language_id=data.language_id,
@@ -148,15 +141,15 @@ async def read_submission(submission_id: int, request: Request) -> do.Submission
     - Self
     - Class manager
     """
-    submission = await db.submission.read(submission_id=submission_id)
+    submission = await service.submission.read(submission_id=submission_id)
 
     # 可以看自己的
     if submission.account_id is request.account.id:
         return submission
 
     # 可以看自己管理的 class 的
-    problem = await db.problem.read(problem_id=submission.problem_id)
-    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
+    problem = await service.problem.read(problem_id=submission.problem_id)
+    challenge = await service.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
     class_role = await rbac.get_role(request.account.id, class_id=challenge.class_id)
     if class_role >= RoleType.manager:
         return submission
@@ -174,19 +167,20 @@ async def read_submission_file(submission_id: int, request: Request) -> str:
 
     This api will return a url which can directly download the file from s3-file-service.
     """
-    submission = await db.submission.read(submission_id=submission_id)
+    submission = await service.submission.read(submission_id=submission_id)
 
     # 可以看自己的
     if submission.account_id is request.account.id:
-        file = await db.s3_file.read(s3_file_id=submission.content_file_id)
+        file = await service.s3_file.read(s3_file_id=submission.content_file_id)
         return url.join_s3(file)
 
     # 可以看自己管理的 class 的
-    problem = await db.problem.read(problem_id=submission.problem_id)
-    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=util.get_request_time())
+    problem = await service.problem.read(problem_id=submission.problem_id)
+    challenge = await service.challenge.read(problem.challenge_id, include_scheduled=True,
+                                             ref_time=request.time)
     class_role = await rbac.get_role(request.account.id, class_id=challenge.class_id)
     if class_role >= RoleType.manager:
-        file = await db.s3_file.read(s3_file_id=submission.content_file_id)
+        file = await service.s3_file.read(s3_file_id=submission.content_file_id)
         return url.join_s3(file)
 
     raise exc.NoPermission
@@ -201,4 +195,4 @@ async def browse_submission_judgment(submission_id: int, request: Request) -> Se
     - Class manager (all)
     """
     # TODO: 權限控制
-    return await db.judgment.browse(submission_id=submission_id)
+    return await service.judgment.browse(submission_id=submission_id)

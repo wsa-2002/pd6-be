@@ -4,10 +4,9 @@ from base import do
 from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
-import persistence.database as db
 from util import rbac
 
-import fastapi.responses
+from .. import service
 
 
 router = APIRouter(
@@ -24,9 +23,10 @@ async def browse_access_log(offset: int, limit: int, req: Request) -> Sequence[d
     ### 權限
     - Class+ manager
     """
-    # if not (await rbac.validate(req.account.id, RoleType.manager)  # System manager
-    #         or await db.rbac.any_class_role(member_id=req.account.id, role=RoleType.manager)):  # Any class manager
-    #     raise exc.NoPermission
+    if not (await rbac.validate(req.account.id, RoleType.manager)  # System manager
+            # or await rbac.any_class_role(member_id=req.account.id, role=RoleType.manager)):  # Any class manager
+            ):
+        raise exc.NoPermission
 
-    access_logs = await db.access_log.browse(offset, limit)
+    access_logs = await service.access_log.browse(offset, limit)
     return access_logs

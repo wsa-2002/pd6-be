@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Optional, Sequence
 
 from pydantic import BaseModel
@@ -7,10 +6,9 @@ from base import do
 import exceptions as exc
 from base.enum import RoleType
 from middleware import APIRouter, response, enveloped, auth, Request
-import persistence.database as db
-import util
 from util import rbac
 
+from .. import service
 
 router = APIRouter(
     tags=['Grade'],
@@ -43,9 +41,9 @@ async def browse_class_grade(class_id: int, request: Request) -> Sequence[do.Gra
     - Class normal (self)
     """
     if await rbac.validate(request.account.id, RoleType.manager, class_id=class_id):  # Class manager
-        return await db.grade.browse(class_id=class_id)
+        return await service.grade.browse(class_id=class_id)
     else:  # Self
-        return await db.grade.browse(class_id=class_id, receiver_id=request.account.id)
+        return await service.grade.browse(class_id=class_id, receiver_id=request.account.id)
 
 
 @router.get('/account/{account_id}/grade', tags=['Account'])
@@ -58,7 +56,7 @@ async def browse_account_grade(account_id: int, request: Request) -> Sequence[do
     if request.account.id is not account_id:  # only self
         raise exc.NoPermission
 
-    return await db.grade.browse(receiver_id=account_id)
+    return await service.grade.browse(receiver_id=account_id)
 
 
 @router.get('/grade/{grade_id}')
@@ -70,7 +68,7 @@ async def get_grade(grade_id: int, request: Request) -> do.Grade:
     - Class normal (self)
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    grade = await db.grade.read(grade_id=grade_id)
+    grade = await service.grade.read(grade_id=grade_id)
 
     is_class_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=grade.class_id)
     is_self = request.account.id is grade.receiver_id
@@ -95,14 +93,14 @@ async def edit_grade(grade_id: int, data: EditGradeInput, request: Request) -> N
     - Class manager
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    grade = await db.grade.read(grade_id=grade_id)
+    grade = await service.grade.read(grade_id=grade_id)
 
     is_class_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=grade.class_id)
     if not is_class_manager:
         raise exc.NoPermission
 
-    await db.grade.edit(grade_id=grade_id, title=data.title, score=data.score, comment=data.comment,
-                        update_time=request.time)
+    await service.grade.edit(grade_id=grade_id, title=data.title, score=data.score, comment=data.comment,
+                             update_time=request.time)
 
 
 @router.delete('/grade/{grade_id}')
@@ -113,10 +111,10 @@ async def delete_grade(grade_id: int, request: Request):
     - Class manager
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    grade = await db.grade.read(grade_id=grade_id)
+    grade = await service.grade.read(grade_id=grade_id)
 
     is_class_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=grade.class_id)
     if not is_class_manager:
         raise exc.NoPermission
 
-    await db.grade.delete(grade_id)
+    await service.grade.delete(grade_id)
