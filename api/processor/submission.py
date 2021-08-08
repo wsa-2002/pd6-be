@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+from datetime import datetime
 from typing import Sequence
 
 from fastapi import File, UploadFile
@@ -127,27 +129,35 @@ async def browse_submission(data: BrowseSubmissionInput, request: Request) -> Se
     )
 
 
+@dataclass
+class ReadSubmissionOutput:
+    id: int
+    account_id: int
+    problem_id: int
+    language_id: int
+    content_file_url: str
+    content_length: int
+    submit_time: datetime
+
+
 @router.get('/submission/{submission_id}')
 @enveloped
-async def read_submission(submission_id: int, request: Request) -> do.Submission:
+async def read_submission(submission_id: int, request: Request) -> ReadSubmissionOutput:
     """
     ### 權限
     - Self
     - Class manager
     """
-    submission = await service.submission.read(submission_id=submission_id)
-
-    # 可以看自己的
-    if submission.account_id is request.account.id:
-        return submission
-
-    # 可以看自己管理的 class 的
+    submission, s3_file = await service.submission.read_with_url(submission_id=submission_id)
     problem = await service.problem.read(problem_id=submission.problem_id)
     challenge = await service.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
     class_role = await rbac.get_role(request.account.id, class_id=challenge.class_id)
-    if class_role >= RoleType.manager:
-        return submission
-
+    # 看自己的 or 助教可以看整個 class
+    if (submission.account_id is request.account.id) or class_role >= RoleType.manager:
+        return ReadSubmissionOutput(id=submission.id, account_id=submission.account_id,
+                                    problem_id=submission.problem_id, language_id=submission.language_id,
+                                    content_file_url=url.join_s3(s3_file), content_length=submission.content_length,
+                                    submit_time=submission.submit_time)
     raise exc.NoPermission
 
 
