@@ -3,6 +3,7 @@ from typing import Sequence, Collection, Tuple
 from base import do
 from base.enum import RoleType
 
+from . import team, challenge
 from .base import SafeExecutor, SafeConnection
 
 
@@ -112,6 +113,35 @@ async def delete(class_id: int) -> None:
             is_deleted=True,
     ):
         pass
+
+
+async def delete_cascade(class_id: int) -> None:
+    async with SafeConnection(event=f'cascade delete from class {class_id=}') as conn:
+        async with conn.transaction():
+            await team.delete_cascade_from_class(class_id=class_id, cascading_conn=conn)
+            await challenge.delete_cascade_from_class(class_id=class_id, cascading_conn=conn)
+
+            await conn.execute(fr'UPDATE class'
+                               fr'   SET is_deleted = $1'
+                               fr' WHERE id = $2',
+                               True, class_id)
+
+
+async def delete_cascade_from_course(course_id: int, cascading_conn=None) -> None:
+    if cascading_conn:
+        await _delete_cascade_from_course(course_id, conn=cascading_conn)
+        return
+
+    async with SafeConnection(event=f'cascade delete class from course {course_id=}') as conn:
+        async with conn.transaction():
+            await _delete_cascade_from_course(course_id, conn=conn)
+
+
+async def _delete_cascade_from_course(course_id: int, conn) -> None:
+    await conn.execute(r'UPDATE class'
+                       r'   SET is_deleted = $1'
+                       r' WHERE course_id = $2',
+                       True, course_id)
 
 
 # === member control

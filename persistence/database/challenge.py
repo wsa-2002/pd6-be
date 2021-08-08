@@ -3,7 +3,8 @@ from typing import Optional, Sequence
 
 from base import do, enum
 
-from .base import SafeExecutor
+from . import peer_review, problem
+from .base import SafeExecutor, SafeConnection
 
 
 async def add(class_id: int, type_: enum.ChallengeType, publicize_type: enum.ChallengePublicizeType,
@@ -130,3 +131,32 @@ async def delete(challenge_id: int) -> None:
             is_deleted=True,
     ):
         pass
+
+
+async def delete_cascade(challenge_id: int) -> None:
+    async with SafeConnection(event=f'cascade delete from challenge {challenge_id=}') as conn:
+        async with conn.transaction():
+            await peer_review.delete_cascade_from_challenge(challenge_id=challenge_id, cascading_conn=conn)
+            await problem.delete_cascade_from_challenge(challenge_id=challenge_id, cascading_conn=conn)
+
+            await conn.execute(fr'UPDATE challenge'
+                               fr'   SET is_deleted = $1'
+                               fr' WHERE id = $2',
+                               True, challenge_id)
+
+
+async def delete_cascade_from_class(class_id: int, cascading_conn=None) -> None:
+    if cascading_conn:
+        await _delete_cascade_from_class(class_id, conn=cascading_conn)
+        return
+
+    async with SafeConnection(event=f'cascade delete challenge from class {class_id=}') as conn:
+        async with conn.transaction():
+            await _delete_cascade_from_class(class_id, conn=conn)
+
+
+async def _delete_cascade_from_class(class_id: int, conn) -> None:
+    await conn.execute(r'UPDATE challenge'
+                       r'   SET is_deleted = $1'
+                       r' WHERE class_id = $2',
+                       True, class_id)

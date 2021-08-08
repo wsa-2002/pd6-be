@@ -3,7 +3,7 @@ from typing import Sequence
 
 from base import do
 
-from .base import SafeExecutor
+from .base import SafeExecutor, SafeConnection
 
 
 async def add(challenge_id: int, challenge_label: str, target_problem_id: int, setter_id: int, description: str,
@@ -142,3 +142,20 @@ async def delete(peer_review_id: int) -> None:
             is_deleted=True,
     ):
         pass
+
+
+async def delete_cascade_from_challenge(challenge_id: int, cascading_conn=None) -> None:
+    if cascading_conn:
+        await _delete_cascade_from_challenge(challenge_id, conn=cascading_conn)
+        return
+
+    async with SafeConnection(event=f'cascade delete peer_review from challenge {challenge_id=}') as conn:
+        async with conn.transaction():
+            await _delete_cascade_from_challenge(challenge_id, conn=conn)
+
+
+async def _delete_cascade_from_challenge(challenge_id: int, conn) -> None:
+    await conn.execute(r'UPDATE peer_review'
+                       r'   SET is_deleted = $1'
+                       r' WHERE challenge_id = $2',
+                       True, challenge_id)

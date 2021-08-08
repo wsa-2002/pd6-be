@@ -8,7 +8,7 @@ add = db.challenge.add
 browse = db.challenge.browse
 read = db.challenge.read
 edit = db.challenge.edit
-delete = db.challenge.delete
+delete = db.challenge.delete_cascade
 
 
 async def browse_task(challenge_id: int) -> Tuple[
