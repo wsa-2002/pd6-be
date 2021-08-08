@@ -27,7 +27,7 @@ class BrowseAccountOutput:
     real_name: str
     alternative_email: Optional[str]
 
-    student_id: str
+    student_id: Optional[str]
 
 
 @router.get('/account')
