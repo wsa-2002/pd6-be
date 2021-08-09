@@ -32,7 +32,6 @@ class Institute:
 class StudentCard:
     id: int
     institute_id: int
-    department: str
     student_id: str
     email: str
     is_default: bool

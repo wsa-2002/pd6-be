@@ -13,7 +13,7 @@ async def browse_member_account_with_student_card_and_institute(class_id: int, i
             sql=fr'SELECT class_member.member_id, class_member.role,'
                 fr'       account.id, account.username, account.nickname, account.real_name, account.role,'
                 fr'       account.is_deleted, account.alternative_email,'
-                fr'       student_card.id, student_card.institute_id, student_card.department, student_card.student_id,'
+                fr'       student_card.id, student_card.institute_id, student_card.student_id,'
                 fr'       student_card.email, student_card.is_default,'
                 fr'       institute.id, institute.abbreviated_name, institute.full_name,'
                 fr'       institute.email_domain, institute.is_disabled'
@@ -33,12 +33,12 @@ async def browse_member_account_with_student_card_and_institute(class_id: int, i
         return [(do.Member(member_id=member_id, role=RoleType(role)),
                  do.Account(id=account_id, username=username, nickname=nickname, real_name=real_name,
                             role=RoleType(role), is_deleted=is_deleted, alternative_email=alternative_email),
-                 do.StudentCard(id=student_card_id, institute_id=institute_id, department=department,
+                 do.StudentCard(id=student_card_id, institute_id=institute_id,
                                 student_id=student_id, email=email, is_default=is_default),
                  do.Institute(id=institute_id, abbreviated_name=abbreviated_name, full_name=full_name,
                               email_domain=email_domain, is_disabled=is_disabled))
                 for (member_id, role,
                      account_id, username, nickname, real_name, role, is_deleted, alternative_email,
-                     student_card_id, institute_id, department, student_id, email, is_default,
+                     student_card_id, institute_id, student_id, email, is_default,
                      institute_id, abbreviated_name, full_name, email_domain, is_disabled)
                 in records]
