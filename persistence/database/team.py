@@ -117,7 +117,7 @@ async def _delete_cascade_from_class(class_id: int, conn) -> None:
 # === member control
 
 
-async def browse_members(team_id: int) -> Sequence[do.Member]:
+async def browse_members(team_id: int) -> Sequence[do.TeamMember]:
     async with SafeExecutor(
             event='get team members id',
             sql=r'SELECT account.id, team_member.role'
@@ -128,10 +128,10 @@ async def browse_members(team_id: int) -> Sequence[do.Member]:
             team_id=team_id,
             fetch='all',
     ) as records:
-        return [do.Member(member_id=id_, role=RoleType(role_str)) for id_, role_str in records]
+        return [do.TeamMember(member_id=id_, team_id=team_id, role=RoleType(role_str)) for id_, role_str in records]
 
 
-async def read_member(team_id: int, member_id: int) -> do.Member:
+async def read_member(team_id: int, member_id: int) -> do.TeamMember:
     async with SafeExecutor(
             event='get team member role',
             sql=r'SELECT role'
@@ -141,7 +141,7 @@ async def read_member(team_id: int, member_id: int) -> do.Member:
             member_id=member_id,
             fetch=1,
     ) as (role,):
-        return do.Member(member_id=member_id, role=RoleType(role))
+        return do.TeamMember(member_id=member_id, team_id=team_id, role=RoleType(role))
 
 
 async def edit_member(team_id: int, member_id: int, role: RoleType):

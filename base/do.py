@@ -63,8 +63,16 @@ class Team:
 
 
 @dataclass
-class Member:
+class ClassMember:
     member_id: int
+    class_id: int
+    role: enum.RoleType
+
+
+@dataclass
+class TeamMember:
+    member_id: int
+    team_id: int
     role: enum.RoleType
 
 

@@ -85,7 +85,7 @@ async def delete_team(team_id: int, request: Request) -> None:
 
 @router.get('/team/{team_id}/member')
 @enveloped
-async def browse_team_member(team_id: int, request: Request) -> Sequence[do.Member]:
+async def browse_team_member(team_id: int, request: Request) -> Sequence[do.TeamMember]:
     """
     ### 權限
     - Class normal

@@ -7,7 +7,7 @@ from .base import SafeExecutor
 
 
 async def browse_member_account_with_student_card_and_institute(class_id: int, include_deleted: bool = False) \
-        -> Sequence[Tuple[do.Member, do.Account, do.StudentCard, do.Institute]]:
+        -> Sequence[Tuple[do.ClassMember, do.Account, do.StudentCard, do.Institute]]:
     async with SafeExecutor(
             event='browse class members with student card',
             sql=fr'SELECT class_member.member_id, class_member.role,'
@@ -30,7 +30,7 @@ async def browse_member_account_with_student_card_and_institute(class_id: int, i
             class_id=class_id,
             fetch='all',
     ) as records:
-        return [(do.Member(member_id=member_id, role=RoleType(role)),
+        return [(do.ClassMember(member_id=member_id, class_id=class_id, role=RoleType(role)),
                  do.Account(id=account_id, username=username, nickname=nickname, real_name=real_name,
                             role=RoleType(role), is_deleted=is_deleted, alternative_email=alternative_email),
                  do.StudentCard(id=student_card_id, institute_id=institute_id,
@@ -44,10 +44,10 @@ async def browse_member_account_with_student_card_and_institute(class_id: int, i
                 in records]
 
 
-async def browse_by_account_id(account_id: int) -> Sequence[Tuple[do.Class, do.Member]]:
+async def browse_by_account_id(account_id: int) -> Sequence[do.ClassMember]:
     async with SafeExecutor(
             event='browse class by account id',
-            sql=fr'SELECT class.id, class.name, class.course_id, class.is_deleted, '
+            sql=fr'SELECT class.id,'
                 fr'       class_member.member_id, class_member.role'
                 fr'  FROM class'
                 fr' INNER JOIN class_member'
@@ -59,6 +59,5 @@ async def browse_by_account_id(account_id: int) -> Sequence[Tuple[do.Class, do.M
             is_deleted=False,
             fetch='all',
     ) as records:
-        return [(do.Class(id=id_, name=name, course_id=course_id, is_deleted=is_deleted),
-                 do.Member(member_id=member_id, role=RoleType(role)))
-                for (id_, name, course_id, is_deleted, member_id, role) in records]
+        return [do.ClassMember(member_id=member_id, class_id=class_id, role=RoleType(role))
+                for (class_id, member_id, role) in records]

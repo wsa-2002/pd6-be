@@ -171,7 +171,7 @@ async def add_members(class_id: int, member_roles: Collection[Tuple[int, RoleTyp
         )
 
 
-async def browse_members(class_id: int) -> Sequence[do.Member]:
+async def browse_members(class_id: int) -> Sequence[do.ClassMember]:
     async with SafeExecutor(
             event='browse class members',
             sql=r'SELECT account.id, class_member.role'
@@ -182,10 +182,10 @@ async def browse_members(class_id: int) -> Sequence[do.Member]:
             class_id=class_id,
             fetch='all',
     ) as records:
-        return [do.Member(member_id=id_, role=RoleType(role_str)) for id_, role_str in records]
+        return [do.ClassMember(member_id=id_, class_id=class_id, role=RoleType(role_str)) for id_, role_str in records]
 
 
-async def read_member(class_id: int, member_id: int) -> do.Member:
+async def read_member(class_id: int, member_id: int) -> do.ClassMember:
     async with SafeExecutor(
             event='read class member role',
             sql=r'SELECT role'
@@ -195,7 +195,7 @@ async def read_member(class_id: int, member_id: int) -> do.Member:
             member_id=member_id,
             fetch=1,
     ) as (role,):
-        return do.Member(member_id=member_id, role=RoleType(role))
+        return do.ClassMember(member_id=member_id, class_id=class_id, role=RoleType(role))
 
 
 async def edit_member(class_id: int, member_id: int, role: RoleType):
