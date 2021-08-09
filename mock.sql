@@ -42,15 +42,15 @@ INSERT INTO class_member VALUES (4, 1, 'MANAGER');
 
 INSERT INTO class_member VALUES (4, 2, 'NORMAL');
 
-INSERT INTO access_log (access_time, request_method, resource_path, ip, account_id) VALUES ('2020-01-01 00:00:00', 'get', '/account', 'random_ip', 1)
+INSERT INTO access_log (access_time, request_method, resource_path, ip, account_id) VALUES ('2020-01-01 00:00:00', 'get', '/account', 'random_ip', 1);
 
-INSERT INTO access_log (access_time, request_method, resource_path, ip, account_id) VALUES ('2020-01-01 00:00:00', 'get', '/account', 'random_ip', 1)
+INSERT INTO access_log (access_time, request_method, resource_path, ip, account_id) VALUES ('2020-01-01 00:00:00', 'get', '/account', 'random_ip', 1);
 
-INSERT INTO announcement VALUES (1, 'title', 'content', 1, '2020-01-01 00:00:00', '2050-01-01 00:00:00', false)
+INSERT INTO announcement VALUES (1, 'title', 'content', 1, '2020-01-01 00:00:00', '2050-01-01 00:00:00', false);
 
-INSERT INTO announcement VALUES (2, 'title2', 'content2', 1, '2020-01-02 00:00:00', '2029-01-01 00:00:00', false)
+INSERT INTO announcement VALUES (2, 'title2', 'content2', 1, '2020-01-02 00:00:00', '2029-01-01 00:00:00', false);
 
-INSERT INTO submission_language VALUES (1, 'python', '3.9', false)
+INSERT INTO submission_language VALUES (1, 'python', '3.9', false);
 
-INSERT INTO submission_language VALUES (2, 'c++', '2.7.1', false)
+INSERT INTO submission_language VALUES (2, 'c++', '2.7.1', false);
 
