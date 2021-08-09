@@ -107,28 +107,6 @@ async def submit(problem_id: int, language_id: int, request: Request, content_fi
     return submission_id
 
 
-class BrowseSubmissionInput(BaseModel):
-    # TODO: add more
-    account_id: int = None
-    problem_id: int = None
-    language_id: int = None
-
-
-@router.get('/submission')
-@enveloped
-async def browse_submission(data: BrowseSubmissionInput, request: Request) -> Sequence[do.Submission]:
-    """
-    ### 權限
-    - Self
-    - Class manager
-    """
-    return await service.submission.browse(
-        account_id=request.account.id,  # TODO: 現在只有開放看自己的
-        problem_id=data.problem_id,
-        language_id=data.language_id,
-    )
-
-
 @dataclass
 class ReadSubmissionOutput:
     id: int
@@ -138,6 +116,31 @@ class ReadSubmissionOutput:
     content_file_url: str
     content_length: int
     submit_time: datetime
+
+
+class BrowseSubmissionInput(BaseModel):
+    # TODO: add more
+    account_id: int = None
+    problem_id: int = None
+    language_id: int = None
+
+
+@router.get('/submission')
+@enveloped
+async def browse_submission(request: Request, account_id: int = None, problem_id: int = None, language_id: int = None) \
+        -> Sequence[ReadSubmissionOutput]:
+    """
+    ### 權限
+    - Self
+    - Class manager
+    """
+    result = await service.submission.browse_with_url(account_id=request.account.id,
+                                                      problem_id=problem_id,
+                                                      language_id=language_id)
+    return [ReadSubmissionOutput(id=submission.id, account_id=submission.account_id, problem_id=submission.problem_id,
+                                 language_id=submission.language_id, content_file_url=url.join_s3(s3_file),
+                                 content_length=submission.content_length, submit_time=submission.submit_time)
+            for submission, s3_file in result]
 
 
 @router.get('/submission/{submission_id}')

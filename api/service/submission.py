@@ -5,6 +5,7 @@ import persistence.database as db
 import persistence.s3 as s3
 
 
+browse_with_url = db.submission_vo.browse_with_url
 read_with_url = db.submission_vo.read_with_url
 
 
