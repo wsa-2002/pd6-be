@@ -42,3 +42,23 @@ async def browse_member_account_with_student_card_and_institute(class_id: int, i
                      student_card_id, institute_id, student_id, email, is_default,
                      institute_id, abbreviated_name, full_name, email_domain, is_disabled)
                 in records]
+
+
+async def browse_by_account_id(account_id: int) -> Sequence[Tuple[do.Class, do.Member]]:
+    async with SafeExecutor(
+            event='browse class by account id',
+            sql=fr'SELECT class.id, class.name, class.course_id, class.is_deleted, '
+                fr'       class_member.member_id, class_member.role'
+                fr'  FROM class'
+                fr' INNER JOIN class_member'
+                fr'    ON class.id = class_member.class_id'
+                fr' WHERE class_member.member_id = %(account_id)s'
+                fr'   AND class.is_deleted = %(is_deleted)s'
+                fr' ORDER BY class.id ASC',
+            account_id=account_id,
+            is_deleted=False,
+            fetch='all',
+    ) as records:
+        return [(do.Class(id=id_, name=name, course_id=course_id, is_deleted=is_deleted),
+                 do.Member(member_id=member_id, role=RoleType(role)))
+                for (id_, name, course_id, is_deleted, member_id, role) in records]
