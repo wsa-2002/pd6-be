@@ -16,9 +16,8 @@ async def add(account_id: int, institute_id: int, student_id: str, email: str) \
                                False, account_id, True)
 
             (id_,) = await conn.fetchrow(r'INSERT INTO student_card'
-                                         r'            (account_id, institute_id, student_id, email,'
-                                         r'             is_default)'
-                                         r'     VALUES ($1, $2, $3, $4, $5, $6)'
+                                         r'            (account_id, institute_id, student_id, email, is_default)'
+                                         r'     VALUES ($1, $2, $3, $4, $5)'
                                          r'  RETURNING id',
                                          account_id, institute_id, student_id, email, True)
 
