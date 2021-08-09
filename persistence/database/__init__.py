@@ -59,6 +59,7 @@ from . import (
     problem,
     testcase,
     submission,
+    submission_vo,
     judgment,
     s3_file,
 
