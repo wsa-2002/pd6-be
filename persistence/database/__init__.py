@@ -61,6 +61,8 @@ from . import (
     submission,
     submission_vo,
     judgment,
+    essay,
+    essay_submission,
     s3_file,
 
     peer_review,

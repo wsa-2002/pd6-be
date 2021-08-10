@@ -45,4 +45,5 @@ s3_handler = S3Handler()
 from . import (
     testcase,
     submission,
+    essay_submission
 )

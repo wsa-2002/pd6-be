@@ -172,6 +172,26 @@ class JudgeCase:
 
 
 @dataclass
+class Essay:
+    id: int
+    challenge_id: int
+    challenge_label: int
+    title: str
+    setter_id: int
+    description: Optional[str]
+    is_deleted: bool
+
+
+@dataclass
+class EssaySubmission:
+    id: int
+    account_id: int
+    essay_id: int
+    content_file_id: int
+    submit_time: datetime
+
+
+@dataclass
 class PeerReview:
     id: int
     challenge_id: int
