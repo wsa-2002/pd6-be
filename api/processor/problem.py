@@ -11,7 +11,6 @@ from .util import rbac
 
 from .. import service
 
-
 router = APIRouter(
     tags=['Problem'],
     default_response_class=response.JSONResponse,
@@ -150,13 +149,12 @@ async def browse_testcase_under_problem(problem_id: int, request: Request) -> Se
         raise exc.NoPermission
 
     testcases = await service.testcase.browse(problem_id=problem_id)
-    return [ReadTestcaseOutput(
-        id=testcase.id,
-        problem_id=testcase.problem_id,
-        is_sample=testcase.is_sample,
-        score=testcase.score,
-        time_limit=testcase.time_limit,
-        memory_limit=testcase.memory_limit,
-        is_disabled=testcase.is_disabled,
-        is_deleted=testcase.is_deleted,
-    ) for testcase in testcases]
+    return [ReadTestcaseOutput(id=testcase.id,
+                               problem_id=testcase.problem_id,
+                               is_sample=testcase.is_sample,
+                               score=testcase.score,
+                               time_limit=testcase.time_limit,
+                               memory_limit=testcase.memory_limit,
+                               is_disabled=testcase.is_disabled,
+                               is_deleted=testcase.is_deleted)
+            for testcase in testcases]
