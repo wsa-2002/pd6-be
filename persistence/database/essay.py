@@ -16,7 +16,7 @@ async def browse(challenge_id: int = None) -> Sequence[do.Essay]:
             event='browse essay',
             sql=fr'SELECT id, challenge_id, challenge_label, title, setter_id, description, is_deleted'
                 fr'  FROM essay'
-                fr' WHERE {cond_sql}',
+                fr' {f" WHERE {cond_sql}" if cond_sql else ""}',
             **conditions,
             fetch='all,'
     ) as records:
