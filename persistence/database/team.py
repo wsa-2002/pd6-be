@@ -120,11 +120,9 @@ async def _delete_cascade_from_class(class_id: int, conn) -> None:
 async def browse_members(team_id: int) -> Sequence[do.TeamMember]:
     async with SafeExecutor(
             event='get team members id',
-            sql=r'SELECT account.id, team_member.team_id, team_member.role'
-                r'  FROM team_member, account'
-                r' WHERE team_member.member_id = account.id'
-                r'   AND team_member.team_id = %(team_id)s'
-                r' ORDER BY team_member.role DESC, account.id ASC',
+            sql=r'SELECT member_id, team_id, role'
+                r'  FROM team_member'
+                r' WHERE team_id = %(team_id)s',
             team_id=team_id,
             fetch='all',
     ) as records:
