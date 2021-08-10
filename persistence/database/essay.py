@@ -5,20 +5,37 @@ from base import do
 from .base import SafeExecutor
 
 
-async def browse(challenge_id: int = None) -> Sequence[do.Essay]:
-    conditions = {}
-    if challenge_id is not None:
-        conditions['challenge_id'] = challenge_id
+async def browse(include_deleted=False) -> Sequence[do.Essay]:
+    filters = []
 
-    cond_sql = ' AND '.join(fr"{field_name} = %({field_name})s" for field_name in conditions)
+    if not include_deleted:
+        filters.append("NOT is_deleted")
+
+    cond_sql = ' AND '.join(filters)
 
     async with SafeExecutor(
             event='browse essay',
             sql=fr'SELECT id, challenge_id, challenge_label, title, setter_id, description, is_deleted'
                 fr'  FROM essay'
-                fr' {f" WHERE {cond_sql}" if cond_sql else ""}',
-            **conditions,
-            fetch='all,'
+                fr' {f" WHERE {cond_sql}" if cond_sql else ""}'
+                fr' ORDER BY id ASC',
+            fetch='all',
+    ) as records:
+        return [do.Essay(id=id_, challenge_id=challenge_id, challenge_label=challenge_label, title=title,
+                         setter_id=setter_id, description=description, is_deleted=is_deleted)
+                for (id_, challenge_id, challenge_label, title, setter_id, description, is_deleted) in records]
+
+
+async def browse_by_challenge(challenge_id: int, include_deleted=False) -> Sequence[do.Essay]:
+    async with SafeExecutor(
+            event='browse essays with challenge id',
+            sql=fr'SELECT id, challenge_id, challenge_label, title, setter_id, description, is_deleted'
+                fr'  FROM essay'
+                fr' WHERE challenge_id = %(challenge_id)s'
+                fr'{" AND NOT is_deleted" if not include_deleted else ""}'
+                fr' ORDER BY id ASC',
+            challenge_id=challenge_id,
+            fetch='all',
     ) as records:
         return [do.Essay(id=id_, challenge_id=challenge_id, challenge_label=challenge_label, title=title,
                          setter_id=setter_id, description=description, is_deleted=is_deleted)
