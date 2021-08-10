@@ -56,7 +56,7 @@ async def read(essay_id: int, include_deleted=False) -> do.Essay:
                         setter_id=setter_id, description=description, is_deleted=is_deleted)
 
 
-async def add(challenge_id: int, challenge_label: int, title: str, setter_id: int, description: int) -> int:
+async def add(challenge_id: int, challenge_label: str, title: str, setter_id: int, description: str) -> int:
     async with SafeExecutor(
             event='create essay',
             sql=fr'INSERT INTO essay'
