@@ -139,6 +139,8 @@ class ReadTestcaseOutput:
     is_deleted: bool
 
 
+@router.get('/problem/{problem_id}/testcase')
+@enveloped
 async def browse_testcase_under_problem(problem_id: int, request: Request) -> Sequence[ReadTestcaseOutput]:
     """
     ### 權限
