@@ -21,7 +21,6 @@ router = APIRouter(
 
 
 class AddChallengeInput(BaseModel):
-    class_id: int
     type: enum.ChallengeType
     publicize_type: enum.ChallengePublicizeType
     title: str

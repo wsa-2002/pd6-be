@@ -16,7 +16,8 @@ async def add(challenge_id: int, challenge_label: str, selection_type: enum.Task
                 "            (challenge_id, challenge_label, selection_type,"
                 "             title, setter_id, full_score, description,"
                 "             source, hint)"
-                "     VALUES (%(title)s, %(setter_id)s, %(full_score)s, %(description)s,"
+                "     VALUES (%(challenge_id)s, %(challenge_label)s, %(selection_type)s,"
+                "             %(title)s, %(setter_id)s, %(full_score)s, %(description)s,"
                 "             %(source)s, %(hint)s)"
                 "  RETURNING id",
             challenge_id=challenge_id, challenge_label=challenge_label, selection_type=selection_type,
