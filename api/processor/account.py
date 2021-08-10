@@ -56,9 +56,9 @@ async def browse_account_with_class_role(account_id: int, request: Request) -> S
     ### 權限
     - Self
     """
-    if account_id is request.account.id:
-        return await service.account.browse_with_class_role(account_id=account_id)
-    raise exc.NoPermission
+    if account_id is not request.account.id:
+        raise exc.NoPermission
+    return await service.account.browse_with_class_role(account_id=account_id)
 
 
 @dataclass
