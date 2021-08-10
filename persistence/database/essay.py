@@ -6,18 +6,12 @@ from .base import SafeExecutor
 
 
 async def browse(include_deleted=False) -> Sequence[do.Essay]:
-    filters = []
-
-    if not include_deleted:
-        filters.append("NOT is_deleted")
-
-    cond_sql = ' AND '.join(filters)
 
     async with SafeExecutor(
             event='browse essay',
             sql=fr'SELECT id, challenge_id, challenge_label, title, setter_id, description, is_deleted'
                 fr'  FROM essay'
-                fr' {f" WHERE {cond_sql}" if cond_sql else ""}'
+                fr' {f" WHERE NOT is_deleted" if not include_deleted else ""}'
                 fr' ORDER BY id ASC',
             fetch='all',
     ) as records:
