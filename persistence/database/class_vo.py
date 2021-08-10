@@ -10,7 +10,7 @@ async def browse_member_account_with_student_card_and_institute(class_id: int, i
         -> Sequence[Tuple[do.ClassMember, do.Account, do.StudentCard, do.Institute]]:
     async with SafeExecutor(
             event='browse class members with student card',
-            sql=fr'SELECT class_member.member_id, class_member.role,'
+            sql=fr'SELECT class_member.member_id, class_member.class_id, class_member.role,'
                 fr'       account.id, account.username, account.nickname, account.real_name, account.role,'
                 fr'       account.is_deleted, account.alternative_email,'
                 fr'       student_card.id, student_card.institute_id, student_card.student_id,'
@@ -37,27 +37,8 @@ async def browse_member_account_with_student_card_and_institute(class_id: int, i
                                 student_id=student_id, email=email, is_default=is_default),
                  do.Institute(id=institute_id, abbreviated_name=abbreviated_name, full_name=full_name,
                               email_domain=email_domain, is_disabled=is_disabled))
-                for (member_id, role,
+                for (member_id, class_id, role,
                      account_id, username, nickname, real_name, role, is_deleted, alternative_email,
                      student_card_id, institute_id, student_id, email, is_default,
                      institute_id, abbreviated_name, full_name, email_domain, is_disabled)
                 in records]
-
-
-async def browse_by_account_id(account_id: int) -> Sequence[do.ClassMember]:
-    async with SafeExecutor(
-            event='browse class by account id',
-            sql=fr'SELECT class.id,'
-                fr'       class_member.member_id, class_member.role'
-                fr'  FROM class'
-                fr' INNER JOIN class_member'
-                fr'    ON class.id = class_member.class_id'
-                fr' WHERE class_member.member_id = %(account_id)s'
-                fr'   AND class.is_deleted = %(is_deleted)s'
-                fr' ORDER BY class.id ASC',
-            account_id=account_id,
-            is_deleted=False,
-            fetch='all',
-    ) as records:
-        return [do.ClassMember(member_id=member_id, class_id=class_id, role=RoleType(role))
-                for (class_id, member_id, role) in records]

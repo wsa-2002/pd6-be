@@ -171,10 +171,23 @@ async def add_members(class_id: int, member_roles: Collection[Tuple[int, RoleTyp
         )
 
 
+async def browse_role_by_account_id(account_id: int) -> Sequence[do.ClassMember]:
+    async with SafeExecutor(
+            event='browse class role by account_id',
+            sql=fr'SELECT class_id, member_id, role'
+                fr'  FROM class_member'
+                fr' WHERE member_id = %(account_id)s',
+            account_id=account_id,
+            fetch='all',
+    ) as records:
+        return [do.ClassMember(class_id=class_id, member_id=member_id, role=RoleType(role))
+                for (class_id, member_id, role) in records]
+
+
 async def browse_members(class_id: int) -> Sequence[do.ClassMember]:
     async with SafeExecutor(
             event='browse class members',
-            sql=r'SELECT account.id, class_member.role'
+            sql=r'SELECT account.id, class_member.class_id, class_member.role'
                 r'  FROM class_member, account'
                 r' WHERE class_member.member_id = account.id'
                 r'   AND class_member.class_id = %(class_id)s'
@@ -182,19 +195,20 @@ async def browse_members(class_id: int) -> Sequence[do.ClassMember]:
             class_id=class_id,
             fetch='all',
     ) as records:
-        return [do.ClassMember(member_id=id_, class_id=class_id, role=RoleType(role_str)) for id_, role_str in records]
+        return [do.ClassMember(member_id=id_, class_id=class_id, role=RoleType(role_str))
+                for id_, class_id, role_str in records]
 
 
 async def read_member(class_id: int, member_id: int) -> do.ClassMember:
     async with SafeExecutor(
             event='read class member role',
-            sql=r'SELECT role'
+            sql=r'SELECT member_id, class_id, role'
                 r'  FROM class_member'
                 r' WHERE class_id = %(class_id)s and member_id = %(member_id)s',
             class_id=class_id,
             member_id=member_id,
             fetch=1,
-    ) as (role,):
+    ) as (member_id, class_id, role):
         return do.ClassMember(member_id=member_id, class_id=class_id, role=RoleType(role))
 
 
