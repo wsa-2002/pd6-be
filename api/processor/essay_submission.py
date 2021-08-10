@@ -72,15 +72,17 @@ async def read_essay_submission(essay_submission_id: int, request: Request) -> d
     - class normal (self)
     """
     essay_submission = await service.essay_submission.read(essay_submission_id=essay_submission_id)
+
+    if request.account.id is essay_submission.account_id:
+        return essay_submission
+
     essay = await service.essay.read(essay_id=essay_submission.essay_id)
     challenge = await service.challenge.read(essay.challenge_id, include_scheduled=True, ref_time=request.time)
 
-    if not (await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)
-            or (await rbac.validate(request.account.id, RoleType.normal, class_id=challenge.class_id)
-                and essay_submission.account_id is request.account.id)):
-        raise exc.NoPermission
+    if await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+        return essay_submission
 
-    return essay_submission
+    raise exc.NoPermission
 
 
 @router.put('/essay-submission/{essay_submission_id}')
