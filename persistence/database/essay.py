@@ -25,12 +25,13 @@ async def browse(challenge_id: int = None) -> Sequence[do.Essay]:
                 for (id_, challenge_id, challenge_label, title, setter_id, description, is_deleted) in records]
 
 
-async def read(essay_id: int) -> do.Essay:
+async def read(essay_id: int, include_deleted=False) -> do.Essay:
     async with SafeExecutor(
             event='read essay by id',
             sql=fr'SELECT id, challenge_id, challenge_label, title, setter_id, description, is_deleted'
                 fr'  FROM essay'
-                fr' WHERE id = %(essay_id)s',
+                fr' WHERE id = %(essay_id)s'
+                fr' {" AND NOT is_deleted" if not include_deleted else ""}',
             essay_id=essay_id,
             fetch=1,
     ) as (id_, challenge_id, challenge_label, title, setter_id, description, is_deleted):
