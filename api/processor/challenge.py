@@ -164,7 +164,7 @@ class AddEssayInput(BaseModel):
 
 @router.post('/challenge/{challenge_id}/essay', tags=['Essay'])
 @enveloped
-async def add_essay_under_challenge(challenge_id: int, data: AddEssayInput, request: Request) -> int:
+async def add_essay_under_challenge(challenge_id: int, data: AddEssayInput, request: Request) -> model.AddOutput:
     """
     ### 權限
     - Class manager
@@ -174,8 +174,9 @@ async def add_essay_under_challenge(challenge_id: int, data: AddEssayInput, requ
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
-    return await service.essay.add(challenge_id=data.challenge_id, challenge_label=data.challenge_label,
-                                   title=data.title, setter_id=request.account.id, description=data.description)
+    essay_id = await service.essay.add(challenge_id=data.challenge_id, challenge_label=data.challenge_label,
+                                       title=data.title, setter_id=request.account.id, description=data.description)
+    return model.AddOutput(id=essay_id)
 
 
 class AddPeerReviewInput(BaseModel):
