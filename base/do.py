@@ -4,6 +4,7 @@ Data Objects
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
+from uuid import UUID
 
 from base import enum
 
@@ -116,8 +117,8 @@ class Testcase:
     problem_id: int
     is_sample: bool
     score: int
-    input_file_id: Optional[int]
-    output_file_id: Optional[int]
+    input_file_uuid: Optional[UUID]
+    output_file_uuid: Optional[UUID]
     time_limit: int
     memory_limit: int
     is_disabled: bool
@@ -126,7 +127,7 @@ class Testcase:
 
 @dataclass
 class S3File:
-    id: int
+    uuid: UUID
     bucket: str
     key: str
 
@@ -145,7 +146,7 @@ class Submission:
     account_id: int
     problem_id: int
     language_id: int
-    content_file_id: int
+    content_file_uuid: UUID
     content_length: int
     submit_time: datetime
 

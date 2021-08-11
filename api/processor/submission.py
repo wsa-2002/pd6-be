@@ -184,7 +184,7 @@ async def read_submission_file(submission_id: int, request: Request) -> str:
 
     # 可以看自己的
     if submission.account_id is request.account.id:
-        file = await service.s3_file.read(s3_file_id=submission.content_file_id)
+        file = await service.s3_file.read(s3_file_uuid=submission.content_file_uuid)
         return url.join_s3(file)
 
     # 可以看自己管理的 class 的
@@ -193,7 +193,7 @@ async def read_submission_file(submission_id: int, request: Request) -> str:
                                              ref_time=request.time)
     class_role = await rbac.get_role(request.account.id, class_id=challenge.class_id)
     if class_role >= RoleType.manager:
-        file = await service.s3_file.read(s3_file_id=submission.content_file_id)
+        file = await service.s3_file.read(s3_file_uuid=submission.content_file_uuid)
         return url.join_s3(file)
 
     raise exc.NoPermission

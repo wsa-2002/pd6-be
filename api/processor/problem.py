@@ -122,7 +122,7 @@ async def add_testcase_under_problem(problem_id: int, data: AddTestcaseInput, re
         raise exc.NoPermission
 
     return await service.testcase.add(problem_id=problem_id, is_sample=data.is_sample, score=data.score,
-                                      input_file_id=None, output_file_id=None,
+                                      input_file_uuid=None, output_file_uuid=None,
                                       time_limit=data.time_limit, memory_limit=data.memory_limit,
                                       is_disabled=data.is_disabled)
 

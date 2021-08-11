@@ -66,7 +66,7 @@ async def read_testcase_input_data(testcase_id: int, request: Request) -> str:
             or (testcase.is_sample and await rbac.validate(request.account.id, RoleType.normal))):
         raise exc.NoPermission
 
-    input_file = await service.s3_file.read(s3_file_id=testcase.input_file_id)
+    input_file = await service.s3_file.read(s3_file_uuid=testcase.input_file_uuid)
     return url.join_s3(s3_file=input_file)
 
 
@@ -89,7 +89,7 @@ async def read_testcase_output_data(testcase_id: int, request: Request) -> str:
             or (testcase.is_sample and await rbac.validate(request.account.id, RoleType.normal))):
         raise exc.NoPermission
 
-    output_file = await service.s3_file.read(s3_file_id=testcase.output_file_id)
+    output_file = await service.s3_file.read(s3_file_uuid=testcase.output_file_uuid)
     return url.join_s3(s3_file=output_file)
 
 
