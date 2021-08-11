@@ -14,8 +14,10 @@ delete = db.challenge.delete_cascade
 async def browse_task(challenge_id: int) -> Tuple[
     Sequence[do.Problem],
     Sequence[do.PeerReview],
+    Sequence[do.Essay]
 ]:
     return (
         await db.problem.browse_by_challenge(challenge_id=challenge_id),
         await db.peer_review.browse_by_challenge(challenge_id=challenge_id),
+        await db.essay.browse_by_challenge(challenge_id=challenge_id)
     )
