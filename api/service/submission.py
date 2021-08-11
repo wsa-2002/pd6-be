@@ -5,19 +5,15 @@ import persistence.database as db
 import persistence.s3 as s3
 
 
-browse_with_url = db.submission_vo.browse_with_url
-read_with_url = db.submission_vo.read_with_url
-
-
 async def add(file: typing.IO, filename: str, account_id: int, problem_id: int, language_id: int,
               submit_time: datetime) -> int:
     bucket, key = await s3.submission.upload(file=file, filename=filename)
 
-    content_file_id = await db.s3_file.add(bucket=bucket, key=key)
+    content_file_uuid = await db.s3_file.add(bucket=bucket, key=key, filename=filename)
 
     submission_id = await db.submission.add(account_id=account_id, problem_id=problem_id,
                                             language_id=language_id,
-                                            content_file_id=content_file_id,
+                                            content_file_uuid=content_file_uuid,
                                             content_length=len(file.read()),
                                             submit_time=submit_time)
 
