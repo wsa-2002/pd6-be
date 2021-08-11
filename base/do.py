@@ -187,7 +187,7 @@ class EssaySubmission:
     id: int
     account_id: int
     essay_id: int
-    content_file_id: int
+    content_file_uuid: UUID
     submit_time: datetime
 
 

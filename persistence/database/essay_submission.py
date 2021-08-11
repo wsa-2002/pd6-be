@@ -17,7 +17,7 @@ async def browse(account_id: int = None, essay_id: int = None) -> Sequence[do.Es
 
     async with SafeExecutor(
             event='browse essay_submission',
-            sql=fr'SELECT id, account_id, essay_id, content_file_id, submit_time'
+            sql=fr'SELECT id, account_id, essay_id, content_file_uuid, submit_time'
                 fr'  FROM essay_submission'
                 fr' {f" WHERE {cond_sql}" if cond_sql else ""}'
                 fr' ORDER BY id DESC',
@@ -25,45 +25,45 @@ async def browse(account_id: int = None, essay_id: int = None) -> Sequence[do.Es
             fetch='all',
     ) as records:
         return [do.EssaySubmission(id=id_, account_id=account_id, essay_id=essay_id,
-                                   content_file_id=content_file_id, submit_time=submit_time)
-                for (id_, account_id, essay_id, content_file_id, submit_time) in records]
+                                   content_file_uuid=content_file_uuid, submit_time=submit_time)
+                for (id_, account_id, essay_id, content_file_uuid, submit_time) in records]
 
 
 async def read(essay_submission_id: int, include_deleted=False) -> do.EssaySubmission:
     async with SafeExecutor(
             event='read essay_submission',
-            sql=fr'SELECT id, account_id, essay_id, content_file_id, submit_time'
+            sql=fr'SELECT id, account_id, essay_id, content_file_uuid, submit_time'
                 fr'  FROM essay_submission'
                 fr' WHERE id = %(essay_submission_id)s'
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}',
             essay_submission_id=essay_submission_id,
             fetch=1,
-    ) as (id_, account_id, essay_id, content_file_id, submit_time):
+    ) as (id_, account_id, essay_id, content_file_uuid, submit_time):
         return do.EssaySubmission(id=id_, account_id=account_id, essay_id=essay_id,
-                                  content_file_id=content_file_id, submit_time=submit_time)
+                                  content_file_uuid=content_file_uuid, submit_time=submit_time)
 
 
-async def add(account_id: int, essay_id: int, content_file_id: int, submit_time: datetime) -> int:
+async def add(account_id: int, essay_id: int, content_file_uuid: int, submit_time: datetime) -> int:
     async with SafeExecutor(
             event='add essay-submission',
             sql=fr"INSERT INTO essay_submission"
-                fr"            (account_id, essay_id, content_file_id, submit_time)"
-                fr"     VALUES (%(account_id)s, %(essay_id)s, %(content_file_id)s, %(submit_time)s)"
+                fr"            (account_id, essay_id, content_file_uuid, submit_time)"
+                fr"     VALUES (%(account_id)s, %(essay_id)s, %(content_file_uuid)s, %(submit_time)s)"
                 fr"  RETURNING id",
-            account_id=account_id, essay_id=essay_id, content_file_id=content_file_id,
+            account_id=account_id, essay_id=essay_id, content_file_uuid=content_file_uuid,
             submit_time=submit_time,
             fetch=1,
     ) as (essay_submission_id, ):
         return essay_submission_id
 
 
-async def edit(essay_submission_id: int, content_file_id: int, submit_time: datetime) -> None:
+async def edit(essay_submission_id: int, content_file_uuid: int, submit_time: datetime) -> None:
     async with SafeExecutor(
             event='update essay_submission by id',
             sql=fr"UPDATE essay_submission"
-                fr"   SET content_file_id = %(content_file_id)s, submit_time = %(submit_time)s"
+                fr"   SET content_file_uuid = %(content_file_uuid)s, submit_time = %(submit_time)s"
                 fr" WHERE id = %(essay_submission_id)s",
-            content_file_id=content_file_id, submit_time=submit_time,
+            content_file_uuid=content_file_uuid, submit_time=submit_time,
             essay_submission_id=essay_submission_id,
     ):
         pass
