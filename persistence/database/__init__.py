@@ -60,6 +60,8 @@ from . import (
     testcase,
     submission,
     judgment,
+    essay,
+    essay_submission,
     s3_file,
 
     peer_review,

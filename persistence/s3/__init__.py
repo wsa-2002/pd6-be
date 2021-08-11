@@ -64,7 +64,9 @@ s3_handler = S3Handler()
 
 # For import usage
 from . import (
+    tools,
+
     testcase,
     submission,
-    tools,
+    essay_submission,
 )
