@@ -12,7 +12,6 @@ from .util import rbac
 
 from .. import service
 
-
 router = APIRouter(
     tags=['Problem'],
     default_response_class=response.JSONResponse,
@@ -142,6 +141,8 @@ class ReadTestcaseOutput:
     is_deleted: bool
 
 
+@router.get('/problem/{problem_id}/testcase')
+@enveloped
 async def browse_testcase_under_problem(problem_id: int, request: Request) -> Sequence[ReadTestcaseOutput]:
     """
     ### 權限
