@@ -246,5 +246,5 @@ async def browse_task_under_challenge(challenge_id: int, request: Request) -> Br
     return BrowseTaskOutput(
         problem=problems,
         peer_review=peer_reviews,
-        essay=essays
+        essay=essays,
     )
