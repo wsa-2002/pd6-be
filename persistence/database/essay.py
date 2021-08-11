@@ -11,7 +11,7 @@ async def browse(include_deleted=False) -> Sequence[do.Essay]:
             event='browse essay',
             sql=fr'SELECT id, challenge_id, challenge_label, title, setter_id, description, is_deleted'
                 fr'  FROM essay'
-                fr' {"WHERE NOT is_deleted" if not include_deleted else ""}'
+                fr'{" WHERE NOT is_deleted" if not include_deleted else ""}'
                 fr' ORDER BY id ASC',
             fetch='all',
     ) as records:
@@ -42,7 +42,7 @@ async def read(essay_id: int, include_deleted=False) -> do.Essay:
             sql=fr'SELECT id, challenge_id, challenge_label, title, setter_id, description, is_deleted'
                 fr'  FROM essay'
                 fr' WHERE id = %(essay_id)s'
-                fr' {" AND NOT is_deleted" if not include_deleted else ""}',
+                fr'{" AND NOT is_deleted" if not include_deleted else ""}',
             essay_id=essay_id,
             fetch=1,
     ) as (id_, challenge_id, challenge_label, title, setter_id, description, is_deleted):
