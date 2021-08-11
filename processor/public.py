@@ -7,9 +7,7 @@ from pydantic import BaseModel
 
 import exceptions as exc
 from middleware import APIRouter, JSONResponse, enveloped
-
-from .. import service
-
+import service
 
 router = APIRouter(tags=['Public'])
 

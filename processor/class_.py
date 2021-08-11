@@ -8,9 +8,9 @@ from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
 import persistence.email as email
-from .util import rbac, model
+import service
 
-from .. import service
+from .util import rbac, model
 
 
 router = APIRouter(

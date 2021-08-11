@@ -5,7 +5,7 @@ def register_routers(app: fastapi.FastAPI):
     """
     A function to register routers without possibility of cyclic import.
     """
-    from .processor import (
+    from . import (
         public,
         s3_file,
 

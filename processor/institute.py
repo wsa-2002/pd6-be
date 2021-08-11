@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from typing import Sequence
 
 from pydantic import BaseModel
@@ -7,9 +6,10 @@ from base import do
 import exceptions as exc
 from base.enum import RoleType
 from middleware import APIRouter, response, enveloped, auth, Request
+import service
+
 from .util import rbac, model
 
-from .. import service
 
 router = APIRouter(
     tags=['Institute'],

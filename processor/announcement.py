@@ -7,9 +7,10 @@ from base.cls import NoTimezoneIsoDatetime
 from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
+import service
+
 from .util import rbac, model
 
-from .. import service
 
 router = APIRouter(
     tags=['Announcement'],

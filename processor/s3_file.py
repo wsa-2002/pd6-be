@@ -4,9 +4,9 @@ from uuid import UUID
 import exceptions as exc
 from base.enum import RoleType
 from middleware import APIRouter, response, enveloped, auth, Request
-from .util import rbac
+import service
 
-from .. import service
+from .util import rbac
 
 
 router = APIRouter(

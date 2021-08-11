@@ -6,9 +6,10 @@ from base.enum import RoleType, ChallengePublicizeType
 from base import do
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
+import service
+
 from .util import rbac
 
-from .. import service
 
 router = APIRouter(
     tags=['Essay Submission'],

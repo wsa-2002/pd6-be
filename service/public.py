@@ -4,7 +4,7 @@ from config import config, app_config
 import exceptions as exc
 import persistence.database as db
 import persistence.email as email
-import security
+from util import security
 
 
 async def default_page():
