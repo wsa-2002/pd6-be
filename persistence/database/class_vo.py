@@ -7,10 +7,10 @@ from .base import SafeExecutor
 
 
 async def browse_member_account_with_student_card_and_institute(class_id: int, include_deleted: bool = False) \
-        -> Sequence[Tuple[do.Member, do.Account, do.StudentCard, do.Institute]]:
+        -> Sequence[Tuple[do.ClassMember, do.Account, do.StudentCard, do.Institute]]:
     async with SafeExecutor(
             event='browse class members with student card',
-            sql=fr'SELECT class_member.member_id, class_member.role,'
+            sql=fr'SELECT class_member.member_id, class_member.class_id, class_member.role,'
                 fr'       account.id, account.username, account.nickname, account.real_name, account.role,'
                 fr'       account.is_deleted, account.alternative_email,'
                 fr'       student_card.id, student_card.institute_id, student_card.student_id,'
@@ -30,14 +30,14 @@ async def browse_member_account_with_student_card_and_institute(class_id: int, i
             class_id=class_id,
             fetch='all',
     ) as records:
-        return [(do.Member(member_id=member_id, role=RoleType(role)),
+        return [(do.ClassMember(member_id=member_id, class_id=class_id, role=RoleType(role)),
                  do.Account(id=account_id, username=username, nickname=nickname, real_name=real_name,
                             role=RoleType(role), is_deleted=is_deleted, alternative_email=alternative_email),
                  do.StudentCard(id=student_card_id, institute_id=institute_id,
                                 student_id=student_id, email=email, is_default=is_default),
                  do.Institute(id=institute_id, abbreviated_name=abbreviated_name, full_name=full_name,
                               email_domain=email_domain, is_disabled=is_disabled))
-                for (member_id, role,
+                for (member_id, class_id, role,
                      account_id, username, nickname, real_name, role, is_deleted, alternative_email,
                      student_card_id, institute_id, student_id, email, is_default,
                      institute_id, abbreviated_name, full_name, email_domain, is_disabled)

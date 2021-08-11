@@ -4,6 +4,7 @@ from typing import Optional, Sequence
 from pydantic import BaseModel
 
 from base.enum import RoleType
+from base import do
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
 from .util import rbac
@@ -46,6 +47,18 @@ async def browse_account_with_default_student_id(request: Request) -> Sequence[B
                                 role=account.role, real_name=account.real_name,
                                 alternative_email=account.alternative_email, student_id=student_card.student_id)
             for account, student_card in result]
+
+
+@router.get('/account/{account_id}/class')
+@enveloped
+async def browse_account_with_class_role(account_id: int, request: Request) -> Sequence[do.ClassMember]:
+    """
+    ### 權限
+    - Self
+    """
+    if account_id is not request.account.id:
+        raise exc.NoPermission
+    return await service.account.browse_with_class_role(account_id=account_id)
 
 
 @dataclass
