@@ -59,7 +59,6 @@ from . import (
     problem,
     testcase,
     submission,
-    submission_vo,
     judgment,
     essay,
     essay_submission,
