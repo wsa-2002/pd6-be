@@ -70,7 +70,7 @@ async def edit(essay_id: int, setter_id: int, title: str = None, description: st
 
     if title is not None:
         to_updates['title'] = title
-    if description is not None:
+    if description is not ...:
         to_updates['description'] = description
 
     if not to_updates:
