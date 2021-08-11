@@ -11,7 +11,7 @@ A `python=3.8`-`asyncio`-based version, using web framework `fastapi`.
 
 Using `conda` as example:
 ```shell
-conda create --name pdogs6-async python=3.8
+conda create --name pdogs6-async python=3.9
 conda activate pdogs6-async
 ```
 
@@ -32,7 +32,7 @@ Then
 
 ```shell
 pip install uvicorn
-uvicorn app:app --reload
+uvicorn main:app --reload
 ```
 
 On your terminal you should see:
@@ -47,7 +47,7 @@ INFO:     Application startup complete.
 Now you can go to http://127.0.0.1:8000 and test it.  
 You may also change the host & port with `--host` and `--port`:
 ```shell
-uvicorn app:app --reload --host 0.0.0.0 --port 80
+uvicorn main:app --reload --host 0.0.0.0 --port 80
 ```
 
 ## About this project
