@@ -1,5 +1,3 @@
-from dataclasses import dataclass
-from datetime import datetime
 from typing import Sequence
 
 from fastapi import File, UploadFile
@@ -9,7 +7,7 @@ from base import do
 from base.enum import RoleType, ChallengePublicizeType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
-from .util import rbac
+from .util import rbac, model
 
 from .. import service
 
@@ -41,7 +39,7 @@ class AddSubmissionLanguageInput(BaseModel):
 
 @router.post('/submission/language', tags=['Administrative'])
 @enveloped
-async def add_submission_language(data: AddSubmissionLanguageInput, request: Request) -> int:
+async def add_submission_language(data: AddSubmissionLanguageInput, request: Request) -> model.AddOutput:
     """
     ### 權限
     - System manager
@@ -49,7 +47,9 @@ async def add_submission_language(data: AddSubmissionLanguageInput, request: Req
     if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
-    return await service.submission.add_language(name=data.name, version=data.version, is_disabled=data.is_disabled)
+    language_id = await service.submission.add_language(name=data.name, version=data.version,
+                                                        is_disabled=data.is_disabled)
+    return model.AddOutput(id=language_id)
 
 
 class EditSubmissionLanguageInput(BaseModel):
@@ -74,7 +74,8 @@ async def edit_submission_language(language_id: int, data: EditSubmissionLanguag
 
 @router.post('/problem/{problem_id}/submission', tags=['Problem'])
 @enveloped
-async def submit(problem_id: int, language_id: int, request: Request, content_file: UploadFile = File(...)) -> int:
+async def submit(problem_id: int, language_id: int, request: Request, content_file: UploadFile = File(...)) \
+        -> model.AddOutput:
     """
     ### 權限
     - System Manager (all)
@@ -104,7 +105,7 @@ async def submit(problem_id: int, language_id: int, request: Request, content_fi
                                                  account_id=request.account.id, problem_id=problem.id,
                                                  language_id=language.id, submit_time=request.time)
 
-    return submission_id
+    return model.AddOutput(id=submission_id)
 
 
 class BrowseSubmissionInput(BaseModel):

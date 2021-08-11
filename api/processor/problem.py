@@ -8,7 +8,7 @@ from base import do
 from base.enum import RoleType, ChallengePublicizeType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
-from .util import rbac
+from .util import rbac, model
 
 from .. import service
 
@@ -110,7 +110,7 @@ class AddTestcaseInput(BaseModel):
 
 @router.post('/problem/{problem_id}/testcase', tags=['Testcase'])
 @enveloped
-async def add_testcase_under_problem(problem_id: int, data: AddTestcaseInput, request: Request) -> int:
+async def add_testcase_under_problem(problem_id: int, data: AddTestcaseInput, request: Request) -> model.AddOutput:
     """
     ### 權限
     - Class manager
@@ -121,10 +121,11 @@ async def add_testcase_under_problem(problem_id: int, data: AddTestcaseInput, re
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
-    return await service.testcase.add(problem_id=problem_id, is_sample=data.is_sample, score=data.score,
-                                      input_file_uuid=None, output_file_uuid=None,
-                                      time_limit=data.time_limit, memory_limit=data.memory_limit,
-                                      is_disabled=data.is_disabled)
+    testcase_id = await service.testcase.add(problem_id=problem_id, is_sample=data.is_sample, score=data.score,
+                                             input_file_uuid=None, output_file_uuid=None,
+                                             time_limit=data.time_limit, memory_limit=data.memory_limit,
+                                             is_disabled=data.is_disabled)
+    return model.AddOutput(id=testcase_id)
 
 
 @dataclass

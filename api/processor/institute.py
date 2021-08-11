@@ -7,7 +7,7 @@ from base import do
 import exceptions as exc
 from base.enum import RoleType
 from middleware import APIRouter, response, enveloped, auth, Request
-from .util import rbac
+from .util import rbac, model
 
 from .. import service
 
@@ -25,14 +25,9 @@ class AddInstituteInput(BaseModel):
     is_disabled: bool
 
 
-@dataclass
-class AddInstituteOutput:
-    id: int
-
-
 @router.post('/institute')
 @enveloped
-async def add_institute(data: AddInstituteInput, request: Request) -> AddInstituteOutput:
+async def add_institute(data: AddInstituteInput, request: Request) -> model.AddOutput:
     """
     ### 權限
     - System Manager
@@ -42,7 +37,7 @@ async def add_institute(data: AddInstituteInput, request: Request) -> AddInstitu
 
     institute_id = await service.institute.add(abbreviated_name=data.abbreviated_name, full_name=data.full_name,
                                                email_domain=data.email_domain, is_disabled=data.is_disabled)
-    return AddInstituteOutput(id=institute_id)
+    return model.AddOutput(id=institute_id)
 
 
 @router.get('/institute', tags=['Public'])
