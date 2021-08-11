@@ -29,12 +29,19 @@ async def read_testcase(testcase_id: int, request: Request) -> ReadTestcaseOutpu
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
+    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     testcase = await service.testcase.read(testcase_id=testcase_id)
+    problem = await service.problem.read(testcase.problem_id)
+    challenge = await service.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
+    is_class_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)
+
     return ReadTestcaseOutput(
         id=testcase.id,
         problem_id=testcase.problem_id,
         is_sample=testcase.is_sample,
         score=testcase.score,
+        input_file_uuid=testcase.input_file_uuid if (testcase.is_sample or is_class_manager) else None,
+        output_file_uuid=testcase.output_file_uuid if (testcase.is_sample or is_class_manager) else None,
         time_limit=testcase.time_limit,
         memory_limit=testcase.memory_limit,
         is_disabled=testcase.is_disabled,
@@ -48,37 +55,6 @@ class EditTestcaseInput(BaseModel):
     time_limit: int = None
     memory_limit: int = None
     is_disabled: bool = None
-
-
-@dataclass
-class ReadTestcaseDataOutput:
-    input_file_uuid: UUID
-    output_file_uuid: UUID
-
-
-@router.get('/testcase/{testcase_id}/data')
-@enveloped
-async def read_testcase_data(testcase_id: int, request: Request) -> ReadTestcaseDataOutput:
-    """
-    ### 權限
-    - System Normal (Sample)
-    - Class Manager (All)
-
-    This api will return a url which can directly download the file from s3-file-service.
-    """
-    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    testcase = await service.testcase.read(testcase_id)
-
-    problem = await service.problem.read(testcase.problem_id)
-    challenge = await service.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
-    if not (await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)
-            or (testcase.is_sample and await rbac.validate(request.account.id, RoleType.normal))):
-        raise exc.NoPermission
-
-    return ReadTestcaseDataOutput(
-        input_file_uuid=testcase.input_file_uuid,
-        output_file_uuid=testcase.output_file_uuid,
-    )
 
 
 @router.patch('/testcase/{testcase_id}')

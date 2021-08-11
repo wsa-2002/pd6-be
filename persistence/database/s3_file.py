@@ -15,7 +15,7 @@ async def browse() -> Sequence[do.S3File]:
             fetch='all',
     ) as records:
         return [do.S3File(uuid=uuid, bucket=bucket, key=key, filename=filename)
-                for (uuid, bucket, key)
+                for (uuid, bucket, key, filename)
                 in records]
 
 
@@ -27,7 +27,7 @@ async def read(s3_file_uuid: UUID) -> do.S3File:
                 fr' WHERE uuid = %(s3_file_uuid)s',
             s3_file_uuid=s3_file_uuid,
             fetch=1,
-    ) as (uuid, bucket, key):
+    ) as (uuid, bucket, key, filename):
         return do.S3File(uuid=uuid, bucket=bucket, key=key, filename=filename)
 
 
