@@ -17,6 +17,9 @@ from . import (
     submission,
     judgment,
 
+    essay,
+    essay_submission,
+
     peer_review,
 
     announcement,

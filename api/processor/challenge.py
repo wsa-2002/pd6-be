@@ -155,6 +155,29 @@ async def add_problem_under_challenge(challenge_id: int, data: AddProblemInput, 
     return model.AddOutput(id=problem_id)
 
 
+class AddEssayInput(BaseModel):
+    challenge_id: int
+    challenge_label: str
+    title: str
+    description: Optional[str]
+
+
+@router.post('/challenge/{challenge_id}/essay', tags=['Essay'])
+@enveloped
+async def add_essay_under_challenge(challenge_id: int, data: AddEssayInput, request: Request) -> int:
+    """
+    ### 權限
+    - Class manager
+    """
+    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
+    challenge = await service.challenge.read(challenge_id=challenge_id, include_scheduled=True, ref_time=request.time)
+    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+        raise exc.NoPermission
+
+    return await service.essay.add(challenge_id=data.challenge_id, challenge_label=data.challenge_label,
+                                   title=data.title, setter_id=request.account.id, description=data.description)
+
+
 class AddPeerReviewInput(BaseModel):
     challenge_label: str
     target_problem_id: int
@@ -202,6 +225,7 @@ async def add_peer_review_under_challenge(challenge_id: int, data: AddPeerReview
 class BrowseTaskOutput:
     problem: Sequence[do.Problem]
     peer_review: Sequence[do.PeerReview]
+    essay: Sequence[do.Essay]
 
 
 @router.get('/challenge/{challenge_id}/task')
@@ -218,9 +242,10 @@ async def browse_task_under_challenge(challenge_id: int, request: Request) -> Br
     if class_role < RoleType.normal:
         raise exc.NoPermission
 
-    problems, peer_reviews = service.challenge.browse_task(challenge.id)
+    problems, peer_reviews, essays = service.challenge.browse_task(challenge.id)
 
     return BrowseTaskOutput(
         problem=problems,
         peer_review=peer_reviews,
+        essay=essays,
     )
