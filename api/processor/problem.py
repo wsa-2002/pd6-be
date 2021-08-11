@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional, Sequence
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -121,7 +122,7 @@ async def add_testcase_under_problem(problem_id: int, data: AddTestcaseInput, re
         raise exc.NoPermission
 
     return await service.testcase.add(problem_id=problem_id, is_sample=data.is_sample, score=data.score,
-                                      input_file_id=None, output_file_id=None,
+                                      input_file_uuid=None, output_file_uuid=None,
                                       time_limit=data.time_limit, memory_limit=data.memory_limit,
                                       is_disabled=data.is_disabled)
 
@@ -132,6 +133,8 @@ class ReadTestcaseOutput:
     problem_id: int
     is_sample: bool
     score: int
+    input_file_uuid: Optional[UUID]
+    output_file_uuid: Optional[UUID]
     time_limit: int
     memory_limit: int
     is_disabled: bool
@@ -143,18 +146,27 @@ class ReadTestcaseOutput:
 async def browse_testcase_under_problem(problem_id: int, request: Request) -> Sequence[ReadTestcaseOutput]:
     """
     ### 權限
-    - System normal
+    - System normal (sample data)
+    - CM (all data)
     """
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
+    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
+    problem = await service.problem.read(problem_id)
+    challenge = await service.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
+    is_class_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)
+
     testcases = await service.testcase.browse(problem_id=problem_id)
-    return [ReadTestcaseOutput(id=testcase.id,
-                               problem_id=testcase.problem_id,
-                               is_sample=testcase.is_sample,
-                               score=testcase.score,
-                               time_limit=testcase.time_limit,
-                               memory_limit=testcase.memory_limit,
-                               is_disabled=testcase.is_disabled,
-                               is_deleted=testcase.is_deleted)
-            for testcase in testcases]
+    return [ReadTestcaseOutput(
+        id=testcase.id,
+        problem_id=testcase.problem_id,
+        is_sample=testcase.is_sample,
+        score=testcase.score,
+        input_file_uuid=testcase.input_file_uuid if (testcase.is_sample or is_class_manager) else None,
+        output_file_uuid=testcase.output_file_uuid if (testcase.is_sample or is_class_manager) else None,
+        time_limit=testcase.time_limit,
+        memory_limit=testcase.memory_limit,
+        is_disabled=testcase.is_disabled,
+        is_deleted=testcase.is_deleted,
+    ) for testcase in testcases]
