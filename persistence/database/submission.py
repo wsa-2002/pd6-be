@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Optional, Sequence
+from uuid import UUID
 
 from base import do
 
@@ -79,24 +80,24 @@ async def read_language(language_id: int, include_disabled=True) -> do.Submissio
 
 
 async def add(account_id: int, problem_id: int, language_id: int,
-              content_file_id: Optional[int], content_length: Optional[int], submit_time: datetime) -> int:
+              content_file_uuid: UUID, content_length: int, submit_time: datetime) -> int:
     async with SafeExecutor(
             event='Add submission',
             sql="INSERT INTO submission"
                 "            (account_id, problem_id, language_id,"
-                "             content_file_id, content_length, submit_time)"
+                "             content_file_uuid, content_length, submit_time)"
                 "     VALUES (%(account_id)s, %(problem_id)s, %(language_id)s,"
-                "             %(content_file_id)s, %(content_length)s, %(submit_time)s)"
+                "             %(content_file_uuid)s, %(content_length)s, %(submit_time)s)"
                 "  RETURNING id",
             account_id=account_id, problem_id=problem_id, language_id=language_id,
-            content_file_id=content_file_id, content_length=content_length, submit_time=submit_time,
+            content_file_uuid=content_file_uuid, content_length=content_length, submit_time=submit_time,
             fetch=1,
     ) as (id_,):
         return id_
 
 
-async def edit(submission_id: int, content_file_id: int, content_length: int):
-    to_updates = {'content_file_id': content_file_id, 'content_length': content_length}
+async def edit(submission_id: int, content_file_uuid: UUID, content_length: int):
+    to_updates = {'content_file_uuid': content_file_uuid, 'content_length': content_length}
 
     set_sql = ', '.join(fr"{field_name} = %({field_name})s" for field_name in to_updates)
 
@@ -128,7 +129,7 @@ async def browse(account_id: int = None, problem_id: int = None, language_id: in
     async with SafeExecutor(
             event='browse submissions',
             sql=fr'SELECT id, account_id, problem_id, language_id,'
-                fr'       content_file_id, content_length, submit_time'
+                fr'       content_file_uuid, content_length, submit_time'
                 fr'  FROM submission'
                 fr' {f"WHERE {cond_sql}" if cond_sql else ""}'
                 fr' ORDER BY id DESC',
@@ -136,9 +137,9 @@ async def browse(account_id: int = None, problem_id: int = None, language_id: in
             fetch='all',
     ) as records:
         return [do.Submission(id=id_, account_id=account_id, problem_id=problem_id,
-                              language_id=language_id, content_file_id=content_file_id, content_length=content_length,
+                              language_id=language_id, content_file_uuid=content_file_uuid, content_length=content_length,
                               submit_time=submit_time)
-                for id_, account_id, problem_id, language_id, content_file_id, content_length, submit_time
+                for id_, account_id, problem_id, language_id, content_file_uuid, content_length, submit_time
                 in records]
 
 
@@ -146,12 +147,12 @@ async def read(submission_id: int) -> do.Submission:
     async with SafeExecutor(
             event='read submission',
             sql=fr'SELECT account_id, problem_id, language_id,'
-                fr'       content_file_id, content_length, submit_time'
+                fr'       content_file_uuid, content_length, submit_time'
                 fr'  FROM submission'
                 fr' WHERE id = %(submission_id)s',
             submission_id=submission_id,
             fetch=1,
-    ) as (account_id, problem_id, language_id, content_file_id, content_length, submit_time):
+    ) as (account_id, problem_id, language_id, content_file_uuid, content_length, submit_time):
         return do.Submission(id=submission_id, account_id=account_id, problem_id=problem_id,
-                             language_id=language_id, content_file_id=content_file_id, content_length=content_length,
+                             language_id=language_id, content_file_uuid=content_file_uuid, content_length=content_length,
                              submit_time=submit_time)

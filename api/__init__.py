@@ -7,6 +7,7 @@ def register_routers(app: fastapi.FastAPI):
     """
     from .processor import (
         public,
+        s3_file,
 
         institute,
         account,
@@ -31,6 +32,7 @@ def register_routers(app: fastapi.FastAPI):
     )
 
     app.include_router(public.router)
+    app.include_router(s3_file.router)
 
     app.include_router(institute.router)
     app.include_router(account.router)
