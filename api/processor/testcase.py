@@ -1,10 +1,13 @@
+from dataclasses import dataclass
+from uuid import UUID
+
 from fastapi import File, UploadFile
 from pydantic import BaseModel
 
 from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
-from .util import url, rbac
+from .util import rbac
 
 from .. import service
 from .problem import ReadTestcaseOutput
@@ -47,9 +50,15 @@ class EditTestcaseInput(BaseModel):
     is_disabled: bool = None
 
 
-@router.get('/testcase/{testcase_id}/input-data')
+@dataclass
+class ReadTestcaseDataOutput:
+    input_file_uuid: UUID
+    output_file_uuid: UUID
+
+
+@router.get('/testcase/{testcase_id}/data')
 @enveloped
-async def read_testcase_input_data(testcase_id: int, request: Request) -> str:
+async def read_testcase_data(testcase_id: int, request: Request) -> ReadTestcaseDataOutput:
     """
     ### 權限
     - System Normal (Sample)
@@ -66,31 +75,10 @@ async def read_testcase_input_data(testcase_id: int, request: Request) -> str:
             or (testcase.is_sample and await rbac.validate(request.account.id, RoleType.normal))):
         raise exc.NoPermission
 
-    input_file = await service.s3_file.read(s3_file_uuid=testcase.input_file_uuid)
-    return url.join_s3(s3_file=input_file)
-
-
-@router.get('/testcase/{testcase_id}/output-data')
-@enveloped
-async def read_testcase_output_data(testcase_id: int, request: Request) -> str:
-    """
-    ### 權限
-    - System Normal (Sample)
-    - Class Manager (All)
-
-    This api will return a url which can directly download the file from s3-file-service.
-    """
-    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    testcase = await service.testcase.read(testcase_id)
-
-    problem = await service.problem.read(testcase.problem_id)
-    challenge = await service.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
-    if not (await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)
-            or (testcase.is_sample and await rbac.validate(request.account.id, RoleType.normal))):
-        raise exc.NoPermission
-
-    output_file = await service.s3_file.read(s3_file_uuid=testcase.output_file_uuid)
-    return url.join_s3(s3_file=output_file)
+    return ReadTestcaseDataOutput(
+        input_file_uuid=testcase.input_file_uuid,
+        output_file_uuid=testcase.output_file_uuid,
+    )
 
 
 @router.patch('/testcase/{testcase_id}')

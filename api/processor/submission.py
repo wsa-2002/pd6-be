@@ -9,7 +9,7 @@ from base import do
 from base.enum import RoleType, ChallengePublicizeType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
-from .util import url, rbac
+from .util import rbac
 
 from .. import service
 
@@ -107,17 +107,6 @@ async def submit(problem_id: int, language_id: int, request: Request, content_fi
     return submission_id
 
 
-@dataclass
-class ReadSubmissionOutput:
-    id: int
-    account_id: int
-    problem_id: int
-    language_id: int
-    content_file_url: str
-    content_length: int
-    submit_time: datetime
-
-
 class BrowseSubmissionInput(BaseModel):
     # TODO: add more
     account_id: int = None
@@ -127,74 +116,40 @@ class BrowseSubmissionInput(BaseModel):
 
 @router.get('/submission')
 @enveloped
-async def browse_submission(request: Request, account_id: int = None, problem_id: int = None, language_id: int = None) \
-        -> Sequence[ReadSubmissionOutput]:
+async def browse_submission(request: Request, account_id: int, problem_id: int = None, language_id: int = None) \
+        -> Sequence[do.Submission]:
     """
     ### 權限
-    - Self
-    - Class manager
+    - Self: see self
     """
-    result = await service.submission.browse_with_url(account_id=request.account.id,
-                                                      problem_id=problem_id,
-                                                      language_id=language_id)
-    return [ReadSubmissionOutput(id=submission.id, account_id=submission.account_id, problem_id=submission.problem_id,
-                                 language_id=submission.language_id, content_file_url=url.join_s3(s3_file),
-                                 content_length=submission.content_length, submit_time=submission.submit_time)
-            for submission, s3_file in result]
+    if account_id is not request.account.id:
+        raise exc.NoPermission
+
+    return await service.submission.browse(account_id=request.account.id,
+                                           problem_id=problem_id,
+                                           language_id=language_id)
 
 
 @router.get('/submission/{submission_id}')
 @enveloped
-async def read_submission(submission_id: int, request: Request) -> ReadSubmissionOutput:
+async def read_submission(submission_id: int, request: Request) -> do.Submission:
     """
     ### 權限
     - Self
     - Class manager
-    """
-    submission, s3_file = await service.submission.read_with_url(submission_id=submission_id)
-    # 可以看自己的
-    if submission.account_id is request.account.id:
-        return ReadSubmissionOutput(id=submission.id, account_id=submission.account_id,
-                                    problem_id=submission.problem_id, language_id=submission.language_id,
-                                    content_file_url=url.join_s3(s3_file), content_length=submission.content_length,
-                                    submit_time=submission.submit_time)
-    # 助教可以看他的 class 的
-    problem = await service.problem.read(problem_id=submission.problem_id)
-    challenge = await service.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
-    class_role = await rbac.get_role(request.account.id, class_id=challenge.class_id)
-    if class_role >= RoleType.manager:
-        return ReadSubmissionOutput(id=submission.id, account_id=submission.account_id,
-                                    problem_id=submission.problem_id, language_id=submission.language_id,
-                                    content_file_url=url.join_s3(s3_file), content_length=submission.content_length,
-                                    submit_time=submission.submit_time)
-    raise exc.NoPermission
-
-
-@router.get('/submission/{submission_id}/content')
-@enveloped
-async def read_submission_file(submission_id: int, request: Request) -> str:
-    """
-    ### 權限
-    - Self
-    - Class manager
-
-    This api will return a url which can directly download the file from s3-file-service.
     """
     submission = await service.submission.read(submission_id=submission_id)
 
     # 可以看自己的
     if submission.account_id is request.account.id:
-        file = await service.s3_file.read(s3_file_uuid=submission.content_file_uuid)
-        return url.join_s3(file)
+        return submission
 
-    # 可以看自己管理的 class 的
+    # 助教可以看他的 class 的
     problem = await service.problem.read(problem_id=submission.problem_id)
-    challenge = await service.challenge.read(problem.challenge_id, include_scheduled=True,
-                                             ref_time=request.time)
+    challenge = await service.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
     class_role = await rbac.get_role(request.account.id, class_id=challenge.class_id)
     if class_role >= RoleType.manager:
-        file = await service.s3_file.read(s3_file_uuid=submission.content_file_uuid)
-        return url.join_s3(file)
+        return submission
 
     raise exc.NoPermission
 
