@@ -22,7 +22,7 @@ async def browse_with_url(account_id: int = None, problem_id: int = None, langua
             event='browse submission with url',
             sql=fr'SELECT submission.id, submission.account_id, submission.problem_id, submission.language_id,'
                 fr'       submission.content_file_uuid, submission.content_length, submission.submit_time,'
-                fr'       s3_file.uuid, s3_file.bucket, s3_file.key'
+                fr'       s3_file.uuid, s3_file.bucket, s3_file.key, s3_file.filename'
                 fr'  FROM submission'
                 fr' INNER JOIN s3_file'
                 fr'    ON submission.content_file_uuid = s3_file.uuid'
@@ -34,7 +34,7 @@ async def browse_with_url(account_id: int = None, problem_id: int = None, langua
         return [(do.Submission(id=id_, account_id=account_id, problem_id=problem_id,
                                language_id=language_id, content_file_uuid=content_file_uuid, content_length=content_length,
                                submit_time=submit_time),
-                 do.S3File(uuid=file_uuid, bucket=bucket, key=key))
+                 do.S3File(uuid=file_uuid, bucket=bucket, key=key, filename=filename))
                 for (id_, account_id, problem_id, language_id, content_file_uuid, content_length, submit_time,
                      file_uuid, bucket, key) in records]
 
@@ -44,7 +44,7 @@ async def read_with_url(submission_id: int) -> Tuple[do.Submission, do.S3File]:
             event='read submission with url',
             sql=fr'SELECT submission.id, submission.account_id, submission.problem_id, submission.language_id,'
                 fr'       submission.content_file_uuid, submission.content_length, submission.submit_time,'
-                fr'       s3_file.uuid, s3_file.bucket, s3_file.key'
+                fr'       s3_file.uuid, s3_file.bucket, s3_file.key, s3_file.filename'
                 fr'  FROM submission'
                 fr' INNER JOIN s3_file'
                 fr'    ON submission.content_file_uuid = s3_file.uuid'
@@ -55,4 +55,4 @@ async def read_with_url(submission_id: int) -> Tuple[do.Submission, do.S3File]:
           file_uuid, bucket, key):
         return (do.Submission(id=id_, account_id=account_id, problem_id=problem_id, language_id=language_id,
                               content_file_uuid=content_file_uuid, content_length=content_length, submit_time=submit_time),
-                do.S3File(uuid=file_uuid, bucket=bucket, key=key))
+                do.S3File(uuid=file_uuid, bucket=bucket, key=key, filename=filename))

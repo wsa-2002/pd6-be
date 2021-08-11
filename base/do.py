@@ -130,6 +130,7 @@ class S3File:
     uuid: UUID
     bucket: str
     key: str
+    filename: str
 
 
 @dataclass
