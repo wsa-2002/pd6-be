@@ -55,7 +55,7 @@ async def read_team_role_by_account_id(team_id: int, account_id: int) -> RoleTyp
             event='get team role by account id',
             sql=r'SELECT role'
                 r'  FROM team_member'
-                r' WHERE team_id = %(class_id)s'
+                r' WHERE team_id = %(team_id)s'
                 r'   AND member_id = %(account_id)s',
             team_id=team_id,
             account_id=account_id,

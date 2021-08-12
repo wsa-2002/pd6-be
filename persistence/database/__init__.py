@@ -64,6 +64,8 @@ from . import (
     essay_submission,
     s3_file,
 
+    assisting_data,
+
     peer_review,
     peer_review_record,
 
