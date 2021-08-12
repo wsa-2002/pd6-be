@@ -2,9 +2,7 @@ from typing import Sequence
 
 from base import do, enum
 from middleware import APIRouter, response, enveloped, auth
-
-from .. import service
-
+import service
 
 router = APIRouter(
     tags=['Judgment'],

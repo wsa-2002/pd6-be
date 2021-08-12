@@ -7,9 +7,10 @@ from base.cls import NoTimezoneIsoDatetime
 from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
-from .util import rbac
+import service
 
-from .. import service
+from .util import rbac, model
+
 
 router = APIRouter(
     tags=['Announcement'],
@@ -28,7 +29,7 @@ class AddAnnouncementInput(BaseModel):
 
 @router.post('/announcement')
 @enveloped
-async def add_announcement(data: AddAnnouncementInput, request: Request) -> int:
+async def add_announcement(data: AddAnnouncementInput, request: Request) -> model.AddOutput:
     """
     ### 權限
     - System manager
@@ -36,8 +37,10 @@ async def add_announcement(data: AddAnnouncementInput, request: Request) -> int:
     if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
-    return await service.announcement.add(title=data.title, content=data.content, author_id=request.account.id,
-                                          post_time=data.post_time, expire_time=data.expire_time)
+    announcement_id = await service.announcement.add(title=data.title, content=data.content,
+                                                     author_id=request.account.id,
+                                                     post_time=data.post_time, expire_time=data.expire_time)
+    return model.AddOutput(id=announcement_id)
 
 
 @router.get('/announcement')

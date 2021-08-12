@@ -8,9 +8,9 @@ from base.cls import NoTimezoneIsoDatetime
 from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
-from .util import rbac
+import service
 
-from .. import service
+from .util import rbac, model
 
 
 router = APIRouter(
@@ -31,7 +31,7 @@ class AddChallengeInput(BaseModel):
 
 @router.post('/class/{class_id}/challenge', tags=['Course'])
 @enveloped
-async def add_challenge_under_class(class_id: int, data: AddChallengeInput, request: Request) -> int:
+async def add_challenge_under_class(class_id: int, data: AddChallengeInput, request: Request) -> model.AddOutput:
     """
     ### 權限
     - Class manager
@@ -44,7 +44,7 @@ async def add_challenge_under_class(class_id: int, data: AddChallengeInput, requ
         title=data.title, setter_id=request.account.id, description=data.description,
         start_time=data.start_time, end_time=data.end_time
     )
-    return challenge_id
+    return model.AddOutput(id=challenge_id)
 
 
 @router.get('/class/{class_id}/challenge', tags=['Course'])
@@ -136,7 +136,7 @@ class AddProblemInput(BaseModel):
 
 @router.post('/challenge/{challenge_id}/problem', tags=['Problem'])
 @enveloped
-async def add_problem_under_challenge(challenge_id: int, data: AddProblemInput, request: Request) -> int:
+async def add_problem_under_challenge(challenge_id: int, data: AddProblemInput, request: Request) -> model.AddOutput:
     """
     ### 權限
     - Class manager
@@ -152,7 +152,7 @@ async def add_problem_under_challenge(challenge_id: int, data: AddProblemInput, 
         description=data.description, source=data.source, hint=data.hint,
     )
 
-    return problem_id
+    return model.AddOutput(id=problem_id)
 
 
 class AddEssayInput(BaseModel):
@@ -164,7 +164,7 @@ class AddEssayInput(BaseModel):
 
 @router.post('/challenge/{challenge_id}/essay', tags=['Essay'])
 @enveloped
-async def add_essay_under_challenge(challenge_id: int, data: AddEssayInput, request: Request) -> int:
+async def add_essay_under_challenge(challenge_id: int, data: AddEssayInput, request: Request) -> model.AddOutput:
     """
     ### 權限
     - Class manager
@@ -174,8 +174,9 @@ async def add_essay_under_challenge(challenge_id: int, data: AddEssayInput, requ
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
-    return await service.essay.add(challenge_id=data.challenge_id, challenge_label=data.challenge_label,
-                                   title=data.title, setter_id=request.account.id, description=data.description)
+    essay_id = await service.essay.add(challenge_id=data.challenge_id, challenge_label=data.challenge_label,
+                                       title=data.title, setter_id=request.account.id, description=data.description)
+    return model.AddOutput(id=essay_id)
 
 
 class AddPeerReviewInput(BaseModel):
@@ -191,7 +192,8 @@ class AddPeerReviewInput(BaseModel):
 
 @router.post('/challenge/{challenge_id}/peer-review', tags=['Peer Review'])
 @enveloped
-async def add_peer_review_under_challenge(challenge_id: int, data: AddPeerReviewInput, request: Request) -> int:
+async def add_peer_review_under_challenge(challenge_id: int, data: AddPeerReviewInput, request: Request) \
+        -> model.AddOutput:
     """
     ### 權限
     - Class manager
@@ -209,14 +211,15 @@ async def add_peer_review_under_challenge(challenge_id: int, data: AddPeerReview
     if challenge.class_id is not target_problem_challenge.class_id:
         raise exc.IllegalInput
 
-    return await service.peer_review.add(challenge_id=challenge_id,
-                                         challenge_label=data.challenge_label,
-                                         target_problem_id=data.target_problem_id,
-                                         setter_id=request.account.id,
-                                         description=data.description,
-                                         min_score=data.min_score, max_score=data.max_score,
-                                         max_review_count=data.max_review_count,
-                                         start_time=data.start_time, end_time=data.end_time)
+    peer_review_id = await service.peer_review.add(challenge_id=challenge_id,
+                                                   challenge_label=data.challenge_label,
+                                                   target_problem_id=data.target_problem_id,
+                                                   setter_id=request.account.id,
+                                                   description=data.description,
+                                                   min_score=data.min_score, max_score=data.max_score,
+                                                   max_review_count=data.max_review_count,
+                                                   start_time=data.start_time, end_time=data.end_time)
+    return model.AddOutput(id=peer_review_id)
 
 
 @dataclass

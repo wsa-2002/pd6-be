@@ -8,9 +8,9 @@ from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
 import persistence.email as email
-from .util import rbac
+import service
 
-from .. import service
+from .util import rbac, model
 
 
 router = APIRouter(
@@ -156,14 +156,9 @@ class AddTeamInput(BaseModel):
     label: str
 
 
-@dataclass
-class AddTeamOutput:
-    id: int
-
-
 @router.post('/class/{class_id}/team', tags=['Team'])
 @enveloped
-async def add_team_under_class(class_id: int, data: AddTeamInput, request: Request) -> AddTeamOutput:
+async def add_team_under_class(class_id: int, data: AddTeamInput, request: Request) -> model.AddOutput:
     """
     ### 權限
     - Class manager
@@ -177,7 +172,7 @@ async def add_team_under_class(class_id: int, data: AddTeamInput, request: Reque
         label=data.label,
     )
 
-    return AddTeamOutput(id=team_id)
+    return model.AddOutput(id=team_id)
 
 
 @router.get('/class/{class_id}/team', tags=['Team'])

@@ -1,16 +1,13 @@
-from dataclasses import dataclass
-from uuid import UUID
-
 from fastapi import File, UploadFile
 from pydantic import BaseModel
 
 from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
-from .util import rbac
+import service
 
-from .. import service
 from .problem import ReadTestcaseOutput
+from .util import rbac
 
 router = APIRouter(
     tags=['Testcase'],

@@ -6,10 +6,10 @@ from base.enum import RoleType
 from base import do
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
+import service
+
 from .util import rbac
 from .util.model import can_omit
-
-from .. import service
 
 
 router = APIRouter(

@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from typing import Sequence
 
 from pydantic import BaseModel
@@ -7,9 +6,9 @@ from base import do
 from base.enum import CourseType, RoleType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
-from .util import rbac
+import service
 
-from .. import service
+from .util import rbac, model
 
 
 router = APIRouter(
@@ -24,14 +23,9 @@ class AddCourseInput(BaseModel):
     type: CourseType
 
 
-@dataclass
-class AddCourseOutput:
-    id: int
-
-
 @router.post('/course')
 @enveloped
-async def add_course(data: AddCourseInput, request: Request) -> AddCourseOutput:
+async def add_course(data: AddCourseInput, request: Request) -> model.AddOutput:
     """
     ### 權限
     - System manager
@@ -43,7 +37,7 @@ async def add_course(data: AddCourseInput, request: Request) -> AddCourseOutput:
         name=data.name,
         course_type=data.type,
     )
-    return AddCourseOutput(id=course_id)
+    return model.AddOutput(id=course_id)
 
 
 @router.get('/course')
@@ -117,14 +111,9 @@ class AddClassInput(BaseModel):
     name: str
 
 
-@dataclass
-class AddClassOutput:
-    id: int
-
-
 @router.post('/course/{course_id}/class', tags=['Class'])
 @enveloped
-async def add_class_under_course(course_id: int, data: AddClassInput, request: Request) -> AddClassOutput:
+async def add_class_under_course(course_id: int, data: AddClassInput, request: Request) -> model.AddOutput:
     """
     ### 權限
     - System manager
@@ -137,7 +126,7 @@ async def add_class_under_course(course_id: int, data: AddClassInput, request: R
         course_id=course_id,
     )
 
-    return AddClassOutput(id=class_id)
+    return model.AddOutput(id=class_id)
 
 
 @router.get('/course/{course_id}/class', tags=['Class'])

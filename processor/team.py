@@ -6,9 +6,9 @@ from base import do
 from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
-from .util import rbac
+import service
 
-from .. import service
+from .util import rbac
 
 
 router = APIRouter(

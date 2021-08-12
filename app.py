@@ -13,7 +13,7 @@ with open('logging.yaml', 'r') as conf:
 
 from config import app_config
 from middleware.api import FastAPI
-from api import api_doc
+from util import api_doc
 from version import version
 
 app = FastAPI(
@@ -76,5 +76,5 @@ app.add_middleware(starlette_context.middleware.RawContextMiddleware)
 
 
 # Register routers
-from api import register_routers
+from processor import register_routers
 register_routers(app)
