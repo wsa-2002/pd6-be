@@ -113,6 +113,23 @@ async def browse_class_member(class_id: int, request: Request) -> Sequence[Brows
             for member, account, student_card, institute in results]
 
 
+@router.get('/class/{class_id}/member/account-referral')
+@enveloped
+async def browse_class_member_with_account_referral(class_id: int, request: Request) -> Sequence[str]:
+    """
+    ### 權限
+    - Class normal
+    - Class+ manager
+    """
+    if (not await rbac.validate(request.account.id, RoleType.normal, class_id=class_id)
+            and not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id, inherit=True)):
+        raise exc.NoPermission
+
+    results = await service.class_.browse_class_member_with_account_referral(class_id=class_id,
+                                                                             include_deleted=False)
+    return [account_referral for account_referral in results]
+
+
 class EditClassMemberInput(BaseModel):
     member_id: int
     role: RoleType
