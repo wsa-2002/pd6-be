@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Sequence
+from uuid import UUID
 
 from base import do
 
@@ -43,7 +44,7 @@ async def read(essay_submission_id: int, include_deleted=False) -> do.EssaySubmi
                                   content_file_uuid=content_file_uuid, submit_time=submit_time)
 
 
-async def add(account_id: int, essay_id: int, content_file_uuid: int, submit_time: datetime) -> int:
+async def add(account_id: int, essay_id: int, content_file_uuid: UUID, submit_time: datetime) -> int:
     async with SafeExecutor(
             event='add essay-submission',
             sql=fr"INSERT INTO essay_submission"
@@ -57,7 +58,7 @@ async def add(account_id: int, essay_id: int, content_file_uuid: int, submit_tim
         return essay_submission_id
 
 
-async def edit(essay_submission_id: int, content_file_uuid: int, submit_time: datetime) -> None:
+async def edit(essay_submission_id: int, content_file_uuid: UUID, submit_time: datetime) -> None:
     async with SafeExecutor(
             event='update essay_submission by id',
             sql=fr"UPDATE essay_submission"
