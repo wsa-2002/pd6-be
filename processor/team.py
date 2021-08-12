@@ -100,7 +100,7 @@ async def browse_team_member(team_id: int, request: Request) -> Sequence[do.Team
 
 
 class AddMemberInput(BaseModel):
-    member_id: int
+    account_referral: str
     role: RoleType
 
 
@@ -115,7 +115,7 @@ async def add_team_member(team_id: int, data: Sequence[AddMemberInput], request:
     if not rbac.validate(request.account.id, RoleType.manager, class_id=team.class_id):
         raise exc.NoPermission
     for member in data:
-        await service.team.add_member(team_id=team.id, member_id=member.member_id, role=member.role)
+        await service.team.add_member(team_id=team.id, account_referral=member.account_referral, role=member.role)
 
 
 class EditMemberInput(BaseModel):
