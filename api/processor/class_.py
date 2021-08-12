@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Sequence
+from typing import Optional, Sequence, Union
 
 from pydantic import BaseModel
 
@@ -113,9 +113,21 @@ async def browse_class_member(class_id: int, request: Request) -> Sequence[Brows
             for member, account, student_card, institute in results]
 
 
+@dataclass
+class ReadClassMemberOutput:
+    member_id: Optional[int]
+    member_referral: Optional[str]
+
+
+@dataclass
+class ReadClassMemberWithoutReferralOutput:
+    member_id: Optional[int]
+
+
 @router.get('/class/{class_id}/member/account-referral')
 @enveloped
-async def browse_class_member_with_account_referral(class_id: int, request: Request) -> Sequence[str]:
+async def browse_class_member_with_account_referral(class_id: int, include_referral: bool, request: Request) \
+        -> Union[Sequence[ReadClassMemberOutput], Sequence[ReadClassMemberWithoutReferralOutput]]:
     """
     ### 權限
     - Class normal
@@ -127,7 +139,12 @@ async def browse_class_member_with_account_referral(class_id: int, request: Requ
 
     results = await service.class_.browse_class_member_with_account_referral(class_id=class_id,
                                                                              include_deleted=False)
-    return [account_referral for account_referral in results]
+    return [ReadClassMemberOutput(member_id=member.member_id,
+                                  member_referral=member_referral)
+            for (member, member_referral) in results] if include_referral \
+      else [ReadClassMemberWithoutReferralOutput(member_id=member.member_id)
+            for (member, member_referral) in results]
+
 
 
 class EditClassMemberInput(BaseModel):

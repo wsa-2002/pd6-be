@@ -199,21 +199,6 @@ async def browse_members(class_id: int) -> Sequence[do.ClassMember]:
                 for id_, class_id, role_str in records]
 
 
-async def browse_class_member_with_account_referral(class_id: int, include_deleted: bool = False) -> Sequence[str]:
-    async with SafeExecutor(
-            event='browse class members with account referral',
-            sql=fr'SELECT account_id_to_referral(class_member.member_id)'
-                fr'  FROM class_member'
-                fr' INNER JOIN account'
-                fr'         ON class_member.member_id = account.id'
-                fr'{f"     AND NOT account.is_deleted" if include_deleted else ""}'
-                fr' WHERE class_member.class_id = %(class_id)s',
-            class_id=class_id,
-            fetch='all',
-    ) as records:
-        return [account_referral for account_referral, in records]
-
-
 async def read_member(class_id: int, member_id: int) -> do.ClassMember:
     async with SafeExecutor(
             event='read class member role',
