@@ -143,6 +143,17 @@ async def read_member(team_id: int, member_id: int) -> do.TeamMember:
         return do.TeamMember(member_id=member_id, team_id=team_id, role=RoleType(role))
 
 
+async def add_member(team_id: int, member_id: int, role: RoleType):
+    async with SafeExecutor(
+            event='add team member',
+            sql=fr'INSERT INTO team_member'
+                fr'            (team_id, member_id, role)'
+                fr'     VALUES (%(team_id)s, %(member_id)s, %(role)s)',
+            team_id=team_id, member_id=member_id, role=role,
+    ):
+        pass
+
+
 async def edit_member(team_id: int, member_id: int, role: RoleType):
     async with SafeExecutor(
             event='set team member',
