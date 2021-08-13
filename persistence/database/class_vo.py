@@ -45,7 +45,7 @@ async def browse_member_account_with_student_card_and_institute(class_id: int, i
 
 
 async def browse_class_member_with_account_id(class_id: int, include_deleted: bool = False) \
-        -> Sequence[Tuple[do.ClassMember, str]]:
+        -> Sequence[Tuple[do.ClassMember, int]]:
     async with SafeExecutor(
             event='browse class members with account id',
             sql=fr'SELECT class_member.member_id, class_member.class_id, class_member.role, '
