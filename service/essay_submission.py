@@ -10,9 +10,9 @@ browse = db.essay_submission.browse
 
 
 async def add(file: typing.IO, filename: str, account_id: int, essay_id: int, submit_time: datetime) -> int:
-    bucket, key = await s3.essay_submission.upload(file=file, filename=filename)
+    bucket, key = await s3.essay_submission.upload(file)
 
-    content_file_uuid = await db.s3_file.add(bucket, key)
+    content_file_uuid = await db.s3_file.add(bucket, key, filename=filename)
 
     essay_submission_id = await db.essay_submission.add(account_id=account_id, essay_id=essay_id,
                                                         content_file_uuid=content_file_uuid, submit_time=submit_time)
@@ -21,9 +21,9 @@ async def add(file: typing.IO, filename: str, account_id: int, essay_id: int, su
 
 
 async def edit(file: typing.IO, filename: str, essay_submission_id: int, submit_time: datetime):
-    bucket, key = await s3.essay_submission.upload(file=file, filename=filename)
+    bucket, key = await s3.essay_submission.upload(file)
 
-    content_file_uuid = await db.s3_file.add(bucket, key)
+    content_file_uuid = await db.s3_file.add(bucket, key, filename=filename)
 
     await db.essay_submission.edit(essay_submission_id=essay_submission_id,
                                    content_file_uuid=content_file_uuid,
