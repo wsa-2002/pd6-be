@@ -6,17 +6,17 @@ from base import do
 from .base import SafeExecutor
 
 
-async def add(receiver_id: int, grader_id: int, class_id: int, title: str, score: Optional[int], comment: Optional[str],
+async def add(receiver: str, grader: str, class_id: int, title: str, score: Optional[str], comment: Optional[str],
               update_time: datetime) -> int:
     async with SafeExecutor(
             event='Add grade',
             sql=r'INSERT INTO grade'
                 r'            (receiver_id, grader_id, class_id, title, score, comment,'
                 r'             update_time)'
-                r'     VALUES (%(receiver_id)s, %(grader_id)s, %(class_id)s, %(title)s, %(score)s, %(comment)s,'
-                r'             %(update_time)s)'
+                r'     VALUES (account_referral_to_id(%(receiver)s), account_referral_to_id(%(grader)s), %(class_id)s,'
+                r'             %(title)s, %(score)s, %(comment)s, %(update_time)s)'
                 r'  RETURNING id',
-            receiver_id=receiver_id, grader_id=grader_id, class_id=class_id,  title=title, score=score, comment=comment,
+            receiver=receiver, grader=grader, class_id=class_id, title=title, score=score, comment=comment,
             update_time=update_time,
             fetch=1,
     ) as (grade_id,):

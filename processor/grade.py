@@ -1,5 +1,8 @@
+import csv
+import codecs
 from typing import Optional, Sequence
 
+from fastapi import UploadFile, File
 from pydantic import BaseModel
 
 from base import do
@@ -18,19 +21,25 @@ router = APIRouter(
 )
 
 
+GRADE_TEMPLATE_UUID = 'c36fba7c-6516-4b5c-bc87-f31323ba3aec'
+GRADE_TEMPLATE = ['Receiver', 'Title', 'Score', 'Comment', 'Grader']
+
+
 @router.post('/class/{class_id}/grade', tags=['Class'])
 @enveloped
-async def import_class_grade(class_id: int, request: Request):
+async def import_class_grade(class_id: int, request: Request, grade_file: UploadFile = File(...)):
     """
     ### 權限
     - Class manager
     """
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
-    """
-    匯入方式未定
-    """
-    ...
+
+    rows = csv.DictReader(codecs.iterdecode(grade_file.file, 'utf_8_sig'))
+    for row in rows:
+        await service.grade.add(receiver=row['Receiver'], grader=row['Grader'], class_id=class_id,
+                                comment=row['Comment'], score=row['Score'], title=row['Title'],
+                                update_time=request.time)
 
 
 @router.get('/class/{class_id}/grade', tags=['Class'])
