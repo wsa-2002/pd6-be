@@ -1,6 +1,6 @@
-# PDOGS 6: Async
+# `pd6-be`: Async Web Backend for PDOGS 6
 
-A `python=3.8`-`asyncio`-based version, using web framework `fastapi`.
+A `python=3.9`-`asyncio`-based web backend, using web framework `fastapi`.
 
 *Please* do proper research about `python`'s `asyncio` before committing to this project.
 
@@ -32,7 +32,7 @@ Then
 
 ```shell
 pip install uvicorn
-uvicorn main:app --reload
+uvicorn main:app
 ```
 
 On your terminal you should see:
@@ -44,8 +44,8 @@ INFO:     Started server process xxxx
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
 ```
-Now you can go to http://127.0.0.1:8000 and test it.  
-You may also change the host & port with `--host` and `--port`:
+Now you can go to `http://127.0.0.1:8000` and test it.  
+You may also turn up the auto-reload option, or change the host & port with `--host` and `--port`:
 ```shell
 uvicorn main:app --reload --host 0.0.0.0 --port 80
 ```
@@ -65,9 +65,12 @@ uvicorn main:app --reload --host 0.0.0.0 --port 80
 - [DRY: Don't Repeat Yourself](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself)
 - [KISS: Keep It Simple & Stupid](https://en.wikipedia.org/wiki/KISS_principle)
 - [YAGNI: You Ain't Gonna Need It](https://en.wikipedia.org/wiki/You_aren%27t_gonna_need_it)
-- [Color of Bikeshed](https://yellow.bikeshed.com/)
+- [Color of Bikeshed](https://bikeshed.com/)
 - [If it ain't broke, don't fix it](https://en.wikipedia.org/wiki/Bert_Lance#If_it_ain't_broke,_don't_fix_it)
 - [Zen of Python](https://www.python.org/dev/peps/pep-0020/)
+- [Premature optimization is the root of all evil](https://en.wikiquote.org/wiki/Donald_Knuth#Computer_Programming_as_an_Art_(1974));
+  [some discussion](https://softwareengineering.stackexchange.com/questions/80084/is-premature-optimization-really-the-root-of-all-evil)
+- [SRP: Single Responsibility Principle](https://en.wikipedia.org/wiki/Single-responsibility_principle)
 
 ### BREAD
 This project adapts the BREAD concept: Browse, Read, Edit, Add, Delete.
@@ -78,4 +81,4 @@ For Browse in this project, it is batch reading with pagination.
 #### Why not CRUD (or DAVE, or whatever)
 Because -- the creator of this project likes BREAD.
 
-If you feel uncomfortable about this, you should go back to the main principles and read [Color of Bikeshed](https://yellow.bikeshed.com/).
+If you feel uncomfortable about this, you should go back to the main principles and read [Color of Bikeshed](https://bikeshed.com/).
