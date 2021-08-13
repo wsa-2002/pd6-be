@@ -42,3 +42,39 @@ async def browse_member_account_with_student_card_and_institute(class_id: int, i
                      student_card_id, institute_id, student_id, email, is_default,
                      institute_id, abbreviated_name, full_name, email_domain, is_disabled)
                 in records]
+
+
+async def browse_class_member_with_account_id(class_id: int, include_deleted: bool = False) \
+        -> Sequence[Tuple[do.ClassMember, int]]:
+    async with SafeExecutor(
+            event='browse class members with account id',
+            sql=fr'SELECT class_member.member_id, class_member.class_id, class_member.role, '
+                fr'       account.id'
+                fr'  FROM class_member'
+                fr' INNER JOIN account'
+                fr'         ON class_member.member_id = account.id'
+                fr'{f"     AND NOT account.is_deleted" if include_deleted else ""}'
+                fr' WHERE class_member.class_id = %(class_id)s',
+            class_id=class_id,
+            fetch='all',
+    ) as records:
+        return [(do.ClassMember(member_id=member_id, class_id=class_id, role=RoleType(role_str)), account_id)
+                for (member_id, class_id, role_str, account_id) in records]
+
+
+async def browse_class_member_with_account_referral(class_id: int, include_deleted: bool = False) \
+        -> Sequence[Tuple[do.ClassMember, str]]:
+    async with SafeExecutor(
+            event='browse class members with account referral',
+            sql=fr'SELECT class_member.member_id, class_member.class_id, class_member.role, '
+                fr'       account_id_to_referral(class_member.member_id)'
+                fr'  FROM class_member'
+                fr' INNER JOIN account'
+                fr'         ON class_member.member_id = account.id'
+                fr'{f"     AND NOT account.is_deleted" if include_deleted else ""}'
+                fr' WHERE class_member.class_id = %(class_id)s',
+            class_id=class_id,
+            fetch='all',
+    ) as records:
+        return [(do.ClassMember(member_id=member_id, class_id=class_id, role=RoleType(role_str)), account_referral)
+                for (member_id, class_id, role_str, account_referral) in records]

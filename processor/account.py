@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional, Sequence
+from typing import Sequence, Optional
 
 from pydantic import BaseModel
 
