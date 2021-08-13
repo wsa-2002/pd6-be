@@ -99,6 +99,25 @@ async def browse_team_member(team_id: int, request: Request) -> Sequence[do.Team
     return await service.team.browse_members(team_id=team_id)
 
 
+class AddMemberInput(BaseModel):
+    account_referral: str
+    role: RoleType
+
+
+@router.post('/team/{team_id}/member')
+@enveloped
+async def add_team_member(team_id: int, data: Sequence[AddMemberInput], request: Request):
+    """
+    ### 權限
+    - class manager
+    """
+    team = await service.team.read(team_id=team_id)
+    if not rbac.validate(request.account.id, RoleType.manager, class_id=team.class_id):
+        raise exc.NoPermission
+    for member in data:
+        await service.team.add_member(team_id=team.id, account_referral=member.account_referral, role=member.role)
+
+
 class EditMemberInput(BaseModel):
     member_id: int
     role: RoleType
