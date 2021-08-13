@@ -25,6 +25,11 @@ def register_routers(app: fastapi.FastAPI):
         submission,
         judgment,
 
+        essay,
+        essay_submission,
+
+        assisting_data,
+
         peer_review,
 
         announcement,
@@ -49,6 +54,11 @@ def register_routers(app: fastapi.FastAPI):
     app.include_router(testcase.router)
     app.include_router(submission.router)
     app.include_router(judgment.router)
+
+    app.include_router(essay.router)
+    app.include_router(essay_submission.router)
+
+    app.include_router(assisting_data.router)
 
     app.include_router(peer_review.router)
 

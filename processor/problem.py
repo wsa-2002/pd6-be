@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Optional, Sequence
 from uuid import UUID
 
+from fastapi import UploadFile, File
 from pydantic import BaseModel
 
 from base import do
@@ -172,3 +173,47 @@ async def browse_testcase_under_problem(problem_id: int, request: Request) -> Se
         is_disabled=testcase.is_disabled,
         is_deleted=testcase.is_deleted,
     ) for testcase in testcases]
+
+
+@dataclass
+class ReadAssistingDataOutput:
+    id: int
+    problem_id: int
+    s3_file_uuid: UUID
+
+
+@router.get('/problem/{problem_id}/assisting-data')
+@enveloped
+async def browse_assisting_data_under_problem(problem_id: int, request: Request) -> Sequence[ReadAssistingDataOutput]:
+    """
+    ### 權限
+    - class manager
+    """
+    problem = await service.problem.read(problem_id=problem_id)
+    challenge = await service.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
+
+    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+        raise exc.NoPermission
+
+    result = await service.assisting_data.browse_with_problem_id(problem_id=problem_id)
+    return [ReadAssistingDataOutput(id=id_, problem_id=problem_id, s3_file_uuid=s3_file_uuid)
+            for (id_, problem_id, s3_file_uuid) in result]
+
+
+@router.post('/problem/{problem_id}/assisting-data')
+@enveloped
+async def add_assisting_data_under_problem(problem_id: int, request: Request, assisting_data: UploadFile = File(...)) \
+        -> model.AddOutput:
+    """
+    ### 權限
+    - class manager
+    """
+    problem = await service.problem.read(problem_id=problem_id)
+    challenge = await service.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
+
+    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+        raise exc.NoPermission
+
+    assisting_data_id = await service.assisting_data.add(file=assisting_data.file, filename=assisting_data.filename,
+                                                         problem_id=problem_id)
+    return model.AddOutput(id=assisting_data_id)

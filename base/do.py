@@ -202,6 +202,14 @@ class EssaySubmission:
 
 
 @dataclass
+class AssistingData:
+    id: int
+    problem_id: int
+    s3_file_uuid: UUID
+    is_deleted: bool
+
+
+@dataclass
 class PeerReview:
     id: int
     challenge_id: int

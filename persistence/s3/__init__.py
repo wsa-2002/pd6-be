@@ -69,4 +69,5 @@ from . import (
     testcase,
     submission,
     essay_submission,
+    assisting_data,
 )

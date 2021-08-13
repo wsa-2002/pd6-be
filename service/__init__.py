@@ -20,6 +20,8 @@ from . import (
     essay,
     essay_submission,
 
+    assisting_data,
+
     peer_review,
 
     announcement,
