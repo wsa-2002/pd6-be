@@ -15,6 +15,7 @@ async def add(problem_id: int, is_sample: bool, score: int, input_file_uuid: Opt
                 "            (problem_id, is_sample, score, input_file_uuid, output_file_uuid, input_filename,"
                 "             output_filename, time_limit, memory_limit, is_disabled)"
                 "     VALUES (%(problem_id)s, %(is_sample)s, %(score)s, %(input_file_uuid)s, %(output_file_uuid)s,"
+                "             %(input_filename)s, %(output_filename)s,"
                 "             %(time_limit)s, %(memory_limit)s, %(is_disabled)s)"
                 "  RETURNING id",
             problem_id=problem_id, is_sample=is_sample, score=score, input_file_uuid=input_file_uuid,
