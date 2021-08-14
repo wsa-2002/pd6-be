@@ -62,6 +62,9 @@ async def app_shutdown():
 # Add middlewares
 # Order matters! First added middlewares are executed last.
 
+import middleware.db_access_log
+app.middleware('http')(middleware.db_access_log.middleware)
+
 import middleware.auth
 app.middleware('http')(middleware.auth.middleware)
 
