@@ -14,7 +14,7 @@ async def add(challenge_id: int, challenge_label: str, title: str, target_proble
             sql="INSERT INTO peer_review"
                 "            (challenge_id, challenge_label, title, target_problem_id, setter_id, description,"
                 "             min_score, max_score, max_review_count, start_time, end_time)"
-                "     VALUES (%(challenge_id)s, %(challenge_label)s, %(target_problem_id)s, %(setter_id)s,"
+                "     VALUES (%(challenge_id)s, %(challenge_label)s, %(title)s, %(target_problem_id)s, %(setter_id)s,"
                 "             %(description)s, %(min_score)s, %(max_score)s, %(max_review_count)s,"
                 "             %(start_time)s, %(end_time)s)"
                 "  RETURNING id",
