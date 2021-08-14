@@ -66,7 +66,7 @@ s3_handler = S3Handler()
 from . import (
     tools,
 
-    testcase,
+    testdata,
     submission,
     essay_submission,
     assisting_data,

@@ -7,7 +7,7 @@ import persistence.s3 as s3
 
 async def add(file: typing.IO, filename: str, account_id: int, problem_id: int, language_id: int,
               submit_time: datetime) -> int:
-    bucket, key = await s3.submission.upload(file=file, filename=filename)
+    bucket, key = await s3.submission.upload(file)
 
     content_file_uuid = await db.s3_file.add(bucket=bucket, key=key, filename=filename)
 
