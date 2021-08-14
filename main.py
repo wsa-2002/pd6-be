@@ -63,7 +63,7 @@ async def app_shutdown():
 # Order matters! First added middlewares are executed last.
 
 import middleware.auth
-app.add_middleware(middleware.auth.Middleware)
+app.middleware('http')(middleware.auth.middleware)
 
 import middleware.logging
 app.middleware('http')(middleware.logging.middleware)
@@ -73,6 +73,12 @@ app.middleware('http')(middleware.tracker.middleware)
 
 import starlette_context.middleware
 app.add_middleware(starlette_context.middleware.RawContextMiddleware)
+
+
+# Add global exception handler
+
+import middleware.envelope
+middleware.envelope.hook_exception_envelope_handler(app)
 
 
 # Register routers

@@ -75,6 +75,21 @@ def enveloped(func):
     return wrapped
 
 
+async def exception_envelope_handler(request, e):
+    handled_exc = _handle_exc(e)
+
+    return fastapi.responses.JSONResponse({
+        'success': False,
+        'data': None,
+        'error': handled_exc.__class__.__name__,
+    })
+
+
+def hook_exception_envelope_handler(app: fastapi.FastAPI):
+    app.exception_handler(fastapi.exceptions.RequestValidationError)(exception_envelope_handler)
+    app.exception_handler(Exception)(exception_envelope_handler)
+
+
 def _handle_exc(error: Exception) -> Exception:
     # Convert pydantic-originated ValidationError to self-defined error
     if isinstance(error, fastapi.exceptions.ValidationError):
@@ -88,3 +103,19 @@ def _handle_exc(error: Exception) -> Exception:
         error = exc.SystemException(cause=error)
 
     return error
+
+
+def middleware_error_enveloped(middleware_func):
+    @functools.wraps(middleware_func)
+    async def wrapped(request: fastapi.Request, call_next):
+        try:
+            return await middleware_func(request, call_next)
+        except Exception as e:
+            handled_exc = _handle_exc(e)
+            return fastapi.responses.JSONResponse({
+                'success': False,
+                'data': None,
+                'error': handled_exc.__class__.__name__,
+            })
+
+    return wrapped

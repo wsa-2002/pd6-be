@@ -14,6 +14,8 @@ from fastapi.encoders import DictIntStrAny, SetIntStr
 # Followings are originally imported from starlette
 from fastapi.routing import JSONResponse, Response
 
+import log
+
 
 def jsonable_encoder(
     obj: Any,
@@ -288,8 +290,25 @@ class APIRoute(fastapi.routing.APIRoute):
         )
 
         async def custom_route_handler(request: fastapi.Request) -> fastapi.Response:
+            """
+            Replace request and logs body
+            """
             from . import Request
             request = Request(request.scope, request.receive)
-            return await original_route_handler(request)
+
+            request_body = ''
+            if 'json' in request.headers.get('Content-Type', ''):
+                request_body = await request.body()
+            log.info(f'>>\tQuery params: {request.query_params}')
+            log.info(f'>>\tJSON Body: {request_body}')
+
+            response = await original_route_handler(request)
+
+            response_body = ''
+            if isinstance(response, fastapi.responses.JSONResponse):
+                response_body = response.body
+            log.info(f"<<\tJSON Body: {response_body}")
+
+            return response
 
         return custom_route_handler

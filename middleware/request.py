@@ -4,6 +4,7 @@ import uuid
 import fastapi
 import starlette_context
 
+import util.tracker
 from base import do
 import exceptions
 
@@ -28,7 +29,7 @@ class Request(fastapi.Request):
     @property
     def time(self) -> datetime.datetime:
         try:
-            request_time = starlette_context.context[common.REQUEST_TIME]
+            request_time = starlette_context.context[util.tracker.REQUEST_TIME]
         except KeyError:
             raise exceptions.SystemException("middleware.tracker not used")
         else:
@@ -37,7 +38,7 @@ class Request(fastapi.Request):
     @property
     def uuid(self) -> uuid.UUID:
         try:
-            request_uuid = starlette_context.context[common.REQUEST_UUID]
+            request_uuid = starlette_context.context[util.tracker.REQUEST_UUID]
         except KeyError:
             raise exceptions.SystemException("middleware.tracker not used")
         else:
