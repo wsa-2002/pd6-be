@@ -23,7 +23,7 @@ class S3FileUrlOutput:
 
 @router.get('/s3-file/{s3_file_uuid}/url')
 @enveloped
-async def get_s3_file_url(s3_file_uuid: UUID, as_attachment: bool, request: Request) -> S3FileUrlOutput:
+async def get_s3_file_url(s3_file_uuid: UUID, filename: str, as_attachment: bool, request: Request) -> S3FileUrlOutput:
     """
     ### 權限
     - SN
@@ -35,4 +35,5 @@ async def get_s3_file_url(s3_file_uuid: UUID, as_attachment: bool, request: Requ
         raise exc.NoPermission
 
     s3_file = await service.s3_file.read(s3_file_uuid=s3_file_uuid)
-    return S3FileUrlOutput(url=await service.s3_file.sign_url(s3_file=s3_file, as_attachment=as_attachment))
+    return S3FileUrlOutput(url=await service.s3_file.sign_url(s3_file=s3_file, filename=filename,
+                                                              as_attachment=as_attachment))
