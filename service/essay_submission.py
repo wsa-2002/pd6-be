@@ -1,5 +1,7 @@
 from datetime import datetime
 import typing
+import uuid
+from uuid import UUID
 
 import persistence.database as db
 import persistence.s3 as s3
@@ -10,9 +12,10 @@ browse = db.essay_submission.browse
 
 
 async def add(file: typing.IO, filename: str, account_id: int, essay_id: int, submit_time: datetime) -> int:
-    bucket, key = await s3.essay_submission.upload(file)
+    key = str(uuid.uuid4())
+    bucket = await s3.essay_submission.upload(file, key=key)
 
-    content_file_uuid = await db.s3_file.add(bucket, key)
+    content_file_uuid = await db.s3_file.add_with_uuid(uuid=UUID(key), bucket=bucket, key=key)
 
     essay_submission_id = await db.essay_submission.add(account_id=account_id, essay_id=essay_id,
                                                         content_file_uuid=content_file_uuid, filename=filename,
@@ -22,9 +25,10 @@ async def add(file: typing.IO, filename: str, account_id: int, essay_id: int, su
 
 
 async def edit(file: typing.IO, filename: str, essay_submission_id: int, submit_time: datetime):
-    bucket, key = await s3.essay_submission.upload(file)
+    key = str(uuid.uuid4())
+    bucket = await s3.essay_submission.upload(file, key=key)
 
-    content_file_uuid = await db.s3_file.add(bucket, key)
+    content_file_uuid = await db.s3_file.add_with_uuid(uuid=UUID(key), bucket=bucket, key=key)
 
     await db.essay_submission.edit(essay_submission_id=essay_submission_id,
                                    content_file_uuid=content_file_uuid, filename=filename,

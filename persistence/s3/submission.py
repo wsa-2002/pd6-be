@@ -1,6 +1,4 @@
 import typing
-from typing import Tuple
-import uuid
 
 from . import s3_handler
 
@@ -8,12 +6,11 @@ from . import s3_handler
 _BUCKET_NAME = 'submission'
 
 
-async def upload(file: typing.IO) -> Tuple[str, str]:
+async def upload(file: typing.IO, key: str) -> str:
     """
-    :return: bucket name and key
+    :return: bucket name
     """
     bucket = await s3_handler.get_bucket(_BUCKET_NAME)
-    key = str(uuid.uuid4())
     await bucket.upload_fileobj(file, key)
-    return _BUCKET_NAME, key
+    return _BUCKET_NAME
 

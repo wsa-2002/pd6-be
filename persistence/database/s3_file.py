@@ -42,3 +42,16 @@ async def add(bucket: str, key: str) -> UUID:
             fetch=1,
     ) as (uuid,):
         return uuid
+
+
+async def add_with_uuid(uuid: UUID, bucket: str, key: str) -> UUID:
+    async with SafeExecutor(
+            event='add s3_file with uuid',
+            sql=fr'INSERT INTO s3_file'
+                fr'            (uuid, bucket, key)'
+                fr'     VALUES (%(uuid)s, %(bucket)s, %(key)s)'
+                fr'  RETURNING uuid',
+            uuid=uuid, bucket=bucket, key=key,
+            fetch=1,
+    ) as (uuid,):
+        return uuid
