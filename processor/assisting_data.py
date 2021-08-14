@@ -22,6 +22,7 @@ class ReadAssistingDataOutput:
     id: int
     problem_id: int
     s3_file_uuid: UUID
+    filename: str
 
 
 @router.get('/assisting-data/{assisting_data_id}')
@@ -40,7 +41,8 @@ async def read_assisting_data(assisting_data_id: int, request: Request) -> ReadA
 
     return ReadAssistingDataOutput(id=assisting_data.id,
                                    problem_id=assisting_data.problem_id,
-                                   s3_file_uuid=assisting_data.s3_file_uuid)
+                                   s3_file_uuid=assisting_data.s3_file_uuid,
+                                   filename=assisting_data.filename)
 
 
 @router.put('/assisting-data/{assisting_data_id}')

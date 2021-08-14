@@ -127,6 +127,8 @@ class Testcase:
     score: int
     input_file_uuid: Optional[UUID]
     output_file_uuid: Optional[UUID]
+    input_filename: Optional[str]
+    output_filename: Optional[str]
     time_limit: int
     memory_limit: int
     is_disabled: bool
@@ -138,7 +140,6 @@ class S3File:
     uuid: UUID
     bucket: str
     key: str
-    filename: str
 
 
 @dataclass
@@ -157,6 +158,7 @@ class Submission:
     language_id: int
     content_file_uuid: UUID
     content_length: int
+    filename: str
     submit_time: datetime
 
 
@@ -198,6 +200,7 @@ class EssaySubmission:
     account_id: int
     essay_id: int
     content_file_uuid: UUID
+    filename: str
     submit_time: datetime
 
 
@@ -206,6 +209,7 @@ class AssistingData:
     id: int
     problem_id: int
     s3_file_uuid: UUID
+    filename: str
     is_deleted: bool
 
 

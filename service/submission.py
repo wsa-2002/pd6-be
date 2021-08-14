@@ -9,12 +9,13 @@ async def add(file: typing.IO, filename: str, account_id: int, problem_id: int, 
               submit_time: datetime) -> int:
     bucket, key = await s3.submission.upload(file)
 
-    content_file_uuid = await db.s3_file.add(bucket=bucket, key=key, filename=filename)
+    content_file_uuid = await db.s3_file.add(bucket=bucket, key=key)
 
     submission_id = await db.submission.add(account_id=account_id, problem_id=problem_id,
                                             language_id=language_id,
                                             content_file_uuid=content_file_uuid,
                                             content_length=len(file.read()),
+                                            filename=filename,
                                             submit_time=submit_time)
 
     return submission_id
