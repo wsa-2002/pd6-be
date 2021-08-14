@@ -214,6 +214,7 @@ class PeerReview:
     id: int
     challenge_id: int
     challenge_label: str
+    title: str
     target_problem_id: int
     setter_id: int
     description: str

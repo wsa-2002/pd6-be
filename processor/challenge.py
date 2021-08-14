@@ -181,6 +181,7 @@ async def add_essay_under_challenge(challenge_id: int, data: AddEssayInput, requ
 
 class AddPeerReviewInput(BaseModel):
     challenge_label: str
+    title: str
     target_problem_id: int
     description: str
     min_score: int
@@ -213,6 +214,7 @@ async def add_peer_review_under_challenge(challenge_id: int, data: AddPeerReview
 
     peer_review_id = await service.peer_review.add(challenge_id=challenge_id,
                                                    challenge_label=data.challenge_label,
+                                                   title=data.title,
                                                    target_problem_id=data.target_problem_id,
                                                    setter_id=request.account.id,
                                                    description=data.description,
