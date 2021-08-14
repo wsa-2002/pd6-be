@@ -125,6 +125,7 @@ async def add_testcase_under_problem(problem_id: int, data: AddTestcaseInput, re
 
     testcase_id = await service.testcase.add(problem_id=problem_id, is_sample=data.is_sample, score=data.score,
                                              input_file_uuid=None, output_file_uuid=None,
+                                             input_filename=None, output_filename=None,
                                              time_limit=data.time_limit, memory_limit=data.memory_limit,
                                              is_disabled=data.is_disabled)
     return model.AddOutput(id=testcase_id)
@@ -138,6 +139,8 @@ class ReadTestcaseOutput:
     score: int
     input_file_uuid: Optional[UUID]
     output_file_uuid: Optional[UUID]
+    input_filename: Optional[str]
+    output_filename: Optional[str]
     time_limit: int
     memory_limit: int
     is_disabled: bool
@@ -168,6 +171,8 @@ async def browse_testcase_under_problem(problem_id: int, request: Request) -> Se
         score=testcase.score,
         input_file_uuid=testcase.input_file_uuid if (testcase.is_sample or is_class_manager) else None,
         output_file_uuid=testcase.output_file_uuid if (testcase.is_sample or is_class_manager) else None,
+        input_filename=testcase.input_filename if (testcase.is_sample or is_class_manager) else None,
+        output_filename=testcase.output_filename if (testcase.is_sample or is_class_manager) else None,
         time_limit=testcase.time_limit,
         memory_limit=testcase.memory_limit,
         is_disabled=testcase.is_disabled,
@@ -180,6 +185,7 @@ class ReadAssistingDataOutput:
     id: int
     problem_id: int
     s3_file_uuid: UUID
+    filename: str
 
 
 @router.get('/problem/{problem_id}/assisting-data')
@@ -196,8 +202,8 @@ async def browse_assisting_data_under_problem(problem_id: int, request: Request)
         raise exc.NoPermission
 
     result = await service.assisting_data.browse_with_problem_id(problem_id=problem_id)
-    return [ReadAssistingDataOutput(id=id_, problem_id=problem_id, s3_file_uuid=s3_file_uuid)
-            for (id_, problem_id, s3_file_uuid) in result]
+    return [ReadAssistingDataOutput(id=id_, problem_id=problem_id, s3_file_uuid=s3_file_uuid, filename=filename)
+            for (id_, problem_id, s3_file_uuid, filename) in result]
 
 
 @router.post('/problem/{problem_id}/assisting-data')
