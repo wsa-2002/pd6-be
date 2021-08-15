@@ -30,13 +30,12 @@ async def browse(account_id: int = None, essay_id: int = None) -> Sequence[do.Es
                 for (id_, account_id, essay_id, content_file_uuid, filename, submit_time) in records]
 
 
-async def read(essay_submission_id: int, include_deleted=False) -> do.EssaySubmission:
+async def read(essay_submission_id: int) -> do.EssaySubmission:
     async with SafeExecutor(
             event='read essay_submission',
             sql=fr'SELECT id, account_id, essay_id, content_file_uuid, filename, submit_time'
                 fr'  FROM essay_submission'
-                fr' WHERE id = %(essay_submission_id)s'
-                fr'{" AND NOT is_deleted" if not include_deleted else ""}',
+                fr' WHERE id = %(essay_submission_id)s',
             essay_submission_id=essay_submission_id,
             fetch=1,
     ) as (id_, account_id, essay_id, content_file_uuid, filename, submit_time):

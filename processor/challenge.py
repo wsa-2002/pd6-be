@@ -156,7 +156,6 @@ async def add_problem_under_challenge(challenge_id: int, data: AddProblemInput, 
 
 
 class AddEssayInput(BaseModel):
-    challenge_id: int
     challenge_label: str
     title: str
     description: Optional[str]
@@ -174,7 +173,7 @@ async def add_essay_under_challenge(challenge_id: int, data: AddEssayInput, requ
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
-    essay_id = await service.essay.add(challenge_id=data.challenge_id, challenge_label=data.challenge_label,
+    essay_id = await service.essay.add(challenge_id=challenge_id, challenge_label=data.challenge_label,
                                        title=data.title, setter_id=request.account.id, description=data.description)
     return model.AddOutput(id=essay_id)
 
