@@ -1,5 +1,6 @@
 import csv
 import codecs
+from dataclasses import dataclass
 from typing import Optional, Sequence
 
 from fastapi import UploadFile, File
@@ -13,16 +14,11 @@ import service
 
 from .util import rbac
 
-
 router = APIRouter(
     tags=['Grade'],
     default_response_class=response.JSONResponse,
     dependencies=auth.doc_dependencies,
 )
-
-
-GRADE_TEMPLATE_UUID = 'c36fba7c-6516-4b5c-bc87-f31323ba3aec'
-GRADE_TEMPLATE = ['Receiver', 'Title', 'Score', 'Comment', 'Grader']
 
 
 @router.post('/class/{class_id}/grade', tags=['Class'])
@@ -35,11 +31,7 @@ async def import_class_grade(class_id: int, request: Request, grade_file: Upload
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
 
-    rows = csv.DictReader(codecs.iterdecode(grade_file.file, 'utf_8_sig'))
-    for row in rows:
-        await service.grade.add(receiver=row['Receiver'], grader=row['Grader'], class_id=class_id,
-                                comment=row['Comment'], score=row['Score'], title=row['Title'],
-                                update_time=request.time)
+    await service.grade.import_class_grade(grade_file=grade_file.file, class_id=class_id, update_time=request.time)
 
 
 @router.get('/class/{class_id}/grade', tags=['Class'])
@@ -67,6 +59,26 @@ async def browse_account_grade(account_id: int, request: Request) -> Sequence[do
         raise exc.NoPermission
 
     return await service.grade.browse(receiver_id=account_id)
+
+
+@dataclass
+class GetGradeTemplateOutput:
+    s3_file_uuid: str
+    filename: str
+
+
+@router.get('/grade/template')
+@enveloped
+async def get_grade_template_file(request: Request) -> GetGradeTemplateOutput:
+    """
+    ### 權限
+    - system normal
+    """
+    if not rbac.validate(request.account.id, RoleType.normal):
+        raise exc.NoPermission
+
+    s3_file, filename = await service.grade.get_template_file()
+    return GetGradeTemplateOutput(s3_file_uuid=str(s3_file.uuid), filename=filename)
 
 
 @router.get('/grade/{grade_id}')
@@ -128,3 +140,5 @@ async def delete_grade(grade_id: int, request: Request):
         raise exc.NoPermission
 
     await service.grade.delete(grade_id)
+
+
