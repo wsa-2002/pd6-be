@@ -2,9 +2,11 @@ from datetime import datetime
 from typing import Optional, Sequence
 
 from base import do
+from base.popo import Filter
 import log
 
 from .base import SafeExecutor
+from .util import count, compile_filters
 
 
 async def add(access_time: datetime, request_method: str, resource_path: str, ip: str, account_id: Optional[int]) \
@@ -22,17 +24,35 @@ async def add(access_time: datetime, request_method: str, resource_path: str, ip
         return id_
 
 
-async def browse(offset: int = 0, limit: int = 50) -> Sequence[do.AccessLog]:
+async def browse(
+        limit: int, offset: int,
+        access_time: Sequence[Filter] = (),
+        request_method: Sequence[Filter] = (),
+        resource_path: Sequence[Filter] = (),
+        ip: Sequence[Filter] = (),
+        account_id: Sequence[Filter] = (),
+) -> tuple[Sequence[do.AccessLog], int]:
+
+    cond_sql, cond_params = compile_filters(
+        access_time=access_time,
+        request_method=request_method,
+        resource_path=resource_path,
+        ip=ip,
+        account_id=account_id,
+    )
+
     async with SafeExecutor(
             event='browse access_logs',
-            sql="SELECT id, access_time, request_method, resource_path, ip, account_id"
-                "  FROM access_log"
-                " ORDER BY id ASC"
-                " OFFSET %(offset)s LIMIT %(limit)s",
-            offset=offset, limit=limit,
+            sql=fr'SELECT id, access_time, request_method, resource_path, ip, account_id'
+                fr'  FROM access_log'
+                fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
+                fr' ORDER BY id ASC'
+                fr' LIMIT %(limit)s OFFSET %(offset)s',
+            **cond_params,
+            limit=limit, offset=offset,
             fetch='all',
     ) as records:
         return [do.AccessLog(id=id_, access_time=access_time, request_method=request_method,
                              resource_path=resource_path, ip=ip, account_id=account_id)
                 for id_, access_time, request_method, resource_path, ip, account_id
-                in records]
+                in records], await count('access_log')
