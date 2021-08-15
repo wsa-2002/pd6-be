@@ -1,6 +1,7 @@
 import datetime
 import json
 import typing
+from uuid import UUID
 
 import fastapi.responses
 
@@ -9,6 +10,8 @@ class JSONEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, datetime.datetime):
             return obj.isoformat() + 'Z'  # Server time is always UTC
+        elif isinstance(obj, UUID):
+            return obj.hex
 
         return super().default(obj)
 
