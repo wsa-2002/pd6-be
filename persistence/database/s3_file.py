@@ -44,7 +44,7 @@ async def add(bucket: str, key: str) -> UUID:
         return uuid
 
 
-async def add_with_uuid(s3_file: do.S3File) -> UUID:
+async def add_with_do(s3_file: do.S3File) -> UUID:
     async with SafeExecutor(
             event='add s3_file with uuid',
             sql=fr'INSERT INTO s3_file'

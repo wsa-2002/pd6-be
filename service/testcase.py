@@ -16,9 +16,9 @@ async def edit_input(testcase_id: int, file: typing.IO, filename: str) -> None:
     # 流程: 先 upload 到 s3 取得 bucket, key
     #       bucket, key 進 s3_file db 得到 file id
     #       file_id 進 testcase db
-    key = str(uuid.uuid4())
-    s3_file = await s3.testdata.upload(file=file, key=key)
-    file_id = await db.s3_file.add_with_uuid(s3_file=s3_file)
+    file_uuid = uuid.uuid4()
+    s3_file = await s3.testdata.upload(file=file, file_uuid=file_uuid)
+    file_id = await db.s3_file.add_with_do(s3_file=s3_file)
     await db.testcase.edit(testcase_id=testcase_id, input_file_uuid=file_id, input_filename=filename)
 
 
@@ -26,9 +26,9 @@ async def edit_output(testcase_id: int, file: typing.IO, filename: str) -> None:
     # 流程: 先 upload 到 s3 取得 bucket, key
     #       bucket, key 進 s3_file db 得到 file id
     #       file_id 進 testcase db
-    key = str(uuid.uuid4())
-    s3_file = await s3.testdata.upload(file=file, key=key)
-    file_id = await db.s3_file.add_with_uuid(s3_file=s3_file)
+    file_uuid = uuid.uuid4()
+    s3_file = await s3.testdata.upload(file=file, file_uuid=file_uuid)
+    file_id = await db.s3_file.add_with_do(s3_file=s3_file)
     await db.testcase.edit(testcase_id=testcase_id, input_file_uuid=file_id, output_filename=filename)
 
 
