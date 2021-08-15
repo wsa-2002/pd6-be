@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing import Sequence, Tuple
 from uuid import UUID
 
 from base import do
@@ -25,7 +25,7 @@ async def browse_with_problem_id(problem_id: int, include_deleted=False) -> Sequ
             event='browse assisting data',
             sql=fr'SELECT id, problem_id, s3_file_uuid, filename, is_deleted'
                 fr'  FROM assisting_data'
-                fr' WHERE problem_id = %(problem)s'
+                fr' WHERE problem_id = %(problem_id)s'
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}'
                 fr' ORDER by id ASC',
             problem_id=problem_id,
@@ -34,6 +34,29 @@ async def browse_with_problem_id(problem_id: int, include_deleted=False) -> Sequ
         return [do.AssistingData(id=id_, problem_id=problem_id, s3_file_uuid=s3_file_uuid,
                                  filename=filename, is_deleted=is_deleted)
                 for (id_, problem_id, s3_file_uuid, filename, is_deleted) in records]
+
+
+async def browse_with_problem_and_s3_file(problem_id: int, include_deleted=False) \
+        -> Sequence[Tuple[do.AssistingData, do.S3File]]:
+    async with SafeExecutor(
+            event='browse assisting data with problem and s3_file',
+            sql=fr'SELECT assisting_data.id, assisting_data.problem_id, assisting_data.s3_file_uuid,'
+                fr'       assisting_data.filename, assisting_data.is_deleted,'
+                fr'       s3_file.uuid, s3_file.bucket, s3_file.key'
+                fr'  FROM assisting_data'
+                fr' INNER JOIN s3_file'
+                fr'         ON s3_file.uuid = assisting_data.s3_file_uuid'
+                fr' WHERE assisting_data.problem_id = %(problem_id)s'
+                fr'{" AND NOT is_deleted" if not include_deleted else ""}'
+                fr' ORDER by assisting_data.id ASC',
+            problem_id=problem_id,
+            fetch='all',
+    ) as records:
+        return [(do.AssistingData(id=assisting_data_id, problem_id=problem_id, s3_file_uuid=s3_file_uuid,
+                                  filename=filename, is_deleted=is_deleted),
+                 do.S3File(uuid=uuid, bucket=bucket, key=key))
+                for (assisting_data_id, problem_id, s3_file_uuid, filename, is_deleted,
+                     uuid, bucket, key) in records]
 
 
 async def read(assisting_data_id: int, include_deleted=False) -> do.AssistingData:

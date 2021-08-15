@@ -1,3 +1,5 @@
+from zipfile import ZipFile
+
 from dataclasses import dataclass
 from typing import Optional, Sequence
 from uuid import UUID
@@ -202,8 +204,9 @@ async def browse_assisting_data_under_problem(problem_id: int, request: Request)
         raise exc.NoPermission
 
     result = await service.assisting_data.browse_with_problem_id(problem_id=problem_id)
-    return [ReadAssistingDataOutput(id=id_, problem_id=problem_id, s3_file_uuid=s3_file_uuid, filename=filename)
-            for (id_, problem_id, s3_file_uuid, filename) in result]
+    return [ReadAssistingDataOutput(id=assisting_data.id, problem_id=assisting_data.problem_id,
+                                    s3_file_uuid=assisting_data.s3_file_uuid, filename=assisting_data.filename)
+            for assisting_data in result]
 
 
 @router.post('/problem/{problem_id}/assisting-data')
@@ -223,3 +226,24 @@ async def add_assisting_data_under_problem(problem_id: int, request: Request, as
     assisting_data_id = await service.assisting_data.add(file=assisting_data.file, filename=assisting_data.filename,
                                                          problem_id=problem_id)
     return model.AddOutput(id=assisting_data_id)
+
+
+@router.post('/problem/{problem_id}/all-assisting-data')
+@enveloped
+async def download_all_assisting_data(problem_id: int, request: Request) -> do.S3File:
+    results = await service.assisting_data.browse_with_problem_and_s3_file(problem_id=problem_id)
+    files = {
+        assisting_data.filename: assisting_data.s3_file_uuid
+        for assisting_data in results
+    }
+
+
+    with ZipFile('assisting_data.zip', 'w') as zipObj:
+        #for filename,
+        # Add multiple files to the zip
+        zipObj.write('sample_file.csv')
+        zipObj.write('test_1.log')
+        zipObj.write('test_2.log')
+
+
+
