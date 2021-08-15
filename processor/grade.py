@@ -1,5 +1,3 @@
-import csv
-import codecs
 from dataclasses import dataclass
 from typing import Optional, Sequence
 
@@ -140,5 +138,3 @@ async def delete_grade(grade_id: int, request: Request):
         raise exc.NoPermission
 
     await service.grade.delete(grade_id)
-
-
