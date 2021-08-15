@@ -1,4 +1,7 @@
 import typing
+from uuid import UUID
+
+from base import do
 
 from . import s3_handler
 
@@ -6,10 +9,10 @@ from . import s3_handler
 _BUCKET_NAME = 'essay-submission'
 
 
-async def upload(file: typing.IO, key: str) -> str:
+async def upload(file: typing.IO, key: str) -> do.S3File:
     """
     :return: bucket name
     """
     bucket = await s3_handler.get_bucket(_BUCKET_NAME)
     await bucket.upload_fileobj(file, key)
-    return _BUCKET_NAME
+    return do.S3File(uuid=UUID(key), bucket=_BUCKET_NAME, key=key)
