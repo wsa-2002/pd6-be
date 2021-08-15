@@ -21,3 +21,13 @@ async def browse_task(challenge_id: int) -> Tuple[
         await db.peer_review.browse_by_challenge(challenge_id=challenge_id),
         await db.essay.browse_by_challenge(challenge_id=challenge_id),
     )
+
+
+async def browse_task_status(challenge_id: int, account_id: int = None) -> Tuple[
+    Sequence[do.Problem],
+    Sequence[do.Submission]
+]:
+    return (
+        await db.problem.browse_by_challenge(challenge_id=challenge_id),
+        await db.submission.browse_by_challenge(challenge_id=challenge_id, account_id=account_id),
+    )

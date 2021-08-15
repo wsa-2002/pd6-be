@@ -244,10 +244,44 @@ async def browse_task_under_challenge(challenge_id: int, request: Request) -> Br
     if class_role < RoleType.normal:
         raise exc.NoPermission
 
-    problems, peer_reviews, essays = service.challenge.browse_task(challenge.id)
+    problems, peer_reviews, essays = await service.challenge.browse_task(challenge.id)
 
     return BrowseTaskOutput(
         problem=problems,
         peer_review=peer_reviews,
         essay=essays,
     )
+
+
+@dataclass
+class ReadProblemStatusOutput:
+    problem_id: int
+    submission_id: int
+
+
+@dataclass
+class ReadStatusOutput:
+    problem: Sequence[ReadProblemStatusOutput]
+
+
+@router.get('/challenge/{challenge_id}/task-status')
+@enveloped
+async def browse_task_status_under_challenge(challenge_id: int, request: Request) -> Sequence[ReadStatusOutput]:
+    """
+    ### 權限
+    - Class manager (all)
+    - Class normal (self)
+    """
+    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
+    challenge = await service.challenge.read(challenge_id=challenge_id, include_scheduled=True, ref_time=request.time)
+    class_role = await rbac.get_role(request.account.id, class_id=challenge.class_id)
+    if class_role < RoleType.normal:
+        raise exc.NoPermission
+
+    if class_role == RoleType.manager:  # Class manager
+        results = await service.challenge.browse_task_status(challenge.id)
+    else:  # Self
+        results = await service.challenge.browse_task_status(challenge.id, request.account.id)
+
+    return [ReadStatusOutput(problem=[ReadProblemStatusOutput(problem_id=problem.id, submission_id=submission.id)
+                             for (problem, submission) in results])]
