@@ -145,6 +145,10 @@ async def browse(account_id: int = None, problem_id: int = None, language_id: in
 
 async def browse_by_challenge(challenge_id: int, account_id: int = None) \
         -> Sequence[do.Submission]:
+    conditions = {}
+    if account_id is not None:
+        conditions['account_id'] = account_id
+
     async with SafeExecutor(
             event='browse submissions by challenge',
             sql=fr'SELECT submission.id, submission.account_id, submission.problem_id,'
@@ -158,7 +162,7 @@ async def browse_by_challenge(challenge_id: int, account_id: int = None) \
                 fr' {f"WHERE submission.account_id = %(account_id)s" if account_id is not None else ""}'
                 fr' ORDER BY submission.id DESC',
             challenge_id=challenge_id,
-            account_id=account_id,
+            **conditions,
             fetch='all',
     ) as records:
         return [do.Submission(id=id_, account_id=account_id, problem_id=problem_id, language_id=language_id,
