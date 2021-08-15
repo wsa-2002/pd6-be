@@ -64,7 +64,9 @@ class SafeConnection:
 
 
 class SafeExecutor:
-    def __init__(self, event: str, sql: str, parameters: Dict = None, fetch: Union[int, str, None] = None, **kwparams):
+    def __init__(self, event: str, sql: str, parameters: Dict = None,
+                 fetch: Union[int, str, None] = None, raise_not_found: bool = True,
+                 **kwparams):
         """
         A safe execution context manager to open, execute, fetch, and close connections automatically.
         It also binds named parameters with `sql=r'%(key)s', key=value` since asyncpg does not support that.
@@ -76,6 +78,7 @@ class SafeExecutor:
         # self._start_time = datetime.now()
         self._event = event
         self._fetch = fetch
+        self._raise_not_found = raise_not_found
 
         # Handle keyword arguments
         if parameters is None:
@@ -125,7 +128,7 @@ class SafeExecutor:
             exec_time_ms = (datetime.now() - start_time).total_seconds() * 1000
             log.info(f"Ended {self.__class__.__name__}: {self._event} after {exec_time_ms} ms")
 
-            if self._fetch and not results:
+            if self._fetch and not results and self._raise_not_found:
                 raise exc.persistence.NotFound
 
             return results

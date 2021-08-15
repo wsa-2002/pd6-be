@@ -1,4 +1,3 @@
-from base.cls import NoTimezoneIsoDatetime
 from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
@@ -18,7 +17,7 @@ router = APIRouter(
 @enveloped
 async def browse_access_log(
         req: Request,
-        limit: int, offset: int,
+        limit: model.Limit, offset: model.Offset,
         access_time: model.FilterStr = None,
         request_method: model.FilterStr = None,
         resource_path: model.FilterStr = None,
@@ -34,7 +33,7 @@ async def browse_access_log(
             ):
         raise exc.NoPermission
 
-    access_time = model.parse_filter(access_time, NoTimezoneIsoDatetime)
+    access_time = model.parse_filter(access_time, model.UTCDatetime)
     request_method = model.parse_filter(request_method, str)
     resource_path = model.parse_filter(resource_path, str)
     ip = model.parse_filter(ip, str)

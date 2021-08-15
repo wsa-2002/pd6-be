@@ -3,10 +3,11 @@ from typing import Optional, Sequence
 
 from base import do
 from base.popo import Filter
+import exceptions as exc
 import log
 
 from .base import SafeExecutor
-from .util import count, compile_filters
+from .util import execute_count, compile_filters
 
 
 async def add(access_time: datetime, request_method: str, resource_path: str, ip: str, account_id: Optional[int]) \
@@ -51,8 +52,18 @@ async def browse(
             **cond_params,
             limit=limit, offset=offset,
             fetch='all',
+            raise_not_found=False,
     ) as records:
-        return [do.AccessLog(id=id_, access_time=access_time, request_method=request_method,
+        data = [do.AccessLog(id=id_, access_time=access_time, request_method=request_method,
                              resource_path=resource_path, ip=ip, account_id=account_id)
                 for id_, access_time, request_method, resource_path, ip, account_id
-                in records], await count('access_log')
+                in records]
+
+    total_count = await execute_count(
+        sql=fr'SELECT id, access_time, request_method, resource_path, ip, account_id'
+            fr'  FROM access_log'
+            fr'{f" WHERE {cond_sql}" if cond_sql else ""}',
+        **cond_params,
+    )
+
+    return data, total_count

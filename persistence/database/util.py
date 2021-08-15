@@ -2,18 +2,52 @@ from typing import Sequence
 
 from base.enum import FilterOperator
 from base.popo import Filter
+import log
 
 from .base import SafeExecutor
 
 
-async def count(table_name: str) -> int:
+ESTIMATE_COST_THRESHOLD = 5000000  # 65659969?
+
+
+async def execute_count(sql: str, **kwargs) -> int:
+    try:
+        rows, cols, cost = await get_query_estimation(sql, **kwargs)
+    except:
+        log.info('Execute count error, pass')
+    else:
+        if cost > ESTIMATE_COST_THRESHOLD:
+            return rows
+
+    return await get_query_actual_count(sql, **kwargs)
+
+
+async def get_query_estimation(sql: str, **kwargs) -> tuple[int, int, int]:
+    """
+    Note: might raise IndexError or KeyError
+    """
     async with SafeExecutor(
-            event=f'count {table_name=}',
-            sql=fr'SELECT COUNT(*)'
-                fr'  FROM {table_name}',
+            event='get query estimation',
+            sql=f"EXPLAIN (format json) {sql}",
+            **kwargs,
             fetch=1,
-    ) as (count_,):
-        return count_
+    ) as (query_plan,):
+        # Note: might raise IndexError or KeyError in this part
+        rows = query_plan[0]['Plan']['Plan Rows']
+        cols = query_plan[0]['Plan']['Plan Width']
+        cost = query_plan[0]['Plan']['Total Cost']
+        return rows, cols, cost
+
+
+async def get_query_actual_count(sql: str, **kwargs) -> int:
+    async with SafeExecutor(
+            event='get query count',
+            sql=f"SELECT COUNT(*)"
+                f"  FROM ({sql}) AS __COUNT_TABLE__",
+            **kwargs,
+            fetch=1,
+    ) as (count,):
+        return count
 
 
 def _compile_filter(col_name: str, filter_: Filter, suffix='') -> tuple[str, dict]:  # sql, param_dict
