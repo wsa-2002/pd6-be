@@ -15,7 +15,7 @@ async def middleware(request: fastapi.Request, call_next):
         access_time=tracker.get_request_time(),
         request_method=request.method,
         resource_path=request.url.path,
-        ip=f"{request.client.host}:{request.client.port}",
+        ip=request.client.host,
         account_id=account.id if account else None,
     )
     return await call_next(request)
