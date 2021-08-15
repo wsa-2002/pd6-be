@@ -4,7 +4,7 @@ import logging
 import traceback
 
 from config import logger_config
-from middleware.tracker import get_request_uuid
+from util.tracker import get_request_uuid
 
 
 class _Logger:
