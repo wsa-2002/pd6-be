@@ -130,6 +130,7 @@ class AddProblemInput(BaseModel):
     title: str
     full_score: int
     description: Optional[str]
+    io_description: Optional[str]
     source: Optional[str]
     hint: Optional[str]
 
@@ -149,7 +150,7 @@ async def add_problem_under_challenge(challenge_id: int, data: AddProblemInput, 
     problem_id = await service.problem.add(
         challenge_id=challenge_id, challenge_label=data.challenge_label,
         title=data.title, setter_id=request.account.id, full_score=data.full_score,
-        description=data.description, source=data.source, hint=data.hint,
+        description=data.description, io_description=data.io_description, source=data.source, hint=data.hint,
     )
 
     return model.AddOutput(id=problem_id)

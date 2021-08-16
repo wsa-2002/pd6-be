@@ -8,20 +8,21 @@ from .base import SafeExecutor, SafeConnection
 
 
 async def add(challenge_id: int, challenge_label: str,
-              title: str, setter_id: int, full_score: int, description: Optional[str],
+              title: str, setter_id: int, full_score: int, description: Optional[str], io_description: Optional[str],
               source: Optional[str], hint: Optional[str]) -> int:
     async with SafeExecutor(
             event='Add problem',
             sql="INSERT INTO problem"
                 "            (challenge_id, challenge_label,"
-                "             title, setter_id, full_score, description,"
+                "             title, setter_id, full_score, description, io_description,"
                 "             source, hint)"
                 "     VALUES (%(challenge_id)s, %(challenge_label)s,"
-                "             %(title)s, %(setter_id)s, %(full_score)s, %(description)s,"
+                "             %(title)s, %(setter_id)s, %(full_score)s, %(description)s, %(io_description)s,"
                 "             %(source)s, %(hint)s)"
                 "  RETURNING id",
             challenge_id=challenge_id, challenge_label=challenge_label,
-            title=title, setter_id=setter_id, full_score=full_score, description=description,
+            title=title, setter_id=setter_id, full_score=full_score,
+            description=description, io_description=io_description,
             source=source, hint=hint,
             fetch=1,
     ) as (id_,):
@@ -39,7 +40,7 @@ async def browse(include_scheduled: bool = False, include_deleted=False) -> Sequ
     async with SafeExecutor(
             event='browse problems',
             sql=fr'SELECT id, challenge_id, challenge_label, title, setter_id, full_score, '
-                fr'       description, source, hint, is_deleted'
+                fr'       description, io_description, source, hint, is_deleted'
                 fr'  FROM problem'
                 fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
                 fr' ORDER BY id ASC',
@@ -47,11 +48,11 @@ async def browse(include_scheduled: bool = False, include_deleted=False) -> Sequ
     ) as records:
         return [do.Problem(id=id_,
                            challenge_id=challenge_id, challenge_label=challenge_label,
-                           title=title, setter_id=setter_id,
-                           full_score=full_score, description=description, source=source, hint=hint,
+                           title=title, setter_id=setter_id, full_score=full_score,
+                           description=description, io_description=io_description, source=source, hint=hint,
                            is_deleted=is_deleted)
                 for (id_, challenge_id, challenge_label, title, setter_id, full_score,
-                     description, source, hint, is_deleted)
+                     description, io_description, source, hint, is_deleted)
                 in records]
 
 
@@ -76,11 +77,11 @@ async def browse_problem_set(request_time: datetime, include_deleted=False) \
     ) as records:
         return [do.Problem(id=id_,
                            challenge_id=challenge_id, challenge_label=challenge_label,
-                           title=title, setter_id=setter_id,
-                           full_score=full_score, description=description, source=source, hint=hint,
+                           title=title, setter_id=setter_id, full_score=full_score,
+                           description=description, io_description=io_description, source=source, hint=hint,
                            is_deleted=is_deleted)
                 for (id_, challenge_id, challenge_label, title, setter_id, full_score,
-                     description, source, hint, is_deleted)
+                     description, io_description, source, hint, is_deleted)
                 in records]
 
 
@@ -98,11 +99,11 @@ async def browse_by_challenge(challenge_id: int, include_deleted=False) -> Seque
     ) as records:
         return [do.Problem(id=id_,
                            challenge_id=challenge_id, challenge_label=challenge_label,
-                           title=title, setter_id=setter_id,
-                           full_score=full_score, description=description, source=source, hint=hint,
+                           title=title, setter_id=setter_id, full_score=full_score,
+                           description=description, io_description=io_description, source=source, hint=hint,
                            is_deleted=is_deleted)
                 for (id_, challenge_id, challenge_label, title, setter_id, full_score,
-                     description, source, hint, is_deleted)
+                     description, io_description, source, hint, is_deleted)
                 in records]
 
 
@@ -117,11 +118,11 @@ async def read(problem_id: int, include_deleted=False) -> do.Problem:
             problem_id=problem_id,
             fetch=1,
     ) as (id_, challenge_id, challenge_label, title, setter_id, full_score,
-          description, source, hint, is_deleted):
+          description, io_description, source, hint, is_deleted):
         return do.Problem(id=id_,
                           challenge_id=challenge_id, challenge_label=challenge_label,
-                          title=title, setter_id=setter_id,
-                          full_score=full_score, description=description, source=source, hint=hint,
+                          title=title, setter_id=setter_id, full_score=full_score,
+                          description=description, io_description=io_description, source=source, hint=hint,
                           is_deleted=is_deleted)
 
 
@@ -130,6 +131,7 @@ async def edit(problem_id: int,
                title: str = None,
                full_score: int = None,
                description: Optional[str] = ...,
+               io_description: Optional[str] = ...,
                source: Optional[str] = ...,
                hint: Optional[str] = ...,) -> None:
     to_updates = {}
@@ -142,6 +144,8 @@ async def edit(problem_id: int,
         to_updates['full_score'] = full_score
     if description is not ...:
         to_updates['description'] = description
+    if io_description is not ...:
+        to_updates['io_description'] = io_description
     if source is not ...:
         to_updates['source'] = source
     if hint is not ...:

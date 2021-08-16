@@ -64,6 +64,7 @@ class EditProblemInput(BaseModel):
     title: str = None
     full_score: int = None
     description: Optional[str] = ...
+    io_description: Optional[str] = ...
     source: Optional[str] = ...
     hint: Optional[str] = ...
 
@@ -82,8 +83,8 @@ async def edit_problem(problem_id: int, data: EditProblemInput, request: Request
         raise exc.NoPermission
 
     return await service.problem.edit(problem_id, title=data.title, full_score=data.full_score,
-                                      description=data.description, source=data.source,
-                                      hint=data.hint)
+                                      description=data.description, io_description=data.io_description,
+                                      source=data.source, hint=data.hint)
 
 
 @router.delete('/problem/{problem_id}')
