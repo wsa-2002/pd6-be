@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional, Sequence
+from uuid import UUID
 
 from fastapi import UploadFile, File
 from pydantic import BaseModel
@@ -61,7 +62,7 @@ async def browse_account_grade(account_id: int, request: Request) -> Sequence[do
 
 @dataclass
 class GetGradeTemplateOutput:
-    s3_file_uuid: str
+    s3_file_uuid: UUID
     filename: str
 
 
@@ -76,7 +77,7 @@ async def get_grade_template_file(request: Request) -> GetGradeTemplateOutput:
         raise exc.NoPermission
 
     s3_file, filename = await service.grade.get_template_file()
-    return GetGradeTemplateOutput(s3_file_uuid=str(s3_file.uuid), filename=filename)
+    return GetGradeTemplateOutput(s3_file_uuid=s3_file.uuid, filename=filename)
 
 
 @router.get('/grade/{grade_id}')
