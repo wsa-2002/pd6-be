@@ -232,7 +232,7 @@ class BrowseTaskOutput:
 
 @router.get('/challenge/{challenge_id}/task')
 @enveloped
-async def browse_task_under_challenge(challenge_id: int, request: Request) -> BrowseTaskOutput:
+async def browse_all_task_under_challenge(challenge_id: int, request: Request) -> BrowseTaskOutput:
     """
     ### 權限
     - Class manager (all)

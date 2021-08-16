@@ -21,7 +21,7 @@ router = APIRouter(
 
 @router.get('/submission/language', tags=['Administrative'])
 @enveloped
-async def browse_submission_language(request: Request) -> Sequence[do.SubmissionLanguage]:
+async def browse_all_submission_language(request: Request) -> Sequence[do.SubmissionLanguage]:
     """
     ### 權限
     - System normal
@@ -158,7 +158,7 @@ async def read_submission(submission_id: int, request: Request) -> do.Submission
 
 @router.get('/submission/{submission_id}/judgment', tags=['Judgment'])
 @enveloped
-async def browse_submission_judgment(submission_id: int, request: Request) -> Sequence[do.Judgment]:
+async def browse_all_submission_judgment(submission_id: int, request: Request) -> Sequence[do.Judgment]:
     """
     ### 權限
     - Self (latest)

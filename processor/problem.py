@@ -149,7 +149,7 @@ class ReadTestcaseOutput:
 
 @router.get('/problem/{problem_id}/testcase')
 @enveloped
-async def browse_testcase_under_problem(problem_id: int, request: Request) -> Sequence[ReadTestcaseOutput]:
+async def browse_all_testcase_under_problem(problem_id: int, request: Request) -> Sequence[ReadTestcaseOutput]:
     """
     ### 權限
     - System normal (sample data)
@@ -190,7 +190,7 @@ class ReadAssistingDataOutput:
 
 @router.get('/problem/{problem_id}/assisting-data')
 @enveloped
-async def browse_assisting_data_under_problem(problem_id: int, request: Request) -> Sequence[ReadAssistingDataOutput]:
+async def browse_all_assisting_data_under_problem(problem_id: int, request: Request) -> Sequence[ReadAssistingDataOutput]:
     """
     ### 權限
     - class manager
