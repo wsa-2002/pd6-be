@@ -72,7 +72,7 @@ async def read(grade_id: int, include_deleted=False) -> do.Grade:
                         is_deleted=is_deleted)
 
 
-async def edit(grade_id: int, update_time: datetime, title: str = None, score: Optional[int] = ...,
+async def edit(grade_id: int, update_time: datetime, title: str = None, score: Optional[str] = ...,
                comment: Optional[str] = ...) -> None:
     to_updates = {
         'update_time': update_time,
