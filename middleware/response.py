@@ -11,7 +11,7 @@ class JSONEncoder(json.JSONEncoder):
         if isinstance(obj, datetime.datetime):
             return obj.isoformat() + 'Z'  # Server time is always UTC
         elif isinstance(obj, UUID):
-            return obj.hex
+            return str(obj)
 
         return super().default(obj)
 
