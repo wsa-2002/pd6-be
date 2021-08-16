@@ -84,7 +84,7 @@ class Grade:
     grader_id: int
     class_id: int
     title: str
-    score: Optional[int]
+    score: Optional[str]
     comment: Optional[str]
     update_time: datetime
     is_deleted: bool

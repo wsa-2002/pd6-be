@@ -33,7 +33,10 @@ async def get_s3_file_url(s3_file_uuid: UUID, filename: str, as_attachment: bool
     """
     if not await rbac.validate(request.account.id, min_role=RoleType.normal):
         raise exc.NoPermission
-
-    s3_file = await service.s3_file.read(s3_file_uuid=s3_file_uuid)
-    return S3FileUrlOutput(url=await service.s3_file.sign_url(bucket=s3_file.bucket, key=s3_file.key, filename=filename,
-                                                              as_attachment=as_attachment))
+    try:  # 先摸 db 看有沒有這個 file
+        s3_file = await service.s3_file.read(s3_file_uuid=s3_file_uuid)
+        return S3FileUrlOutput(url=await service.s3_file.sign_url(bucket=s3_file.bucket, key=s3_file.key,
+                                                                  filename=filename, as_attachment=as_attachment))
+    except exc.persistence.NotFound:  # 如果 db 找不到的話就代表在 temp 裡面
+        return S3FileUrlOutput(url=await service.s3_file.sign_url(bucket='temp', key=str(s3_file_uuid),
+                                                                  filename=filename, as_attachment=as_attachment))
