@@ -8,8 +8,7 @@ import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
 import service
 
-from .util import rbac
-from .util.model import can_omit
+from .util import rbac, model
 
 
 router = APIRouter(
@@ -41,8 +40,8 @@ async def read_essay(essay_id: int, request: Request) -> do.Essay:
 
 
 class EditEssayInput(BaseModel):
-    title: Optional[str] = can_omit
-    description: Optional[str] = can_omit
+    title: Optional[str] = model.can_omit
+    description: Optional[str] = model.can_omit
 
 
 @router.patch('/essay/{essay_id}')
