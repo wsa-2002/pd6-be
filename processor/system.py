@@ -2,6 +2,7 @@ from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
 import service
+from util.api_doc import add_to_docstring
 
 from .util import rbac, model
 
@@ -13,38 +14,37 @@ router = APIRouter(
 )
 
 
+BROWSE_ACCESS_LOG_COLUMNS = {
+    'access_time': model.UTCDatetime,
+    'request_method': str,
+    'resource_path': str,
+    'ip': str,
+    'account_id': int,
+}
+
+
 @router.get('/access-log')
 @enveloped
+@add_to_docstring({k: v.__name__ for k, v in BROWSE_ACCESS_LOG_COLUMNS.items()})
 async def browse_access_log(
         req: Request,
         limit: model.Limit, offset: model.Offset,
-        access_time: model.FilterStr = None,
-        request_method: model.FilterStr = None,
-        resource_path: model.FilterStr = None,
-        ip: model.FilterStr = None,
-        account_id: model.FilterStr = None,
+        filter: model.FilterStr = None, sort: model.SorterStr = None,
 ) -> model.BrowseOutputBase:
     """
     ### 權限
     - Class+ manager
+    
+    ### Available columns
     """
     if not (await rbac.validate(req.account.id, RoleType.manager)  # System manager
             # or await rbac.any_class_role(member_id=req.account.id, role=RoleType.manager)):  # Any class manager
             ):
         raise exc.NoPermission
 
-    access_time = model.parse_filter(access_time, model.UTCDatetime)
-    request_method = model.parse_filter(request_method, str)
-    resource_path = model.parse_filter(resource_path, str)
-    ip = model.parse_filter(ip, str)
-    account_id = model.parse_filter(account_id, int)
+    filters = model.parse_filter(filter, BROWSE_ACCESS_LOG_COLUMNS)
+    sorters = model.parse_sorter(sort, BROWSE_ACCESS_LOG_COLUMNS)
 
-    access_logs, total_count = await service.access_log.browse(
-        limit=limit, offset=offset,
-        access_time=access_time,
-        request_method=request_method,
-        resource_path=resource_path,
-        ip=ip,
-        account_id=account_id,
-    )
+    access_logs, total_count = await service.access_log.browse(limit=limit, offset=offset,
+                                                               filters=filters, sorters=sorters)
     return model.BrowseOutputBase(access_logs, total_count=total_count)

@@ -71,3 +71,8 @@ class FilterOperator(StrEnum):
 
     like = 'LIKE'
     nlike = not_like = 'NOT LIKE'
+
+
+class SortOrder(StrEnum):
+    asc = 'ASC'
+    desc = 'DESC'

@@ -1,10 +1,14 @@
-from dataclasses import dataclass
-from typing import Union, Any
+from typing import Union, Any, NamedTuple
 
 from base import enum
 
 
-@dataclass
-class Filter:
+class Filter(NamedTuple):
+    col_name: str
     op: enum.FilterOperator
-    val: Union[Any, set, tuple, str]  # normal, in, between, like
+    value: Union[Any, set, tuple, str]  # normal, in, between, like
+
+
+class Sorter(NamedTuple):
+    col_name: str
+    order: enum.SortOrder

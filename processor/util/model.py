@@ -7,6 +7,7 @@ import pydantic.datetime_parse
 
 import base.popo
 from base.enum import FilterOperator
+import exceptions as exc
 
 
 def _ellipsis():
@@ -37,24 +38,39 @@ class Offset(pydantic.types.ConstrainedInt):
 
 
 FilterStr = typing.Optional[pydantic.Json]
+SorterStr = typing.Optional[pydantic.Json]
 
 
-def parse_filter(json_obj: FilterStr, value_type=None) -> typing.Sequence[base.popo.Filter]:
-    parsed: typing.Sequence[base.popo.Filter] = pydantic.parse_obj_as(typing.Sequence[base.popo.Filter], json_obj or [])
+def parse_filter(json_obj: FilterStr, column_types: dict[str, type]) -> typing.Sequence[base.popo.Filter]:
+    filters: list[base.popo.Filter] = pydantic.parse_obj_as(list[base.popo.Filter], json_obj or [])
 
-    if value_type:
-        for filter_ in parsed:
-            to_parse_type = value_type
-            if filter_.op in (FilterOperator.in_, FilterOperator.not_in):
-                to_parse_type = set[to_parse_type]
-            if filter_.op in (FilterOperator.between, FilterOperator.not_between):
-                to_parse_type = tuple[to_parse_type, to_parse_type]
-            if filter_.op in (FilterOperator.like, FilterOperator.not_like):
-                to_parse_type = str
+    for i, filter_ in enumerate(filters):
+        try:
+            to_parse_type = column_types[filter_.col_name]
+        except KeyError:
+            raise exc.IllegalInput
 
-            filter_.val = pydantic.parse_obj_as(to_parse_type, filter_.val)
+        if filter_.op in (FilterOperator.in_, FilterOperator.not_in):
+            to_parse_type = set[to_parse_type]
+        if filter_.op in (FilterOperator.between, FilterOperator.not_between):
+            to_parse_type = tuple[to_parse_type, to_parse_type]
+        if filter_.op in (FilterOperator.like, FilterOperator.not_like):
+            to_parse_type = str
 
-    return parsed
+        # filter_.val = pydantic.parse_obj_as(to_parse_type, filter_.val)
+        filters[i] = base.popo.Filter(col_name=filter_.col_name, op=filter_.op,
+                                      value=pydantic.parse_obj_as(to_parse_type, filter_.value))
+
+    return filters
+
+
+def parse_sorter(json_obj: FilterStr, column_types: dict[str, type]) -> typing.Sequence[base.popo.Sorter]:
+    sorters: list[base.popo.Sorter] = pydantic.parse_obj_as(list[base.popo.Sorter], json_obj or [])
+
+    if any(sorter.col_name not in column_types for sorter in sorters):
+        raise exc.IllegalInput
+
+    return sorters
 
 
 class UTCDatetime(datetime.datetime):
