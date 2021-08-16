@@ -30,14 +30,14 @@ async def browse_member_account_with_student_card_and_institute(class_id: int, i
             class_id=class_id,
             fetch='all',
     ) as records:
-        return [(do.ClassMember(member_id=member_id, class_id=class_id, role=RoleType(role)),
+        return [(do.ClassMember(member_id=member_id, class_id=class_id, role=RoleType(class_role)),
                  do.Account(id=account_id, username=username, nickname=nickname, real_name=real_name,
                             role=RoleType(role), is_deleted=is_deleted, alternative_email=alternative_email),
                  do.StudentCard(id=student_card_id, institute_id=institute_id,
                                 student_id=student_id, email=email, is_default=is_default),
                  do.Institute(id=institute_id, abbreviated_name=abbreviated_name, full_name=full_name,
                               email_domain=email_domain, is_disabled=is_disabled))
-                for (member_id, class_id, role,
+                for (member_id, class_id, class_role,
                      account_id, username, nickname, real_name, role, is_deleted, alternative_email,
                      student_card_id, institute_id, student_id, email, is_default,
                      institute_id, abbreviated_name, full_name, email_domain, is_disabled)
