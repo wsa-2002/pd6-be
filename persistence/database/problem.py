@@ -61,7 +61,8 @@ async def browse_problem_set(request_time: datetime, include_deleted=False) \
     async with SafeExecutor(
             event='browse problem set',
             sql=fr'SELECT problem.id, problem.challenge_id, problem.challenge_label,'
-                fr'       problem.title, problem.setter_id, problem.full_score, problem.description, '
+                fr'       problem.title, problem.setter_id, problem.full_score, '
+                fr'       problem.description, problem.io_description,'
                 fr'       problem.source, problem.hint, problem.is_deleted'
                 fr'  FROM problem'
                 fr'       INNER JOIN challenge'
@@ -89,7 +90,7 @@ async def browse_by_challenge(challenge_id: int, include_deleted=False) -> Seque
     async with SafeExecutor(
             event='browse problems with challenge id',
             sql=fr'SELECT id, challenge_id, challenge_label, title, setter_id, full_score, '
-                fr'       description, source, hint, is_deleted'
+                fr'       description, io_description, source, hint, is_deleted'
                 fr'  FROM problem'
                 fr' WHERE challenge_id = %(challenge_id)s'
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}'
