@@ -42,7 +42,7 @@ async def add_institute(data: AddInstituteInput, request: Request) -> model.AddO
 
 @router.get('/institute', tags=['Public'])
 @enveloped
-async def browse_institute() -> Sequence[do.Institute]:
+async def browse_all_institute() -> Sequence[do.Institute]:
     """
     ### 權限
     - Public

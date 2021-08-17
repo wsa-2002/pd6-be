@@ -6,6 +6,7 @@ from typing import (
     Type,
     Union,
 )
+import urllib.parse
 
 import fastapi.routing
 from fastapi import params
@@ -299,7 +300,10 @@ class APIRoute(fastapi.routing.APIRoute):
             request_body = ''
             if 'json' in request.headers.get('Content-Type', ''):
                 request_body = await request.body()
-            log.info(f'>>\tQuery params: {request.query_params}')
+            query_string = ''
+            if request_query_string := request.scope.get("query_string"):
+                query_string = urllib.parse.unquote(request_query_string)
+            log.info(f'>>\tQuery params: {query_string}')
             log.info(f'>>\tJSON Body: {request_body}')
 
             response = await original_route_handler(request)

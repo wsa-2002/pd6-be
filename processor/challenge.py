@@ -4,7 +4,6 @@ from typing import Optional, Sequence
 from pydantic import BaseModel
 
 from base import do, enum
-from base.cls import NoTimezoneIsoDatetime
 from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
@@ -21,12 +20,12 @@ router = APIRouter(
 
 
 class AddChallengeInput(BaseModel):
-    type: enum.ChallengeType
     publicize_type: enum.ChallengePublicizeType
+    selection_type: enum.TaskSelectionType
     title: str
     description: Optional[str]
-    start_time: NoTimezoneIsoDatetime
-    end_time: NoTimezoneIsoDatetime
+    start_time: model.UTCDatetime
+    end_time: model.UTCDatetime
 
 
 @router.post('/class/{class_id}/challenge', tags=['Course'])
@@ -40,7 +39,7 @@ async def add_challenge_under_class(class_id: int, data: AddChallengeInput, requ
         raise exc.NoPermission
 
     challenge_id = await service.challenge.add(
-        class_id=class_id, type_=data.type, publicize_type=data.publicize_type,
+        class_id=class_id, publicize_type=data.publicize_type, selection_type=data.selection_type,
         title=data.title, setter_id=request.account.id, description=data.description,
         start_time=data.start_time, end_time=data.end_time
     )
@@ -84,12 +83,12 @@ async def read_challenge(challenge_id: int, request: Request) -> do.Challenge:
 
 class EditChallengeInput(BaseModel):
     # class_id: int
-    type: enum.ChallengeType = None
     publicize_type: enum.ChallengePublicizeType = None
+    selection_type: enum.TaskSelectionType = None
     title: str = None
     description: Optional[str] = ...
-    start_time: NoTimezoneIsoDatetime = None
-    end_time: NoTimezoneIsoDatetime = None
+    start_time: model.UTCDatetime = None
+    end_time: model.UTCDatetime = None
 
 
 @router.patch('/challenge/{challenge_id}')
@@ -104,7 +103,8 @@ async def edit_challenge(challenge_id: int, data: EditChallengeInput, request: R
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
-    await service.challenge.edit(challenge_id=challenge_id, type_=data.type, publicize_type=data.publicize_type,
+    await service.challenge.edit(challenge_id=challenge_id, publicize_type=data.publicize_type,
+                                 selection_type=data.selection_type,
                                  title=data.title, description=data.description, start_time=data.start_time,
                                  end_time=data.end_time)
 
@@ -126,7 +126,6 @@ async def delete_challenge(challenge_id: int, request: Request) -> None:
 
 class AddProblemInput(BaseModel):
     challenge_label: str
-    selection_type: enum.TaskSelectionType
     title: str
     full_score: int
     description: Optional[str]
@@ -147,7 +146,7 @@ async def add_problem_under_challenge(challenge_id: int, data: AddProblemInput, 
         raise exc.NoPermission
 
     problem_id = await service.problem.add(
-        challenge_id=challenge_id, challenge_label=data.challenge_label, selection_type=data.selection_type,
+        challenge_id=challenge_id, challenge_label=data.challenge_label,
         title=data.title, setter_id=request.account.id, full_score=data.full_score,
         description=data.description, source=data.source, hint=data.hint,
     )
@@ -186,8 +185,8 @@ class AddPeerReviewInput(BaseModel):
     min_score: int
     max_score: int
     max_review_count: int
-    start_time: NoTimezoneIsoDatetime
-    end_time: NoTimezoneIsoDatetime
+    start_time: model.UTCDatetime
+    end_time: model.UTCDatetime
 
 
 @router.post('/challenge/{challenge_id}/peer-review', tags=['Peer Review'])
@@ -232,7 +231,7 @@ class BrowseTaskOutput:
 
 @router.get('/challenge/{challenge_id}/task')
 @enveloped
-async def browse_task_under_challenge(challenge_id: int, request: Request) -> BrowseTaskOutput:
+async def browse_all_task_under_challenge(challenge_id: int, request: Request) -> BrowseTaskOutput:
     """
     ### 權限
     - Class manager (all)
