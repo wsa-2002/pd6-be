@@ -63,6 +63,7 @@ async def read_problem(problem_id: int, request: Request) -> do.Problem:
 class EditProblemInput(BaseModel):
     title: str = None
     full_score: int = None
+    testcase_disabled: bool = None
     description: Optional[str] = ...
     source: Optional[str] = ...
     hint: Optional[str] = ...
@@ -82,8 +83,8 @@ async def edit_problem(problem_id: int, data: EditProblemInput, request: Request
         raise exc.NoPermission
 
     return await service.problem.edit(problem_id, title=data.title, full_score=data.full_score,
-                                      description=data.description, source=data.source,
-                                      hint=data.hint)
+                                      testcase_disabled=data.testcase_disabled, description=data.description,
+                                      source=data.source, hint=data.hint)
 
 
 @router.delete('/problem/{problem_id}')
