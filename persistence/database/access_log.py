@@ -2,9 +2,12 @@ from datetime import datetime
 from typing import Optional, Sequence
 
 from base import do
+from base.popo import Filter, Sorter
+import exceptions as exc
 import log
 
 from .base import SafeExecutor
+from .util import execute_count, compile_filters
 
 
 async def add(access_time: datetime, request_method: str, resource_path: str, ip: str, account_id: Optional[int]) \
@@ -22,17 +25,36 @@ async def add(access_time: datetime, request_method: str, resource_path: str, ip
         return id_
 
 
-async def browse(offset: int = 0, limit: int = 50) -> Sequence[do.AccessLog]:
+async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter]) \
+        -> tuple[Sequence[do.AccessLog], int]:
+
+    cond_sql, cond_params = compile_filters(filters)
+    sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
+    if sort_sql:
+        sort_sql += ','
+
     async with SafeExecutor(
             event='browse access_logs',
-            sql="SELECT id, access_time, request_method, resource_path, ip, account_id"
-                "  FROM access_log"
-                " ORDER BY id ASC"
-                " OFFSET %(offset)s LIMIT %(limit)s",
-            offset=offset, limit=limit,
+            sql=fr'SELECT id, access_time, request_method, resource_path, ip, account_id'
+                fr'  FROM access_log'
+                fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
+                fr' ORDER BY {sort_sql} id ASC'
+                fr' LIMIT %(limit)s OFFSET %(offset)s',
+            **cond_params,
+            limit=limit, offset=offset,
             fetch='all',
+            raise_not_found=False,
     ) as records:
-        return [do.AccessLog(id=id_, access_time=access_time, request_method=request_method,
+        data = [do.AccessLog(id=id_, access_time=access_time, request_method=request_method,
                              resource_path=resource_path, ip=ip, account_id=account_id)
                 for id_, access_time, request_method, resource_path, ip, account_id
                 in records]
+
+    total_count = await execute_count(
+        sql=fr'SELECT id, access_time, request_method, resource_path, ip, account_id'
+            fr'  FROM access_log'
+            fr'{f" WHERE {cond_sql}" if cond_sql else ""}',
+        **cond_params,
+    )
+
+    return data, total_count
