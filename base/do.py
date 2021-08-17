@@ -113,6 +113,7 @@ class Problem:
     setter_id: int
     full_score: int
     description: Optional[str]
+    io_description: Optional[str]
     source: Optional[str]
     hint: Optional[str]
     is_deleted: bool
