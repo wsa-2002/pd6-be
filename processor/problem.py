@@ -65,6 +65,7 @@ class EditProblemInput(BaseModel):
     full_score: int = None
     testcase_disabled: bool = None
     description: Optional[str] = ...
+    io_description: Optional[str] = ...
     source: Optional[str] = ...
     hint: Optional[str] = ...
 
@@ -83,7 +84,8 @@ async def edit_problem(problem_id: int, data: EditProblemInput, request: Request
         raise exc.NoPermission
 
     return await service.problem.edit(problem_id, title=data.title, full_score=data.full_score,
-                                      testcase_disabled=data.testcase_disabled, description=data.description,
+                                      testcase_disabled=data.testcase_disabled,
+                                      description=data.description, io_description=data.io_description,
                                       source=data.source, hint=data.hint)
 
 
@@ -203,8 +205,9 @@ async def browse_all_assisting_data_under_problem(problem_id: int, request: Requ
         raise exc.NoPermission
 
     result = await service.assisting_data.browse_with_problem_id(problem_id=problem_id)
-    return [ReadAssistingDataOutput(id=id_, problem_id=problem_id, s3_file_uuid=s3_file_uuid, filename=filename)
-            for (id_, problem_id, s3_file_uuid, filename) in result]
+    return [ReadAssistingDataOutput(id=assisting_data.id, problem_id=assisting_data.problem_id,
+                                    s3_file_uuid=assisting_data.s3_file_uuid, filename=assisting_data.filename)
+            for assisting_data in result]
 
 
 @router.post('/problem/{problem_id}/assisting-data')
