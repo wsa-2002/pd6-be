@@ -21,6 +21,6 @@ async def edit(problem_id: int,
 
     await db.problem.edit(problem_id, title=title, full_score=full_score,
                           description=description, source=source, hint=hint)
-
-    await db.testcase.disable_enable_testcase_by_problem(problem_id=problem_id,
-                                                         testcase_disabled=testcase_disabled)
+    if testcase_disabled is not None:
+        await db.testcase.disable_enable_testcase_by_problem(problem_id=problem_id,
+                                                             testcase_disabled=testcase_disabled)
