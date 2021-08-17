@@ -1,6 +1,13 @@
+import datetime
 from dataclasses import dataclass
+import typing
 
 import pydantic
+import pydantic.datetime_parse
+
+import base.popo
+from base.enum import FilterOperator
+import exceptions as exc
 
 
 def _ellipsis():
@@ -15,11 +22,72 @@ class AddOutput:
     id: int
 
 
-limit = 0
-offset = 100
-
-
 @dataclass
 class BrowseOutputBase:
-    total: int
-    data: ...
+    data: typing.Any
+    total_count: int
+
+
+class Limit(pydantic.types.ConstrainedInt):
+    gt = -1
+    lt = 101
+
+
+class Offset(pydantic.types.ConstrainedInt):
+    gt = -1
+
+
+FilterStr = typing.Optional[pydantic.Json]
+SorterStr = typing.Optional[pydantic.Json]
+
+
+def parse_filter(json_obj: FilterStr, column_types: dict[str, type]) -> typing.Sequence[base.popo.Filter]:
+    filters: list[base.popo.Filter] = pydantic.parse_obj_as(list[base.popo.Filter], json_obj or [])
+
+    for i, filter_ in enumerate(filters):
+        try:
+            to_parse_type = column_types[filter_.col_name]
+        except KeyError:
+            raise exc.IllegalInput
+
+        if filter_.op in (FilterOperator.in_, FilterOperator.not_in):
+            to_parse_type = set[to_parse_type]
+        if filter_.op in (FilterOperator.between, FilterOperator.not_between):
+            to_parse_type = tuple[to_parse_type, to_parse_type]
+        if filter_.op in (FilterOperator.like, FilterOperator.not_like):
+            to_parse_type = str
+
+        # filter_.val = pydantic.parse_obj_as(to_parse_type, filter_.val)
+        filters[i] = base.popo.Filter(col_name=filter_.col_name, op=filter_.op,
+                                      value=pydantic.parse_obj_as(to_parse_type, filter_.value))
+
+    return filters
+
+
+def parse_sorter(json_obj: FilterStr, column_types: dict[str, type]) -> typing.Sequence[base.popo.Sorter]:
+    sorters: list[base.popo.Sorter] = pydantic.parse_obj_as(list[base.popo.Sorter], json_obj or [])
+
+    if any(sorter.col_name not in column_types for sorter in sorters):
+        raise exc.IllegalInput
+
+    return sorters
+
+
+class UTCDatetime(datetime.datetime):
+    """
+    A pydantic-compatible custom class to convert incoming datetime to UTC+0 datetime
+    """
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, value):
+        converted = pydantic.datetime_parse.parse_datetime(value)
+
+        # forces timezone to be None
+        if converted.tzinfo is not None:
+            # Uses utc as default timezone
+            converted = converted.astimezone(tz=datetime.timezone.utc).replace(tzinfo=None)
+
+        return converted

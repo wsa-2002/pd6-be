@@ -25,7 +25,7 @@ async def browse_with_problem_id(problem_id: int, include_deleted=False) -> Sequ
             event='browse assisting data',
             sql=fr'SELECT id, problem_id, s3_file_uuid, filename, is_deleted'
                 fr'  FROM assisting_data'
-                fr' WHERE problem_id = %(problem)s'
+                fr' WHERE problem_id = %(problem_id)s'
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}'
                 fr' ORDER by id ASC',
             problem_id=problem_id,

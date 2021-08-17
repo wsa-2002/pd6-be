@@ -71,3 +71,14 @@ def _gen_err_doc(modules, base_cls):
             item_docs.append(f"#### {module.__name__.split('.', maxsplit=1)[-1].title()}\n{indent(item_doc, '  ')}")
 
     return '\n'.join(item_docs)
+
+
+def add_to_docstring(doc):
+    """
+    Add stuff to docstring.
+    """
+    def decorator(func):
+        func.__doc__ += str(doc)
+        return func
+
+    return decorator
