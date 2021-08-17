@@ -22,8 +22,8 @@ class AddAnnouncementInput(BaseModel):
     title: str
     content: str
     author_id: int
-    post_time: model.UTCDatetime
-    expire_time: model.UTCDatetime
+    post_time: model.ServerTZDatetime
+    expire_time: model.ServerTZDatetime
 
 
 @router.post('/announcement')
@@ -76,8 +76,8 @@ async def read_announcement(announcement_id: int, request: Request) -> do.Announ
 class EditAnnouncementInput(BaseModel):
     title: str = None
     content: str = None
-    post_time: model.UTCDatetime = None
-    expire_time: model.UTCDatetime = None
+    post_time: model.ServerTZDatetime = None
+    expire_time: model.ServerTZDatetime = None
 
 
 @router.patch('/announcement/{announcement_id}')

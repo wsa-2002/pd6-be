@@ -15,7 +15,7 @@ router = APIRouter(
 
 
 BROWSE_ACCESS_LOG_COLUMNS = {
-    'access_time': model.UTCDatetime,
+    'access_time': model.ServerTZDatetime,
     'request_method': str,
     'resource_path': str,
     'ip': str,
