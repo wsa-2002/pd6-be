@@ -187,7 +187,7 @@ class JudgeCase:
 class Essay:
     id: int
     challenge_id: int
-    challenge_label: int
+    challenge_label: str
     title: str
     setter_id: int
     description: Optional[str]
