@@ -244,7 +244,7 @@ async def browse_all_task_under_challenge(challenge_id: int, request: Request) -
     if class_role < RoleType.normal:
         raise exc.NoPermission
 
-    problems, peer_reviews, essays = service.challenge.browse_task(challenge.id)
+    problems, peer_reviews, essays = await service.challenge.browse_task(challenge.id)
 
     return BrowseTaskOutput(
         problem=problems,
