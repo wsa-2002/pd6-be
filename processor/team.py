@@ -136,8 +136,8 @@ async def edit_team_member(team_id: int, data: Sequence[EditMemberInput], reques
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=team.class_id):
         raise exc.NoPermission
 
-    for (member_id, role) in data:
-        await service.team.edit_member(team_id=team_id, member_id=member_id, role=role)
+    for member in data:
+        await service.team.edit_member(team_id=team_id, member_id=member.member_id, role=member.role)
 
 
 @router.delete('/team/{team_id}/member/{member_id}')
