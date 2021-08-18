@@ -91,3 +91,13 @@ def compile_filters(filters: Sequence[Filter]) -> tuple[str, dict]:
         params |= param_dict
 
     return ' AND '.join(conditions), params
+
+
+async def account_referral_to_id(account_referral: str) -> int:
+    async with SafeExecutor(
+            event='account referral to id',
+            sql=f"SELECT account_referral_to_id(%(account_referral)s)",
+            account_referral=account_referral,
+            fetch=1,
+    ) as (account_id,):
+        return account_id

@@ -140,6 +140,30 @@ async def edit_team_member(team_id: int, data: Sequence[EditMemberInput], reques
         await service.team.edit_member(team_id=team_id, member_id=member_id, role=role)
 
 
+class SetMemberInput(BaseModel):
+    account_referral: str
+    role: RoleType
+
+
+@router.put('/team/{team_id}/member')
+@enveloped
+async def set_team_members(team_id: int, data: Sequence[SetMemberInput], request: Request) -> None:
+    """
+    ### 權限
+    - Class manager
+    """
+    # 因為需要 class_id 才能判斷權限，所以先 read team 再判斷要不要噴 NoPermission
+    team = await service.team.read(team_id)
+
+    if not await rbac.validate(request.account.id, RoleType.manager, class_id=team.class_id):
+        raise exc.NoPermission
+
+    await service.team.delete_all_members_in_team(team_id=team_id)
+    await service.team.add_members_by_account_referral(team_id=team_id,
+                                                       member_roles=[(member.account_referral, member.role)
+                                                                      for member in data])
+
+
 @router.delete('/team/{team_id}/member/{member_id}')
 @enveloped
 async def delete_team_member(team_id: int, member_id: int, request: Request) -> None:

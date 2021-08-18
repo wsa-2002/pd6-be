@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing import Sequence, Collection, Tuple
 
 from base import do
 from base.enum import RoleType
@@ -154,6 +154,17 @@ async def add_member(team_id: int, account_referral: str, role: RoleType):
         pass
 
 
+async def add_members_by_account_referral(team_id: int, member_roles: Collection[Tuple[str, RoleType]]):
+    async with SafeConnection(event='add members to team') as conn:
+        await conn.executemany(
+            command=r'INSERT INTO team_member'
+                    r'            (team_id, account_referral_to_id(%(account_referral)s), role)'
+                    r'     VALUES ($1, $2, $3)',
+            args=[(team_id, account_referral, role)
+                  for account_referral, role in member_roles],
+        )
+
+
 async def edit_member(team_id: int, member_id: int, role: RoleType):
     async with SafeExecutor(
             event='set team member',
@@ -174,5 +185,15 @@ async def delete_member(team_id: int, member_id: int):
                 r'      WHERE team_id = %(team_id)s AND member_id = %(member_id)s',
             team_id=team_id,
             member_id=member_id,
+    ):
+        pass
+
+
+async def delete_all_members_in_team(team_id: int):
+    async with SafeExecutor(
+            event='HARD DELETE team member',
+            sql=r'DELETE FROM team_member'
+                r'      WHERE team_id = %(team_id)s',
+            team_id=team_id,
     ):
         pass
