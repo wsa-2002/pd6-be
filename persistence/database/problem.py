@@ -149,7 +149,7 @@ async def read_task_status_by_type(problem_id: int, selection_type: enum.TaskSel
                 fr' INNER JOIN judgment'
                 fr'         ON judgment.submission_id = submission.id'
                 fr' WHERE problem.id = %(problem_id)s'
-                fr'{f"AND submission.account_id = %(account_id)s" if account_id is not None else ""}'
+                fr'{" AND submission.account_id = %(account_id)s" if account_id is not None else ""}'
                 fr'{" AND NOT problem.is_deleted" if not include_deleted else ""}'
                 fr' ORDER BY '
                 fr'{"submission.submit_time" if is_last else "judgment.status, judgment.score"}'
