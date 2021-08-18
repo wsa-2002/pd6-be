@@ -27,11 +27,6 @@ class CourseType(StrEnum):
     contest = 'CONTEST'
 
 
-class ChallengeType(StrEnum):
-    contest = 'CONTEST'
-    homework = 'HOMEWORK'
-
-
 class ChallengePublicizeType(StrEnum):
     start_time = 'START_TIME'
     end_time = 'END_TIME'

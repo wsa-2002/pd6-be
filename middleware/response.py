@@ -9,7 +9,7 @@ import fastapi.responses
 class JSONEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, datetime.datetime):
-            return obj.isoformat() + 'Z'  # Server time is always UTC
+            return obj.astimezone().isoformat()  # Return with timezone
         elif isinstance(obj, UUID):
             return str(obj)
 

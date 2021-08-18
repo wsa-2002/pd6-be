@@ -73,9 +73,9 @@ def parse_sorter(json_obj: FilterStr, column_types: Dict[str, type]) -> Sequence
     return sorters
 
 
-class UTCDatetime(datetime.datetime):
+class ServerTZDatetime(datetime.datetime):
     """
-    A pydantic-compatible custom class to convert incoming datetime to UTC+0 datetime
+    A pydantic-compatible custom class to convert incoming datetime to server timezone datetime (without tzinfo)
     """
     @classmethod
     def __get_validators__(cls):
@@ -85,9 +85,8 @@ class UTCDatetime(datetime.datetime):
     def validate(cls, value):
         converted = pydantic.datetime_parse.parse_datetime(value)
 
-        # forces timezone to be None
         if converted.tzinfo is not None:
-            # Uses utc as default timezone
-            converted = converted.astimezone(tz=datetime.timezone.utc).replace(tzinfo=None)
+            # Convert to server time
+            converted = converted.astimezone().replace(tzinfo=None)
 
         return converted

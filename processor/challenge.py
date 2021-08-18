@@ -24,8 +24,8 @@ class AddChallengeInput(BaseModel):
     selection_type: enum.TaskSelectionType
     title: str
     description: Optional[str]
-    start_time: model.UTCDatetime
-    end_time: model.UTCDatetime
+    start_time: model.ServerTZDatetime
+    end_time: model.ServerTZDatetime
 
 
 @router.post('/class/{class_id}/challenge', tags=['Course'])
@@ -87,8 +87,8 @@ class EditChallengeInput(BaseModel):
     selection_type: enum.TaskSelectionType = None
     title: str = None
     description: Optional[str] = ...
-    start_time: model.UTCDatetime = None
-    end_time: model.UTCDatetime = None
+    start_time: model.ServerTZDatetime = None
+    end_time: model.ServerTZDatetime = None
 
 
 @router.patch('/challenge/{challenge_id}')
@@ -129,6 +129,7 @@ class AddProblemInput(BaseModel):
     title: str
     full_score: int
     description: Optional[str]
+    io_description: Optional[str]
     source: Optional[str]
     hint: Optional[str]
 
@@ -148,7 +149,7 @@ async def add_problem_under_challenge(challenge_id: int, data: AddProblemInput, 
     problem_id = await service.problem.add(
         challenge_id=challenge_id, challenge_label=data.challenge_label,
         title=data.title, setter_id=request.account.id, full_score=data.full_score,
-        description=data.description, source=data.source, hint=data.hint,
+        description=data.description, io_description=data.io_description, source=data.source, hint=data.hint,
     )
 
     return model.AddOutput(id=problem_id)
@@ -185,8 +186,8 @@ class AddPeerReviewInput(BaseModel):
     min_score: int
     max_score: int
     max_review_count: int
-    start_time: model.UTCDatetime
-    end_time: model.UTCDatetime
+    start_time: model.ServerTZDatetime
+    end_time: model.ServerTZDatetime
 
 
 @router.post('/challenge/{challenge_id}/peer-review', tags=['Peer Review'])
