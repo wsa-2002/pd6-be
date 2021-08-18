@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional, Sequence, Tuple
+from typing import Optional, Sequence
 from uuid import UUID
 
 from fastapi import UploadFile, File
@@ -58,12 +58,6 @@ async def read_problem(problem_id: int, request: Request) -> do.Problem:
         raise exc.NoPermission
 
     return problem
-
-
-@router.get('/problem/{problem_id}/task-status')
-@enveloped
-async def read_task_status(problem_id: int) -> Tuple[do.Problem, do.Submission]:
-    return await service.problem.read_task_status_by_type(problem_id=problem_id)
 
 
 class EditProblemInput(BaseModel):
