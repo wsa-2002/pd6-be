@@ -1,10 +1,10 @@
 from datetime import datetime
-from typing import Sequence, Tuple
+from typing import Sequence
 from uuid import UUID
 
 from base import do
 
-from .base import SafeExecutor, SafeConnection
+from .base import SafeExecutor
 
 
 # Submission Language

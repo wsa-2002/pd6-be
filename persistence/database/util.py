@@ -1,4 +1,4 @@
-from typing import Sequence, Tuple
+from typing import Sequence
 
 from base.enum import FilterOperator
 from base.popo import Filter
@@ -22,7 +22,7 @@ async def execute_count(sql: str, **kwargs) -> int:
     return await get_query_actual_count(sql, **kwargs)
 
 
-async def get_query_estimation(sql: str, **kwargs) -> Tuple[int, int, int]:
+async def get_query_estimation(sql: str, **kwargs) -> tuple[int, int, int]:
     """
     Note: might raise IndexError or KeyError
     """
@@ -50,7 +50,7 @@ async def get_query_actual_count(sql: str, **kwargs) -> int:
         return count
 
 
-def _compile_filter(filter_: Filter, suffix='') -> Tuple[str, dict]:  # sql, param_dict
+def _compile_filter(filter_: Filter, suffix='') -> tuple[str, dict]:  # sql, param_dict
 
     # Non-single values
 
@@ -83,7 +83,7 @@ def _compile_filter(filter_: Filter, suffix='') -> Tuple[str, dict]:  # sql, par
     return sql, {param_name: filter_.value}
 
 
-def compile_filters(filters: Sequence[Filter]) -> Tuple[str, dict]:
+def compile_filters(filters: Sequence[Filter]) -> tuple[str, dict]:
     conditions, params = [], {}
     for i, filter_ in enumerate(filters):
         sql, param_dict = _compile_filter(filter_, suffix=str(i))
