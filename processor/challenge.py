@@ -24,8 +24,8 @@ class AddChallengeInput(BaseModel):
     selection_type: enum.TaskSelectionType
     title: str
     description: Optional[str]
-    start_time: model.UTCDatetime
-    end_time: model.UTCDatetime
+    start_time: model.ServerTZDatetime
+    end_time: model.ServerTZDatetime
 
 
 @router.post('/class/{class_id}/challenge', tags=['Course'])
@@ -87,8 +87,8 @@ class EditChallengeInput(BaseModel):
     selection_type: enum.TaskSelectionType = None
     title: str = None
     description: Optional[str] = model.can_omit
-    start_time: model.UTCDatetime = None
-    end_time: model.UTCDatetime = None
+    start_time: model.ServerTZDatetime = None
+    end_time: model.ServerTZDatetime = None
 
 
 @router.patch('/challenge/{challenge_id}')
@@ -186,8 +186,8 @@ class AddPeerReviewInput(BaseModel):
     min_score: int
     max_score: int
     max_review_count: int
-    start_time: model.UTCDatetime
-    end_time: model.UTCDatetime
+    start_time: model.ServerTZDatetime
+    end_time: model.ServerTZDatetime
 
 
 @router.post('/challenge/{challenge_id}/peer-review', tags=['Peer Review'])

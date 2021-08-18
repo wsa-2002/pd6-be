@@ -44,8 +44,8 @@ class EditPeerReviewInput(BaseModel):
     min_score: int = None
     max_score: int = None
     max_review_count: int = None
-    start_time: model.UTCDatetime = None
-    end_time: model.UTCDatetime = None
+    start_time: model.ServerTZDatetime = None
+    end_time: model.ServerTZDatetime = None
 
 
 @router.patch('/peer-review/{peer_review_id}')
