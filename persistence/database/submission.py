@@ -142,39 +142,6 @@ async def browse(account_id: int = None, problem_id: int = None, language_id: in
                 for id_, account_id, problem_id, language_id, filename, content_file_uuid, content_length, submit_time
                 in records]
 
-from . import challenge
-from base import do, enum
-
-
-async def browse_by_challenge(challenge_id: int, account_id: int = None) \
-        -> Sequence[Tuple[do.Problem, do.Submission]]:
-    conditions = {}
-    if account_id is not None:
-        conditions['account_id'] = account_id
-
-    result = await challenge.read(challenge_id=challenge_id)
-    async with SafeExecutor(
-            event='browse submissions by challenge',
-            sql=fr'SELECT submission.id, submission.account_id, submission.problem_id,'
-                fr'       submission.language_id, submission.filename,'
-                fr'       submission.content_file_uuid, submission.content_length, submission.submit_time'
-                fr'  FROM challenge'
-                fr'       INNER JOIN problem'
-                fr'               ON problem.challenge_id = %(challenge_id)s'
-                fr'       INNER JOIN submission'
-                fr'               ON submission.problem_id = problem.id'
-                fr' {f"WHERE submission.account_id = %(account_id)s" if account_id is not None else ""}'
-                fr' ORDER BY submission.id DESC',
-            challenge_id=challenge_id,
-            **conditions,
-            fetch='all',
-    ) as records:
-        return [do.Submission(id=id_, account_id=account_id, problem_id=problem_id, language_id=language_id,
-                              filename=filename, content_file_uuid=content_file_uuid, content_length=content_length,
-                              submit_time=submit_time)
-                for id_, account_id, problem_id, language_id, filename, content_file_uuid, content_length, submit_time
-                in records]
-
 
 async def read(submission_id: int) -> do.Submission:
     async with SafeExecutor(
