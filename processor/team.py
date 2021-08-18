@@ -1,4 +1,6 @@
+from dataclasses import dataclass
 from typing import Sequence
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -16,6 +18,26 @@ router = APIRouter(
     default_response_class=response.JSONResponse,
     dependencies=auth.doc_dependencies,
 )
+
+
+@dataclass
+class GetTeamTemplateOutput:
+    s3_file_uuid: UUID
+    filename: str
+
+
+@router.get('/team/template')
+@enveloped
+async def get_team_template_file(request: Request) -> GetTeamTemplateOutput:
+    """
+    ### 權限
+    - system normal
+    """
+    if not rbac.validate(request.account.id, RoleType.normal):
+        raise exc.NoPermission
+
+    s3_file, filename = await service.team.get_template_file()
+    return GetTeamTemplateOutput(s3_file_uuid=s3_file.uuid, filename=filename)
 
 
 @router.get('/team/{team_id}')
