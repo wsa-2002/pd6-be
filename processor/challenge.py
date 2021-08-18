@@ -275,7 +275,7 @@ async def browse_task_status_under_challenge(challenge_id: int, request: Request
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     challenge = await service.challenge.read(challenge_id=challenge_id, include_scheduled=True, ref_time=request.time)
     class_role = await rbac.get_role(request.account.id, class_id=challenge.class_id)
-    if class_role < RoleType.normal:
+    if class_role < RoleType.guest:
         raise exc.NoPermission
 
     if class_role == RoleType.manager:  # Class manager
