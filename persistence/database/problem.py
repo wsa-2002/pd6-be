@@ -1,4 +1,4 @@
-from typing import Optional, Sequence
+from typing import Optional, Sequence, Tuple
 from datetime import datetime
 
 from base import do, enum
@@ -123,6 +123,30 @@ async def read(problem_id: int, include_deleted=False) -> do.Problem:
                           title=title, setter_id=setter_id,
                           full_score=full_score, description=description, source=source, hint=hint,
                           is_deleted=is_deleted)
+
+
+async def read_task_status_by_type(problem_id: int, is_last=True, include_deleted=False) -> do.Submission:
+    async with SafeExecutor(
+            event='read problem submission status by task selection type',
+            sql=fr'SELECT submission.id, submission.account_id, submission.problem_id,'
+                fr'       submission.language_id, submission.filename,'
+                fr'       submission.content_file_uuid, submission.content_length, submission.submit_time'
+                fr'  FROM problem'
+                fr' INNER JOIN submission'
+                fr'         ON submission.problem_id = problem.id'
+                fr' INNER JOIN judgment'
+                fr'         ON judgment.submission_id = submission.id'
+                fr' WHERE problem.id = %(problem_id)s'
+                fr'{" AND NOT problem.is_deleted" if not include_deleted else ""}'
+                fr' ORDER BY '
+                fr'{"submission.submit_time" if is_last else "judgment.status, judgment.score"}'
+                fr' DESC',
+            problem_id=problem_id,
+            fetch=1,
+    ) as (submission_id, account_id, problem_id, language_id, filename, content_file_uuid, content_length, submit_time):
+        return do.Submission(id=submission_id, account_id=account_id, problem_id=problem_id, filename=filename,
+                             language_id=language_id, content_file_uuid=content_file_uuid,
+                             content_length=content_length, submit_time=submit_time)
 
 
 async def edit(problem_id: int,

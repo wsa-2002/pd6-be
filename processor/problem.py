@@ -60,6 +60,12 @@ async def read_problem(problem_id: int, request: Request) -> do.Problem:
     return problem
 
 
+@router.get('/problem/{problem_id}/task-status')
+@enveloped
+async def read_task_status(problem_id: int) -> do.Submission:
+    return await service.problem.read_task_status_by_type(problem_id=problem_id)
+
+
 class EditProblemInput(BaseModel):
     title: str = None
     full_score: int = None

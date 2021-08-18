@@ -1,10 +1,10 @@
 from datetime import datetime
-from typing import Sequence
+from typing import Sequence, Tuple
 from uuid import UUID
 
 from base import do
 
-from .base import SafeExecutor
+from .base import SafeExecutor, SafeConnection
 
 
 # Submission Language
@@ -142,13 +142,17 @@ async def browse(account_id: int = None, problem_id: int = None, language_id: in
                 for id_, account_id, problem_id, language_id, filename, content_file_uuid, content_length, submit_time
                 in records]
 
+from . import challenge
+from base import do, enum
+
 
 async def browse_by_challenge(challenge_id: int, account_id: int = None) \
-        -> Sequence[do.Submission]:
+        -> Sequence[Tuple[do.Problem, do.Submission]]:
     conditions = {}
     if account_id is not None:
         conditions['account_id'] = account_id
 
+    result = await challenge.read(challenge_id=challenge_id)
     async with SafeExecutor(
             event='browse submissions by challenge',
             sql=fr'SELECT submission.id, submission.account_id, submission.problem_id,'

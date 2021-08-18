@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, Sequence
+from typing import Optional, Sequence, Tuple
 
 from base import do
 from base.popo import Filter, Sorter
@@ -26,7 +26,7 @@ async def add(access_time: datetime, request_method: str, resource_path: str, ip
 
 
 async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter]) \
-        -> tuple[Sequence[do.AccessLog], int]:
+        -> Tuple[Sequence[do.AccessLog], int]:
 
     cond_sql, cond_params = compile_filters(filters)
     sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
