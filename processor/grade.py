@@ -1,5 +1,8 @@
+from dataclasses import dataclass
 from typing import Optional, Sequence
+from uuid import UUID
 
+from fastapi import UploadFile, File
 from pydantic import BaseModel
 
 from base import do
@@ -8,8 +11,7 @@ from base.enum import RoleType
 from middleware import APIRouter, response, enveloped, auth, Request
 import service
 
-from .util import rbac
-
+from .util import rbac, model
 
 router = APIRouter(
     tags=['Grade'],
@@ -20,17 +22,15 @@ router = APIRouter(
 
 @router.post('/class/{class_id}/grade', tags=['Class'])
 @enveloped
-async def import_class_grade(class_id: int, request: Request):
+async def import_class_grade(class_id: int, request: Request, grade_file: UploadFile = File(...)):
     """
     ### 權限
     - Class manager
     """
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
-    """
-    匯入方式未定
-    """
-    ...
+
+    await service.grade.import_class_grade(grade_file=grade_file.file, class_id=class_id, update_time=request.time)
 
 
 @router.get('/class/{class_id}/grade', tags=['Class'])
@@ -60,6 +60,26 @@ async def browse_account_grade(account_id: int, request: Request) -> Sequence[do
     return await service.grade.browse(receiver_id=account_id)
 
 
+@dataclass
+class GetGradeTemplateOutput:
+    s3_file_uuid: UUID
+    filename: str
+
+
+@router.get('/grade/template')
+@enveloped
+async def get_grade_template_file(request: Request) -> GetGradeTemplateOutput:
+    """
+    ### 權限
+    - system normal
+    """
+    if not rbac.validate(request.account.id, RoleType.normal):
+        raise exc.NoPermission
+
+    s3_file, filename = await service.grade.get_template_file()
+    return GetGradeTemplateOutput(s3_file_uuid=s3_file.uuid, filename=filename)
+
+
 @router.get('/grade/{grade_id}')
 @enveloped
 async def get_grade(grade_id: int, request: Request) -> do.Grade:
@@ -82,8 +102,8 @@ async def get_grade(grade_id: int, request: Request) -> do.Grade:
 
 class EditGradeInput(BaseModel):
     title: str = None
-    score: Optional[int] = ...
-    comment: Optional[str] = ...
+    score: Optional[str] = model.can_omit
+    comment: Optional[str] = model.can_omit
 
 
 @router.patch('/grade/{grade_id}')

@@ -65,9 +65,11 @@ async def read_problem(problem_id: int, request: Request) -> do.Problem:
 class EditProblemInput(BaseModel):
     title: str = None
     full_score: int = None
-    description: Optional[str] = ...
-    source: Optional[str] = ...
-    hint: Optional[str] = ...
+    testcase_disabled: bool = None
+    description: Optional[str] = model.can_omit
+    io_description: Optional[str] = model.can_omit
+    source: Optional[str] = model.can_omit
+    hint: Optional[str] = model.can_omit
 
 
 @router.patch('/problem/{problem_id}')
@@ -84,8 +86,9 @@ async def edit_problem(problem_id: int, data: EditProblemInput, request: Request
         raise exc.NoPermission
 
     return await service.problem.edit(problem_id, title=data.title, full_score=data.full_score,
-                                      description=data.description, source=data.source,
-                                      hint=data.hint)
+                                      testcase_disabled=data.testcase_disabled,
+                                      description=data.description, io_description=data.io_description,
+                                      source=data.source, hint=data.hint)
 
 
 @router.delete('/problem/{problem_id}')
@@ -151,7 +154,7 @@ class ReadTestcaseOutput:
 
 @router.get('/problem/{problem_id}/testcase')
 @enveloped
-async def browse_testcase_under_problem(problem_id: int, request: Request) -> Sequence[ReadTestcaseOutput]:
+async def browse_all_testcase_under_problem(problem_id: int, request: Request) -> Sequence[ReadTestcaseOutput]:
     """
     ### 權限
     - System normal (sample data)
@@ -192,7 +195,7 @@ class ReadAssistingDataOutput:
 
 @router.get('/problem/{problem_id}/assisting-data')
 @enveloped
-async def browse_assisting_data_under_problem(problem_id: int, request: Request) -> Sequence[ReadAssistingDataOutput]:
+async def browse_all_assisting_data_under_problem(problem_id: int, request: Request) -> Sequence[ReadAssistingDataOutput]:
     """
     ### 權限
     - class manager

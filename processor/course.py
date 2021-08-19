@@ -42,7 +42,7 @@ async def add_course(data: AddCourseInput, request: Request) -> model.AddOutput:
 
 @router.get('/course')
 @enveloped
-async def browse_course(request: Request) -> Sequence[do.Course]:
+async def browse_all_course(request: Request) -> Sequence[do.Course]:
     """
     ### 權限
     - System manager (hidden)
@@ -131,7 +131,7 @@ async def add_class_under_course(course_id: int, data: AddClassInput, request: R
 
 @router.get('/course/{course_id}/class', tags=['Class'])
 @enveloped
-async def browse_class_under_course(course_id: int, request: Request) -> Sequence[do.Class]:
+async def browse_all_class_under_course(course_id: int, request: Request) -> Sequence[do.Class]:
     """
     ### 權限
     - Class+ manager (hidden)

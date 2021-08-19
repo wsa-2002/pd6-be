@@ -84,7 +84,7 @@ class Grade:
     grader_id: int
     class_id: int
     title: str
-    score: Optional[int]
+    score: Optional[str]
     comment: Optional[str]
     update_time: datetime
     is_deleted: bool
@@ -94,8 +94,8 @@ class Grade:
 class Challenge:
     id: int
     class_id: int
-    type: enum.ChallengeType
     publicize_type: enum.ChallengePublicizeType
+    selection_type: enum.TaskSelectionType
     title: str
     setter_id: int
     description: Optional[str]
@@ -109,11 +109,11 @@ class Problem:
     id: int
     challenge_id: int
     challenge_label: str
-    selection_type: enum.TaskSelectionType
     title: str
     setter_id: int
     full_score: int
     description: Optional[str]
+    io_description: Optional[str]
     source: Optional[str]
     hint: Optional[str]
     is_deleted: bool
@@ -187,7 +187,7 @@ class JudgeCase:
 class Essay:
     id: int
     challenge_id: int
-    challenge_label: int
+    challenge_label: str
     title: str
     setter_id: int
     description: Optional[str]

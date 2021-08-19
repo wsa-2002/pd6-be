@@ -3,7 +3,6 @@ from typing import Sequence
 from pydantic import BaseModel
 
 from base import do
-from base.cls import NoTimezoneIsoDatetime
 from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
@@ -23,8 +22,8 @@ class AddAnnouncementInput(BaseModel):
     title: str
     content: str
     author_id: int
-    post_time: NoTimezoneIsoDatetime
-    expire_time: NoTimezoneIsoDatetime
+    post_time: model.ServerTZDatetime
+    expire_time: model.ServerTZDatetime
 
 
 @router.post('/announcement')
@@ -77,8 +76,8 @@ async def read_announcement(announcement_id: int, request: Request) -> do.Announ
 class EditAnnouncementInput(BaseModel):
     title: str = None
     content: str = None
-    post_time: NoTimezoneIsoDatetime = None
-    expire_time: NoTimezoneIsoDatetime = None
+    post_time: model.ServerTZDatetime = None
+    expire_time: model.ServerTZDatetime = None
 
 
 @router.patch('/announcement/{announcement_id}')

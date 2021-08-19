@@ -1,9 +1,5 @@
-import datetime
 import enum
 import typing
-
-import pydantic.datetime_parse
-
 
 T = typing.TypeVar("T")
 
@@ -45,23 +41,3 @@ class OrderedMixin:
         items = tuple(reversed(self.__class__))
         self_index = items.index(self)
         return items[self_index-1] if self_index else items[0]
-
-
-class NoTimezoneIsoDatetime(datetime.datetime):
-    """
-    A pydantic-compatible custom class to represent and validate ISO-format datetime without timezone info
-    """
-    @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, value):
-        converted = pydantic.datetime_parse.parse_datetime(value)
-
-        # forces timezone to be None
-        if converted.tzinfo is not None:
-            # Uses utc as default timezone
-            converted = converted.astimezone(tz=datetime.timezone.utc).replace(tzinfo=None)
-
-        return converted

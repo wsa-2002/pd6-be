@@ -116,6 +116,19 @@ async def edit(testcase_id: int,
         pass
 
 
+async def disable_enable_testcase_by_problem(problem_id: int, testcase_disabled: bool, is_sample=False) -> None:
+    async with SafeExecutor(
+            event='disable or enable testcase by problem',
+            sql=fr'UPDATE testcase'
+                fr'   SET is_disabled = %(is_disabled)s'
+                fr' WHERE problem_id = %(problem_id)s'
+                fr'   AND is_sample = %(is_sample)s',
+            is_disabled=testcase_disabled,
+            problem_id=problem_id, is_sample=is_sample,
+    ):
+        pass
+
+
 async def delete(testcase_id: int) -> None:
     async with SafeExecutor(
             event='soft delete testcase',

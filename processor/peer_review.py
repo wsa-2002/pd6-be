@@ -1,13 +1,12 @@
 from pydantic import BaseModel
 
 from base import do
-from base.cls import NoTimezoneIsoDatetime
 from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
 import service
 
-from .util import rbac
+from .util import model, rbac
 
 
 router = APIRouter(
@@ -45,8 +44,8 @@ class EditPeerReviewInput(BaseModel):
     min_score: int = None
     max_score: int = None
     max_review_count: int = None
-    start_time: NoTimezoneIsoDatetime = None
-    end_time: NoTimezoneIsoDatetime = None
+    start_time: model.ServerTZDatetime = None
+    end_time: model.ServerTZDatetime = None
 
 
 @router.patch('/peer-review/{peer_review_id}')

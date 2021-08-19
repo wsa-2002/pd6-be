@@ -9,6 +9,8 @@ import exceptions as exc
 from middleware import APIRouter, JSONResponse, enveloped
 import service
 
+from .util import model
+
 router = APIRouter(tags=['Public'])
 
 
@@ -26,7 +28,7 @@ class AddAccountInput(BaseModel):
     password: str
     nickname: str
     real_name: str
-    alternative_email: Optional[pydantic.EmailStr] = ...
+    alternative_email: Optional[pydantic.EmailStr] = model.can_omit
     # Student card
     institute_id: int
     student_id: str

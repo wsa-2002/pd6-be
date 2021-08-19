@@ -51,7 +51,7 @@ async def browse_account_with_default_student_id(request: Request) -> Sequence[B
 
 @router.get('/account/{account_id}/class')
 @enveloped
-async def browse_account_with_class_role(account_id: int, request: Request) -> Sequence[do.ClassMember]:
+async def browse_all_account_with_class_role(account_id: int, request: Request) -> Sequence[do.ClassMember]:
     """
     ### 權限
     - Self
