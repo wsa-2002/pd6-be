@@ -9,6 +9,7 @@ read = db.problem.read
 delete = db.problem.delete_cascade
 
 browse_problem_set = db.problem.browse_problem_set
+read_task_status_by_type = db.problem.read_task_status_by_type
 
 
 async def edit(problem_id: int,
