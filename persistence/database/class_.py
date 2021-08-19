@@ -175,8 +175,8 @@ async def add_members_by_account_referral(class_id: int, member_roles: Collectio
     async with SafeConnection(event='add members to class') as conn:
         await conn.executemany(
             command=r'INSERT INTO class_member'
-                    r'            (class_id, account_referral_to_id(%(account_referral)s), role)'
-                    r'     VALUES ($1, $2, $3)',
+                    r'            (class_id, member_id, role)'
+                    r'     VALUES ($1, account_referral_to_id($2), $3)',
             args=[(class_id, account_referral, role)
                   for account_referral, role in member_roles],
         )

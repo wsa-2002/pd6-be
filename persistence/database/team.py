@@ -158,8 +158,8 @@ async def add_members_by_account_referral(team_id: int, member_roles: Collection
     async with SafeConnection(event='add members to team') as conn:
         await conn.executemany(
             command=r'INSERT INTO team_member'
-                    r'            (team_id, account_referral_to_id(%(account_referral)s), role)'
-                    r'     VALUES ($1, $2, $3)',
+                    r'            (team_id, member_id, role)'
+                    r'     VALUES ($1, account_referral_to_id($2), $3)',
             args=[(team_id, account_referral, role)
                   for account_referral, role in member_roles],
         )
