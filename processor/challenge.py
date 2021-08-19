@@ -86,7 +86,7 @@ class EditChallengeInput(BaseModel):
     publicize_type: enum.ChallengePublicizeType = None
     selection_type: enum.TaskSelectionType = None
     title: str = None
-    description: Optional[str] = ...
+    description: Optional[str] = model.can_omit
     start_time: model.ServerTZDatetime = None
     end_time: model.ServerTZDatetime = None
 

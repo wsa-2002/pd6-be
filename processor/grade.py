@@ -11,7 +11,7 @@ from base.enum import RoleType
 from middleware import APIRouter, response, enveloped, auth, Request
 import service
 
-from .util import rbac
+from .util import rbac, model
 
 router = APIRouter(
     tags=['Grade'],
@@ -102,8 +102,8 @@ async def get_grade(grade_id: int, request: Request) -> do.Grade:
 
 class EditGradeInput(BaseModel):
     title: str = None
-    score: Optional[str] = ...
-    comment: Optional[str] = ...
+    score: Optional[str] = model.can_omit
+    comment: Optional[str] = model.can_omit
 
 
 @router.patch('/grade/{grade_id}')

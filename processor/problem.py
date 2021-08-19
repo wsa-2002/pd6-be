@@ -64,10 +64,10 @@ class EditProblemInput(BaseModel):
     title: str = None
     full_score: int = None
     testcase_disabled: bool = None
-    description: Optional[str] = ...
-    io_description: Optional[str] = ...
-    source: Optional[str] = ...
-    hint: Optional[str] = ...
+    description: Optional[str] = model.can_omit
+    io_description: Optional[str] = model.can_omit
+    source: Optional[str] = model.can_omit
+    hint: Optional[str] = model.can_omit
 
 
 @router.patch('/problem/{problem_id}')
