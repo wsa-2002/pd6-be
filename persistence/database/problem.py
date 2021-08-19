@@ -112,7 +112,7 @@ async def read(problem_id: int, include_deleted=False) -> do.Problem:
     async with SafeExecutor(
             event='read problem by id',
             sql=fr'SELECT id, challenge_id, challenge_label, title, setter_id, full_score, '
-                fr'       description, source, hint, is_deleted'
+                fr'       description, io_description, source, hint, is_deleted'
                 fr'  FROM problem'
                 fr' WHERE id = %(problem_id)s'
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}',
