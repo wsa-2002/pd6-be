@@ -1,10 +1,14 @@
+from dataclasses import dataclass
+from datetime import datetime
+
 from pydantic import BaseModel
 
-from base import do
-from base.enum import RoleType
+from base import do, popo
+from base.enum import RoleType, FilterOperator
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
 import service
+from util.api_doc import add_to_docstring
 
 from .util import model, rbac
 
@@ -85,15 +89,61 @@ async def delete_peer_review(peer_review_id: int, request: Request) -> None:
     return await service.peer_review.delete(peer_review_id=peer_review_id)
 
 
+@dataclass
+class ReadPeerReviewRecordOutput:
+    id: int
+    peer_review_id: int
+    grader_id: int
+    receiver_id: int
+    score: int
+    comment: str
+    submit_time: datetime
+
+
+BROWSE_PEER_REVIEW_RECORD_COLUMNS = {
+    'grader_id': int,
+    'receiver_id': int,
+    'score': int,
+    'comment': str,
+    'submit_time': model.ServerTZDatetime,
+}
+
+
 @router.get('/peer-review/{peer_review_id}/record')
 @enveloped
-async def browse_peer_review_record(peer_review_id: int, request: Request):
+@add_to_docstring({k: v.__name__ for k, v in BROWSE_PEER_REVIEW_RECORD_COLUMNS.items()})
+async def browse_peer_review_record(peer_review_id: int, request: Request,
+                                    limit: model.Limit, offset: model.Offset,
+                                    filter: model.FilterStr = None, sort: model.SorterStr = None,)\
+        -> model.BrowseOutputBase:
     """
     ### 權限
     - Class manager (full)
     - Self (看不到對方)
     """
-    ...  # TODO
+    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
+    peer_review = await service.peer_review.read(peer_review_id=peer_review_id)
+    challenge = await service.challenge.read(challenge_id=peer_review.challenge_id, include_scheduled=True)
+
+    is_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)
+
+    filters = model.parse_filter(filter, BROWSE_PEER_REVIEW_RECORD_COLUMNS)
+    sorters = model.parse_sorter(sort, BROWSE_PEER_REVIEW_RECORD_COLUMNS)
+
+    if not is_manager:  # 不是 class manager 的話只能看自己的
+        filters.append(popo.Filter(col_name='receiver_id',
+                                   op=FilterOperator.eq,
+                                   value=request.account.id))
+
+    peer_review_record, total_count = await service.peer_review_record.browse(limit=limit, offset=offset,
+                                                                              filters=filters, sorters=sorters)
+    records = [ReadPeerReviewRecordOutput(id=record.id, peer_review_id=record.peer_review_id,
+                                          grader_id=record.grader_id if is_manager else None,  # self 不能看 grader_id
+                                          receiver_id=record.receiver_id,
+                                          score=record.score, comment=record.comment, submit_time=record.submit_time)
+               for record in peer_review_record]
+
+    return model.BrowseOutputBase(records, total_count=total_count)
 
 
 # 改一下這些 function name
@@ -106,27 +156,69 @@ async def assign_peer_review_record(peer_review_id: int, request: Request):
     ### 權限
     - Self is class *normal ONLY*
     """
-    return {'id': 1}
+    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
+    peer_review = await service.peer_review.read(peer_review_id)
+    challenge = await service.challenge.read(challenge_id=peer_review.challenge_id, include_scheduled=True)
+    class_role = await rbac.get_role(request.account.id, class_id=challenge.class_id)
+
+    if class_role is not RoleType.normal:
+        raise exc.NoPermission
+
+    # TODO: assign peer review
 
 
 @router.get('/peer-review-record/{peer_review_record_id}')
 @enveloped
-async def read_peer_review_record(peer_review_record_id: int, request: Request):
+async def read_peer_review_record(peer_review_record_id: int, request: Request) -> ReadPeerReviewRecordOutput:
     """
     ### 權限
     - Class manager (full)
     - Self (看不到對方)
     """
-    ...  # TODO
+    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
+    peer_review_record = await service.peer_review_record.read(peer_review_record_id)
+    peer_review = await service.peer_review.read(peer_review_id=peer_review_record.peer_review_id)
+    challenge = await service.challenge.read(challenge_id=peer_review.challenge_id)
+
+    is_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)
+
+    if not (is_manager or request.account.id is peer_review_record.receiver_id):
+        raise exc.NoPermission
+
+    return ReadPeerReviewRecordOutput(
+        id=peer_review_record.id,
+        peer_review_id=peer_review_record.id,
+        grader_id=peer_review_record.grader_id if is_manager else None,
+        receiver_id=peer_review_record.receiver_id,
+        score=peer_review_record.score,
+        comment=peer_review_record.comment,
+        submit_time=peer_review_record.submit_time
+    )
 
 
-@router.put('/peer-review-record/{peer_review_record_id}/score')
+@dataclass
+class SubmitPeerReviewInput:
+    score: int
+    comment: str
+
+
+@router.put('/peer-review-record/{peer_review_record_id}')
 @enveloped
-async def submit_peer_review_record_score(peer_review_record_id: int, request: Request):
+async def submit_peer_review_record(peer_review_record_id: int, data: SubmitPeerReviewInput, request: Request):
     """
     互評完了，交互評成績評語
 
     ### 權限
     - Self is class *normal ONLY*
     """
-    pass
+    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
+    peer_review_record = await service.peer_review_record.read(peer_review_record_id)
+    peer_review = await service.peer_review.read(peer_review_id=peer_review_record.peer_review_id)
+    challenge = await service.challenge.read(challenge_id=peer_review.challenge_id)
+
+    class_role = await rbac.get_role(request.account.id, class_id=challenge.class_id)
+    if class_role is not RoleType.normal:  # only class normal
+        raise exc.NoPermission
+
+    await service.peer_review_record.edit(peer_review_record.id, score=data.score,
+                                          comment=data.comment, submit_time=request.time)

@@ -1,10 +1,11 @@
 from datetime import datetime
 from typing import Sequence
 
-import log
 from base import do
+from base.popo import Filter, Sorter
 
 from .base import SafeExecutor
+from .util import execute_count, compile_filters
 
 
 async def add(peer_review_id: int, grader_id: int, receiver_id: int) -> int:
@@ -36,30 +37,39 @@ async def edit_score(peer_review_record_id: int, score: int, comment: str, submi
         pass
 
 
-async def browse(grader_id: int = None, receiver_id: int = None) -> Sequence[do.PeerReviewRecord]:
-    conditions = {}
+async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter]) \
+        -> tuple[Sequence[do.PeerReviewRecord], int]:
 
-    if grader_id is not None:
-        conditions['grader_id'] = grader_id
-    if receiver_id is not None:
-        conditions['receiver_id'] = receiver_id
-
-    cond_sql = ' AND '.join(fr"{field_name} = %({field_name})s" for field_name in conditions)
+    cond_sql, cond_params = compile_filters(filters)
+    sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
+    if sort_sql:
+        sort_sql += ','
 
     async with SafeExecutor(
             event='browse peer review records',
             sql=fr'SELECT id, peer_review_id, grader_id, receiver_id, score, comment, submit_time'
                 fr'  FROM peer_review_record'
-                fr' {f"WHERE {cond_sql}" if cond_sql else ""}'
-                fr' ORDER BY id ASC',
-            **conditions,
+                fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
+                fr' ORDER BY {sort_sql} id ASC'
+                fr' LIMIT %(limit)s OFFSET %(offset)s',
+            **cond_params,
+            limit=limit, offset=offset,
             fetch='all',
+            raise_not_found=False,
     ) as records:
-        return [do.PeerReviewRecord(id=id_, peer_review_id=peer_review_id,
+        data = [do.PeerReviewRecord(id=id_, peer_review_id=peer_review_id,
                                     grader_id=grader_id, receiver_id=receiver_id,
                                     score=score, comment=comment, submit_time=submit_time)
                 for (id_, peer_review_id, grader_id, receiver_id, score, comment, submit_time)
                 in records]
+    total_count = await execute_count(
+        sql=fr'SELECT id, peer_review_id, grader_id, receiver_id, score, comment, submit_time'
+            fr'  FROM peer_review_record'
+            fr'{f" WHERE {cond_sql}" if cond_sql else ""}',
+        **cond_params,
+    )
+
+    return data, total_count
 
 
 async def read(peer_review_record_id: int) -> do.PeerReviewRecord:
