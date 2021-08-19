@@ -8,7 +8,6 @@ from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
 import persistence.email as email
-from persistence.database.util import account_referral_to_id
 import service
 
 from .util import rbac, model
@@ -179,7 +178,7 @@ class SetClassMemberInput(BaseModel):
 
 @router.put('/class/{class_id}/member')
 @enveloped
-async def set_class_members(class_id: int, data: Sequence[SetClassMemberInput], request: Request) -> None:
+async def replace_class_members(class_id: int, data: Sequence[SetClassMemberInput], request: Request) -> None:
     """
     ### 權限
     - Class+ manager
@@ -187,12 +186,11 @@ async def set_class_members(class_id: int, data: Sequence[SetClassMemberInput], 
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id, inherit=True):
         raise exc.NoPermission
 
-    await service.class_.delete_all_members_in_class(class_id=class_id)
-    await service.class_.add_members_by_account_referral(class_id=class_id,
-                                                         member_roles=[(member.account_referral, member.role)
-                                                                        for member in data])
+    await service.class_.replace_members(class_id=class_id,
+                                         member_roles=[(member.account_referral, member.role)
+                                                       for member in data])
 
-    updated_class_managers = [await account_referral_to_id(account_referral=member.account_referral)
+    updated_class_managers = [await service.account.referral_to_id(account_referral=member.account_referral)
                               for member in data if member.role is RoleType.manager]
     if updated_class_managers:
         class_manager_emails = await service.class_.browse_member_emails(class_id, RoleType.manager)

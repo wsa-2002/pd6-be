@@ -147,7 +147,7 @@ class SetMemberInput(BaseModel):
 
 @router.put('/team/{team_id}/member')
 @enveloped
-async def set_team_members(team_id: int, data: Sequence[SetMemberInput], request: Request) -> None:
+async def replace_team_members(team_id: int, data: Sequence[SetMemberInput], request: Request) -> None:
     """
     ### 權限
     - Class manager
@@ -158,10 +158,9 @@ async def set_team_members(team_id: int, data: Sequence[SetMemberInput], request
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=team.class_id):
         raise exc.NoPermission
 
-    await service.team.delete_all_members_in_team(team_id=team_id)
-    await service.team.add_members_by_account_referral(team_id=team_id,
-                                                       member_roles=[(member.account_referral, member.role)
-                                                                      for member in data])
+    await service.team.replace_members(team_id=team_id,
+                                       member_roles=[(member.account_referral, member.role)
+                                                     for member in data])
 
 
 @router.delete('/team/{team_id}/member/{member_id}')

@@ -171,7 +171,7 @@ async def add_members(class_id: int, member_roles: Collection[Tuple[int, RoleTyp
         )
 
 
-async def add_members_by_account_referral(class_id: int, member_roles: Collection[Tuple[str, RoleType]]):
+async def add_members_by_account_referral(class_id: int, member_roles: Sequence[Tuple[str, RoleType]]):
     async with SafeConnection(event='add members to class') as conn:
         await conn.executemany(
             command=r'INSERT INTO class_member'

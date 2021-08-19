@@ -1,4 +1,4 @@
-from typing import Sequence, Collection, Tuple
+from typing import Sequence, Tuple
 
 from base import do
 from base.enum import RoleType
@@ -154,7 +154,7 @@ async def add_member(team_id: int, account_referral: str, role: RoleType):
         pass
 
 
-async def add_members_by_account_referral(team_id: int, member_roles: Collection[Tuple[str, RoleType]]):
+async def add_members_by_account_referral(team_id: int, member_roles: Sequence[Tuple[str, RoleType]]):
     async with SafeConnection(event='add members to team') as conn:
         await conn.executemany(
             command=r'INSERT INTO team_member'
