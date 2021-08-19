@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Optional
 
 from pydantic import BaseModel
 
@@ -89,17 +90,6 @@ async def delete_peer_review(peer_review_id: int, request: Request) -> None:
     return await service.peer_review.delete(peer_review_id=peer_review_id)
 
 
-@dataclass
-class ReadPeerReviewRecordOutput:
-    id: int
-    peer_review_id: int
-    grader_id: int
-    receiver_id: int
-    score: int
-    comment: str
-    submit_time: datetime
-
-
 BROWSE_PEER_REVIEW_RECORD_COLUMNS = {
     'grader_id': int,
     'receiver_id': int,
@@ -149,7 +139,7 @@ async def browse_peer_review_record(peer_review_id: int, request: Request,
 # 改一下這些 function name
 @router.post('/peer-review/{peer_review_id}/record')
 @enveloped
-async def assign_peer_review_record(peer_review_id: int, request: Request):
+async def assign_peer_review_record(peer_review_id: int, request: Request) -> model.AddOutput:
     """
     發互評 (決定 A 要評誰 )
 
@@ -164,7 +154,21 @@ async def assign_peer_review_record(peer_review_id: int, request: Request):
     if class_role is not RoleType.normal:
         raise exc.NoPermission
 
-    # TODO: assign peer review
+    peer_review_record_id = await service.peer_review_record.add_auto(peer_review_id=peer_review.id,
+                                                                      grader_id=request.account.id)
+
+    return model.AddOutput(id=peer_review_record_id)
+
+
+@dataclass
+class ReadPeerReviewRecordOutput:
+    id: int
+    peer_review_id: int
+    grader_id: Optional[int]
+    receiver_id: int
+    score: int
+    comment: str
+    submit_time: datetime
 
 
 @router.get('/peer-review-record/{peer_review_record_id}')
@@ -178,11 +182,11 @@ async def read_peer_review_record(peer_review_record_id: int, request: Request) 
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     peer_review_record = await service.peer_review_record.read(peer_review_record_id)
     peer_review = await service.peer_review.read(peer_review_id=peer_review_record.peer_review_id)
-    challenge = await service.challenge.read(challenge_id=peer_review.challenge_id)
+    challenge = await service.challenge.read(challenge_id=peer_review.challenge_id, include_scheduled=True)
 
     is_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)
 
-    if not (is_manager or request.account.id is peer_review_record.receiver_id):
+    if not (is_manager or (request.account.id is peer_review_record.receiver_id)):
         raise exc.NoPermission
 
     return ReadPeerReviewRecordOutput(
@@ -192,19 +196,18 @@ async def read_peer_review_record(peer_review_record_id: int, request: Request) 
         receiver_id=peer_review_record.receiver_id,
         score=peer_review_record.score,
         comment=peer_review_record.comment,
-        submit_time=peer_review_record.submit_time
+        submit_time=peer_review_record.submit_time,
     )
 
 
-@dataclass
-class SubmitPeerReviewInput:
+class SubmitPeerReviewInput(BaseModel):
     score: int
     comment: str
 
 
-@router.put('/peer-review-record/{peer_review_record_id}')
+@router.patch('/peer-review-record/{peer_review_record_id}')
 @enveloped
-async def submit_peer_review_record(peer_review_record_id: int, data: SubmitPeerReviewInput, request: Request):
+async def submit_peer_review_record(peer_review_record_id: int, data: SubmitPeerReviewInput, request: Request) -> None:
     """
     互評完了，交互評成績評語
 
@@ -214,7 +217,7 @@ async def submit_peer_review_record(peer_review_record_id: int, data: SubmitPeer
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     peer_review_record = await service.peer_review_record.read(peer_review_record_id)
     peer_review = await service.peer_review.read(peer_review_id=peer_review_record.peer_review_id)
-    challenge = await service.challenge.read(challenge_id=peer_review.challenge_id)
+    challenge = await service.challenge.read(challenge_id=peer_review.challenge_id, include_scheduled=True)
 
     class_role = await rbac.get_role(request.account.id, class_id=challenge.class_id)
     if class_role is not RoleType.normal:  # only class normal
