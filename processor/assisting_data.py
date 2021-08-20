@@ -64,7 +64,7 @@ async def edit_assisting_data(assisting_data_id: int, request: Request, assistin
                                       assisting_data_id=assisting_data.id)
 
 
-@router.delete('assisting-data/{assisting_data_id}')
+@router.delete('/assisting-data/{assisting_data_id}')
 @enveloped
 async def delete_assisting_data(assisting_data_id: int, request: Request) -> None:
     """
