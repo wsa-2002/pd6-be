@@ -17,6 +17,8 @@ read = db.account.read
 edit_general = db.account.edit
 edit_default_student_card = db.account.edit_default_student_card
 
+referral_to_id = db.account.account_referral_to_id
+
 
 async def edit_alternative_email(account_id: int, alternative_email: str = None) -> None:
     # 先 update email 因為如果失敗就整個失敗

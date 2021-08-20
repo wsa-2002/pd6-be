@@ -232,3 +232,13 @@ async def edit_default_student_card(account_id: int, student_card_id: int) -> No
             student_card_id=student_card_id,
     ):
         return
+
+
+async def account_referral_to_id(account_referral: str) -> int:
+    async with SafeExecutor(
+            event='account referral to id',
+            sql=f"SELECT account_referral_to_id(%(account_referral)s)",
+            account_referral=account_referral,
+            fetch=1,
+    ) as (account_id,):
+        return account_id
