@@ -320,10 +320,15 @@ async def get_challenge_statistics(challenge_id: int, request: Request) -> GetCh
 
 
 @dataclass
+class MemberSubmissionStatOutput:
+    id: int
+    problem_scores: Optional[Sequence[do.Judgment]]
+    essay_submissions: Optional[Sequence[do.EssaySubmission]]
+
+
+@dataclass
 class GetMemberSubmissionStatOutput:
-    member_id: Sequence[int]
-    problem_scores: Sequence[Optional[Sequence[do.Judgment]]]
-    essay_submissions: Sequence[Optional[Sequence[do.EssaySubmission]]]
+    member: Sequence[MemberSubmissionStatOutput]
 
 
 @router.get('/challenge/{challenge_id}/statistics/member-submission')
@@ -338,7 +343,10 @@ async def get_member_submission_statistics(challenge_id: int, request: Request) 
     if not rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
-    member_id, problem_scores, essay_submissions = await service.challenge.get_member_submission_statistics(challenge_id=challenge.id)
-    return GetMemberSubmissionStatOutput(member_id=member_id,
-                                         problem_scores=problem_scores,
-                                         essay_submissions=essay_submissions)
+    results = await service.challenge.get_member_submission_statistics(challenge_id=challenge.id)
+    return GetMemberSubmissionStatOutput(
+        member=[MemberSubmissionStatOutput(
+            id=member_id,
+            problem_scores=problem_scores if problem_scores else None,
+            essay_submissions=essays if essays else None)
+            for member_id, problem_scores, essays in results])

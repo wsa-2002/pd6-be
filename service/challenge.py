@@ -45,39 +45,34 @@ async def get_challenge_statistics(challenge_id: int) -> Sequence[Tuple[str, int
 
 
 async def get_member_submission_statistics(challenge_id: int) \
-        -> Tuple[Sequence[int], Sequence[Sequence[do.Judgment]], Sequence[Sequence[do.EssaySubmission]]]:
+        -> Sequence[Tuple[int, Sequence[do.Judgment], Sequence[do.EssaySubmission]]]:
     """
-    :return: [[], [[judgment]], [[essay_submission]]]
+    :return: [id, [submission_id, submission_score], [essay_submission]]
     """
 
     challenge = await db.challenge.read(challenge_id, include_scheduled=True)
     class_members = await db.class_.browse_members(class_id=challenge.class_id)
     problems = await db.problem.browse_by_challenge(challenge_id=challenge_id)
     essays = await db.essay.browse_by_challenge(challenge_id=challenge_id)
-
-    all_judgments = []
-    all_essay_submissions = []
+    result = []
     for class_member in class_members:
-        judgments = []
-        essay_submissions = []
+        problem_scores = []
         for problem in problems:
             try:
-                judgments.append(await db.judgment.get_submission_score(problem_id=problem.id,
-                                                                        account_id=class_member.member_id,
-                                                                        selection_type=challenge.selection_type,
-                                                                        challenge_end_time=challenge.end_time))
+                problem_scores.append(await db.judgment.get_submission_score(problem_id=problem.id,
+                                                                             account_id=class_member.member_id,
+                                                                             selection_type=challenge.selection_type,
+                                                                             challenge_end_time=challenge.end_time))
             except exc.persistence.NotFound:
                 pass
+
+        essay_submissions = []
         for essay in essays:
             try:
-                essay_submissions.append(await db.essay_submission.get_latest_essay_submission(
-                    account_id=class_member.member_id,
-                    essay_id=essay.id))
+                essay_submissions.append(
+                    await db.essay_submission.get_latest_essay_submission(account_id=class_member.member_id,
+                                                                          essay_id=essay.id))
             except exc.persistence.NotFound:
                 pass
-        all_judgments.append(judgments)
-        all_essay_submissions.append(essay_submissions)
-
-    return ([class_member.member_id for class_member in class_members],
-            all_judgments,
-            all_essay_submissions)
+        result.append((class_member.member_id, problem_scores, essay_submissions))
+    return result
