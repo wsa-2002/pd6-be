@@ -168,7 +168,7 @@ async def browse_all_submission_judgment(submission_id: int, request: Request) -
     return await service.judgment.browse(submission_id=submission_id)
 
 
-@router.get('/submission/{submission_id}/judgment', tags=['Judgment'])
+@router.get('/submission/{submission_id}/latest-judgment', tags=['Judgment'])
 @enveloped
 async def read_submission_latest_judgment(submission_id: int, request: Request) -> do.Judgment:
     """
