@@ -98,7 +98,7 @@ async def get_submission_score(problem_id: int, account_id: int, selection_type:
                     fr'        AND submission.account_id = %(account_id)s'
                     fr'        AND submission.submit_time <= %(challenge_end_time)s'
                     fr'        AND submission.problem_id = %(problem_id)s'
-                    fr' ORDER BY score DESC'
+                    fr' ORDER BY judgment.score DESC'
                     fr' LIMIT 1',
                 account_id=account_id, challenge_end_time=challenge_end_time, problem_id=problem_id,
         ) as (id_, submission_id, status, total_time, max_memory, score, judge_time):
