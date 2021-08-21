@@ -166,3 +166,18 @@ async def browse_all_submission_judgment(submission_id: int, request: Request) -
     """
     # TODO: 權限控制
     return await service.judgment.browse(submission_id=submission_id)
+
+
+@router.get('/submission/{submission_id}/judgment', tags=['Judgment'])
+@enveloped
+async def read_submission_latest_judgment(submission_id: int, request: Request) -> do.Judgment:
+    """
+    ### 權限
+    - Self: see self
+    """
+    submission = await service.submission.read(submission_id=submission_id)
+
+    # 可以看自己的
+    if submission.account_id is not request.account.id:
+        raise exc.NoPermission
+    return await service.submission.read_latest_judgment(submission_id=submission_id)
