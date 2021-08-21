@@ -5,7 +5,7 @@ import persistence.database as db
 import persistence.s3 as s3
 
 browse_with_problem_id = db.assisting_data.browse_with_problem_id
-browse_with_problem_and_s3_file = db.assisting_data.browse_with_problem_and_s3_file
+browse_with_s3_files = db.assisting_data.browse_with_s3_files
 read = db.assisting_data.read
 delete = db.assisting_data.delete
 

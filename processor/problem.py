@@ -1,3 +1,4 @@
+import io
 from zipfile import ZipFile
 
 from dataclasses import dataclass
@@ -230,27 +231,22 @@ async def add_assisting_data_under_problem(problem_id: int, request: Request, as
                                                          problem_id=problem_id)
     return model.AddOutput(id=assisting_data_id)
 
-
+import persistence.database as db
 import persistence.s3 as s3
 @router.post('/problem/{problem_id}/all-assisting-data')
 @enveloped
 async def download_all_assisting_data(problem_id: int, request: Request) -> None: # do.S3File:
-    results = await service.assisting_data.browse_with_problem_and_s3_file(problem_id=problem_id)
-    files = {
-        assisting_data.filename: s3_file.key
-        for (assisting_data, s3_file) in results
-    }
+    s3_files = await service.assisting_data.browse_with_s3_files(problem_id=problem_id)
+    files = [await s3.assisting_data.download(s3_file.key) for s3_file in s3_files]
+    zip_file = ZipFile('assisting_data.zip', "w")
 
-    for filename in files:
-        file = await s3.assisting_data.download(files[filename])
-    #file
+    with zip_file as zipObj:
+        for file_to_zip in files:
+            zipObj.write(file_to_zip)
 
-'''
-    with ZipFile('assisting_data.zip', 'w') as zipObj:
-        #for filename,
-        # Add multiple files to the zip
-        zipObj.write('sample_file.csv')
-        zipObj.write('test_1.log')
-        zipObj.write('test_2.log')
-'''
+    s3_file = await s3.assisting_data.upload(file=zip_file)
+    await db.s3_file.add(bucket=s3_file.bucket, key=s3_file.key)
+
+
+
 

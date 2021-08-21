@@ -31,5 +31,6 @@ async def download(key: str) -> typing.IO:
     """
     bucket = await s3_handler.get_bucket(_BUCKET_NAME)
 
-    with io.BytesIO() as file:
-        return await bucket.download_fileobj(key, file)
+    with io.BytesIO() as file: # open('filename')
+        await bucket.download_fileobj(key, file)
+    return file
