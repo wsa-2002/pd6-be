@@ -31,3 +31,4 @@ add_language = db.submission.add_language
 edit_language = db.submission.edit_language
 browse_language = db.submission.browse_language
 read_language = db.submission.read_language
+read_latest_judgment = db.submission.read_latest_judgment

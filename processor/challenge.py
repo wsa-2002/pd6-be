@@ -269,8 +269,7 @@ class ReadStatusOutput:
 async def browse_task_status_under_challenge(challenge_id: int, request: Request) -> Sequence[ReadStatusOutput]:
     """
     ### 權限
-    - Class manager (all)
-    - Class normal (self)
+    - Self: see self
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     challenge = await service.challenge.read(challenge_id=challenge_id, include_scheduled=True, ref_time=request.time)
@@ -278,10 +277,6 @@ async def browse_task_status_under_challenge(challenge_id: int, request: Request
     if class_role < RoleType.guest:
         raise exc.NoPermission
 
-    if class_role == RoleType.manager:  # Class manager
-        results = await service.challenge.browse_task_status(challenge.id)
-    else:  # Self
-        results = await service.challenge.browse_task_status(challenge.id, request.account.id)
-
+    results = await service.challenge.browse_task_status(challenge.id, request.account.id)
     return [ReadStatusOutput(problem=[ReadProblemStatusOutput(problem_id=problem.id, submission_id=submission.id)
                              for (problem, submission) in results])]

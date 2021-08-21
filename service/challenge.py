@@ -23,7 +23,7 @@ async def browse_task(challenge_id: int) -> Tuple[
     )
 
 
-async def browse_task_status(challenge_id: int, account_id: int = None) \
+async def browse_task_status(challenge_id: int, account_id: int) \
         -> Sequence[Tuple[do.Problem, do.Submission]]:
     challenge = await db.challenge.read(challenge_id=challenge_id, include_scheduled=True)
     problems = await db.problem.browse_by_challenge(challenge_id=challenge_id)
@@ -31,5 +31,6 @@ async def browse_task_status(challenge_id: int, account_id: int = None) \
     return [await db.problem.read_task_status_by_type(
                 problem_id=problem.id,
                 selection_type=challenge.selection_type,
+                challenge_end_time=challenge.end_time,
                 account_id=account_id)
             for problem in problems]
