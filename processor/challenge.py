@@ -328,7 +328,7 @@ class GetMemberSubmissionStatOutput:
 
 @router.get('/challenge/{challenge_id}/statistics/member-submission')
 @enveloped
-async def get_member_submission_statistics(challenge_id: int, request: Request) -> GetMemberSubmissionStatOutput:
+async def get_member_submission_statistics(challenge_id: int, request: Request) -> model.BrowseOutputBase:
     """
     ### 權限
     - class manager
@@ -339,9 +339,11 @@ async def get_member_submission_statistics(challenge_id: int, request: Request) 
         raise exc.NoPermission
 
     results = await service.challenge.get_member_submission_statistics(challenge_id=challenge.id)
-    return GetMemberSubmissionStatOutput(
+    member_submission_stat = GetMemberSubmissionStatOutput(
         member=[MemberSubmissionStatOutput(
             id=member_id,
             problem_scores=problem_scores if problem_scores else None,
             essay_submissions=essays if essays else None)
             for member_id, problem_scores, essays in results])
+
+    return model.BrowseOutputBase(data=member_submission_stat, total_count=results.__len__())
