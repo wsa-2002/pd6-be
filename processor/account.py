@@ -54,6 +54,13 @@ async def browse_account_with_default_student_id(request: Request) -> Sequence[B
 @enveloped
 async def batch_get_account_with_default_student_id(request: Request, account_ids: List[int] = Query(None)) \
         -> Sequence[BrowseAccountOutput]:
+    """
+    ### 權限
+    - System Manager
+    """
+    is_manager = await rbac.validate(request.account.id, RoleType.manager)
+    if not is_manager:
+        raise exc.NoPermission
 
     result = await service.account.browse_list_with_default_student_card(account_ids=account_ids)
     return [BrowseAccountOutput(id=account.id, username=account.username, nickname=account.nickname,
