@@ -171,6 +171,17 @@ async def add_members(class_id: int, member_roles: Collection[Tuple[int, RoleTyp
         )
 
 
+async def add_members_by_account_referral(class_id: int, member_roles: Sequence[Tuple[str, RoleType]]):
+    async with SafeConnection(event='add members to class') as conn:
+        await conn.executemany(
+            command=r'INSERT INTO class_member'
+                    r'            (class_id, member_id, role)'
+                    r'     VALUES ($1, account_referral_to_id($2), $3)',
+            args=[(class_id, account_referral, role)
+                  for account_referral, role in member_roles],
+        )
+
+
 async def browse_role_by_account_id(account_id: int) -> Sequence[do.ClassMember]:
     async with SafeExecutor(
             event='browse class role by account_id',
@@ -232,6 +243,16 @@ async def delete_member(class_id: int, member_id: int):
                 r'      WHERE class_id = %(class_id)s AND member_id = %(member_id)s',
             class_id=class_id,
             member_id=member_id,
+    ):
+        pass
+
+
+async def delete_all_members_in_class(class_id: int):
+    async with SafeExecutor(
+            event='HARD DELETE all class member',
+            sql=r'DELETE FROM class_member'
+                r'      WHERE class_id = %(class_id)s',
+            class_id=class_id,
     ):
         pass
 

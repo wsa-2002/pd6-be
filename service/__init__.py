@@ -23,6 +23,7 @@ from . import (
     assisting_data,
 
     peer_review,
+    peer_review_record,
 
     announcement,
     access_log,

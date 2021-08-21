@@ -67,8 +67,8 @@ async def edit(assisting_data_id: int, s3_file_uuid: UUID, filename: str):
     async with SafeExecutor(
             event='update assisting data',
             sql=fr'UPDATE assisting_data'
-                fr'   SET s3_file_uuid = %(s3_file_uuid), filename = %(filename)s'
-                fr' WHERE id = %(assisting_data_id)',
+                fr'   SET s3_file_uuid = %(s3_file_uuid)s, filename = %(filename)s'
+                fr' WHERE id = %(assisting_data_id)s',
             assisting_data_id=assisting_data_id, filename=filename,
             s3_file_uuid=s3_file_uuid,
     ):
