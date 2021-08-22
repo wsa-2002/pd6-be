@@ -268,7 +268,7 @@ async def total_ac_member_count(problem_id: int) -> int:
                 fr'        AND not challenge.is_deleted'
                 fr' WHERE class_member.role = %(role)s'
                 fr'   AND submission.problem_id = %(problem_id)s',
-            judgment_status='ACCEPTED', role=enum.RoleType.normal,
+            judgment_status=enum.JudgmentStatusType.ac, role=enum.RoleType.normal,
             problem_id=problem_id,
             fetch=1,
     ) as (count,):
