@@ -24,8 +24,8 @@ class AddChallengeInput(BaseModel):
     selection_type: enum.TaskSelectionType
     title: str
     description: Optional[str]
-    start_time: model.UTCDatetime
-    end_time: model.UTCDatetime
+    start_time: model.ServerTZDatetime
+    end_time: model.ServerTZDatetime
 
 
 @router.post('/class/{class_id}/challenge', tags=['Course'])
@@ -86,9 +86,9 @@ class EditChallengeInput(BaseModel):
     publicize_type: enum.ChallengePublicizeType = None
     selection_type: enum.TaskSelectionType = None
     title: str = None
-    description: Optional[str] = ...
-    start_time: model.UTCDatetime = None
-    end_time: model.UTCDatetime = None
+    description: Optional[str] = model.can_omit
+    start_time: model.ServerTZDatetime = None
+    end_time: model.ServerTZDatetime = None
 
 
 @router.patch('/challenge/{challenge_id}')
@@ -186,8 +186,8 @@ class AddPeerReviewInput(BaseModel):
     min_score: int
     max_score: int
     max_review_count: int
-    start_time: model.UTCDatetime
-    end_time: model.UTCDatetime
+    start_time: model.ServerTZDatetime
+    end_time: model.ServerTZDatetime
 
 
 @router.post('/challenge/{challenge_id}/peer-review', tags=['Peer Review'])
@@ -244,10 +244,39 @@ async def browse_all_task_under_challenge(challenge_id: int, request: Request) -
     if class_role < RoleType.normal:
         raise exc.NoPermission
 
-    problems, peer_reviews, essays = service.challenge.browse_task(challenge.id)
+    problems, peer_reviews, essays = await service.challenge.browse_task(challenge.id)
 
     return BrowseTaskOutput(
         problem=problems,
         peer_review=peer_reviews,
         essay=essays,
     )
+
+
+@dataclass
+class ReadProblemStatusOutput:
+    problem_id: int
+    submission_id: int
+
+
+@dataclass
+class ReadStatusOutput:
+    problem: Sequence[ReadProblemStatusOutput]
+
+
+@router.get('/challenge/{challenge_id}/task-status')
+@enveloped
+async def browse_task_status_under_challenge(challenge_id: int, request: Request) -> Sequence[ReadStatusOutput]:
+    """
+    ### 權限
+    - Self: see self
+    """
+    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
+    challenge = await service.challenge.read(challenge_id=challenge_id, include_scheduled=True, ref_time=request.time)
+    class_role = await rbac.get_role(request.account.id, class_id=challenge.class_id)
+    if class_role < RoleType.guest:
+        raise exc.NoPermission
+
+    results = await service.challenge.browse_task_status(challenge.id, request.account.id)
+    return [ReadStatusOutput(problem=[ReadProblemStatusOutput(problem_id=problem.id, submission_id=submission.id)
+                             for (problem, submission) in results])]

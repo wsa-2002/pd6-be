@@ -1,4 +1,4 @@
-from typing import Optional, Sequence
+from typing import Optional, Sequence, Tuple
 from datetime import datetime
 
 from base import do, enum
@@ -112,7 +112,7 @@ async def read(problem_id: int, include_deleted=False) -> do.Problem:
     async with SafeExecutor(
             event='read problem by id',
             sql=fr'SELECT id, challenge_id, challenge_label, title, setter_id, full_score, '
-                fr'       description, source, hint, is_deleted'
+                fr'       description, io_description, source, hint, is_deleted'
                 fr'  FROM problem'
                 fr' WHERE id = %(problem_id)s'
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}',
@@ -125,6 +125,47 @@ async def read(problem_id: int, include_deleted=False) -> do.Problem:
                           title=title, setter_id=setter_id, full_score=full_score,
                           description=description, io_description=io_description, source=source, hint=hint,
                           is_deleted=is_deleted)
+
+
+async def read_task_status_by_type(problem_id: int, account_id: int,
+                                   selection_type: enum.TaskSelectionType,
+                                   challenge_end_time: datetime, include_deleted=False) \
+        -> Tuple[do.Problem, do.Submission]:
+
+    is_last = selection_type is enum.TaskSelectionType.last
+    async with SafeExecutor(
+            event='read problem submission status by task selection type',
+            sql=fr'SELECT problem.id, problem.challenge_id, problem.challenge_label, problem.title,'
+                fr'       problem.setter_id, problem.full_score, problem.description, problem.io_description,'
+                fr'       problem.source, problem.hint, problem.is_deleted,'
+                fr'       submission.id, submission.account_id, submission.problem_id,'
+                fr'       submission.language_id, submission.filename,'
+                fr'       submission.content_file_uuid, submission.content_length, submission.submit_time'
+                fr'  FROM problem'
+                fr' INNER JOIN submission'
+                fr'         ON submission.problem_id = problem.id'
+                fr' INNER JOIN judgment'
+                fr'         ON judgment.submission_id = submission.id'
+                fr' WHERE problem.id = %(problem_id)s'
+                fr'   AND submission.submit_time <= %(challenge_end_time)s'
+                fr'   AND submission.account_id = %(account_id)s'
+                fr'{" AND NOT problem.is_deleted" if not include_deleted else ""}'
+                fr' ORDER BY '
+                fr'{"submission.submit_time" if is_last else "judgment.status, judgment.score"} DESC'
+                fr' LIMIT 1',
+            problem_id=problem_id,
+            challenge_end_time=challenge_end_time,
+            account_id=account_id,
+            fetch=1,
+    ) as (problem_id, challenge_id, challenge_label, title, setter_id, full_score,
+          description, io_description, source, hint, is_deleted,
+          submission_id, account_id, problem_id, language_id, filename, content_file_uuid, content_length, submit_time):
+        return (do.Problem(id=problem_id, challenge_id=challenge_id, challenge_label=challenge_label, title=title,
+                           setter_id=setter_id, full_score=full_score, description=description,
+                           io_description=io_description, source=source, hint=hint, is_deleted=is_deleted),
+                do.Submission(id=submission_id, account_id=account_id, problem_id=problem_id, filename=filename,
+                              language_id=language_id, content_file_uuid=content_file_uuid,
+                              content_length=content_length, submit_time=submit_time))
 
 
 async def edit(problem_id: int,

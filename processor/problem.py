@@ -63,10 +63,11 @@ async def read_problem(problem_id: int, request: Request) -> do.Problem:
 class EditProblemInput(BaseModel):
     title: str = None
     full_score: int = None
-    description: Optional[str] = ...
-    io_description: Optional[str] = ...
-    source: Optional[str] = ...
-    hint: Optional[str] = ...
+    testcase_disabled: bool = None
+    description: Optional[str] = model.can_omit
+    io_description: Optional[str] = model.can_omit
+    source: Optional[str] = model.can_omit
+    hint: Optional[str] = model.can_omit
 
 
 @router.patch('/problem/{problem_id}')
@@ -83,6 +84,7 @@ async def edit_problem(problem_id: int, data: EditProblemInput, request: Request
         raise exc.NoPermission
 
     return await service.problem.edit(problem_id, title=data.title, full_score=data.full_score,
+                                      testcase_disabled=data.testcase_disabled,
                                       description=data.description, io_description=data.io_description,
                                       source=data.source, hint=data.hint)
 

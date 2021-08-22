@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Sequence
 from uuid import UUID
 
-from base import do
+from base import do, enum
 
 from .base import SafeExecutor
 
@@ -156,3 +156,21 @@ async def read(submission_id: int) -> do.Submission:
         return do.Submission(id=submission_id, account_id=account_id, problem_id=problem_id, filename=filename,
                              language_id=language_id, content_file_uuid=content_file_uuid,
                              content_length=content_length, submit_time=submit_time)
+
+
+async def read_latest_judgment(submission_id: int) -> do.Judgment:
+    async with SafeExecutor(
+        event='read submission latest judgment',
+        sql=fr'SELECT judgment.id, judgment.submission_id, judgment.status, judgment.total_time,'
+            fr'       judgment.max_memory, judgment.score, judgment.judge_time'
+            fr'  FROM judgment'
+            fr' INNER JOIN submission'
+            fr'         ON submission.id = judgment.submission_id'
+            fr' WHERE submission.id = %(submission_id)s'
+            fr' ORDER BY judgment.id DESC'
+            fr' LIMIT 1',
+            submission_id=submission_id,
+            fetch=1,
+    ) as (judgment_id, submission_id, status, total_time, max_memory, score, judge_time):
+        return do.Judgment(id=judgment_id, submission_id=submission_id, status=status,
+                           total_time=total_time, max_memory=max_memory, score=score, judge_time=judge_time)

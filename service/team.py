@@ -1,5 +1,7 @@
 import io
+from typing import Sequence, Tuple
 
+from base import enum
 import persistence.database as db
 import persistence.s3 as s3
 
@@ -28,3 +30,10 @@ async def get_template_file() -> tuple[do.S3File, str]:
     with io.BytesIO(TEAM_TEMPLATE) as file:
         s3_file = await s3.temp.upload(file=file)
         return s3_file, TEAM_TEMPLATE_FILENAME
+
+
+async def replace_members(team_id: int, member_roles: Sequence[Tuple[str, enum.RoleType]]) -> None:
+    await db.team.delete_all_members_in_team(team_id=team_id)
+    await db.team.add_members_by_account_referral(team_id=team_id,
+                                                  member_roles=[(account_referral, role)
+                                                                for (account_referral, role) in member_roles])
