@@ -95,7 +95,7 @@ class ReadAccountOutput:
 
 @router.get('/account/{account_id}')
 @enveloped
-async def read_account(account_id: int, request: Request) -> ReadAccountOutput:
+async def read_account_with_default_student_id(account_id: int, request: Request) -> ReadAccountOutput:
     """
     ### 權限
     - System Manager
