@@ -29,7 +29,7 @@ async def edit_output(testcase_id: int, file: typing.IO, filename: str) -> None:
     file_uuid = uuid.uuid4()
     s3_file = await s3.testdata.upload(file=file, file_uuid=file_uuid)
     file_id = await db.s3_file.add_with_do(s3_file=s3_file)
-    await db.testcase.edit(testcase_id=testcase_id, input_file_uuid=file_id, output_filename=filename)
+    await db.testcase.edit(testcase_id=testcase_id, output_file_uuid=file_id, output_filename=filename)
 
 
 delete_input_data = db.testcase.delete_input_data
