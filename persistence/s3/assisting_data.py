@@ -30,7 +30,7 @@ async def download(key: str) -> typing.IO:
     :return: file-like object: typing.IO
     """
     bucket = await s3_handler.get_bucket(_BUCKET_NAME)
-
-    with io.BytesIO() as file: # open('filename')
+    to_download_file = io.BytesIO()
+    with to_download_file as file:
         await bucket.download_fileobj(key, file)
-    return file
+    return to_download_file
