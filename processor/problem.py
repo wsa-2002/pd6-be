@@ -231,5 +231,16 @@ async def add_assisting_data_under_problem(problem_id: int, request: Request, as
 
 @router.post('/problem/{problem_id}/all-assisting-data')
 @enveloped
-async def download_all_assisting_data(problem_id: int, request: Request) -> None: # -> do.S3File:
-    await service.assisting_data.download_all(problem_id=problem_id)
+async def download_all_assisting_data(problem_id: int, request: Request, filename: str, as_attachment: bool) -> None:
+    """
+    ### 權限
+    - class manager
+    """
+    problem = await service.problem.read(problem_id=problem_id)
+    challenge = await service.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
+
+    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+        raise exc.NoPermission
+
+    await service.assisting_data.download_all(account_id=request.account.id, problem_id=problem_id,
+                                              filename=filename, as_attachment=as_attachment)
