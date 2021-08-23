@@ -3,8 +3,6 @@ import aioboto3
 from base import mcs
 from config import S3Config
 
-from typing import Union
-import io
 
 class S3Handler(metaclass=mcs.Singleton):
     def __init__(self):
