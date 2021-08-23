@@ -11,7 +11,7 @@ import exceptions as exc
 
 
 def _ellipsis():
-    return ellipsis
+    return Ellipsis
 
 
 can_omit = pydantic.Field(default_factory=_ellipsis)
