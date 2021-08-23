@@ -70,10 +70,12 @@ class ReadAccountOutput:
     real_name: str
     alternative_email: Optional[str]
 
+    student_id: Optional[str]
+
 
 @router.get('/account/{account_id}')
 @enveloped
-async def read_account(account_id: int, request: Request) -> ReadAccountOutput:
+async def read_account_with_default_student_id(account_id: int, request: Request) -> ReadAccountOutput:
     """
     ### 權限
     - System Manager
@@ -89,14 +91,15 @@ async def read_account(account_id: int, request: Request) -> ReadAccountOutput:
 
     view_personal = is_self or is_manager
 
-    target_account = await service.account.read(account_id)
+    account, student_card = await service.account.read_with_default_student_card(account_id=account_id)
     result = ReadAccountOutput(
-        id=target_account.id,
-        username=target_account.username,
-        nickname=target_account.nickname,
-        role=target_account.role,
-        real_name=target_account.real_name if view_personal else None,
-        alternative_email=target_account.alternative_email if view_personal else None,
+        id=account.id,
+        username=account.username,
+        nickname=account.nickname,
+        role=account.role,
+        real_name=account.real_name if view_personal else None,
+        alternative_email=account.alternative_email if view_personal else None,
+        student_id=student_card.student_id if view_personal else None,
     )
 
     return result
