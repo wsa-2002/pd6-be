@@ -68,3 +68,21 @@ async def edit(essay_submission_id: int, content_file_uuid: UUID, filename: str,
             essay_submission_id=essay_submission_id,
     ):
         pass
+
+
+async def get_latest_essay_submission(account_id: int, essay_id: int) -> do.EssaySubmission:
+    async with SafeExecutor(
+            event='get latest essay submission by account id and essay id',
+            sql=fr'SELECT id, account_id, essay_id, content_file_uuid, filename, submit_time'
+                fr'  FROM essay_submission'
+                fr' WHERE account_id = %(account_id)s'
+                fr'   AND essay_id = %(essay_id)s'
+                fr' ORDER by id DESC'
+                fr' LIMIT 1',
+            account_id=account_id,
+            essay_id=essay_id,
+            fetch=1,
+    ) as (id_, account_id, essay_id, content_file_uuid, filename, submit_time):
+        return do.EssaySubmission(id=id_, account_id=account_id, essay_id=essay_id,
+                                  content_file_uuid=content_file_uuid,
+                                  filename=filename, submit_time=submit_time)

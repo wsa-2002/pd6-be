@@ -11,7 +11,6 @@ import service
 
 from .util import rbac, model
 
-
 router = APIRouter(
     tags=['Challenge'],
     default_response_class=response.JSONResponse,
@@ -279,4 +278,72 @@ async def browse_task_status_under_challenge(challenge_id: int, request: Request
 
     results = await service.challenge.browse_task_status(challenge.id, request.account.id)
     return [ReadStatusOutput(problem=[ReadProblemStatusOutput(problem_id=problem.id, submission_id=submission.id)
-                             for (problem, submission) in results])]
+                                      for (problem, submission) in results])]
+
+
+@dataclass
+class ProblemStatOutput:
+    task_label: str
+    solved_member_count: int
+    submission_count: int
+    member_count: int
+
+
+@dataclass
+class GetChallengeStatOutput:
+    tasks: Sequence[ProblemStatOutput]
+
+
+@router.get('/challenge/{challenge_id}/statistics/summary')
+@enveloped
+async def get_challenge_statistics(challenge_id: int, request: Request) -> GetChallengeStatOutput:
+    """
+    ### 權限
+    - class manager
+    """
+    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
+    challenge = await service.challenge.read(challenge_id, include_scheduled=True)
+    if not rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+        raise exc.NoPermission
+
+    result = await service.challenge.get_challenge_statistics(challenge_id=challenge_id)
+    return GetChallengeStatOutput(tasks=[ProblemStatOutput(task_label=task_label,
+                                                           solved_member_count=solved_member_count,
+                                                           submission_count=submission_count,
+                                                           member_count=member_count)
+                                         for task_label, solved_member_count, submission_count, member_count in result])
+
+
+@dataclass
+class MemberSubmissionStatOutput:
+    id: int
+    problem_scores: Optional[Sequence[do.Judgment]]
+    essay_submissions: Optional[Sequence[do.EssaySubmission]]
+
+
+@dataclass
+class GetMemberSubmissionStatOutput:
+    member: Sequence[MemberSubmissionStatOutput]
+
+
+@router.get('/challenge/{challenge_id}/statistics/member-submission')
+@enveloped
+async def get_member_submission_statistics(challenge_id: int, request: Request) -> model.BrowseOutputBase:
+    """
+    ### 權限
+    - class manager
+    """
+    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
+    challenge = await service.challenge.read(challenge_id, include_scheduled=True)
+    if not rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+        raise exc.NoPermission
+
+    results = await service.challenge.get_member_submission_statistics(challenge_id=challenge.id)
+    member_submission_stat = GetMemberSubmissionStatOutput(
+        member=[MemberSubmissionStatOutput(
+            id=member_id,
+            problem_scores=problem_scores if problem_scores else None,
+            essay_submissions=essays if essays else None)
+            for member_id, problem_scores, essays in results])
+
+    return model.BrowseOutputBase(data=member_submission_stat, total_count=results.__len__())
