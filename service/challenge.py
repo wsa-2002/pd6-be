@@ -2,6 +2,7 @@ from typing import Tuple, Sequence
 
 from base import do
 import persistence.database as db
+
 import exceptions as exc
 
 add = db.challenge.add
@@ -16,11 +17,25 @@ async def browse_task(challenge_id: int) -> Tuple[
     Sequence[do.PeerReview],
     Sequence[do.Essay]
 ]:
-    return (
-        await db.problem.browse_by_challenge(challenge_id=challenge_id),
-        await db.peer_review.browse_by_challenge(challenge_id=challenge_id),
-        await db.essay.browse_by_challenge(challenge_id=challenge_id),
-    )
+    problems = []
+    try:
+        problems = await db.problem.browse_by_challenge(challenge_id=challenge_id)
+    except exc.persistence.NotFound:
+        pass
+
+    peer_reviews = []
+    try:
+        peer_reviews = await db.peer_review.browse_by_challenge(challenge_id=challenge_id)
+    except exc.persistence.NotFound:
+        pass
+
+    essays = []
+    try:
+        essays = await db.essay.browse_by_challenge(challenge_id=challenge_id)
+    except exc.persistence.NotFound:
+        pass
+
+    return problems, peer_reviews, essays
 
 
 async def browse_task_status(challenge_id: int, account_id: int) \
