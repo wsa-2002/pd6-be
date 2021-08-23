@@ -244,3 +244,37 @@ async def download_all_assisting_data(problem_id: int, request: Request, filenam
 
     await service.assisting_data.download_all(account_id=request.account.id, problem_id=problem_id,
                                               filename=filename, as_attachment=as_attachment)
+
+
+@router.post('/problem/{problem_id}/all-sample-testcase')
+@enveloped
+async def download_all_sample_testcase(problem_id: int, request: Request, filename: str, as_attachment: bool) -> None:
+    """
+    ### 權限
+    - class manager
+    """
+    problem = await service.problem.read(problem_id=problem_id)
+    challenge = await service.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
+
+    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+        raise exc.NoPermission
+
+    await service.testcase.download_all_sample(account_id=request.account.id, problem_id=problem_id,
+                                               filename=filename, as_attachment=as_attachment)
+
+
+@router.post('/problem/{problem_id}/all-non-sample-testcase')
+@enveloped
+async def download_all_non_sample_testcase(problem_id: int, request: Request, filename: str, as_attachment: bool) -> None:
+    """
+    ### 權限
+    - class manager
+    """
+    problem = await service.problem.read(problem_id=problem_id)
+    challenge = await service.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
+
+    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+        raise exc.NoPermission
+
+    await service.testcase.download_all_non_sample(account_id=request.account.id, problem_id=problem_id,
+                                                   filename=filename, as_attachment=as_attachment)

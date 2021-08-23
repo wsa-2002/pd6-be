@@ -3,14 +3,13 @@ import zipfile
 import typing
 import uuid
 
-import service.s3_file as s3_tool
 import persistence.database as db
 import persistence.s3 as s3
+import service.s3_file as s3_tool
 import persistence.email as email
 
 
 browse_with_problem_id = db.assisting_data.browse_with_problem_id
-browse_with_s3_files = db.assisting_data.browse_with_s3_files
 read = db.assisting_data.read
 delete = db.assisting_data.delete
 
@@ -36,9 +35,10 @@ async def edit(file: typing.IO, filename: str, assisting_data_id: int) -> None:
 
 
 async def download_all(account_id: int, problem_id: int, filename: str, as_attachment: bool) -> None:
-    result = await db.assisting_data.browse_with_s3_files(problem_id=problem_id)
+    result = await db.assisting_data.browse_with_problem_id(problem_id=problem_id)
     files = {}
-    for assisting_data, s3_file in result:
+    for assisting_data in result:
+        s3_file = await db.s3_file.read(s3_file_uuid=assisting_data.s3_file_uuid)
         files[assisting_data.filename] = s3_file.key
 
     zip_buffer = io.BytesIO()
@@ -48,8 +48,6 @@ async def download_all(account_id: int, problem_id: int, filename: str, as_attac
             zipper.writestr(filename, infile_content)
 
     s3_file = await s3.temp.put_object(body=zip_buffer.getvalue())
-
-    await db.s3_file.add_with_do(s3_file=s3_file)
 
     file_url = await s3_tool.sign_url(bucket=s3_file.bucket, key=s3_file.key,
                                       filename=filename, as_attachment=as_attachment)
