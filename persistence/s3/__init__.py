@@ -3,6 +3,8 @@ import aioboto3
 from base import mcs
 from config import S3Config
 
+from typing import Union
+import io
 
 class S3Handler(metaclass=mcs.Singleton):
     def __init__(self):
@@ -57,6 +59,14 @@ class S3Handler(metaclass=mcs.Singleton):
             },
             ExpiresIn=expire_secs,
         )
+
+    async def get_file_content(self, bucket: str, key: str):
+        infile_object = await self._client.get_object(Bucket=bucket, Key=key)
+        infile_content = await infile_object['Body'].read()
+        return infile_content
+
+    async def put_object(self, bucket: str, key: str, body) -> None:
+        await self._client.put_object(Bucket=bucket, Key=key, Body=body)
 
 
 s3_handler = S3Handler()

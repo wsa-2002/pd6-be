@@ -25,12 +25,8 @@ async def upload(file: typing.IO, file_uuid: Optional[UUID] = None) -> do.S3File
     return do.S3File(uuid=file_uuid, bucket=_BUCKET_NAME, key=key)
 
 
-async def download(key: str) -> typing.IO:
+async def get_file_content(key: str):
     """
-    :return: file-like object: typing.IO
+    :return: infile content
     """
-    bucket = await s3_handler.get_bucket(_BUCKET_NAME)
-    to_download_file = io.BytesIO()
-    with to_download_file as file:
-        await bucket.download_fileobj(key, file)
-    return to_download_file
+    return await s3_handler.get_file_content(bucket=_BUCKET_NAME, key=key)

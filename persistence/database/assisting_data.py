@@ -36,10 +36,13 @@ async def browse_with_problem_id(problem_id: int, include_deleted=False) -> Sequ
                 for (id_, problem_id, s3_file_uuid, filename, is_deleted) in records]
 
 
-async def browse_with_s3_files(problem_id: int, include_deleted=False) -> Sequence[do.S3File]:
+async def browse_with_s3_files(problem_id: int, include_deleted=False) \
+        -> Sequence[Tuple[do.AssistingData, do.S3File]]:
     async with SafeExecutor(
             event='browse assisting data with problem and s3_file',
-            sql=fr'SELECT s3_file.uuid, s3_file.bucket, s3_file.key'
+            sql=fr'SELECT assisting_data.id, assisting_data.problem_id, assisting_data.s3_file_uuid,'
+                fr'       assisting_data.filename, assisting_data.is_deleted,'
+                fr'       s3_file.uuid, s3_file.bucket, s3_file.key'
                 fr'  FROM assisting_data'
                 fr' INNER JOIN s3_file'
                 fr'         ON s3_file.uuid = assisting_data.s3_file_uuid'
@@ -49,8 +52,11 @@ async def browse_with_s3_files(problem_id: int, include_deleted=False) -> Sequen
             problem_id=problem_id,
             fetch='all',
     ) as records:
-        return [do.S3File(uuid=uuid, bucket=bucket, key=key)
-                for (uuid, bucket, key) in records]
+        return [(do.AssistingData(id=assisting_data_id, problem_id=problem_id, s3_file_uuid=s3_file_uuid,
+                                  filename=filename, is_deleted=is_deleted),
+                do.S3File(uuid=s3_file_uuid, bucket=bucket, key=key))
+                for (assisting_data_id, problem_id, s3_file_uuid, filename, is_deleted,
+                     s3_file_uuid, bucket, key) in records]
 
 
 async def read(assisting_data_id: int, include_deleted=False) -> do.AssistingData:

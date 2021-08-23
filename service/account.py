@@ -13,6 +13,7 @@ async def add(username: str, password: str, nickname: str, real_name: str, role=
 browse_with_default_student_card = db.account_vo.browse_with_default_student_card
 browse_with_class_role = db.class_.browse_role_by_account_id
 read = db.account.read
+read_with_default_student_card = db.account_vo.read_with_default_student_card
 
 edit_general = db.account.edit
 edit_default_student_card = db.account.edit_default_student_card
