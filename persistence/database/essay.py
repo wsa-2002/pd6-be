@@ -65,13 +65,15 @@ async def add(challenge_id: int, challenge_label: str, title: str, setter_id: in
         return essay_id
 
 
-async def edit(essay_id: int, setter_id: int, title: str = None, description: str = None):
-    to_updates = {}
+async def edit(essay_id: int, setter_id: int, title: str = None,  challenge_label: str = None, description: str = None):
+    to_updates = {'setter_id': setter_id}
 
-    if title is not None:
+    if title is not ...:
         to_updates['title'] = title
     if description is not ...:
         to_updates['description'] = description
+    if challenge_label is not ...:
+        to_updates['challenge_label'] = challenge_label
 
     if not to_updates:
         return
