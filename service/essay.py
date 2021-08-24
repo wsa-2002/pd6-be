@@ -7,6 +7,9 @@ import service.s3_file as s3_tool
 import persistence.email as email
 
 
+ESSAY_FILENAME = 'essay.zip'
+
+
 add = db.essay.add
 read = db.essay.read
 browse = db.essay.browse
@@ -14,7 +17,7 @@ edit = db.essay.edit
 delete = db.essay.delete
 
 
-async def download_all(account_id: int, essay_id: int, filename: str, as_attachment: bool) -> None:
+async def download_all(account_id: int, essay_id: int, as_attachment: bool) -> None:
     result = await db.essay_submission.browse(essay_id=essay_id)
     files = {}
     for essay_submission in result:
@@ -30,7 +33,7 @@ async def download_all(account_id: int, essay_id: int, filename: str, as_attachm
     s3_file = await s3.temp.put_object(body=zip_buffer.getvalue())
 
     file_url = await s3_tool.sign_url(bucket=s3_file.bucket, key=s3_file.key,
-                                      filename=filename, as_attachment=as_attachment)
+                                      filename=ESSAY_FILENAME, as_attachment=as_attachment)
 
     account, student_card = await db.account_vo.read_with_default_student_card(account_id=account_id)
     await email.notification.send_file_download_url(to=student_card.email, file_url=file_url)

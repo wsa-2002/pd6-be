@@ -11,6 +11,10 @@ import service.s3_file as s3_tool
 import persistence.email as email
 
 
+SAMPLE_FILENAME = 'sample_testcase.zip'
+NON_SAMPLE_FILENAME = 'non_sample_testcase.zip'
+
+
 add = db.testcase.add
 browse = db.testcase.browse
 read = db.testcase.read
@@ -42,7 +46,7 @@ delete_input_data = db.testcase.delete_input_data
 delete_output_data = db.testcase.delete_output_data
 
 
-async def download_all_sample(account_id: int, problem_id: int, filename: str, as_attachment: bool) -> None:
+async def download_all_sample(account_id: int, problem_id: int, as_attachment: bool) -> None:
     result = await db.testcase.browse(problem_id=problem_id)
     files = {}
     for testcase in result:
@@ -64,13 +68,13 @@ async def download_all_sample(account_id: int, problem_id: int, filename: str, a
     s3_file = await s3.temp.put_object(body=zip_buffer.getvalue())
 
     file_url = await s3_tool.sign_url(bucket=s3_file.bucket, key=s3_file.key,
-                                      filename=filename, as_attachment=as_attachment)
+                                      filename=SAMPLE_FILENAME, as_attachment=as_attachment)
 
     account, student_card = await db.account_vo.read_with_default_student_card(account_id=account_id)
     await email.notification.send_file_download_url(to=student_card.email, file_url=file_url)
 
 
-async def download_all_non_sample(account_id: int, problem_id: int, filename: str, as_attachment: bool) -> None:
+async def download_all_non_sample(account_id: int, problem_id: int, as_attachment: bool) -> None:
     result = await db.testcase.browse(problem_id=problem_id)
     files = {}
     for testcase in result:
@@ -92,7 +96,7 @@ async def download_all_non_sample(account_id: int, problem_id: int, filename: st
     s3_file = await s3.temp.put_object(body=zip_buffer.getvalue())
 
     file_url = await s3_tool.sign_url(bucket=s3_file.bucket, key=s3_file.key,
-                                      filename=filename, as_attachment=as_attachment)
+                                      filename=NON_SAMPLE_FILENAME, as_attachment=as_attachment)
 
     account, student_card = await db.account_vo.read_with_default_student_card(account_id=account_id)
     await email.notification.send_file_download_url(to=student_card.email, file_url=file_url)

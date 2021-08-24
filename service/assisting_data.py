@@ -9,6 +9,9 @@ import service.s3_file as s3_tool
 import persistence.email as email
 
 
+ASSISTING_DATA_FILENAME = 'assisting_data.zip'
+
+
 browse_with_problem_id = db.assisting_data.browse_with_problem_id
 read = db.assisting_data.read
 delete = db.assisting_data.delete
@@ -34,7 +37,7 @@ async def edit(file: typing.IO, filename: str, assisting_data_id: int) -> None:
     await db.assisting_data.edit(assisting_data_id=assisting_data_id, s3_file_uuid=s3_file_uuid, filename=filename)
 
 
-async def download_all(account_id: int, problem_id: int, filename: str, as_attachment: bool) -> None:
+async def download_all(account_id: int, problem_id: int, as_attachment: bool) -> None:
     result = await db.assisting_data.browse_with_problem_id(problem_id=problem_id)
     files = {}
     for assisting_data in result:
@@ -50,7 +53,7 @@ async def download_all(account_id: int, problem_id: int, filename: str, as_attac
     s3_file = await s3.temp.put_object(body=zip_buffer.getvalue())
 
     file_url = await s3_tool.sign_url(bucket=s3_file.bucket, key=s3_file.key,
-                                      filename=filename, as_attachment=as_attachment)
+                                      filename=ASSISTING_DATA_FILENAME, as_attachment=as_attachment)
 
     account, student_card = await db.account_vo.read_with_default_student_card(account_id=account_id)
     await email.notification.send_file_download_url(to=student_card.email, file_url=file_url)
