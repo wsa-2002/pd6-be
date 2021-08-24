@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Sequence
 from uuid import UUID
 
+from fastapi import UploadFile, File
 from pydantic import BaseModel
 
 from base import do
@@ -24,6 +25,19 @@ router = APIRouter(
 class GetTeamTemplateOutput:
     s3_file_uuid: UUID
     filename: str
+
+
+@router.post('/class/{class_id}/team-import', tags=['Class'])
+@enveloped
+async def import_team(class_id: int, request: Request, team_file: UploadFile = File(...)):
+    """
+    ### 權限
+    - Class manager
+    """
+    if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id):
+        raise exc.NoPermission
+
+    await service.team.import_team(team_file.file, class_id=class_id)
 
 
 @router.get('/team/template')
