@@ -26,7 +26,7 @@ async def read(judgment_id: int) -> do.Judgment:
             event='read judgment',
             sql=fr'SELECT submission_id, status, total_time, max_memory, score, judge_time'
                 fr'  FROM judgment'
-                fr' WHERE judgment_id = %(judgment_id)s',
+                fr' WHERE id = %(judgment_id)s',
             judgment_id=judgment_id,
             fetch=1,
     ) as (submission_id, status, total_time, max_memory, score, judge_time):
