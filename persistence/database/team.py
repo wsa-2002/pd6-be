@@ -59,14 +59,16 @@ async def read(team_id: int, *, include_deleted=False) -> do.Team:
         return do.Team(id=id_, name=name, class_id=class_id, is_deleted=is_deleted, label=label)
 
 
-async def read_by_team_name(class_id: int, team_name: str, include_deleted=False) -> do.Team:
+async def read_by_team_name(class_id: int, team_name: str, label: str, include_deleted=False) -> do.Team:
     async with SafeExecutor(
             event='read team by team name',
             sql=fr'SELECT id, name, class_id, is_deleted, label'
                 fr'  FROM team'
                 fr' WHERE name = %(team_name)s'
+                fr'   AND class_id = %(class_id)s'
+                fr'   AND label = %(label)s'
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}',
-            team_name=team_name,
+            team_name=team_name, class_id=class_id, label=label,
             fetch=1,
     ) as (id_, name, class_id, is_deleted, label):
         return do.Team(id=id_, name=name, class_id=class_id, is_deleted=is_deleted, label=label)
