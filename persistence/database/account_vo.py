@@ -41,7 +41,7 @@ async def read_with_default_student_card(account_id: int, include_deleted: bool 
                 fr'       student_card.email, student_card.is_default'
                 fr'  FROM account'
                 fr'       LEFT JOIN student_card'  # some account might not have student card, so left join
-                fr'              ON student_card.account_id = %(account_id)s'
+                fr'              ON student_card.account_id = account.id'
                 fr'             AND student_card.is_default'
                 fr' WHERE account.id = %(account_id)s'
                 fr'{" AND NOT account.is_deleted" if not include_deleted else ""}',
