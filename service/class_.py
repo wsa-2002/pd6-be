@@ -1,6 +1,7 @@
 from typing import Sequence, Tuple
 
 from base import enum
+import exceptions as exc
 import persistence.database as db
 
 add = db.class_.add
@@ -19,7 +20,10 @@ delete_member = db.class_.delete_member
 
 
 async def replace_members(class_id: int, member_roles: Sequence[Tuple[str, enum.RoleType]]) -> None:
-    await db.class_.delete_all_members_in_class(class_id=class_id)
-    await db.class_.add_members_by_account_referral(class_id=class_id,
-                                                    member_roles=[(account_referral, role)
-                                                                  for (account_referral, role) in member_roles])
+    try:
+        await db.class_.delete_all_members_in_class(class_id=class_id)
+        await db.class_.add_members_by_account_referral(class_id=class_id,
+                                                        member_roles=[(account_referral, role)
+                                                                      for (account_referral, role) in member_roles])
+    except:
+        raise exc.IllegalInput

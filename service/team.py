@@ -37,10 +37,13 @@ async def get_template_file() -> tuple[do.S3File, str]:
 
 
 async def replace_members(team_id: int, member_roles: Sequence[Tuple[str, enum.RoleType]]) -> None:
-    await db.team.delete_all_members_in_team(team_id=team_id)
-    await db.team.add_members_by_account_referral(team_id=team_id,
-                                                  member_roles=[(account_referral, role)
-                                                                for (account_referral, role) in member_roles])
+    try:
+        await db.team.delete_all_members_in_team(team_id=team_id)
+        await db.team.add_members_by_account_referral(team_id=team_id,
+                                                      member_roles=[(account_referral, role)
+                                                      for (account_referral, role) in member_roles])
+    except:
+        raise exc.IllegalInput
 
 
 async def import_team(team_file: typing.IO, class_id: int):
