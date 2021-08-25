@@ -1,5 +1,6 @@
 from typing import Optional
 
+from fastapi import BackgroundTasks
 from pydantic import BaseModel
 
 from base.enum import RoleType
@@ -80,7 +81,8 @@ async def delete_essay(essay_id: int, request: Request) -> None:
 
 @router.post('/essay/{essay_id}/all-essay-submission')
 @enveloped
-async def download_all_essay_submission(essay_id: int, request: Request, as_attachment: bool) -> None:
+async def download_all_essay_submission(essay_id: int, request: Request, as_attachment: bool,
+                                        background_tasks: BackgroundTasks) -> None:
     """
     ### 權限
     - class manager
@@ -91,5 +93,6 @@ async def download_all_essay_submission(essay_id: int, request: Request, as_atta
     if not rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
-    await service.essay.download_all(account_id=request.account.id, essay_id=essay_id,
-                                     as_attachment=as_attachment)
+    background_tasks.add_task(service.essay.download_all,
+                              account_id=request.account.id, essay_id=essay_id, as_attachment=as_attachment)
+    return
