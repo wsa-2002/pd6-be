@@ -41,7 +41,7 @@ async def send_file_download_url(to: str, file_url: str, subject='PDOGS File Dow
     message["Subject"] = subject
     message.set_content(fr"""
 Please download your file with the following url:
-{service_config.url}/file-download?url={file_url}
+{file_url}
 """)
 
     async with smtp_handler.client:
