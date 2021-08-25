@@ -66,41 +66,26 @@ async def read_case(judgment_id: int, testcase_id: int) -> do.JudgeCase:
                             time_lapse=time_lapse, peak_memory=peak_memory, score=score)
 
 
-async def get_submission_score(problem_id: int, account_id: int, selection_type: enum.TaskSelectionType,
-                               challenge_end_time: datetime) -> do.Judgment:
-    if selection_type is enum.TaskSelectionType.last:
-        async with SafeExecutor(
-                event='get submission score by LAST',
-                sql=fr'SELECT judgment.id, judgment.submission_id, judgment.status, judgment.total_time,'
-                    fr'       judgment.max_memory, judgment.score, judgment.judge_time'
-                    fr'  FROM judgment'
-                    fr' INNER JOIN submission'
-                    fr'         ON submission.id = judgment.submission_id'
-                    fr'        AND submission.account_id = %(account_id)s'
-                    fr'        AND submission.submit_time <= %(challenge_end_time)s'
-                    fr'        AND submission.problem_id = %(problem_id)s'
-                    fr'   ORDER BY submission.id DESC'
-                    fr' LIMIT 1',
-                account_id=account_id, challenge_end_time=challenge_end_time, problem_id=problem_id,
-                fetch=1,
-        ) as (id_, submission_id, status, total_time, max_memory, score, judge_time):
-            return do.Judgment(id=id_, submission_id=submission_id, status=status, total_time=total_time,
-                               max_memory=max_memory, score=score, judge_time=judge_time)
-
-    elif selection_type is enum.TaskSelectionType.best:
-        async with SafeExecutor(
-                event='get submission score by BEST',
-                sql=fr'SELECT judgment.id, judgment.submission_id, judgment.status, judgment.total_time,'
-                    fr'       judgment.max_memory, judgment.score, judgment.judge_time'
-                    fr'  FROM judgment'
-                    fr' INNER JOIN submission'
-                    fr'         ON submission.id = judgment.submission_id'
-                    fr'        AND submission.account_id = %(account_id)s'
-                    fr'        AND submission.submit_time <= %(challenge_end_time)s'
-                    fr'        AND submission.problem_id = %(problem_id)s'
-                    fr' ORDER BY judgment.score DESC'
-                    fr' LIMIT 1',
-                account_id=account_id, challenge_end_time=challenge_end_time, problem_id=problem_id,
-        ) as (id_, submission_id, status, total_time, max_memory, score, judge_time):
-            return do.Judgment(id=id_, submission_id=submission_id, status=status, total_time=total_time,
-                               max_memory=max_memory, score=score, judge_time=judge_time)
+async def get_submission_judgment_by_challenge_type(problem_id: int, account_id: int,
+                                                    selection_type: enum.TaskSelectionType,
+                                                    challenge_end_time: datetime) -> do.Judgment:
+    is_last = selection_type is enum.TaskSelectionType.last
+    async with SafeExecutor(
+            event='get submission score by LAST',
+            sql=fr'SELECT judgment.id, judgment.submission_id, judgment.status, judgment.total_time,'
+                fr'       judgment.max_memory, judgment.score, judgment.judge_time'
+                fr'  FROM judgment'
+                fr' INNER JOIN submission'
+                fr'         ON submission.id = judgment.submission_id'
+                fr'        AND submission.account_id = %(account_id)s'
+                fr'        AND submission.submit_time <= %(challenge_end_time)s'
+                fr'        AND submission.problem_id = %(problem_id)s'
+                fr' ORDER BY'
+                fr' {"submission.id" if is_last else "judgment.score"}'
+                fr' DESC'
+                fr' LIMIT 1',
+            account_id=account_id, challenge_end_time=challenge_end_time, problem_id=problem_id,
+            fetch=1,
+    ) as (id_, submission_id, status, total_time, max_memory, score, judge_time):
+        return do.Judgment(id=id_, submission_id=submission_id, status=status, total_time=total_time,
+                           max_memory=max_memory, score=score, judge_time=judge_time)

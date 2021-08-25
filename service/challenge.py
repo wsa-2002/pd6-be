@@ -44,10 +44,10 @@ async def browse_task_status(challenge_id: int, account_id: int) \
     problems = await db.problem.browse_by_challenge(challenge_id=challenge_id)
 
     return [await db.problem.read_task_status_by_type(
-                problem_id=problem.id,
-                selection_type=challenge.selection_type,
-                challenge_end_time=challenge.end_time,
-                account_id=account_id)
+        problem_id=problem.id,
+        selection_type=challenge.selection_type,
+        challenge_end_time=challenge.end_time,
+        account_id=account_id)
             for problem in problems]
 
 
@@ -72,13 +72,14 @@ async def get_member_submission_statistics(challenge_id: int) \
     essays = await db.essay.browse_by_challenge(challenge_id=challenge_id)
     result = []
     for class_member in class_members:
-        problem_scores = []
+        problem_judgments = []
         for problem in problems:
             try:
-                problem_scores.append(await db.judgment.get_submission_score(problem_id=problem.id,
-                                                                             account_id=class_member.member_id,
-                                                                             selection_type=challenge.selection_type,
-                                                                             challenge_end_time=challenge.end_time))
+                problem_judgments.append(await db.judgment.get_submission_judgment_by_challenge_type(
+                    problem_id=problem.id,
+                    account_id=class_member.member_id,
+                    selection_type=challenge.selection_type,
+                    challenge_end_time=challenge.end_time))
             except exc.persistence.NotFound:
                 pass
 
@@ -90,5 +91,5 @@ async def get_member_submission_statistics(challenge_id: int) \
                                                                           essay_id=essay.id))
             except exc.persistence.NotFound:
                 pass
-        result.append((class_member.member_id, problem_scores, essay_submissions))
+        result.append((class_member.member_id, problem_judgments, essay_submissions))
     return result
