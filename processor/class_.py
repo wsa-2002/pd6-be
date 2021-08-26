@@ -35,7 +35,7 @@ BROWSE_CLASS_COLUMNS = {
 @add_to_docstring({k: v.__name__ for k, v in BROWSE_CLASS_COLUMNS.items()})
 async def browse_class(
         req: Request,
-        limit: model.Limit, offset: model.Offset,
+        limit: model.Limit = 50, offset: model.Offset = 0,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
 ) -> model.BrowseOutputBase:
     """
@@ -127,7 +127,7 @@ BROWSE_CLASS_MEMBER_COLUMNS = {
 async def browse_class_member(
         class_id: int,
         req: Request,
-        limit: model.Limit, offset: model.Offset,
+        limit: model.Limit = 50, offset: model.Offset = 0,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
 ) -> model.BrowseOutputBase: # Sequence[BrowseClassMemberOutput]:
     """
@@ -174,7 +174,7 @@ BROWSE_CLASS_MEMBER_WITH_REFERRAL_COLUMNS = {
 async def browse_class_member_with_account_referral(
         class_id: int,
         req: Request,
-        limit: model.Limit, offset: model.Offset,
+        limit: model.Limit = 50, offset: model.Offset = 0,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
 ) -> model.BrowseOutputBase: # -> Sequence[ReadClassMemberOutput]:
     """
@@ -306,7 +306,7 @@ BROWSE_TEAM_UNDER_CLASS_COLUMNS = {
 async def browse_team_under_class(
         class_id: int,
         req: Request,
-        limit: model.Limit, offset: model.Offset,
+        limit: model.Limit = 50, offset: model.Offset = 0,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
 ) -> model.BrowseOutputBase:
     """
@@ -345,7 +345,7 @@ BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS = {
 async def browse_submission_under_class(
         class_id: int,
         req: Request,
-        limit: model.Limit, offset: model.Offset,
+        limit: model.Limit = 50, offset: model.Offset = 0,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
 ) -> model.BrowseOutputBase:
     """

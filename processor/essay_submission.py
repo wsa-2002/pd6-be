@@ -61,9 +61,9 @@ BROWSE_ESSAY_SUBMISSION_COLUMNS = {
 async def browse_essay_submission_by_essay_id(
         essay_id: int,
         req: Request,
-        limit: model.Limit, offset: model.Offset,
+        limit: model.Limit = 50, offset: model.Offset = 0,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
-) -> model.BrowseOutputBase: # Sequence[do.EssaySubmission]:
+) -> model.BrowseOutputBase:
     """
     ### 權限
     - class manager (all)

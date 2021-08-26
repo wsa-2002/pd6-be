@@ -59,7 +59,7 @@ BROWSE_ANNOUNCEMENT_COLUMNS = {
 @add_to_docstring({k: v.__name__ for k, v in BROWSE_ANNOUNCEMENT_COLUMNS.items()})
 async def browse_announcement(
         req: Request,
-        limit: model.Limit, offset: model.Offset,
+        limit: model.Limit = 50, offset: model.Offset = 0,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
 ) -> model.BrowseOutputBase:
     """

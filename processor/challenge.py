@@ -66,7 +66,7 @@ BROWSE_CHALLENGE_COLUMNS = {
 async def browse_challenge_under_class(
         class_id: int,
         req: Request,
-        limit: model.Limit, offset: model.Offset,
+        limit: model.Limit = 50, offset: model.Offset = 0,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
 ) -> model.BrowseOutputBase:
     """

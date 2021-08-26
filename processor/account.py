@@ -49,7 +49,7 @@ BROWSE_ACCOUNT_COLUMNS = {
 @add_to_docstring({k: v.__name__ for k, v in BROWSE_ACCOUNT_COLUMNS.items()})
 async def browse_account_with_default_student_id(
         req: Request,
-        limit: model.Limit, offset: model.Offset,
+        limit: model.Limit = 50, offset: model.Offset = 0,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
 ) -> model.BrowseOutputBase:
     """
@@ -64,7 +64,7 @@ async def browse_account_with_default_student_id(
     sorters = model.parse_sorter(sort, BROWSE_ACCOUNT_COLUMNS)
 
     result, total_count = await service.account.browse_with_default_student_card(limit=limit, offset=offset,
-                                                               filters=filters, sorters=sorters)
+                                                                                 filters=filters, sorters=sorters)
     data = [BrowseAccountOutput(id=account.id, username=account.username, nickname=account.nickname,
                                 role=account.role, real_name=account.real_name,
                                 alternative_email=account.alternative_email, student_id=student_card.student_id)
