@@ -1,15 +1,16 @@
 from dataclasses import dataclass
-from typing import Optional, Sequence
+from typing import Optional
 from uuid import UUID
 
 from fastapi import UploadFile, File
 from pydantic import BaseModel
 
-from base import do
+from base import do, popo
 import exceptions as exc
-from base.enum import RoleType
+from base.enum import RoleType, FilterOperator
 from middleware import APIRouter, response, enveloped, auth, Request
 import service
+from util.api_doc import add_to_docstring
 
 from .util import rbac, model
 
@@ -33,23 +34,63 @@ async def import_class_grade(class_id: int, request: Request, grade_file: Upload
     await service.grade.import_class_grade(grade_file=grade_file.file, class_id=class_id, update_time=request.time)
 
 
+BROWSE_CLASS_GRADE_COLUMNS = {
+    'receiver_id': int,
+    'grader_id': int,
+    'class_id': int,
+    'title': str,
+    'score': str,
+    'comment': str,
+    'update_time': str,
+}
+
+
 @router.get('/class/{class_id}/grade', tags=['Class'])
 @enveloped
-async def browse_class_grade(class_id: int, request: Request) -> Sequence[do.Grade]:
+@add_to_docstring({k: v.__name__ for k, v in BROWSE_CLASS_GRADE_COLUMNS.items()})
+async def browse_class_grade(class_id: int, request: Request,
+                             limit: int = 50, offset: int = 0,
+                             filter: model.FilterStr = None, sort: model.SorterStr = None)\
+        -> model.BrowseOutputBase:
     """
     ### 權限
     - Class manager (all)
     - Class normal (self)
     """
+
+    filters = model.parse_filter(filter, BROWSE_CLASS_GRADE_COLUMNS)
+    sorters = model.parse_sorter(sort, BROWSE_CLASS_GRADE_COLUMNS)
+    filters.append(popo.Filter(col_name='class_id',
+                               op=FilterOperator.eq,
+                               value=class_id))
+
     if await rbac.validate(request.account.id, RoleType.manager, class_id=class_id):  # Class manager
-        return await service.grade.browse(class_id=class_id)
+        grades, total_count = await service.grade.browse(limit=limit, offset=offset, filters=filters, sorters=sorters)
+        return model.BrowseOutputBase(grades, total_count=total_count)
     else:  # Self
-        return await service.grade.browse(class_id=class_id, receiver_id=request.account.id)
+        filters.append(popo.Filter(col_name='receiver_id',
+                                   op=FilterOperator.eq,
+                                   value=request.account.id))
+        grades, total_count = await service.grade.browse(limit=limit, offset=offset, filters=filters, sorters=sorters)
+        return model.BrowseOutputBase(grades, total_count=total_count)
+
+
+BROWSE_ACCOUNT_GRADE_COLUMNS = {
+    'class_id': int,
+    'title': str,
+    'score': str,
+    'comment': str,
+    'update_time': str,
+}
 
 
 @router.get('/account/{account_id}/grade', tags=['Account'])
 @enveloped
-async def browse_account_grade(account_id: int, request: Request) -> Sequence[do.Grade]:
+@add_to_docstring({k: v.__name__ for k, v in BROWSE_ACCOUNT_GRADE_COLUMNS.items()})
+async def browse_account_grade(account_id: int, request: Request,
+                               limit: model.Limit = 50, offset: model.Offset = 0,
+                               filter: model.FilterStr = None, sort: model.SorterStr = None) \
+        -> model.BrowseOutputBase:
     """
     ### 權限
     - Self
@@ -57,7 +98,14 @@ async def browse_account_grade(account_id: int, request: Request) -> Sequence[do
     if request.account.id is not account_id:  # only self
         raise exc.NoPermission
 
-    return await service.grade.browse(receiver_id=account_id)
+    filters = model.parse_filter(filter, BROWSE_ACCOUNT_GRADE_COLUMNS)
+    sorters = model.parse_sorter(sort, BROWSE_ACCOUNT_GRADE_COLUMNS)
+    filters.append(popo.Filter(col_name='receiver_id',
+                               op=FilterOperator.eq,
+                               value=request.account.id))
+    grades, total_count = await service.grade.browse(limit=limit, offset=offset, filters=filters, sorters=sorters)
+
+    return model.BrowseOutputBase(grades, total_count=total_count)
 
 
 @dataclass
