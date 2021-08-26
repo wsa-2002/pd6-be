@@ -50,16 +50,35 @@ async def browse_account_with_default_student_id(request: Request) -> Sequence[B
             for account, student_card in result]
 
 
+@dataclass
+class BrowseAccountWithRoleOutput:
+    member_id: int
+    role: RoleType
+    class_id: int
+    class_name: str
+    course_id: int
+    course_name: str
+
+
 @router.get('/account/{account_id}/class')
 @enveloped
-async def browse_all_account_with_class_role(account_id: int, request: Request) -> Sequence[do.ClassMember]:
+async def browse_all_account_with_class_role(account_id: int, request: Request) \
+        -> Sequence[BrowseAccountWithRoleOutput]:
     """
     ### 權限
     - Self
     """
     if account_id is not request.account.id:
         raise exc.NoPermission
-    return await service.account.browse_with_class_role(account_id=account_id)
+    results = await service.account.browse_with_class_role(account_id=account_id)
+
+    return [BrowseAccountWithRoleOutput(member_id=class_member.member_id,
+                                        role=class_member.role,
+                                        class_id=class_member.class_id,
+                                        class_name=class_.name,
+                                        course_id=course.id,
+                                        course_name=course.name)
+            for class_member, class_, course in results]
 
 
 @dataclass
