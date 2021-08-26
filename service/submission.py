@@ -32,3 +32,5 @@ edit_language = db.submission.edit_language
 browse_language = db.submission.browse_language
 read_language = db.submission.read_language
 read_latest_judgment = db.submission.read_latest_judgment
+
+get_problem_score_by_type = db.judgment.get_submission_judgment_by_challenge_type
