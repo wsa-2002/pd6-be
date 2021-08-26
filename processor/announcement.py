@@ -60,7 +60,7 @@ async def browse_announcement(
         req: Request,
         limit: model.Limit, offset: model.Offset,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
-) -> model.BrowseOutputBase: # -> Sequence[do.Announcement]:
+) -> model.BrowseOutputBase:
     """
     ### 權限
     - System manager (all)
@@ -73,11 +73,10 @@ async def browse_announcement(
     filters = model.parse_filter(filter, BROWSE_ANNOUNCEMENT_COLUMNS)
     sorters = model.parse_sorter(sort, BROWSE_ANNOUNCEMENT_COLUMNS)
 
-    return await service.announcement.browse(limit=limit, offset=offset, filters=filters, sorters=sorters,
-                                             include_scheduled=system_role >= RoleType.manager, ref_time=req.time)
-    announcements, total_count = await service.access_log.browse(limit=limit, offset=offset,
-                                                                 filters=filters, sorters=sorters)
+    announcements, total_count = await service.announcement.browse(limit=limit, offset=offset, filters=filters, sorters=sorters,
+                                                                   include_scheduled=system_role >= RoleType.manager, ref_time=req.time)
     return model.BrowseOutputBase(announcements, total_count=total_count)
+
 
 @router.get('/announcement/{announcement_id}')
 @enveloped
