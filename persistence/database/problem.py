@@ -275,7 +275,7 @@ async def total_ac_member_count(problem_id: int) -> int:
         return count
 
 
-async def total_submission_count(problem_id: int) -> int:
+async def total_submission_count(problem_id: int, challenge_id: int) -> int:
     async with SafeExecutor(
             event='get total submission count by problem',
             sql=fr'SELECT count(*)'
@@ -286,9 +286,10 @@ async def total_submission_count(problem_id: int) -> int:
                 fr' INNER JOIN challenge'
                 fr'         ON class_member.class_id = challenge.class_id'
                 fr'        AND submission.submit_time <= challenge.end_time'
+                fr'        AND challenge.id = %(challenge_id)s'
                 fr'        AND NOT challenge.is_deleted'
                 fr' WHERE submission.problem_id = %(problem_id)s',
-            role=enum.RoleType.normal, problem_id=problem_id,
+            role=enum.RoleType.normal, problem_id=problem_id, challenge_id=challenge_id,
             fetch=1,
     ) as (count,):
         return count
