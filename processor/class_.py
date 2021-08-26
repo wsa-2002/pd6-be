@@ -9,6 +9,7 @@ import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
 import persistence.email as email
 import service
+from util.api_doc import add_to_docstring
 
 from .util import rbac, model
 
@@ -247,3 +248,16 @@ async def browse_team_under_class(class_id: int, request: Request) -> Sequence[d
         raise exc.NoPermission
 
     return await service.team.browse(class_id=class_id)
+
+
+@router.get('/class/{class_id}/submission', tags=['Submission'])
+@enveloped
+async def browse_submission_under_class(class_id: int, request: Request) -> Sequence[do.Submission]:
+    """
+    ### 權限
+    - Class manager
+    """
+    if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id):
+        raise exc.NoPermission
+
+    return await service.submission.browse_under_class(class_id=class_id)

@@ -174,3 +174,27 @@ async def read_latest_judgment(submission_id: int) -> do.Judgment:
     ) as (judgment_id, submission_id, status, total_time, max_memory, score, judge_time):
         return do.Judgment(id=judgment_id, submission_id=submission_id, status=status,
                            total_time=total_time, max_memory=max_memory, score=score, judge_time=judge_time)
+
+
+async def browse_under_class(class_id: int) \
+        -> Sequence[do.Submission]:
+
+    async with SafeExecutor(
+            event='browse submissions',
+            sql=fr'SELECT submission.id, submission.account_id, submission.problem_id , submission.language_id, '
+                fr'       submission.filename, submission.content_file_uuid, submission.content_length, submission.submit_time'
+                fr'  FROM submission'
+                fr'  INNER JOIN problem'
+                fr'          ON problem.id = submission.problem_id'
+                fr'  INNER JOIN challenge'
+                fr'          ON challenge.id = problem.challenge_id '
+                fr'  WHERE challenge.class_id = %(class_id)s'
+                fr'  ORDER BY submission.id DESC',
+            class_id=class_id,
+            fetch='all',
+    ) as records:
+        return [do.Submission(id=id_, account_id=account_id, problem_id=problem_id, language_id=language_id,
+                              filename=filename, content_file_uuid=content_file_uuid, content_length=content_length,
+                              submit_time=submit_time)
+                for id_, account_id, problem_id, language_id, filename, content_file_uuid, content_length, submit_time
+                in records]
