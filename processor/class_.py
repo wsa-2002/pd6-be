@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional, Sequence, Union
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -250,14 +251,38 @@ async def browse_team_under_class(class_id: int, request: Request) -> Sequence[d
     return await service.team.browse(class_id=class_id)
 
 
+BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS = {
+    'id': int,
+    'account_id': int,
+    'problem_id': int,
+    'language_id': int,
+    'content_file_uuid': UUID,
+    'content_length': int,
+    'filename': str,
+    'submit_time': model.ServerTZDatetime,
+}
+
+
 @router.get('/class/{class_id}/submission', tags=['Submission'])
 @enveloped
-async def browse_submission_under_class(class_id: int, request: Request) -> Sequence[do.Submission]:
+@add_to_docstring({k: v.__name__ for k, v in BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS.items()})
+async def browse_submission_under_class(
+        class_id: int,
+        req: Request,
+        limit: model.Limit, offset: model.Offset,
+        filter: model.FilterStr = None, sort: model.SorterStr = None,
+) -> model.BrowseOutputBase:
     """
     ### 權限
     - Class manager
     """
-    if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id):
+    if not await rbac.validate(req.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
 
-    return await service.submission.browse_under_class(class_id=class_id)
+    filters = model.parse_filter(filter, BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS)
+    sorters = model.parse_sorter(sort, BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS)
+    submissions, total_count = await service.submission.browse_under_class(class_id=class_id,
+                                                                           limit=limit, offset=offset,
+                                                                           filters=filters, sorters=sorters
+                                                                           )
+    return model.BrowseOutputBase(submissions, total_count=total_count)
