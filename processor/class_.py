@@ -48,8 +48,8 @@ async def browse_class(
     filters = model.parse_filter(filter, BROWSE_CLASS_COLUMNS)
     sorters = model.parse_sorter(sort, BROWSE_CLASS_COLUMNS)
 
-    classes, total_count = await service.class_.browse(limit=limit, offset=offset,
-                                                       filters=filters, sorters=sorters)
+    classes, total_count = await service.class_.browse_with_filter(limit=limit, offset=offset,
+                                                                   filters=filters, sorters=sorters)
     return model.BrowseOutputBase(classes, total_count=total_count)
 
 

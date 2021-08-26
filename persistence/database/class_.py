@@ -23,7 +23,32 @@ async def add(name: str, course_id: int) -> int:
         return course_id
 
 
-async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter],
+async def browse(course_id: int = None, include_deleted=False) -> Sequence[do.Class]:
+    conditions = {}
+    if course_id is not None:
+        conditions['course_id'] = course_id
+
+    filters = []
+    if not include_deleted:
+        filters.append("NOT is_deleted")
+
+    cond_sql = ' AND '.join(list(fr"{field_name} = %({field_name})s" for field_name in conditions)
+                            + filters)
+
+    async with SafeExecutor(
+            event='browse classes',
+            sql=fr'SELECT id, name, course_id, is_deleted'
+                fr'  FROM class'
+                fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
+                fr' ORDER BY course_id ASC, id ASC',
+            **conditions,
+            fetch='all',
+    ) as records:
+        return [do.Class(id=id_, name=name, course_id=course_id, is_deleted=is_deleted)
+                for (id_, name, course_id, is_deleted) in records]
+
+
+async def browse_with_filter(limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter],
                  course_id: int = None, include_deleted=False) -> tuple[Sequence[do.Class], int]:
     if course_id is not None:
         filters.append(Filter(col_name='course_id',

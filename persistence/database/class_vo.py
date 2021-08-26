@@ -1,7 +1,7 @@
 from typing import Sequence, Tuple
 
 from base import do
-from base.enum import RoleType, FilterOperator
+from base.enum import RoleType
 from base.popo import Filter, Sorter
 
 from .base import SafeExecutor
