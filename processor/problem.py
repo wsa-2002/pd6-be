@@ -13,7 +13,6 @@ import service
 
 from .util import rbac, model
 
-
 router = APIRouter(
     tags=['Problem'],
     default_response_class=response.JSONResponse,
@@ -21,6 +20,7 @@ router = APIRouter(
 )
 
 
+# TODO: Browse method
 @router.get('/problem')
 @enveloped
 async def browse_problem_set(request: Request) -> Sequence[do.Problem]:
@@ -193,7 +193,8 @@ class ReadAssistingDataOutput:
 
 @router.get('/problem/{problem_id}/assisting-data')
 @enveloped
-async def browse_all_assisting_data_under_problem(problem_id: int, request: Request) -> Sequence[ReadAssistingDataOutput]:
+async def browse_all_assisting_data_under_problem(problem_id: int, request: Request) -> Sequence[
+    ReadAssistingDataOutput]:
     """
     ### 權限
     - class manager

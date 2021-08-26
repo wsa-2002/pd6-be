@@ -133,7 +133,7 @@ async def browse_peer_review_record(peer_review_id: int, request: Request,
                                           score=record.score, comment=record.comment, submit_time=record.submit_time)
                for record in peer_review_record]
 
-    return model.BrowseOutputBase(records, total_count=total_count)
+    return model.OutputBase(records, total_count=total_count)
 
 
 # 改一下這些 function name

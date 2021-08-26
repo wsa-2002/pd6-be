@@ -5,13 +5,14 @@ from uuid import UUID
 from fastapi import UploadFile, File
 from pydantic import BaseModel
 
-from base import do
-from base.enum import RoleType
+from base import do, popo
+from base.enum import RoleType, FilterOperator
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
 import service
+from util.api_doc import add_to_docstring
 
-from .util import rbac
+from .util import rbac, model
 
 
 router = APIRouter(
@@ -119,9 +120,19 @@ async def delete_team(team_id: int, request: Request) -> None:
     await service.team.delete(team_id)
 
 
+BROWSE_TEAM_MEMBER_COLUMNS = {
+    'member_id': int,
+    'role': RoleType,
+}
+
+
 @router.get('/team/{team_id}/member')
 @enveloped
-async def browse_team_member(team_id: int, request: Request) -> Sequence[do.TeamMember]:
+@add_to_docstring({k: v.__name__ for k, v in BROWSE_TEAM_MEMBER_COLUMNS.items()})
+async def browse_team_member(team_id: int, request: Request,
+                             limit: model.Limit = 50, offset: model.Offset = 0,
+                             filter: model.FilterStr = None, sorter: model.SorterStr = None) \
+        -> model.BrowseOutputBase:
     """
     ### 權限
     - Class normal
@@ -132,7 +143,16 @@ async def browse_team_member(team_id: int, request: Request) -> Sequence[do.Team
     if not await rbac.validate(request.account.id, RoleType.normal, class_id=team.class_id):
         raise exc.NoPermission
 
-    return await service.team.browse_members(team_id=team_id)
+    filters = model.parse_filter(filter, BROWSE_TEAM_MEMBER_COLUMNS)
+    sorters = model.parse_sorter(sorter, BROWSE_TEAM_MEMBER_COLUMNS)
+
+    filters.append(popo.Filter(col_name='team_id',
+                               op=FilterOperator.eq,
+                               value=team_id))
+
+    team_members, total_count = await service.team.browse_members(limit=limit, offset=offset,
+                                                                  filters=filters, sorters=sorters)
+    return model.BrowseOutputBase(team_members, total_count=total_count)
 
 
 class AddMemberInput(BaseModel):
