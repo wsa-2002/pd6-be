@@ -65,7 +65,7 @@ BROWSE_CHALLENGE_COLUMNS = {
 @add_to_docstring({k: v.__name__ for k, v in BROWSE_CHALLENGE_COLUMNS.items()})
 async def browse_challenge_under_class(
         class_id: int,
-        req: Request,
+        request: Request,
         limit: model.Limit = 50, offset: model.Offset = 0,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
 ) -> model.BrowseOutputBase:
@@ -74,7 +74,7 @@ async def browse_challenge_under_class(
     - Class manager (all)
     - Class guest (not scheduled)
     """
-    class_role = await rbac.get_role(req.account.id, class_id=class_id)
+    class_role = await rbac.get_role(request.account.id, class_id=class_id)
 
     if class_role < RoleType.guest:
         raise exc.NoPermission
@@ -87,7 +87,7 @@ async def browse_challenge_under_class(
                                value=class_id))
 
     challenges, total_count = await service.challenge.browse(limit=limit, offset=offset, filters=filters, sorters=sorters,
-                                                             include_scheduled=(class_role == RoleType.manager), ref_time=req.time)
+                                                             include_scheduled=(class_role == RoleType.manager), ref_time=request.time)
     return model.BrowseOutputBase(challenges, total_count=total_count)
 
 
@@ -294,7 +294,7 @@ class ReadStatusOutput:
 
 @router.get('/challenge/{challenge_id}/task-status')
 @enveloped
-async def browse_task_status_under_challenge(challenge_id: int, request: Request) -> Sequence[ReadStatusOutput]:
+async def browse_all_task_status_under_challenge(challenge_id: int, request: Request) -> Sequence[ReadStatusOutput]:
     """
     ### 權限
     - Self: see self

@@ -34,7 +34,7 @@ BROWSE_CLASS_COLUMNS = {
 @enveloped
 @add_to_docstring({k: v.__name__ for k, v in BROWSE_CLASS_COLUMNS.items()})
 async def browse_class(
-        req: Request,
+        request: Request,
         limit: model.Limit = 50, offset: model.Offset = 0,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
 ) -> model.BrowseOutputBase:
@@ -42,7 +42,7 @@ async def browse_class(
     ### 權限
     - system normal: all
     """
-    if not await rbac.validate(req.account.id, RoleType.normal):
+    if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
     filters = model.parse_filter(filter, BROWSE_CLASS_COLUMNS)
@@ -126,17 +126,17 @@ BROWSE_CLASS_MEMBER_COLUMNS = {
 @add_to_docstring({k: v.__name__ for k, v in BROWSE_CLASS_MEMBER_COLUMNS.items()})
 async def browse_class_member(
         class_id: int,
-        req: Request,
+        request: Request,
         limit: model.Limit = 50, offset: model.Offset = 0,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
-) -> model.BrowseOutputBase: # Sequence[BrowseClassMemberOutput]:
+) -> model.BrowseOutputBase:
     """
     ### 權限
     - Class normal
     - Class+ manager
     """
-    if (not await rbac.validate(req.account.id, RoleType.normal, class_id=class_id)
-            and not await rbac.validate(req.account.id, RoleType.manager, class_id=class_id, inherit=True)):
+    if (not await rbac.validate(request.account.id, RoleType.normal, class_id=class_id)
+            and not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id, inherit=True)):
         raise exc.NoPermission
 
     filters = model.parse_filter(filter, BROWSE_CLASS_MEMBER_COLUMNS)
@@ -173,7 +173,7 @@ BROWSE_CLASS_MEMBER_WITH_REFERRAL_COLUMNS = {
 @add_to_docstring({k: v.__name__ for k, v in BROWSE_CLASS_MEMBER_WITH_REFERRAL_COLUMNS.items()})
 async def browse_class_member_with_account_referral(
         class_id: int,
-        req: Request,
+        request: Request,
         limit: model.Limit = 50, offset: model.Offset = 0,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
 ) -> model.BrowseOutputBase: # -> Sequence[ReadClassMemberOutput]:
@@ -182,8 +182,8 @@ async def browse_class_member_with_account_referral(
     - Class normal
     - Class+ manager
     """
-    if (not await rbac.validate(req.account.id, RoleType.normal, class_id=class_id)
-            and not await rbac.validate(req.account.id, RoleType.manager, class_id=class_id, inherit=True)):
+    if (not await rbac.validate(request.account.id, RoleType.normal, class_id=class_id)
+            and not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id, inherit=True)):
         raise exc.NoPermission
 
     filters = model.parse_filter(filter, BROWSE_CLASS_MEMBER_WITH_REFERRAL_COLUMNS)
@@ -305,7 +305,7 @@ BROWSE_TEAM_UNDER_CLASS_COLUMNS = {
 @add_to_docstring({k: v.__name__ for k, v in BROWSE_TEAM_UNDER_CLASS_COLUMNS.items()})
 async def browse_team_under_class(
         class_id: int,
-        req: Request,
+        request: Request,
         limit: model.Limit = 50, offset: model.Offset = 0,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
 ) -> model.BrowseOutputBase:
@@ -313,7 +313,7 @@ async def browse_team_under_class(
     ### 權限
     - Class normal: all
     """
-    class_role = await rbac.get_role(req.account.id, class_id=class_id)
+    class_role = await rbac.get_role(request.account.id, class_id=class_id)
     if class_role < RoleType.normal:
         raise exc.NoPermission
 
@@ -344,7 +344,7 @@ BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS = {
 @add_to_docstring({k: v.__name__ for k, v in BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS.items()})
 async def browse_submission_under_class(
         class_id: int,
-        req: Request,
+        request: Request,
         limit: model.Limit = 50, offset: model.Offset = 0,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
 ) -> model.BrowseOutputBase:
@@ -352,7 +352,7 @@ async def browse_submission_under_class(
     ### 權限
     - Class manager
     """
-    if not await rbac.validate(req.account.id, RoleType.manager, class_id=class_id):
+    if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
 
     filters = model.parse_filter(filter, BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS)

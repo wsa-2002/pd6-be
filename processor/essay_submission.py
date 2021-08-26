@@ -60,7 +60,7 @@ BROWSE_ESSAY_SUBMISSION_COLUMNS = {
 @add_to_docstring({k: v.__name__ for k, v in BROWSE_ESSAY_SUBMISSION_COLUMNS.items()})
 async def browse_essay_submission_by_essay_id(
         essay_id: int,
-        req: Request,
+        request: Request,
         limit: model.Limit = 50, offset: model.Offset = 0,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
 ) -> model.BrowseOutputBase:
@@ -71,9 +71,9 @@ async def browse_essay_submission_by_essay_id(
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     essay = await service.essay.read(essay_id=essay_id)
-    challenge = await service.challenge.read(essay.challenge_id, include_scheduled=True, ref_time=req.time)
+    challenge = await service.challenge.read(essay.challenge_id, include_scheduled=True, ref_time=request.time)
 
-    class_role = await rbac.get_role(req.account.id, class_id=challenge.class_id)
+    class_role = await rbac.get_role(request.account.id, class_id=challenge.class_id)
     if (not class_role is RoleType.manager
     and not class_role is RoleType.self):
         raise exc.NoPermission
@@ -88,7 +88,7 @@ async def browse_essay_submission_by_essay_id(
     if class_role is RoleType.normal:
         filters.append(popo.Filter(col_name='account_id',
                                    op=FilterOperator.eq,
-                                   value=req.account.id))
+                                   value=request.account.id))
 
     essay_submissions, total_count = await service.essay_submission.browse(limit=limit, offset=offset,
                                                                            filters=filters, sorters=sorters)

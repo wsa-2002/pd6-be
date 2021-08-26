@@ -58,7 +58,7 @@ BROWSE_ANNOUNCEMENT_COLUMNS = {
 @enveloped
 @add_to_docstring({k: v.__name__ for k, v in BROWSE_ANNOUNCEMENT_COLUMNS.items()})
 async def browse_announcement(
-        req: Request,
+        request: Request,
         limit: model.Limit = 50, offset: model.Offset = 0,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
 ) -> model.BrowseOutputBase:
@@ -67,7 +67,7 @@ async def browse_announcement(
     - System manager (all)
     - System guest (limited)
     """
-    system_role = await rbac.get_role(req.account.id)
+    system_role = await rbac.get_role(request.account.id)
     if not system_role >= RoleType.guest:
         raise exc.NoPermission
 
