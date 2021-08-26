@@ -181,6 +181,10 @@ async def browse_under_class(class_id: int,
                              limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter]) \
         -> tuple[Sequence[do.Submission], int]:
 
+    filters = [Filter(col_name=f'submission.{filter_.col_name}',
+                      op=filter_.op,
+                      value=filter_.value) for filter_ in filters]
+
     cond_sql, cond_params = compile_filters(filters)
     sort_sql = ' ,'.join(f"submission.{sorter.col_name} {sorter.order}" for sorter in sorters)
     if sort_sql:
@@ -195,7 +199,7 @@ async def browse_under_class(class_id: int,
                 fr'          ON problem.id = submission.problem_id'
                 fr'  INNER JOIN challenge'
                 fr'          ON challenge.id = problem.challenge_id '
-                fr'{f" WHERE submission.{cond_sql}" if cond_sql else ""}'
+                fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
                 fr'      AND challenge.class_id = %(class_id)s'
                 fr' ORDER BY {sort_sql} submission.id DESC',
             **cond_params,
@@ -218,7 +222,7 @@ async def browse_under_class(class_id: int,
             fr'          ON problem.id = submission.problem_id'
             fr'  INNER JOIN challenge'
             fr'          ON challenge.id = problem.challenge_id '
-            fr'{f" WHERE submission.{cond_sql}" if cond_sql else ""}'
+            fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
             fr'      AND challenge.class_id = %(class_id)s',
         **cond_params,
         class_id=class_id,

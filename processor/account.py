@@ -39,8 +39,6 @@ BROWSE_ACCOUNT_COLUMNS = {
     'role': str,
     'real_name': str,
     'alternative_email': str,
-
-    'student_id': str,
 }
 
 

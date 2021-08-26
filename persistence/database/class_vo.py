@@ -11,12 +11,13 @@ from .util import execute_count, compile_filters
 async def browse_member_account_with_student_card_and_institute(
         limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter], include_deleted: bool = False) \
         -> tuple[Sequence[Tuple[do.ClassMember, do.Account, do.StudentCard, do.Institute]], int]:
-        # -> Sequence[Tuple[do.ClassMember, do.Account, do.StudentCard, do.Institute]]:
+
+    filters = [Filter(col_name=f'class_member.{filter_.col_name}',
+                      op=filter_.op,
+                      value=filter_.value) for filter_ in filters]
 
     cond_sql, cond_params = compile_filters(filters)
     sort_sql = ' ,'.join(f"class_member.{sorter.col_name} {sorter.order}" for sorter in sorters)
-    if sort_sql:
-        sort_sql += ','
 
     async with SafeExecutor(
             event='browse class members with student card',
@@ -36,7 +37,7 @@ async def browse_member_account_with_student_card_and_institute(
                 fr'        AND student_card.is_default'
                 fr' INNER JOIN institute'
                 fr'         ON student_card.institute_id = institute.id'
-                fr'{f" WHERE class_member.{cond_sql}" if cond_sql else ""}'
+                fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
                 fr'{f" ORDER BY {sort_sql}" if sort_sql else ""}'
                 fr' LIMIT %(limit)s OFFSET %(offset)s',
             **cond_params,
@@ -101,10 +102,12 @@ async def browse_class_member_with_account_referral(limit: int, offset: int, fil
                                                     include_deleted: bool = False) \
         -> tuple[Sequence[Tuple[do.ClassMember, str]], int]:
 
+    filters = [Filter(col_name=f'class_member.{filter_.col_name}',
+                      op=filter_.op,
+                      value=filter_.value) for filter_ in filters]
+
     cond_sql, cond_params = compile_filters(filters)
     sort_sql = ' ,'.join(f"class_member.{sorter.col_name} {sorter.order}" for sorter in sorters)
-    if sort_sql:
-        sort_sql += ','
 
     async with SafeExecutor(
             event='browse class members with account referral',
@@ -113,7 +116,7 @@ async def browse_class_member_with_account_referral(limit: int, offset: int, fil
                 fr'  FROM class_member'
                 fr' INNER JOIN account'
                 fr'         ON class_member.member_id = account.id'
-                fr'{f" WHERE class_member.{cond_sql}" if cond_sql else ""}'
+                fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
                 fr'{f"   AND NOT account.is_deleted" if include_deleted else ""}'
                 fr'{f" ORDER BY {sort_sql}" if sort_sql else ""}'
                 fr' LIMIT %(limit)s OFFSET %(offset)s',
@@ -131,7 +134,7 @@ async def browse_class_member_with_account_referral(limit: int, offset: int, fil
             fr'  FROM class_member'
             fr' INNER JOIN account'
             fr'         ON class_member.member_id = account.id'
-            fr'{f" WHERE class_member.{cond_sql}" if cond_sql else ""}'
+            fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
             fr'{f"   AND NOT account.is_deleted" if include_deleted else ""}',
         **cond_params,
     )

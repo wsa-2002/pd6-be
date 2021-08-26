@@ -49,7 +49,7 @@ async def browse(course_id: int = None, include_deleted=False) -> Sequence[do.Cl
 
 
 async def browse_with_filter(limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter],
-                 course_id: int = None, include_deleted=False) -> tuple[Sequence[do.Class], int]:
+                             course_id: int = None, include_deleted=False) -> tuple[Sequence[do.Class], int]:
     if course_id is not None:
         filters.append(Filter(col_name='course_id',
                               op=FilterOperator.eq,

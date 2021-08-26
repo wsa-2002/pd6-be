@@ -12,6 +12,10 @@ async def browse_with_default_student_card(limit: int, offset: int, filters: Seq
                                            sorters: Sequence[Sorter], include_deleted: bool = False) \
         -> tuple[Sequence[Tuple[do.Account, do.StudentCard]], int]:
 
+    filters = [Filter(col_name=f'account.{filter_.col_name}',
+                      op=filter_.op,
+                      value=filter_.value) for filter_ in filters]
+
     cond_sql, cond_params = compile_filters(filters)
     sort_sql = ' ,'.join(f"account.{sorter.col_name} {sorter.order}" for sorter in sorters)
     if sort_sql:
@@ -27,7 +31,7 @@ async def browse_with_default_student_card(limit: int, offset: int, filters: Seq
                 fr'       LEFT JOIN student_card'  # some account might not have student card, so left join
                 fr'              ON student_card.account_id = account.id'
                 fr'             AND student_card.is_default'
-                fr'{f" WHERE account.{cond_sql}" if cond_sql else ""}'
+                fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
                 fr'{" AND NOT account.is_deleted" if not include_deleted else ""}'
                 fr' ORDER BY {sort_sql} account.id ASC'
                 fr' LIMIT %(limit)s OFFSET %(offset)s',

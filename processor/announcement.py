@@ -75,7 +75,7 @@ async def browse_announcement(
     sorters = model.parse_sorter(sort, BROWSE_ANNOUNCEMENT_COLUMNS)
 
     announcements, total_count = await service.announcement.browse(limit=limit, offset=offset, filters=filters, sorters=sorters,
-                                                                   include_scheduled=system_role >= RoleType.manager, ref_time=req.time)
+                                                                   include_scheduled=system_role >= RoleType.manager, ref_time=request.time)
     return model.BrowseOutputBase(announcements, total_count=total_count)
 
 

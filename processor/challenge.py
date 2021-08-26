@@ -50,7 +50,7 @@ BROWSE_CHALLENGE_COLUMNS = {
     'id': int,
     'class_id': int,
     'publicize_type': enum.ChallengePublicizeType,
-    'selection_typ': enum.TaskSelectionType,
+    'selection_type': enum.TaskSelectionType,
     'title': str,
     'setter_id': int,
     'description': str,

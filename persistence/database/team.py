@@ -24,7 +24,7 @@ async def add(name: str, class_id: int, label: str) -> int:
 
 
 async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter],
-                 include_deleted=False) -> tuple[Sequence[do.Team], int]: # -> Sequence[do.Team]:
+                 include_deleted=False) -> tuple[Sequence[do.Team], int]:
 
     if not include_deleted:
         filters.append(Filter(col_name='is_deleted',

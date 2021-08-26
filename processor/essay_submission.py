@@ -74,8 +74,8 @@ async def browse_essay_submission_by_essay_id(
     challenge = await service.challenge.read(essay.challenge_id, include_scheduled=True, ref_time=request.time)
 
     class_role = await rbac.get_role(request.account.id, class_id=challenge.class_id)
-    if (not class_role is RoleType.manager
-    and not class_role is RoleType.self):
+
+    if (not class_role is RoleType.manager and not class_role is RoleType.normal):
         raise exc.NoPermission
 
     filters = model.parse_filter(filter, BROWSE_ESSAY_SUBMISSION_COLUMNS)

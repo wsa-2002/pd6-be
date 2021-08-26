@@ -113,11 +113,8 @@ class BrowseClassMemberOutput:
 
 BROWSE_CLASS_MEMBER_COLUMNS = {
     'member_id': int,
+    'class_id': int,
     'role': enum.RoleType,
-    'username': str,
-    'real_name': str,
-    'student_id': str,
-    'institute_abbreviated_name': str,
 }
 
 
@@ -164,7 +161,8 @@ class ReadClassMemberOutput:
 
 BROWSE_CLASS_MEMBER_WITH_REFERRAL_COLUMNS = {
     'member_id': int,
-    'member_referral': str,
+    'class_id': int,
+    'role': enum.RoleType,
 }
 
 
@@ -357,8 +355,8 @@ async def browse_submission_under_class(
 
     filters = model.parse_filter(filter, BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS)
     sorters = model.parse_sorter(sort, BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS)
+
     submissions, total_count = await service.submission.browse_under_class(class_id=class_id,
                                                                            limit=limit, offset=offset,
-                                                                           filters=filters, sorters=sorters
-                                                                           )
+                                                                           filters=filters, sorters=sorters)
     return model.BrowseOutputBase(submissions, total_count=total_count)
