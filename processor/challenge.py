@@ -53,7 +53,7 @@ BROWSE_CHALLENGE_COLUMNS = {
     'selection_typ': enum.TaskSelectionType,
     'title': str,
     'setter_id': int,
-    'description': Optional[str],
+    'description': str,
     'start_time': model.ServerTZDatetime,
     'end_time': model.ServerTZDatetime,
     'is_deleted': bool,

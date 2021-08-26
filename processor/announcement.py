@@ -56,6 +56,7 @@ BROWSE_ANNOUNCEMENT_COLUMNS = {
 
 @router.get('/announcement')
 @enveloped
+@add_to_docstring({k: v.__name__ for k, v in BROWSE_ANNOUNCEMENT_COLUMNS.items()})
 async def browse_announcement(
         req: Request,
         limit: model.Limit, offset: model.Offset,

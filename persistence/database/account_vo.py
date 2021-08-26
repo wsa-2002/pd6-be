@@ -27,7 +27,7 @@ async def browse_with_default_student_card(limit: int, offset: int, filters: Seq
                 fr'       LEFT JOIN student_card'  # some account might not have student card, so left join
                 fr'              ON student_card.account_id = account.id'
                 fr'             AND student_card.is_default'
-                fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
+                fr'{f" WHERE account.{cond_sql}" if cond_sql else ""}'
                 fr'{" AND NOT account.is_deleted" if not include_deleted else ""}'
                 fr' ORDER BY {sort_sql} account.id ASC'
                 fr' LIMIT %(limit)s OFFSET %(offset)s',

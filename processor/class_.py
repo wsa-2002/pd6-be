@@ -4,8 +4,8 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from base import do, enum
-from base.enum import RoleType
+from base import do, enum, popo
+from base.enum import RoleType, FilterOperator
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
 import persistence.email as email
@@ -22,17 +22,35 @@ router = APIRouter(
 )
 
 
+BROWSE_CLASS_COLUMNS = {
+    'id': int,
+    'name': str,
+    'course_id': int,
+    'is_deleted': bool,
+}
+
+
 @router.get('/class')
 @enveloped
-async def browse_class(request: Request) -> Sequence[do.Class]:
+@add_to_docstring({k: v.__name__ for k, v in BROWSE_CLASS_COLUMNS.items()})
+async def browse_class(
+        req: Request,
+        limit: model.Limit, offset: model.Offset,
+        filter: model.FilterStr = None, sort: model.SorterStr = None,
+) -> model.BrowseOutputBase:
     """
     ### 權限
     - system normal: all
     """
-    if not await rbac.validate(request.account.id, RoleType.normal):
+    if not await rbac.validate(req.account.id, RoleType.normal):
         raise exc.NoPermission
 
-    return await service.class_.browse()
+    filters = model.parse_filter(filter, BROWSE_CLASS_COLUMNS)
+    sorters = model.parse_sorter(sort, BROWSE_CLASS_COLUMNS)
+
+    classes, total_count = await service.class_.browse(limit=limit, offset=offset,
+                                                       filters=filters, sorters=sorters)
+    return model.BrowseOutputBase(classes, total_count=total_count)
 
 
 @router.get('/class/{class_id}')
@@ -93,26 +111,49 @@ class BrowseClassMemberOutput:
     institute_abbreviated_name: str
 
 
+BROWSE_CLASS_MEMBER_COLUMNS = {
+    'member_id': int,
+    'role': enum.RoleType,
+    'username': str,
+    'real_name': str,
+    'student_id': str,
+    'institute_abbreviated_name': str,
+}
+
+
 @router.get('/class/{class_id}/member')
 @enveloped
-async def browse_class_member(class_id: int, request: Request) -> Sequence[BrowseClassMemberOutput]:
+@add_to_docstring({k: v.__name__ for k, v in BROWSE_CLASS_MEMBER_COLUMNS.items()})
+async def browse_class_member(
+        class_id: int,
+        req: Request,
+        limit: model.Limit, offset: model.Offset,
+        filter: model.FilterStr = None, sort: model.SorterStr = None,
+) -> model.BrowseOutputBase: # Sequence[BrowseClassMemberOutput]:
     """
     ### 權限
     - Class normal
     - Class+ manager
     """
-    if (not await rbac.validate(request.account.id, RoleType.normal, class_id=class_id)
-            and not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id, inherit=True)):
+    if (not await rbac.validate(req.account.id, RoleType.normal, class_id=class_id)
+            and not await rbac.validate(req.account.id, RoleType.manager, class_id=class_id, inherit=True)):
         raise exc.NoPermission
 
-    results = await service.class_.browse_member_account_with_student_card_and_institute(class_id=class_id,
-                                                                                         include_deleted=False)
+    filters = model.parse_filter(filter, BROWSE_CLASS_MEMBER_COLUMNS)
+    sorters = model.parse_sorter(sort, BROWSE_CLASS_MEMBER_COLUMNS)
 
-    return [BrowseClassMemberOutput(member_id=member.member_id, role=member.role,
+    filters.append(popo.Filter(col_name='class_id',
+                               op=FilterOperator.eq,
+                               value=class_id))
+
+    result, total_count = await service.class_.browse_member_account_with_student_card_and_institute(
+                                               limit=limit, offset=offset, filters=filters, sorters=sorters)
+    data = [BrowseClassMemberOutput(member_id=member.member_id, role=member.role,
                                     username=account.username, real_name=account.real_name,
                                     student_id=student_card.student_id,
                                     institute_abbreviated_name=institute.abbreviated_name)
-            for member, account, student_card, institute in results]
+            for member, account, student_card, institute in result]
+    return model.BrowseOutputBase(data, total_count=total_count)
 
 
 @dataclass
@@ -121,31 +162,44 @@ class ReadClassMemberOutput:
     member_referral: Optional[str]
 
 
-@dataclass
-class ReadClassMemberWithoutReferralOutput:
-    member_id: Optional[int]
+BROWSE_CLASS_MEMBER_WITH_REFERRAL_COLUMNS = {
+    'member_id': int,
+    'member_referral': str,
+}
 
 
 @router.get('/class/{class_id}/member/account-referral')
 @enveloped
-async def browse_class_member_with_account_referral(class_id: int, include_referral: bool, request: Request) \
-        -> Union[Sequence[ReadClassMemberOutput], Sequence[ReadClassMemberWithoutReferralOutput]]:
+@add_to_docstring({k: v.__name__ for k, v in BROWSE_CLASS_MEMBER_WITH_REFERRAL_COLUMNS.items()})
+async def browse_class_member_with_account_referral(
+        class_id: int,
+        req: Request,
+        limit: model.Limit, offset: model.Offset,
+        filter: model.FilterStr = None, sort: model.SorterStr = None,
+) -> model.BrowseOutputBase: # -> Sequence[ReadClassMemberOutput]:
     """
     ### 權限
     - Class normal
     - Class+ manager
     """
-    if (not await rbac.validate(request.account.id, RoleType.normal, class_id=class_id)
-            and not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id, inherit=True)):
+    if (not await rbac.validate(req.account.id, RoleType.normal, class_id=class_id)
+            and not await rbac.validate(req.account.id, RoleType.manager, class_id=class_id, inherit=True)):
         raise exc.NoPermission
 
-    results = await service.class_.browse_class_member_with_account_referral(class_id=class_id,
-                                                                             include_deleted=False)
-    return [ReadClassMemberOutput(member_id=member.member_id,
+    filters = model.parse_filter(filter, BROWSE_CLASS_MEMBER_WITH_REFERRAL_COLUMNS)
+    sorters = model.parse_sorter(sort, BROWSE_CLASS_MEMBER_WITH_REFERRAL_COLUMNS)
+
+    filters.append(popo.Filter(col_name='class_id',
+                               op=FilterOperator.eq,
+                               value=class_id))
+
+    results, total_count = await service.class_.browse_class_member_with_account_referral(limit=limit, offset=offset,
+                                                                                          filters=filters, sorters=sorters)
+    data = [ReadClassMemberOutput(member_id=member.member_id,
                                   member_referral=member_referral)
-            for (member, member_referral) in results] if include_referral \
-      else [ReadClassMemberWithoutReferralOutput(member_id=member.member_id)
             for (member, member_referral) in results]
+
+    return model.BrowseOutputBase(data, total_count=total_count)
 
 
 class EditClassMemberInput(BaseModel):
@@ -237,18 +291,40 @@ async def add_team_under_class(class_id: int, data: AddTeamInput, request: Reque
     return model.AddOutput(id=team_id)
 
 
+BROWSE_TEAM_UNDER_CLASS_COLUMNS = {
+    'id': int,
+    'name': str,
+    'class_id': int,
+    'label': str,
+    'is_deleted': bool,
+}
+
+
 @router.get('/class/{class_id}/team', tags=['Team'])
 @enveloped
-async def browse_team_under_class(class_id: int, request: Request) -> Sequence[do.Team]:
+@add_to_docstring({k: v.__name__ for k, v in BROWSE_TEAM_UNDER_CLASS_COLUMNS.items()})
+async def browse_team_under_class(
+        class_id: int,
+        req: Request,
+        limit: model.Limit, offset: model.Offset,
+        filter: model.FilterStr = None, sort: model.SorterStr = None,
+) -> model.BrowseOutputBase:
     """
     ### 權限
     - Class normal: all
     """
-    class_role = await rbac.get_role(request.account.id, class_id=class_id)
+    class_role = await rbac.get_role(req.account.id, class_id=class_id)
     if class_role < RoleType.normal:
         raise exc.NoPermission
 
-    return await service.team.browse(class_id=class_id)
+    filters = model.parse_filter(filter, BROWSE_TEAM_UNDER_CLASS_COLUMNS)
+    sorters = model.parse_sorter(sort, BROWSE_TEAM_UNDER_CLASS_COLUMNS)
+
+    filters.append(popo.Filter(col_name='class_id',
+                               op=FilterOperator.eq,
+                               value=class_id))
+    teams, total_count = await service.team.browse(limit=limit, offset=offset, filters=filters, sorters=sorters)
+    return model.BrowseOutputBase(teams, total_count=total_count)
 
 
 BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS = {

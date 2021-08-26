@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Sequence
 from uuid import UUID
 
-from base import do, enum
+from base import do
 from base.popo import Filter, Sorter
 
 from .base import SafeExecutor
@@ -179,7 +179,7 @@ async def read_latest_judgment(submission_id: int) -> do.Judgment:
 
 async def browse_under_class(class_id: int,
                              limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter]) \
-        -> Sequence[do.Submission]:
+        -> tuple[Sequence[do.Submission], int]:
 
     cond_sql, cond_params = compile_filters(filters)
     sort_sql = ' ,'.join(f"submission.{sorter.col_name} {sorter.order}" for sorter in sorters)
