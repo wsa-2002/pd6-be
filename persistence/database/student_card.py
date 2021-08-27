@@ -1,8 +1,10 @@
 from typing import Sequence
 
 from base import do
+from base.popo import Filter, Sorter
 
 from .base import SafeExecutor, SafeConnection
+from .util import execute_count, compile_filters
 
 
 async def add(account_id: int, institute_id: int, student_id: str, email: str) \
@@ -37,18 +39,37 @@ async def read(student_card_id: int) -> do.StudentCard:
                               email=email, is_default=is_default)
 
 
-async def browse(account_id: int) -> Sequence[do.StudentCard]:
+async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter]) \
+        -> tuple[Sequence[do.StudentCard], int]:
+
+    cond_sql, cond_params = compile_filters(filters)
+    sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
+    if sort_sql:
+        sort_sql += ','
+
     async with SafeExecutor(
             event='browse student card by account id',
             sql=fr'SELECT id, institute_id, student_id, email, is_default'
                 fr'  FROM student_card'
-                fr' WHERE account_id = %(account_id)s',
-            account_id=account_id,
+                fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
+                fr' ORDER BY {sort_sql} id ASC'
+                fr' LIMIT %(limit)s OFFSET %(offset)s',
+            **cond_params,
+            limit=limit, offset=offset,
             fetch='all',
     ) as records:
-        return [do.StudentCard(id=id_, institute_id=institute_id, student_id=student_id,
+        data = [do.StudentCard(id=id_, institute_id=institute_id, student_id=student_id,
                                email=email, is_default=is_default)
                 for (id_, institute_id, student_id, email, is_default) in records]
+
+    total_count = await execute_count(
+        sql=fr'SELECT id, institute_id, student_id, email, is_default'
+            fr'  FROM student_card'
+            fr'{f" WHERE {cond_sql}" if cond_sql else ""}',
+        **cond_params,
+    )
+
+    return data, total_count
 
 
 async def is_duplicate(institute_id: int, student_id: str) -> bool:

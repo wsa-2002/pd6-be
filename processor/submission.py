@@ -3,11 +3,12 @@ from typing import Sequence
 from fastapi import File, UploadFile
 from pydantic import BaseModel
 
-from base import do
-from base.enum import RoleType, ChallengePublicizeType
+from base import do, popo
+from base.enum import RoleType, ChallengePublicizeType, FilterOperator
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
 import service
+from util.api_doc import add_to_docstring
 
 from .util import rbac, model
 
@@ -109,17 +110,19 @@ async def submit(problem_id: int, language_id: int, request: Request, content_fi
     return model.AddOutput(id=submission_id)
 
 
-class BrowseSubmissionInput(BaseModel):
-    # TODO: add more
-    account_id: int = None
-    problem_id: int = None
-    language_id: int = None
+BROWSE_SUBMISSION_COLUMNS = {
+    'problem_id': int,
+    'language_id': int,
+    'submit_time': model.ServerTZDatetime,
+}
 
 
 @router.get('/submission')
 @enveloped
-async def browse_submission(request: Request, account_id: int, problem_id: int = None, language_id: int = None) \
-        -> Sequence[do.Submission]:
+@add_to_docstring({k: v.__name__ for k, v in BROWSE_SUBMISSION_COLUMNS.items()})
+async def browse_submission(account_id: int, request: Request, limit: model.Limit = 50, offset: model.Offset = 0,
+                            filter: model.FilterStr = None, sort: model.SorterStr = None) \
+        -> model.BrowseOutputBase:
     """
     ### 權限
     - Self: see self
@@ -127,9 +130,18 @@ async def browse_submission(request: Request, account_id: int, problem_id: int =
     if account_id is not request.account.id:
         raise exc.NoPermission
 
-    return await service.submission.browse(account_id=request.account.id,
-                                           problem_id=problem_id,
-                                           language_id=language_id)
+    filters = model.parse_filter(filter, BROWSE_SUBMISSION_COLUMNS)
+    sorters = model.parse_sorter(sort, BROWSE_SUBMISSION_COLUMNS)
+
+    # 只能看自己的
+    filters.append(popo.Filter(col_name='account_id',
+                               op=FilterOperator.eq,
+                               value=request.account.id))
+
+    submissions, total_count = await service.submission.browse(limit=limit, offset=offset,
+                                                               filters=filters, sorters=sorters)
+
+    return model.BrowseOutputBase(submissions, total_count=total_count)
 
 
 @router.get('/submission/{submission_id}')
