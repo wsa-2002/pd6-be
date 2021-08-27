@@ -12,7 +12,7 @@ from typing import (
 
 import fastapi.routing
 
-from . import auth
+from . import routing
 
 
 class APIRouter(fastapi.routing.APIRouter):
@@ -29,7 +29,7 @@ class APIRouter(fastapi.routing.APIRouter):
         redirect_slashes: bool = True,
         default: Optional[fastapi.routing.ASGIApp] = None,
         dependency_overrides_provider: Optional[Any] = None,
-        route_class: Type[fastapi.routing.APIRoute] = auth.APIRoute,  # Changed!
+        route_class: Type[fastapi.routing.APIRoute] = routing.APIRoute,  # Changed!
         on_startup: Optional[Sequence[Callable[[], Any]]] = None,
         on_shutdown: Optional[Sequence[Callable[[], Any]]] = None,
         deprecated: Optional[bool] = None,

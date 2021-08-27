@@ -1,6 +1,6 @@
 from email.message import EmailMessage
 
-from config import smtp_config
+from config import service_config, smtp_config
 from persistence.email import smtp_handler
 from typing import Sequence
 
@@ -31,3 +31,18 @@ Operator: {operator_id}
 """
     subject = "PDOGS Notification (Class Manager Updates)"
     await send(bcc=bccs, msg=msg, subject=subject)
+
+
+# send file download url
+async def send_file_download_url(to: str, file_url: str, subject='PDOGS File Download URL'):
+    message = EmailMessage()
+    message["From"] = f"{smtp_config.username}@{smtp_config.host}"
+    message["To"] = to
+    message["Subject"] = subject
+    message.set_content(fr"""
+Please download your file with the following url:
+{file_url}
+""")
+
+    async with smtp_handler.client:
+        await smtp_handler.client.send_message(message)

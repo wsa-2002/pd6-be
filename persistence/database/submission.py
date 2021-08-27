@@ -1,10 +1,12 @@
 from datetime import datetime
-from typing import Optional, Sequence
+from typing import Sequence
+from uuid import UUID
 
-import log
 from base import do
+from base.popo import Filter, Sorter
 
 from .base import SafeExecutor
+from .util import execute_count, compile_filters
 
 
 # Submission Language
@@ -80,63 +82,156 @@ async def read_language(language_id: int, include_disabled=True) -> do.Submissio
 
 
 async def add(account_id: int, problem_id: int, language_id: int,
-              content_file: str, content_length: int, submit_time: datetime) -> int:
+              content_file_uuid: UUID, filename: str, content_length: int, submit_time: datetime) -> int:
     async with SafeExecutor(
             event='Add submission',
             sql="INSERT INTO submission"
-                "            (account_id, problem_id, language_id,"
-                "             content_file, content_length, submit_time)"
-                "     VALUES (%(account_id)s, %(problem_id)s, %(language_id)s,"
-                "             %(content_file)s, %(content_length)s, %(submit_time)s)"
+                "            (account_id, problem_id, language_id, filename,"
+                "             content_file_uuid, content_length, submit_time)"
+                "     VALUES (%(account_id)s, %(problem_id)s, %(language_id)s, %(filename)s,"
+                "             %(content_file_uuid)s, %(content_length)s, %(submit_time)s)"
                 "  RETURNING id",
-            account_id=account_id, problem_id=problem_id, language_id=language_id,
-            content_file=content_file, content_length=content_length, submit_time=submit_time,
+            account_id=account_id, problem_id=problem_id, language_id=language_id, filename=filename,
+            content_file_uuid=content_file_uuid, content_length=content_length, submit_time=submit_time,
             fetch=1,
     ) as (id_,):
         return id_
 
 
-# TODO: more filters
-async def browse(account_id: int = None, problem_id: int = None, language_id: int = None) \
-        -> Sequence[do.Submission]:
-    conditions = {}
+async def edit(submission_id: int, content_file_uuid: UUID, content_length: int, filename: str):
+    to_updates = {'content_file_uuid': content_file_uuid, 'content_length': content_length, 'filename': filename}
 
-    if account_id is not None:
-        conditions['account_id'] = account_id
-    if problem_id is not None:
-        conditions['problem_id'] = problem_id
-    if language_id is not None:
-        conditions['language_id'] = language_id
+    set_sql = ', '.join(fr"{field_name} = %({field_name})s" for field_name in to_updates)
 
-    cond_sql = ' AND '.join(fr"{field_name} = %({field_name})s" for field_name in conditions)
+    async with SafeExecutor(
+            event='add file id and length',
+            sql=fr'UPDATE submission'
+                fr'   SET {set_sql}'
+                fr' WHERE id  = %(submission_id)s',
+            submission_id=submission_id,
+            **to_updates,
+    ):
+        pass
+
+
+async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter]) \
+        -> tuple[Sequence[do.Submission], int]:
+
+    cond_sql, cond_params = compile_filters(filters)
+    sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
+    if sort_sql:
+        sort_sql += ','
 
     async with SafeExecutor(
             event='browse submissions',
-            sql=fr'SELECT id, account_id, problem_id, language_id,'
-                fr'       content_file, content_length, submit_time'
+            sql=fr'SELECT id, account_id, problem_id, language_id, filename,'
+                fr'       content_file_uuid, content_length, submit_time'
                 fr'  FROM submission'
                 fr' {f"WHERE {cond_sql}" if cond_sql else ""}'
-                fr' ORDER BY id DESC',
-            **conditions,
+                fr' ORDER BY {sort_sql} id DESC'
+                fr' LIMIT %(limit)s OFFSET %(offset)s',
+            **cond_params,
+            limit=limit, offset=offset,
             fetch='all',
     ) as records:
-        return [do.Submission(id=id_, account_id=account_id, problem_id=problem_id,
-                              language_id=language_id, content_file=content_file, content_length=content_length,
+        data = [do.Submission(id=id_, account_id=account_id, problem_id=problem_id, language_id=language_id,
+                              filename=filename, content_file_uuid=content_file_uuid, content_length=content_length,
                               submit_time=submit_time)
-                for id_, account_id, problem_id, language_id, content_file, content_length, submit_time
+                for id_, account_id, problem_id, language_id, filename, content_file_uuid, content_length, submit_time
                 in records]
+
+    total_count = await execute_count(
+        sql=fr'SELECT id, account_id, problem_id, language_id, filename,'
+            fr'       content_file_uuid, content_length, submit_time'
+            fr'  FROM submission'
+            fr' {f"WHERE {cond_sql}" if cond_sql else ""}',
+        **cond_params,
+    )
+
+    return data, total_count
 
 
 async def read(submission_id: int) -> do.Submission:
     async with SafeExecutor(
             event='read submission',
-            sql=fr'SELECT account_id, problem_id, language_id,'
-                fr'       content_file, content_length, submit_time'
+            sql=fr'SELECT account_id, problem_id, language_id, filename,'
+                fr'       content_file_uuid, content_length, submit_time'
                 fr'  FROM submission'
                 fr' WHERE id = %(submission_id)s',
             submission_id=submission_id,
             fetch=1,
-    ) as (account_id, problem_id, language_id, content_file, content_length, submit_time):
-        return do.Submission(id=submission_id, account_id=account_id, problem_id=problem_id,
-                             language_id=language_id, content_file=content_file, content_length=content_length,
-                             submit_time=submit_time)
+    ) as (account_id, problem_id, language_id, filename, content_file_uuid, content_length, submit_time):
+        return do.Submission(id=submission_id, account_id=account_id, problem_id=problem_id, filename=filename,
+                             language_id=language_id, content_file_uuid=content_file_uuid,
+                             content_length=content_length, submit_time=submit_time)
+
+
+async def read_latest_judgment(submission_id: int) -> do.Judgment:
+    async with SafeExecutor(
+            event='read submission latest judgment',
+            sql=fr'SELECT judgment.id, judgment.submission_id, judgment.status, judgment.total_time,'
+                fr'       judgment.max_memory, judgment.score, judgment.judge_time'
+                fr'  FROM judgment'
+                fr' INNER JOIN submission'
+                fr'         ON submission.id = judgment.submission_id'
+                fr' WHERE submission.id = %(submission_id)s'
+                fr' ORDER BY judgment.id DESC'
+                fr' LIMIT 1',
+            submission_id=submission_id,
+            fetch=1,
+    ) as (judgment_id, submission_id, status, total_time, max_memory, score, judge_time):
+        return do.Judgment(id=judgment_id, submission_id=submission_id, status=status,
+                           total_time=total_time, max_memory=max_memory, score=score, judge_time=judge_time)
+
+
+async def browse_under_class(class_id: int,
+                             limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter]) \
+        -> tuple[Sequence[do.Submission], int]:
+
+    filters = [Filter(col_name=f'submission.{filter_.col_name}',
+                      op=filter_.op,
+                      value=filter_.value) for filter_ in filters]
+
+    cond_sql, cond_params = compile_filters(filters)
+    sort_sql = ' ,'.join(f"submission.{sorter.col_name} {sorter.order}" for sorter in sorters)
+    if sort_sql:
+        sort_sql += ','
+
+    async with SafeExecutor(
+            event='browse submissions',
+            sql=fr'SELECT submission.id, submission.account_id, submission.problem_id , submission.language_id, '
+                fr'       submission.filename, submission.content_file_uuid, submission.content_length, submission.submit_time'
+                fr'  FROM submission'
+                fr'  INNER JOIN problem'
+                fr'          ON problem.id = submission.problem_id'
+                fr'  INNER JOIN challenge'
+                fr'          ON challenge.id = problem.challenge_id '
+                fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
+                fr'      AND challenge.class_id = %(class_id)s'
+                fr' ORDER BY {sort_sql} submission.id DESC',
+            **cond_params,
+            class_id=class_id,
+            limit=limit, offset=offset,
+            fetch='all',
+            raise_not_found=False,
+    ) as records:
+        data = [do.Submission(id=id_, account_id=account_id, problem_id=problem_id, language_id=language_id,
+                              filename=filename, content_file_uuid=content_file_uuid, content_length=content_length,
+                              submit_time=submit_time)
+                for id_, account_id, problem_id, language_id, filename, content_file_uuid, content_length, submit_time
+                in records]
+
+    total_count = await execute_count(
+        sql=fr'SELECT submission.id, submission.account_id, submission.problem_id , submission.language_id, '
+            fr'       submission.filename, submission.content_file_uuid, submission.content_length, submission.submit_time'
+            fr'  FROM submission'
+            fr'  INNER JOIN problem'
+            fr'          ON problem.id = submission.problem_id'
+            fr'  INNER JOIN challenge'
+            fr'          ON challenge.id = problem.challenge_id '
+            fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
+            fr'      AND challenge.class_id = %(class_id)s',
+        **cond_params,
+        class_id=class_id,
+    )
+    return data, total_count

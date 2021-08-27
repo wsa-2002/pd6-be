@@ -1,26 +1,19 @@
 from datetime import datetime
-from typing import Optional
 import uuid
 
-import starlette_context
-import starlette_context.errors
+import fastapi
+
+import util.tracker
+
+from .envelope import middleware_error_enveloped
 
 
+@middleware_error_enveloped
 async def middleware(request, call_next):
-    starlette_context.context['request_id'] = uuid.uuid1()
-    starlette_context.context['request_time'] = datetime.now()
-    return await call_next(request)
+    request_uuid, request_time = uuid.uuid1(), datetime.now()
+    util.tracker.set_request_uuid(request_uuid)
+    util.tracker.set_request_time(request_time)
 
-
-def get_request_uuid() -> Optional[uuid.UUID]:
-    try:
-        return starlette_context.context['request_id']
-    except starlette_context.errors.ContextDoesNotExistError:
-        return None
-
-
-def get_request_time() -> Optional[datetime]:
-    try:
-        return starlette_context.context['request_time']
-    except starlette_context.errors.ContextDoesNotExistError:
-        return None
+    response: fastapi.Response = await call_next(request)
+    response.headers['X-Request-ID'] = str(request_uuid)
+    return response

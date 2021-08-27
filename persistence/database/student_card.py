@@ -1,11 +1,13 @@
 from typing import Sequence
 
 from base import do
+from base.popo import Filter, Sorter
 
 from .base import SafeExecutor, SafeConnection
+from .util import execute_count, compile_filters
 
 
-async def add(account_id: int, institute_id: int, department: str, student_id: str, email: str) \
+async def add(account_id: int, institute_id: int, student_id: str, email: str) \
         -> int:
     async with SafeConnection(event='insert student card') as conn:
         async with conn.transaction():
@@ -16,11 +18,10 @@ async def add(account_id: int, institute_id: int, department: str, student_id: s
                                False, account_id, True)
 
             (id_,) = await conn.fetchrow(r'INSERT INTO student_card'
-                                         r'            (account_id, institute_id, department, student_id, email,'
-                                         r'             is_default)'
-                                         r'     VALUES ($1, $2, $3, $4, $5, $6)'
+                                         r'            (account_id, institute_id, student_id, email, is_default)'
+                                         r'     VALUES ($1, $2, $3, $4, $5)'
                                          r'  RETURNING id',
-                                         account_id, institute_id, department, student_id, email, True)
+                                         account_id, institute_id, student_id, email, True)
 
             return id_
 
@@ -28,28 +29,47 @@ async def add(account_id: int, institute_id: int, department: str, student_id: s
 async def read(student_card_id: int) -> do.StudentCard:
     async with SafeExecutor(
             event='get student card by id',
-            sql=fr'SELECT id, institute_id, department, student_id, email, is_default'
+            sql=fr'SELECT id, institute_id, student_id, email, is_default'
                 fr'  FROM student_card'
                 fr' WHERE id = %(student_card)s',
             student_card=student_card_id,
             fetch=1,
-    ) as (id_, institute_id, department, student_id, email, is_default):
-        return do.StudentCard(id=id_, institute_id=institute_id, department=department, student_id=student_id,
+    ) as (id_, institute_id, student_id, email, is_default):
+        return do.StudentCard(id=id_, institute_id=institute_id, student_id=student_id,
                               email=email, is_default=is_default)
 
 
-async def browse(account_id: int) -> Sequence[do.StudentCard]:
+async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter]) \
+        -> tuple[Sequence[do.StudentCard], int]:
+
+    cond_sql, cond_params = compile_filters(filters)
+    sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
+    if sort_sql:
+        sort_sql += ','
+
     async with SafeExecutor(
             event='browse student card by account id',
-            sql=fr'SELECT id, institute_id, department, student_id, email, is_default'
+            sql=fr'SELECT id, institute_id, student_id, email, is_default'
                 fr'  FROM student_card'
-                fr' WHERE account_id = %(account_id)s',
-            account_id=account_id,
+                fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
+                fr' ORDER BY {sort_sql} id ASC'
+                fr' LIMIT %(limit)s OFFSET %(offset)s',
+            **cond_params,
+            limit=limit, offset=offset,
             fetch='all',
     ) as records:
-        return [do.StudentCard(id=id_, institute_id=institute_id, department=department, student_id=student_id,
+        data = [do.StudentCard(id=id_, institute_id=institute_id, student_id=student_id,
                                email=email, is_default=is_default)
-                for (id_, institute_id, department, student_id, email, is_default) in records]
+                for (id_, institute_id, student_id, email, is_default) in records]
+
+    total_count = await execute_count(
+        sql=fr'SELECT id, institute_id, student_id, email, is_default'
+            fr'  FROM student_card'
+            fr'{f" WHERE {cond_sql}" if cond_sql else ""}',
+        **cond_params,
+    )
+
+    return data, total_count
 
 
 async def is_duplicate(institute_id: int, student_id: str) -> bool:
@@ -61,7 +81,7 @@ async def is_duplicate(institute_id: int, student_id: str) -> bool:
                 fr'   AND student_id = %(student_id)s',
             institute_id=institute_id,
             student_id=student_id,
-            fetch='1',
+            fetch=1,
     ) as (cnt,):
         return cnt > 0
 
@@ -76,25 +96,3 @@ async def read_owner_id(student_card_id: int) -> int:
             fetch=1,
     ) as (id_,):
         return id_
-
-
-async def edit(student_card_id: int, department: str = None) -> None:
-    to_updates = {}
-
-    if department is not None:
-        to_updates['department'] = department
-
-    if not to_updates:
-        return
-
-    set_sql = ', '.join(fr"{field_name} = %({field_name})s" for field_name in to_updates)
-
-    async with SafeExecutor(
-            event='edit student_card by id',
-            sql=fr'UPDATE student_card'
-                fr'   SET {set_sql}'
-                fr' WHERE id = %(student_card_id)s',
-            student_card_id=student_card_id,
-            **to_updates,
-    ):
-        pass

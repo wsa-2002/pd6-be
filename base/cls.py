@@ -1,8 +1,7 @@
 import enum
-from typing import TypeVar
+import typing
 
-
-T = TypeVar("T")
+T = typing.TypeVar("T")
 
 
 class StrEnum(str, enum.Enum):

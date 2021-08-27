@@ -4,6 +4,7 @@ Data Objects
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
+from uuid import UUID
 
 from base import enum
 
@@ -32,7 +33,6 @@ class Institute:
 class StudentCard:
     id: int
     institute_id: int
-    department: str
     student_id: str
     email: str
     is_default: bool
@@ -64,8 +64,16 @@ class Team:
 
 
 @dataclass
-class Member:
+class ClassMember:
     member_id: int
+    class_id: int
+    role: enum.RoleType
+
+
+@dataclass
+class TeamMember:
+    member_id: int
+    team_id: int
     role: enum.RoleType
 
 
@@ -76,7 +84,7 @@ class Grade:
     grader_id: int
     class_id: int
     title: str
-    score: Optional[int]
+    score: Optional[str]
     comment: Optional[str]
     update_time: datetime
     is_deleted: bool
@@ -86,8 +94,8 @@ class Grade:
 class Challenge:
     id: int
     class_id: int
-    type: enum.ChallengeType
     publicize_type: enum.ChallengePublicizeType
+    selection_type: enum.TaskSelectionType
     title: str
     setter_id: int
     description: Optional[str]
@@ -101,11 +109,11 @@ class Problem:
     id: int
     challenge_id: int
     challenge_label: str
-    selection_type: enum.TaskSelectionType
     title: str
     setter_id: int
     full_score: int
     description: Optional[str]
+    io_description: Optional[str]
     source: Optional[str]
     hint: Optional[str]
     is_deleted: bool
@@ -117,8 +125,10 @@ class Testcase:
     problem_id: int
     is_sample: bool
     score: int
-    input_file_id: Optional[int]
-    output_file_id: Optional[int]
+    input_file_uuid: Optional[UUID]
+    output_file_uuid: Optional[UUID]
+    input_filename: Optional[str]
+    output_filename: Optional[str]
     time_limit: int
     memory_limit: int
     is_disabled: bool
@@ -127,7 +137,7 @@ class Testcase:
 
 @dataclass
 class S3File:
-    id: int
+    uuid: UUID
     bucket: str
     key: str
 
@@ -146,8 +156,9 @@ class Submission:
     account_id: int
     problem_id: int
     language_id: int
-    content_file: str
+    content_file_uuid: UUID
     content_length: int
+    filename: str
     submit_time: datetime
 
 
@@ -173,10 +184,41 @@ class JudgeCase:
 
 
 @dataclass
+class Essay:
+    id: int
+    challenge_id: int
+    challenge_label: str
+    title: str
+    setter_id: int
+    description: Optional[str]
+    is_deleted: bool
+
+
+@dataclass
+class EssaySubmission:
+    id: int
+    account_id: int
+    essay_id: int
+    content_file_uuid: UUID
+    filename: str
+    submit_time: datetime
+
+
+@dataclass
+class AssistingData:
+    id: int
+    problem_id: int
+    s3_file_uuid: UUID
+    filename: str
+    is_deleted: bool
+
+
+@dataclass
 class PeerReview:
     id: int
     challenge_id: int
     challenge_label: str
+    title: str
     target_problem_id: int
     setter_id: int
     description: str

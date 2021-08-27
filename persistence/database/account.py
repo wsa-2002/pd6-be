@@ -1,4 +1,4 @@
-from typing import Tuple, Sequence
+from typing import Tuple
 
 from base import do
 from base.enum import RoleType
@@ -20,21 +20,6 @@ async def add(username: str, pass_hash: str, nickname: str, real_name: str, role
         return account_id
 
 
-async def browse(include_deleted: bool = False) -> Sequence[do.Account]:
-    async with SafeExecutor(
-            event='browse account',
-            sql=fr'SELECT id, username, nickname, real_name, role, is_deleted, alternative_email'
-                fr'  FROM account'
-                fr'{" WHERE NOT is_deleted" if not include_deleted else ""}'
-                fr' ORDER BY id ASC',
-            fetch='all',
-    ) as records:
-        return [do.Account(id=id_, username=username, nickname=nickname, real_name=real_name, role=RoleType(role),
-                           is_deleted=is_deleted, alternative_email=alternative_email)
-                for (id_, username, nickname, real_name, role, is_deleted, alternative_email)
-                in records]
-
-
 async def read(account_id: int, *, include_deleted: bool = False) -> do.Account:
     async with SafeExecutor(
             event='read account info',
@@ -49,11 +34,12 @@ async def read(account_id: int, *, include_deleted: bool = False) -> do.Account:
                           is_deleted=is_deleted, alternative_email=alternative_email)
 
 
-# Uses ellipsis (...) as default value for values that can be set to None
-async def edit(account_id: int,
-               nickname: str = ...) -> None:
+async def edit(account_id: int, real_name: str = None, nickname: str = None) -> None:
     to_updates = {}
-    if nickname is not ...:
+
+    if real_name is not None:
+        to_updates['real_name'] = real_name
+    if nickname is not None:
         to_updates['nickname'] = nickname
 
     if not to_updates:
@@ -147,18 +133,17 @@ async def read_pass_hash(account_id: int, include_4s_hash: bool = False) -> str:
         return pass_hash
 
 
-async def add_email_verification(email: str, account_id: int, institute_id: int = None, department: str = None,
+async def add_email_verification(email: str, account_id: int, institute_id: int = None,
                                  student_id: str = None) -> str:
     async with SafeExecutor(
             event='create email verification',
             sql=r'INSERT INTO email_verification'
-                r'            (email, account_id, institute_id, department, student_id)'
-                r'     VALUES (%(email)s, %(account_id)s, %(institute_id)s, %(department)s, %(student_id)s)'
+                r'            (email, account_id, institute_id, student_id)'
+                r'     VALUES (%(email)s, %(account_id)s, %(institute_id)s, %(student_id)s)'
                 r'  RETURNING code',
             email=email,
             account_id=account_id,
             institute_id=institute_id,
-            department=department,
             student_id=student_id,
             fetch=1,
     ) as (code,):
@@ -169,12 +154,12 @@ async def verify_email(code: str) -> None:
     async with SafeConnection(event='Verify email') as conn:
         async with conn.transaction():
             try:
-                email, account_id, institute_id, department, student_id = await conn.fetchrow(
+                email, account_id, institute_id, student_id = await conn.fetchrow(
                     r'UPDATE email_verification'
                     r'   SET is_consumed = $1'
                     r' WHERE code = $2'
                     r'   AND is_consumed = $3'
-                    r' RETURNING email, account_id, institute_id, department, student_id',
+                    r' RETURNING email, account_id, institute_id, student_id',
                     True, code, False)
             except TypeError:
                 raise exc.persistence.NotFound
@@ -186,9 +171,9 @@ async def verify_email(code: str) -> None:
                                    r'   AND is_default = $3',
                                    False, account_id, True)
                 await conn.execute(r'INSERT INTO student_card'
-                                   r'            (account_id, institute_id, department, student_id, email, is_default)'
-                                   r'     VALUES ($1, $2, $3, $4, $5, $6)',
-                                   account_id, institute_id, department, student_id, email, True)
+                                   r'            (account_id, institute_id, student_id, email, is_default)'
+                                   r'     VALUES ($1, $2, $3, $4, $5)',
+                                   account_id, institute_id, student_id, email, True)
                 await conn.execute(r'UPDATE account'
                                    r'   SET role = $1'
                                    r' WHERE id = $2'
@@ -218,12 +203,12 @@ async def reset_password(code: str, password_hash: str) -> None:
     async with SafeConnection(event='reset password') as conn:
         async with conn.transaction():
             try:
-                email, account_id, institute_id, department, student_id = await conn.fetchrow(
+                email, account_id, institute_id, student_id = await conn.fetchrow(
                     r'UPDATE email_verification'
                     r'   SET is_consumed = $1'
                     r' WHERE code = $2'
                     r'   AND is_consumed = $3'
-                    r' RETURNING email, account_id, institute_id, department, student_id',
+                    r' RETURNING email, account_id, institute_id, student_id',
                     True, code, False)
             except TypeError:
                 raise exc.persistence.NotFound
@@ -247,3 +232,13 @@ async def edit_default_student_card(account_id: int, student_card_id: int) -> No
             student_card_id=student_card_id,
     ):
         return
+
+
+async def account_referral_to_id(account_referral: str) -> int:
+    async with SafeExecutor(
+            event='account referral to id',
+            sql=f"SELECT account_referral_to_id(%(account_referral)s)",
+            account_referral=account_referral,
+            fetch=1,
+    ) as (account_id,):
+        return account_id

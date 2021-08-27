@@ -44,12 +44,14 @@ pool_handler = PoolHandler()
 # For import usage
 from . import (
     account,
+    account_vo,
     institute,
     student_card,
     rbac,
 
     course,
     class_,
+    class_vo,
     team,
     grade,
     challenge,
@@ -58,7 +60,11 @@ from . import (
     testcase,
     submission,
     judgment,
+    essay,
+    essay_submission,
     s3_file,
+
+    assisting_data,
 
     peer_review,
     peer_review_record,

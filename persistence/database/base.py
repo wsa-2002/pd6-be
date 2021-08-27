@@ -64,7 +64,9 @@ class SafeConnection:
 
 
 class SafeExecutor:
-    def __init__(self, event: str, sql: str, parameters: Dict = None, fetch=None, **kwparams):
+    def __init__(self, event: str, sql: str, parameters: Dict = None,
+                 fetch: Union[int, str, None] = None, raise_not_found: bool = True,
+                 **kwparams):
         """
         A safe execution context manager to open, execute, fetch, and close connections automatically.
         It also binds named parameters with `sql=r'%(key)s', key=value` since asyncpg does not support that.
@@ -76,6 +78,7 @@ class SafeExecutor:
         # self._start_time = datetime.now()
         self._event = event
         self._fetch = fetch
+        self._raise_not_found = raise_not_found
 
         # Handle keyword arguments
         if parameters is None:
@@ -86,11 +89,14 @@ class SafeExecutor:
 
     async def __aenter__(self) -> Optional[Union[asyncpg.Record, List[asyncpg.Record]]]:
         """
-        If fetch is 1 / "one": return a tuple (= row)
+        If fetch
+            - == 1: return a tuple (= row)
+            - > 1: return a list of tuples (= rows) with len <= fetch
+            - == "all": return a list of tuples (= rows) with all records
+            - is `None` or any false value: return None (no fetch)
+            - strange value: raise ValueError
 
-        If fetch is "many" or "all": return a list of tuples (= rows)
-
-        If fetch is `None` or strange value: return `None`
+        Will raise NotFound if requested to fetch but unable to fetch anything.
         """
         start_time = datetime.now()
 
@@ -99,24 +105,30 @@ class SafeExecutor:
         async with pool_handler.pool.acquire() as conn:
             conn: asyncpg.connection.Connection
 
+            results = None
+
             if not self._fetch:
                 await conn.execute(self._sql, *self._parameters)
-                return
-
-            if self._fetch == 'all':
-                results = await conn.fetch(self._sql, *self._parameters)
-            elif self._fetch == 'one' or self._fetch == 1:
-                results = await conn.fetchrow(self._sql, *self._parameters)
-            elif isinstance(self._fetch, int) and self._fetch > 0:
-                cur = await conn.cursor(self._sql, *self._parameters)
-                results = await cur.fetch(self._fetch)
+            elif isinstance(self._fetch, int):
+                if self._fetch == 1:
+                    results = await conn.fetchrow(self._sql, *self._parameters)
+                elif self._fetch > 1:
+                    cur = await conn.cursor(self._sql, *self._parameters)
+                    results = await cur.fetch(self._fetch)
+                else:
+                    raise ValueError
+            elif isinstance(self._fetch, str):
+                if self._fetch == 'all':
+                    results = await conn.fetch(self._sql, *self._parameters)
+                else:
+                    raise ValueError
             else:
                 raise ValueError
 
             exec_time_ms = (datetime.now() - start_time).total_seconds() * 1000
             log.info(f"Ended {self.__class__.__name__}: {self._event} after {exec_time_ms} ms")
 
-            if not results:
+            if self._fetch and not results and self._raise_not_found:
                 raise exc.persistence.NotFound
 
             return results

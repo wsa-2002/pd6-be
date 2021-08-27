@@ -1,12 +1,10 @@
-from datetime import datetime
 from functools import wraps
 import logging
 
 import traceback
-from uuid import uuid1
 
 from config import logger_config
-from util import get_request_uuid
+from util.tracker import get_request_uuid
 
 
 class _Logger:
