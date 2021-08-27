@@ -2,9 +2,11 @@ from datetime import datetime
 from typing import Optional, Sequence
 
 from base import do, enum
+from base.popo import Filter, Sorter
 
 from . import peer_review, problem
 from .base import SafeExecutor, SafeConnection
+from .util import execute_count, compile_filters
 
 
 async def add(class_id: int, publicize_type: enum.ChallengePublicizeType, selection_type: enum.TaskSelectionType,
@@ -25,23 +27,24 @@ async def add(class_id: int, publicize_type: enum.ChallengePublicizeType, select
         return id_
 
 
-async def browse(class_id: int = None, include_scheduled: bool = False, ref_time: datetime = None,
-                 include_deleted: bool = False) -> Sequence[do.Challenge]:
-    conditions = {}
-    if class_id is not None:
-        conditions['class_id'] = class_id
-
-    filters = []
-    if not include_deleted:
-        filters.append("NOT is_deleted")
-
-    if not include_scheduled:  # only show start_time < ref_time
+async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter],
+                 include_scheduled: bool = False, ref_time: datetime = None,
+                 include_deleted: bool = False) -> tuple[Sequence[do.Challenge], int]:
+    if not include_scheduled:
         if not ref_time:
             raise ValueError
-        filters.append(f"start_time <= %(ref_time)s")
+        filters.append(Filter(col_name='start_time',
+                              op=enum.FilterOperator.le,
+                              value=ref_time))
+    if not include_deleted:
+        filters.append(Filter(col_name='is_deleted',
+                              op=enum.FilterOperator.eq,
+                              value=include_deleted))
 
-    cond_sql = ' AND '.join(list(fr"{field_name} = %({field_name})s" for field_name in conditions)
-                            + filters)
+    cond_sql, cond_params = compile_filters(filters)
+    sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
+    if sort_sql:
+        sort_sql += ','
 
     async with SafeExecutor(
             event='browse challenges',
@@ -49,18 +52,29 @@ async def browse(class_id: int = None, include_scheduled: bool = False, ref_time
                 fr'       start_time, end_time, is_deleted'
                 fr'  FROM challenge'
                 fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
-                fr' ORDER BY class_id ASC, id ASC',
-            ref_time=ref_time,
-            **conditions,
+                fr' ORDER BY {sort_sql} class_id ASC, id ASC'
+                fr' LIMIT %(limit)s OFFSET %(offset)s',
+            **cond_params,
+            limit=limit, offset=offset,
             fetch='all',
+            raise_not_found=False,
     ) as records:
-        return [do.Challenge(id=id_, class_id=class_id, publicize_type=enum.ChallengePublicizeType(publicize_type),
+        data = [do.Challenge(id=id_, class_id=class_id, publicize_type=enum.ChallengePublicizeType(publicize_type),
                              selection_type=enum.TaskSelectionType(selection_type), title=title,
                              setter_id=setter_id, description=description, start_time=start_time, end_time=end_time,
                              is_deleted=is_deleted)
                 for (id_, class_id, publicize_type, selection_type, title, setter_id, description,
                      start_time, end_time, is_deleted)
                 in records]
+    total_count = await execute_count(
+        sql=fr'SELECT id, class_id, publicize_type, selection_type, title,'
+            fr'       setter_id, description, start_time, end_time, is_deleted'
+            fr'  FROM challenge'
+            fr'{f" WHERE {cond_sql}" if cond_sql else ""}',
+        **cond_params,
+    )
+
+    return data, total_count
 
 
 async def read(challenge_id: int, include_scheduled: bool = False, ref_time: datetime = None,

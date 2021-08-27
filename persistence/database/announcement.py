@@ -3,8 +3,11 @@ from typing import Sequence
 
 import log
 from base import do
+from base.enum import FilterOperator
+from base.popo import Filter, Sorter
 
 from .base import SafeExecutor
+from .util import execute_count, compile_filters
 
 
 async def add(title: str, content: str, author_id: int, post_time: datetime, expire_time: datetime) \
@@ -21,33 +24,52 @@ async def add(title: str, content: str, author_id: int, post_time: datetime, exp
         return announcement_id
 
 
-async def browse(include_scheduled: bool, ref_time: datetime = None, include_deleted=False) \
-        -> Sequence[do.Announcement]:
+async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter],
+                 include_scheduled: bool, ref_time: datetime = None, include_deleted=False) \
+        -> tuple[Sequence[do.Announcement], int]:
     """
     ref_time must be given if include_scheduled is False
     """
-    filters = []
     if not include_scheduled:
         if not ref_time:
             raise ValueError
-        filters.append("post_time <= %(ref_time)s AND expire_time > %(ref_time)s")
+        filters.append(Filter(col_name='post_time',
+                              op=FilterOperator.le,
+                              value=ref_time))
     if not include_deleted:
-        filters.append("NOT is_deleted")
+        filters.append(Filter(col_name='is_deleted',
+                              op=FilterOperator.eq,
+                              value=include_deleted))
 
-    cond_sql = ' AND '.join(filters)
+    cond_sql, cond_params = compile_filters(filters)
+    sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
+    if sort_sql:
+        sort_sql += ','
 
     async with SafeExecutor(
             event='get all announcements',
             sql=fr'SELECT id, title, content, author_id, post_time, expire_time, is_deleted'
                 fr'  FROM announcement'
                 fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
-                fr' ORDER BY id ASC',
-            ref_time=ref_time,
+                fr' ORDER BY {sort_sql} id ASC'
+                fr' LIMIT %(limit)s OFFSET %(offset)s',
+            **cond_params,
+            limit=limit, offset=offset,
             fetch='all',
+            raise_not_found=False,
     ) as records:
-        return [do.Announcement(id=id_, title=title, content=content, author_id=author_id,
+        data = [do.Announcement(id=id_, title=title, content=content, author_id=author_id,
                                 post_time=post_time, expire_time=expire_time, is_deleted=is_deleted)
                 for (id_, title, content, author_id, post_time, expire_time, is_deleted) in records]
+
+    total_count = await execute_count(
+        sql=fr'SELECT id, title, content, author_id, post_time, expire_time, is_deleted'
+            fr'  FROM announcement'
+            fr'{f" WHERE {cond_sql}" if cond_sql else ""}',
+        **cond_params,
+    )
+
+    return data, total_count
 
 
 async def read(announcement_id: int, include_scheduled: bool, ref_time: datetime = None, include_deleted=False) \

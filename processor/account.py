@@ -11,7 +11,7 @@ from middleware import APIRouter, response, enveloped, auth, Request
 import service
 from util.api_doc import add_to_docstring
 
-from .util import rbac
+from .util import rbac, model
 
 
 router = APIRouter(
@@ -33,9 +33,24 @@ class BrowseAccountOutput:
     student_id: Optional[str]
 
 
+BROWSE_ACCOUNT_COLUMNS = {
+    'id': int,
+    'username': str,
+    'nickname': str,
+    'role': str,
+    'real_name': str,
+    'alternative_email': str,
+}
+
+
 @router.get('/account')
 @enveloped
-async def browse_account_with_default_student_id(request: Request) -> Sequence[BrowseAccountOutput]:
+@add_to_docstring({k: v.__name__ for k, v in BROWSE_ACCOUNT_COLUMNS.items()})
+async def browse_account_with_default_student_id(
+        request: Request,
+        limit: model.Limit = 50, offset: model.Offset = 0,
+        filter: model.FilterStr = None, sort: model.SorterStr = None,
+) -> model.BrowseOutputBase:
     """
     ### 權限
     - System Manager
@@ -44,11 +59,17 @@ async def browse_account_with_default_student_id(request: Request) -> Sequence[B
     if not is_manager:
         raise exc.NoPermission
 
-    result = await service.account.browse_with_default_student_card()
-    return [BrowseAccountOutput(id=account.id, username=account.username, nickname=account.nickname,
+    filters = model.parse_filter(filter, BROWSE_ACCOUNT_COLUMNS)
+    sorters = model.parse_sorter(sort, BROWSE_ACCOUNT_COLUMNS)
+
+    result, total_count = await service.account.browse_with_default_student_card(limit=limit, offset=offset,
+                                                                                 filters=filters, sorters=sorters)
+    data = [BrowseAccountOutput(id=account.id, username=account.username, nickname=account.nickname,
                                 role=account.role, real_name=account.real_name,
                                 alternative_email=account.alternative_email, student_id=student_card.student_id)
             for account, student_card in result]
+
+    return model.BrowseOutputBase(data, total_count=total_count)
 
 
 @dataclass

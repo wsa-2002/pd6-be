@@ -7,6 +7,7 @@ import persistence.database as db
 add = db.class_.add
 edit = db.class_.edit
 browse = db.class_.browse
+browse_with_filter = db.class_.browse_with_filter
 read = db.class_.read
 delete = db.class_.delete_cascade
 

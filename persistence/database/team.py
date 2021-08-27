@@ -1,8 +1,9 @@
 from typing import Sequence, Tuple
 
 from base import do
+from base.enum import RoleType, FilterOperator
 from base.popo import Filter, Sorter
-from base.enum import RoleType
+
 
 from .base import SafeExecutor, SafeConnection
 from .util import execute_count, compile_filters
@@ -23,29 +24,42 @@ async def add(name: str, class_id: int, label: str) -> int:
         return team_id
 
 
-async def browse(class_id: int = None, include_deleted=False) -> Sequence[do.Team]:
-    conditions = {}
-    if class_id is not None:
-        conditions['class_id'] = class_id
+async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter],
+                 include_deleted=False) -> tuple[Sequence[do.Team], int]:
 
-    filters = []
     if not include_deleted:
-        filters.append("NOT is_deleted")
+        filters.append(Filter(col_name='is_deleted',
+                              op=FilterOperator.eq,
+                              value=include_deleted))
 
-    cond_sql = ' AND '.join(list(fr"{field_name} = %({field_name})s" for field_name in conditions)
-                            + filters)
+    cond_sql, cond_params = compile_filters(filters)
+    sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
+    if sort_sql:
+        sort_sql += ','
 
     async with SafeExecutor(
             event='browse teams',
             sql=fr'SELECT id, name, class_id, is_deleted, label'
                 fr'  FROM team'
                 fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
-                fr' ORDER BY class_id ASC, id ASC',
-            **conditions,
+                fr' ORDER BY {sort_sql} class_id ASC, id ASC'
+                fr' LIMIT %(limit)s OFFSET %(offset)s',
+            **cond_params,
+            limit=limit, offset=offset,
             fetch='all',
+            raise_not_found=False,
     ) as records:
-        return [do.Team(id=id_, name=name, class_id=class_id, is_deleted=is_deleted, label=label)
+        data = [do.Team(id=id_, name=name, class_id=class_id, is_deleted=is_deleted, label=label)
                 for (id_, name, class_id, is_deleted, label) in records]
+
+    total_count = await execute_count(
+        sql=fr'SELECT id, name, class_id, is_deleted, label'
+            fr'  FROM team'
+            fr'{f" WHERE {cond_sql}" if cond_sql else ""}',
+        **cond_params,
+    )
+
+    return data, total_count
 
 
 async def read(team_id: int, *, include_deleted=False) -> do.Team:
