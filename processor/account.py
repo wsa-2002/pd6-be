@@ -77,7 +77,7 @@ async def batch_get_account_with_default_student_id(request: Request, account_id
                                   student_id=student_card.student_id)
             for account, student_card in result]
 
-
+@dataclass
 class BrowseAccountWithRoleOutput:
     member_id: int
     role: RoleType
