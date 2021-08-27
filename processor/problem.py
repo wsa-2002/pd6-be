@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Optional, Sequence
 from uuid import UUID
 
-from fastapi import UploadFile, File
+from fastapi import UploadFile, File, BackgroundTasks
 from pydantic import BaseModel
 
 from base import do
@@ -228,6 +228,62 @@ async def add_assisting_data_under_problem(problem_id: int, request: Request, as
     assisting_data_id = await service.assisting_data.add(file=assisting_data.file, filename=assisting_data.filename,
                                                          problem_id=problem_id)
     return model.AddOutput(id=assisting_data_id)
+
+
+@router.post('/problem/{problem_id}/all-assisting-data')
+@enveloped
+async def download_all_assisting_data(problem_id: int, request: Request, as_attachment: bool,
+                                      background_tasks: BackgroundTasks) -> None:
+    """
+    ### 權限
+    - class manager
+    """
+    problem = await service.problem.read(problem_id=problem_id)
+    challenge = await service.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
+
+    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+        raise exc.NoPermission
+    background_tasks.add_task(service.assisting_data.download_all,
+                              account_id=request.account.id, problem_id=problem_id, as_attachment=as_attachment)
+    return
+
+
+@router.post('/problem/{problem_id}/all-sample-testcase')
+@enveloped
+async def download_all_sample_testcase(problem_id: int, request: Request, as_attachment: bool,
+                                       background_tasks: BackgroundTasks) -> None:
+    """
+    ### 權限
+    - class manager
+    """
+    problem = await service.problem.read(problem_id=problem_id)
+    challenge = await service.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
+
+    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+        raise exc.NoPermission
+
+    background_tasks.add_task(service.testcase.download_all_sample,
+                              account_id=request.account.id, problem_id=problem_id, as_attachment=as_attachment)
+    return
+
+
+@router.post('/problem/{problem_id}/all-non-sample-testcase')
+@enveloped
+async def download_all_non_sample_testcase(problem_id: int, request: Request, as_attachment: bool,
+                                           background_tasks: BackgroundTasks) -> None:
+    """
+    ### 權限
+    - class manager
+    """
+    problem = await service.problem.read(problem_id=problem_id)
+    challenge = await service.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
+
+    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+        raise exc.NoPermission
+
+    background_tasks.add_task(service.testcase.download_all_non_sample,
+                              account_id=request.account.id, problem_id=problem_id, as_attachment=as_attachment)
+    return
 
 
 @dataclass
