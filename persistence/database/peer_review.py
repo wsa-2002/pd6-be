@@ -78,7 +78,7 @@ async def browse_by_challenge(challenge_id: int, include_deleted=False) \
 
 async def read(peer_review_id: int, include_deleted=False) -> do.PeerReview:
     async with SafeExecutor(
-            event='browse peer reviews',
+            event='read peer review',
             sql=fr'SELECT id, challenge_id, challenge_label, title, target_problem_id, setter_id, description,'
                 fr'       min_score, max_score, max_review_count, start_time, end_time,'
                 fr'       is_deleted'
@@ -86,10 +86,10 @@ async def read(peer_review_id: int, include_deleted=False) -> do.PeerReview:
                 fr' WHERE id = %(peer_review_id)s'
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}',
             peer_review_id=peer_review_id,
-            fetch='all',
+            fetch=1,
     ) as (id_, challenge_id, challenge_label, title, target_problem_id, setter_id, description,
           min_score, max_score, max_review_count, start_time, end_time, is_deleted):
-        return do.PeerReview(id=id_, challenge_id=challenge_id, challenge_label=challenge_label,title=title,
+        return do.PeerReview(id=id_, challenge_id=challenge_id, challenge_label=challenge_label, title=title,
                              target_problem_id=target_problem_id, setter_id=setter_id, description=description,
                              min_score=min_score, max_score=max_score, max_review_count=max_review_count,
                              start_time=start_time, end_time=end_time, is_deleted=is_deleted)

@@ -161,8 +161,28 @@ async def read_submission(submission_id: int, request: Request) -> do.Submission
 async def browse_all_submission_judgment(submission_id: int, request: Request) -> Sequence[do.Judgment]:
     """
     ### 權限
-    - Self (latest)
-    - Class manager (all)
+    - Class manager
     """
-    # TODO: 權限控制
+    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
+    submission = await service.submission.read(submission_id=submission_id)
+    problem = await service.problem.read(problem_id=submission.problem_id)
+    challenge = await service.challenge.read(challenge_id=problem.challenge_id, include_scheduled=True)
+
+    if not rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+        raise exc.NoPermission
     return await service.judgment.browse(submission_id=submission_id)
+
+
+@router.get('/submission/{submission_id}/latest-judgment', tags=['Judgment'])
+@enveloped
+async def read_submission_latest_judgment(submission_id: int, request: Request) -> do.Judgment:
+    """
+    ### 權限
+    - Self: see self
+    """
+    submission = await service.submission.read(submission_id=submission_id)
+
+    # 可以看自己的
+    if submission.account_id is not request.account.id:
+        raise exc.NoPermission
+    return await service.submission.read_latest_judgment(submission_id=submission_id)

@@ -41,6 +41,7 @@ async def read_essay(essay_id: int, request: Request) -> do.Essay:
 
 class EditEssayInput(BaseModel):
     title: Optional[str] = model.can_omit
+    challenge_label: Optional[str] = model.can_omit
     description: Optional[str] = model.can_omit
 
 
@@ -58,7 +59,7 @@ async def edit_essay(essay_id: int, data: EditEssayInput, request: Request) -> N
         raise exc.NoPermission
 
     await service.essay.edit(essay_id=essay.id, setter_id=request.account.id, title=data.title,
-                             description=data.description)
+                             challenge_label=data.challenge_label, description=data.description)
 
 
 @router.delete('/essay/{essay_id}')

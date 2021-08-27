@@ -13,11 +13,14 @@ async def add(username: str, password: str, nickname: str, real_name: str, role=
 browse_with_default_student_card = db.account_vo.browse_with_default_student_card
 browse_list_with_default_student_card = db.account_vo.browse_list_with_default_student_card
 browse_with_class_role = db.class_.browse_role_by_account_id
+
 read = db.account.read
 read_with_default_student_card = db.account_vo.read_with_default_student_card
 
 edit_general = db.account.edit
 edit_default_student_card = db.account.edit_default_student_card
+
+referral_to_id = db.account.account_referral_to_id
 
 
 async def edit_alternative_email(account_id: int, alternative_email: str = None) -> None:

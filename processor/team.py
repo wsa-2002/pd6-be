@@ -1,5 +1,8 @@
+from dataclasses import dataclass
 from typing import Sequence
+from uuid import UUID
 
+from fastapi import UploadFile, File
 from pydantic import BaseModel
 
 from base import do
@@ -16,6 +19,39 @@ router = APIRouter(
     default_response_class=response.JSONResponse,
     dependencies=auth.doc_dependencies,
 )
+
+
+@dataclass
+class GetTeamTemplateOutput:
+    s3_file_uuid: UUID
+    filename: str
+
+
+@router.post('/class/{class_id}/team-import', tags=['Class'])
+@enveloped
+async def import_team(class_id: int, request: Request, team_file: UploadFile = File(...)):
+    """
+    ### 權限
+    - Class manager
+    """
+    if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id):
+        raise exc.NoPermission
+
+    await service.team.import_team(team_file.file, class_id=class_id)
+
+
+@router.get('/team/template')
+@enveloped
+async def get_team_template_file(request: Request) -> GetTeamTemplateOutput:
+    """
+    ### 權限
+    - system normal
+    """
+    if not rbac.validate(request.account.id, RoleType.normal):
+        raise exc.NoPermission
+
+    s3_file, filename = await service.team.get_template_file()
+    return GetTeamTemplateOutput(s3_file_uuid=s3_file.uuid, filename=filename)
 
 
 @router.get('/team/{team_id}')
@@ -138,6 +174,29 @@ async def edit_team_member(team_id: int, data: Sequence[EditMemberInput], reques
 
     for member in data:
         await service.team.edit_member(team_id=team_id, member_id=member.member_id, role=member.role)
+
+
+class SetMemberInput(BaseModel):
+    account_referral: str
+    role: RoleType
+
+
+@router.put('/team/{team_id}/member')
+@enveloped
+async def replace_team_members(team_id: int, data: Sequence[SetMemberInput], request: Request) -> None:
+    """
+    ### 權限
+    - Class manager
+    """
+    # 因為需要 class_id 才能判斷權限，所以先 read team 再判斷要不要噴 NoPermission
+    team = await service.team.read(team_id)
+
+    if not await rbac.validate(request.account.id, RoleType.manager, class_id=team.class_id):
+        raise exc.NoPermission
+
+    await service.team.replace_members(team_id=team_id,
+                                       member_roles=[(member.account_referral, member.role)
+                                                     for member in data])
 
 
 @router.delete('/team/{team_id}/member/{member_id}')

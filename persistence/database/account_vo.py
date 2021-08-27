@@ -69,7 +69,8 @@ async def read_with_default_student_card(account_id: int, include_deleted: bool 
                 fr'       LEFT JOIN student_card'  # some account might not have student card, so left join
                 fr'              ON student_card.account_id = %(account_id)s'
                 fr'             AND student_card.is_default'
-                fr'{" WHERE NOT account.is_deleted" if not include_deleted else ""}',
+                fr' WHERE account.id = %(account_id)s'
+                fr'{" AND NOT account.is_deleted" if not include_deleted else ""}',
             account_id=account_id,
             fetch=1,
     ) as (account_id, username, nickname, real_name, role, is_deleted, alternative_email,
@@ -78,3 +79,4 @@ async def read_with_default_student_card(account_id: int, include_deleted: bool 
                            role=enum.RoleType(role), is_deleted=is_deleted, alternative_email=alternative_email),
                 do.StudentCard(id=student_card_id, institute_id=institute_id,
                                student_id=student_id, email=email, is_default=is_default))
+

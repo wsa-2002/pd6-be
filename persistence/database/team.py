@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing import Sequence, Tuple
 
 from base import do
 from base.enum import RoleType
@@ -154,6 +154,48 @@ async def add_member(team_id: int, account_referral: str, role: RoleType):
         pass
 
 
+async def add_team_and_add_member(team_name: str, class_id: int, team_label: str, account_referral: str, role: RoleType):
+    async with SafeConnection(event='add member with team name') as conn:
+        async with conn.transaction():
+            (team_id,) = await conn.fetchrow(
+                fr'WITH get AS ('
+                fr'     SELECT id'
+                fr'       FROM team'
+                fr'      WHERE team.name = $1'
+                fr'        AND team.class_id = $2'
+                fr'        AND team.label = $3'
+                fr'), new_team AS ('
+                fr'     INSERT INTO team'
+                fr'                 (name, class_id, label)'
+                fr'          VALUES ($1, $2, $3)'
+                fr'     ON CONFLICT DO NOTHING'
+                fr'     RETURNING id'
+                fr')'
+                fr'SELECT id FROM get'
+                fr' UNION ALL'
+                fr' SELECT id FROM new_team',
+                team_name, class_id, team_label,
+            )
+
+            await conn.execute(
+                fr'INSERT INTO team_member'
+                fr'            (team_id, member_id, role)'
+                fr'     VALUES ($1, account_referral_to_id($2), $3)',
+                team_id, account_referral, role,
+            )
+
+
+async def add_members_by_account_referral(team_id: int, member_roles: Sequence[Tuple[str, RoleType]]):
+    async with SafeConnection(event='add members to team') as conn:
+        await conn.executemany(
+            command=r'INSERT INTO team_member'
+                    r'            (team_id, member_id, role)'
+                    r'     VALUES ($1, account_referral_to_id($2), $3)',
+            args=[(team_id, account_referral, role)
+                  for account_referral, role in member_roles],
+        )
+
+
 async def edit_member(team_id: int, member_id: int, role: RoleType):
     async with SafeExecutor(
             event='set team member',
@@ -174,5 +216,15 @@ async def delete_member(team_id: int, member_id: int):
                 r'      WHERE team_id = %(team_id)s AND member_id = %(member_id)s',
             team_id=team_id,
             member_id=member_id,
+    ):
+        pass
+
+
+async def delete_all_members_in_team(team_id: int):
+    async with SafeExecutor(
+            event='HARD DELETE team member',
+            sql=r'DELETE FROM team_member'
+                r'      WHERE team_id = %(team_id)s',
+            team_id=team_id,
     ):
         pass

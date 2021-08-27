@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional, Sequence, Union
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -9,6 +10,7 @@ import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
 import persistence.email as email
 import service
+from util.api_doc import add_to_docstring
 
 from .util import rbac, model
 
@@ -146,7 +148,6 @@ async def browse_class_member_with_account_referral(class_id: int, include_refer
             for (member, member_referral) in results]
 
 
-
 class EditClassMemberInput(BaseModel):
     member_id: int
     role: RoleType
@@ -166,6 +167,33 @@ async def edit_class_member(class_id: int, data: Sequence[EditClassMemberInput],
         await service.class_.edit_member(class_id=class_id, member_id=item.member_id, role=item.role)
 
     updated_class_managers = [member.member_id for member in data if member.role is RoleType.manager]
+    if updated_class_managers:
+        class_manager_emails = await service.class_.browse_member_emails(class_id, RoleType.manager)
+        await email.notification.notify_cm_change(class_manager_emails, updated_class_managers,
+                                                  class_id, request.account.id)
+
+
+class SetClassMemberInput(BaseModel):
+    account_referral: str
+    role: RoleType
+
+
+@router.put('/class/{class_id}/member')
+@enveloped
+async def replace_class_members(class_id: int, data: Sequence[SetClassMemberInput], request: Request) -> None:
+    """
+    ### 權限
+    - Class+ manager
+    """
+    if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id, inherit=True):
+        raise exc.NoPermission
+
+    await service.class_.replace_members(class_id=class_id,
+                                         member_roles=[(member.account_referral, member.role)
+                                                       for member in data])
+
+    updated_class_managers = [await service.account.referral_to_id(account_referral=member.account_referral)
+                              for member in data if member.role is RoleType.manager]
     if updated_class_managers:
         class_manager_emails = await service.class_.browse_member_emails(class_id, RoleType.manager)
         await email.notification.notify_cm_change(class_manager_emails, updated_class_managers,
@@ -221,3 +249,40 @@ async def browse_team_under_class(class_id: int, request: Request) -> Sequence[d
         raise exc.NoPermission
 
     return await service.team.browse(class_id=class_id)
+
+
+BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS = {
+    'id': int,
+    'account_id': int,
+    'problem_id': int,
+    'language_id': int,
+    'content_file_uuid': UUID,
+    'content_length': int,
+    'filename': str,
+    'submit_time': model.ServerTZDatetime,
+}
+
+
+@router.get('/class/{class_id}/submission', tags=['Submission'])
+@enveloped
+@add_to_docstring({k: v.__name__ for k, v in BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS.items()})
+async def browse_submission_under_class(
+        class_id: int,
+        req: Request,
+        limit: model.Limit, offset: model.Offset,
+        filter: model.FilterStr = None, sort: model.SorterStr = None,
+) -> model.BrowseOutputBase:
+    """
+    ### 權限
+    - Class manager
+    """
+    if not await rbac.validate(req.account.id, RoleType.manager, class_id=class_id):
+        raise exc.NoPermission
+
+    filters = model.parse_filter(filter, BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS)
+    sorters = model.parse_sorter(sort, BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS)
+    submissions, total_count = await service.submission.browse_under_class(class_id=class_id,
+                                                                           limit=limit, offset=offset,
+                                                                           filters=filters, sorters=sorters
+                                                                           )
+    return model.BrowseOutputBase(submissions, total_count=total_count)
