@@ -1,5 +1,6 @@
+from fastapi import Query
 from dataclasses import dataclass
-from typing import Sequence, Optional
+from typing import Sequence, Optional, List
 
 from pydantic import BaseModel
 
@@ -49,6 +50,32 @@ async def browse_account_with_default_student_id(request: Request) -> Sequence[B
                                 alternative_email=account.alternative_email, student_id=student_card.student_id)
             for account, student_card in result]
 
+
+@dataclass
+class BatchGetAccountOutput:
+    id: int
+    username: str
+    real_name: str
+
+    student_id: Optional[str]
+
+
+@router.get('/account-summary/batch')
+@enveloped
+async def batch_get_account_with_default_student_id(request: Request, account_ids: List[int] = Query(None)) \
+        -> Sequence[BatchGetAccountOutput]:
+    """
+    ### 權限
+    - System Normal
+    """
+    is_normal = await rbac.validate(request.account.id, RoleType.normal)
+    if not is_normal:
+        raise exc.NoPermission
+
+    result = await service.account.browse_list_with_default_student_card(account_ids=account_ids)
+    return [BatchGetAccountOutput(id=account.id, username=account.username, real_name=account.real_name,
+                                  student_id=student_card.student_id)
+            for account, student_card in result]
 
 @dataclass
 class BrowseAccountWithRoleOutput:
