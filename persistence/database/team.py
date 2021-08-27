@@ -164,6 +164,7 @@ async def add_team_and_add_member(team_name: str, class_id: int, team_label: str
                 fr'      WHERE team.name = $1'
                 fr'        AND team.class_id = $2'
                 fr'        AND team.label = $3'
+                fr'        AND is_deleted = $4'
                 fr'), new_team AS ('
                 fr'     INSERT INTO team'
                 fr'                 (name, class_id, label)'
@@ -174,7 +175,7 @@ async def add_team_and_add_member(team_name: str, class_id: int, team_label: str
                 fr'SELECT id FROM get'
                 fr' UNION ALL'
                 fr' SELECT id FROM new_team',
-                team_name, class_id, team_label,
+                team_name, class_id, team_label, False,
             )
 
             await conn.execute(
