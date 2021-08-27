@@ -41,7 +41,7 @@ FilterStr = typing.Optional[pydantic.Json]
 SorterStr = typing.Optional[pydantic.Json]
 
 
-def parse_filter(json_obj: FilterStr, column_types: dict[str, type]) -> typing.Sequence[base.popo.Filter]:
+def parse_filter(json_obj: FilterStr, column_types: dict[str, type]) -> list[base.popo.Filter]:
     filters: list[base.popo.Filter] = pydantic.parse_obj_as(list[base.popo.Filter], json_obj or [])
 
     for i, filter_ in enumerate(filters):
@@ -64,7 +64,7 @@ def parse_filter(json_obj: FilterStr, column_types: dict[str, type]) -> typing.S
     return filters
 
 
-def parse_sorter(json_obj: FilterStr, column_types: dict[str, type]) -> typing.Sequence[base.popo.Sorter]:
+def parse_sorter(json_obj: FilterStr, column_types: dict[str, type]) -> list[base.popo.Sorter]:
     sorters: list[base.popo.Sorter] = pydantic.parse_obj_as(list[base.popo.Sorter], json_obj or [])
 
     if any(sorter.col_name not in column_types for sorter in sorters):

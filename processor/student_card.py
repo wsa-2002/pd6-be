@@ -2,13 +2,14 @@ from typing import Sequence
 
 from pydantic import BaseModel
 
-from base import do
+from base import do, popo
 import exceptions as exc
-from base.enum import RoleType
+from base.enum import RoleType, FilterOperator
 from middleware import APIRouter, response, enveloped, auth, Request
 import service
+from util.api_doc import add_to_docstring
 
-from .util import rbac
+from .util import rbac, model
 
 
 router = APIRouter(
@@ -54,9 +55,20 @@ async def add_student_card_to_account(account_id: int, data: AddStudentCardInput
                                    institute_id=institute.id, student_id=data.student_id)
 
 
+BROWSE_STUDENT_CARD_COLUMNS = {
+    'institute_id': int,
+    'student_id': str,
+    'email': str,
+}
+
+
 @router.get('/account/{account_id}/student-card', tags=['Account'])
 @enveloped
-async def browse_account_student_card(account_id: int, request: Request) -> Sequence[do.StudentCard]:
+@add_to_docstring({k: v.__name__ for k, v in BROWSE_STUDENT_CARD_COLUMNS.items()})
+async def browse_account_student_card(account_id: int, request: Request,
+                                      limit: model.Limit = 50, offset: model.Offset = 0,
+                                      filter: model.FilterStr = None, sort: model.SorterStr = None,
+                                      ) -> model.BrowseOutputBase:
     """
     ### 權限
     - System manager
@@ -68,7 +80,16 @@ async def browse_account_student_card(account_id: int, request: Request) -> Sequ
     if not (is_manager or is_self):
         raise exc.NoPermission
 
-    return await service.student_card.browse(account_id)
+    filters = model.parse_filter(filter, BROWSE_STUDENT_CARD_COLUMNS)
+    sorters = model.parse_sorter(sort, BROWSE_STUDENT_CARD_COLUMNS)
+    filters.append(popo.Filter(col_name='account_id',
+                               op=FilterOperator.eq,
+                               value=account_id))
+
+    student_cards, total_count = await service.student_card.browse(limit=limit, offset=offset,
+                                                                   filters=filters, sorters=sorters)
+
+    return model.BrowseOutputBase(student_cards, total_count=total_count)
 
 
 @router.get('/student-card/{student_card_id}')
