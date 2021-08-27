@@ -22,9 +22,8 @@ delete_member = db.class_.delete_member
 
 async def replace_members(class_id: int, member_roles: Sequence[Tuple[str, enum.RoleType]]) -> None:
     try:
-        await db.class_.delete_all_members_in_class(class_id=class_id)
-        await db.class_.add_members_by_account_referral(class_id=class_id,
-                                                        member_roles=[(account_referral, role)
-                                                                      for (account_referral, role) in member_roles])
+        await db.class_.replace_members(class_id=class_id,
+                                        member_roles=[(account_referral, role)
+                                        for (account_referral, role) in member_roles])
     except:
         raise exc.IllegalInput
