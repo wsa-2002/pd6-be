@@ -1,4 +1,3 @@
-from typing import Sequence
 from uuid import UUID
 
 from fastapi import File, UploadFile
@@ -68,6 +67,8 @@ async def browse_essay_submission_by_essay_id(
     ### 權限
     - class manager (all)
     - class normal (self)
+
+    ### Available columns
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     essay = await service.essay.read(essay_id=essay_id)

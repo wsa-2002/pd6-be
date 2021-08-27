@@ -110,6 +110,8 @@ async def browse_peer_review_record(peer_review_id: int, request: Request,
     ### 權限
     - Class manager (full)
     - Self (看不到對方)
+
+    ### Available columns
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     peer_review = await service.peer_review.read(peer_review_id=peer_review_id)

@@ -115,6 +115,8 @@ async def browse_all_account_with_class_role(account_id: int, request: Request) 
     """
     ### 權限
     - Self
+
+    ### Available columns
     """
     if account_id is not request.account.id:
         raise exc.NoPermission

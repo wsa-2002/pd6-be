@@ -73,6 +73,8 @@ async def browse_challenge_under_class(
     ### 權限
     - Class manager (all)
     - Class guest (not scheduled)
+
+    ### Available columns
     """
     class_role = await rbac.get_role(request.account.id, class_id=class_id)
 

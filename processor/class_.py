@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional, Sequence, Union
+from typing import Optional, Sequence
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -41,6 +41,8 @@ async def browse_class(
     """
     ### 權限
     - system normal: all
+
+    ### Available columns
     """
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
@@ -131,6 +133,8 @@ async def browse_class_member(
     ### 權限
     - Class normal
     - Class+ manager
+
+    ### Available columns
     """
     if (not await rbac.validate(request.account.id, RoleType.normal, class_id=class_id)
             and not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id, inherit=True)):
@@ -179,6 +183,8 @@ async def browse_class_member_with_account_referral(
     ### 權限
     - Class normal
     - Class+ manager
+
+    ### Available columns
     """
     if (not await rbac.validate(request.account.id, RoleType.normal, class_id=class_id)
             and not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id, inherit=True)):
@@ -310,6 +316,8 @@ async def browse_team_under_class(
     """
     ### 權限
     - Class normal: all
+
+    ### Available columns
     """
     class_role = await rbac.get_role(request.account.id, class_id=class_id)
     if class_role < RoleType.normal:
@@ -349,6 +357,8 @@ async def browse_submission_under_class(
     """
     ### 權限
     - Class manager
+
+    ### Available columns
     """
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
