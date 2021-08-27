@@ -1,14 +1,16 @@
 from typing import Sequence
+from uuid import UUID
 
 from fastapi import File, UploadFile
 
-from base.enum import RoleType, ChallengePublicizeType
-from base import do
+from base.enum import RoleType, ChallengePublicizeType, FilterOperator
+from base import do, popo
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
 import service
+from util.api_doc import add_to_docstring
 
-from .util import rbac
+from .util import rbac, model
 
 
 router = APIRouter(
@@ -43,9 +45,25 @@ async def upload_essay(essay_id: int, request: Request, essay_file: UploadFile =
                                               submit_time=request.time)
 
 
+BROWSE_ESSAY_SUBMISSION_COLUMNS = {
+    'id': int,
+    'account_id': int,
+    'essay_id': int,
+    'content_file_uuid': UUID,
+    'filename': str,
+    'submit_time': model.ServerTZDatetime,
+}
+
+
 @router.get('/essay/{essay_id}/essay-submission')
 @enveloped
-async def browse_essay_submission_by_essay_id(essay_id: int, request: Request) -> Sequence[do.EssaySubmission]:
+@add_to_docstring({k: v.__name__ for k, v in BROWSE_ESSAY_SUBMISSION_COLUMNS.items()})
+async def browse_essay_submission_by_essay_id(
+        essay_id: int,
+        request: Request,
+        limit: model.Limit = 50, offset: model.Offset = 0,
+        filter: model.FilterStr = None, sort: model.SorterStr = None,
+) -> model.BrowseOutputBase:
     """
     ### 權限
     - class manager (all)
@@ -55,13 +73,26 @@ async def browse_essay_submission_by_essay_id(essay_id: int, request: Request) -
     essay = await service.essay.read(essay_id=essay_id)
     challenge = await service.challenge.read(essay.challenge_id, include_scheduled=True, ref_time=request.time)
 
-    if await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
-        return await service.essay_submission.browse(essay_id=essay_id)
+    class_role = await rbac.get_role(request.account.id, class_id=challenge.class_id)
 
-    if await rbac.validate(request.account.id, RoleType.normal, class_id=challenge.class_id):
-        return await service.essay_submission.browse(account_id=request.account.id, essay_id=essay_id)
+    if (not class_role is RoleType.manager and not class_role is RoleType.normal):
+        raise exc.NoPermission
 
-    raise exc.NoPermission
+    filters = model.parse_filter(filter, BROWSE_ESSAY_SUBMISSION_COLUMNS)
+    sorters = model.parse_sorter(sort, BROWSE_ESSAY_SUBMISSION_COLUMNS)
+
+    filters.append(popo.Filter(col_name='essay_id',
+                               op=FilterOperator.eq,
+                               value=essay_id))
+
+    if class_role is RoleType.normal:
+        filters.append(popo.Filter(col_name='account_id',
+                                   op=FilterOperator.eq,
+                                   value=request.account.id))
+
+    essay_submissions, total_count = await service.essay_submission.browse(limit=limit, offset=offset,
+                                                                           filters=filters, sorters=sorters)
+    return model.BrowseOutputBase(essay_submissions, total_count=total_count)
 
 
 @router.get('/essay-submission/{essay_submission_id}')

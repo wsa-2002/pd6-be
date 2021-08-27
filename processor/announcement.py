@@ -7,6 +7,7 @@ from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
 import service
+from util.api_doc import add_to_docstring
 
 from .util import rbac, model
 
@@ -42,9 +43,25 @@ async def add_announcement(data: AddAnnouncementInput, request: Request) -> mode
     return model.AddOutput(id=announcement_id)
 
 
+BROWSE_ANNOUNCEMENT_COLUMNS = {
+    'id': int,
+    'title': str,
+    'content': str,
+    'author_id': int,
+    'post_time': model.ServerTZDatetime,
+    'expire_time': model.ServerTZDatetime,
+    'is_deleted': bool
+}
+
+
 @router.get('/announcement')
 @enveloped
-async def browse_announcement(request: Request) -> Sequence[do.Announcement]:
+@add_to_docstring({k: v.__name__ for k, v in BROWSE_ANNOUNCEMENT_COLUMNS.items()})
+async def browse_announcement(
+        request: Request,
+        limit: model.Limit = 50, offset: model.Offset = 0,
+        filter: model.FilterStr = None, sort: model.SorterStr = None,
+) -> model.BrowseOutputBase:
     """
     ### 權限
     - System manager (all)
@@ -54,7 +71,12 @@ async def browse_announcement(request: Request) -> Sequence[do.Announcement]:
     if not system_role >= RoleType.guest:
         raise exc.NoPermission
 
-    return await service.announcement.browse(include_scheduled=system_role >= RoleType.manager, ref_time=request.time)
+    filters = model.parse_filter(filter, BROWSE_ANNOUNCEMENT_COLUMNS)
+    sorters = model.parse_sorter(sort, BROWSE_ANNOUNCEMENT_COLUMNS)
+
+    announcements, total_count = await service.announcement.browse(limit=limit, offset=offset, filters=filters, sorters=sorters,
+                                                                   include_scheduled=system_role >= RoleType.manager, ref_time=request.time)
+    return model.BrowseOutputBase(announcements, total_count=total_count)
 
 
 @router.get('/announcement/{announcement_id}')

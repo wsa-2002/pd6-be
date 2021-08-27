@@ -1,10 +1,12 @@
 from typing import Sequence, Collection, Tuple
 
 from base import do
-from base.enum import RoleType
+from base.enum import RoleType, FilterOperator
+from base.popo import Filter, Sorter
 
 from . import team, challenge
 from .base import SafeExecutor, SafeConnection
+from .util import execute_count, compile_filters
 
 
 async def add(name: str, course_id: int) -> int:
@@ -44,6 +46,48 @@ async def browse(course_id: int = None, include_deleted=False) -> Sequence[do.Cl
     ) as records:
         return [do.Class(id=id_, name=name, course_id=course_id, is_deleted=is_deleted)
                 for (id_, name, course_id, is_deleted) in records]
+
+
+async def browse_with_filter(limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter],
+                             course_id: int = None, include_deleted=False) -> tuple[Sequence[do.Class], int]:
+    if course_id is not None:
+        filters.append(Filter(col_name='course_id',
+                              op=FilterOperator.eq,
+                              value=course_id))
+
+    if not include_deleted:
+        filters.append(Filter(col_name='is_deleted',
+                              op=FilterOperator.eq,
+                              value=include_deleted))
+
+    cond_sql, cond_params = compile_filters(filters)
+    sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
+    if sort_sql:
+        sort_sql += ','
+
+    async with SafeExecutor(
+            event='browse classes',
+            sql=fr'SELECT id, name, course_id, is_deleted'
+                fr'  FROM class'
+                fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
+                fr' ORDER BY {sort_sql} course_id ASC, id ASC'
+                fr' LIMIT %(limit)s OFFSET %(offset)s',
+            **cond_params,
+            limit=limit, offset=offset,
+            fetch='all',
+            raise_not_found=False,
+    ) as records:
+        data = [do.Class(id=id_, name=name, course_id=course_id, is_deleted=is_deleted)
+                for (id_, name, course_id, is_deleted) in records]
+
+    total_count = await execute_count(
+        sql=fr'SELECT id, name, course_id, is_deleted'
+            fr'  FROM class'
+            fr'{f" WHERE {cond_sql}" if cond_sql else ""}',
+        **cond_params,
+    )
+
+    return data, total_count
 
 
 async def browse_from_member_role(member_id: int, role: RoleType, include_deleted=False) \
@@ -182,17 +226,28 @@ async def add_members_by_account_referral(class_id: int, member_roles: Sequence[
         )
 
 
-async def browse_role_by_account_id(account_id: int) -> Sequence[do.ClassMember]:
+async def browse_role_by_account_id(account_id: int) \
+        -> Sequence[Tuple[do.ClassMember, do.Class, do.Course]]:
     async with SafeExecutor(
             event='browse class role by account_id',
-            sql=fr'SELECT class_id, member_id, role'
-                fr'  FROM class_member'
-                fr' WHERE member_id = %(account_id)s',
+            sql=fr'SELECT class_member.class_id, class_member.member_id, class_member.role,'
+                fr'       class.id, class.name, class.course_id, class.is_deleted,'
+                fr'       course.id, course.name, course.type, course.is_deleted'
+                fr' FROM class_member'
+                fr' INNER JOIN class'
+                fr'         ON class.id = class_member.class_id'
+                fr' INNER JOIN course'
+                fr'         ON course.id = class.course_id'
+                fr' WHERE class_member.member_id = %(account_id)s',
             account_id=account_id,
             fetch='all',
     ) as records:
-        return [do.ClassMember(class_id=class_id, member_id=member_id, role=RoleType(role))
-                for (class_id, member_id, role) in records]
+        return [(do.ClassMember(class_id=class_id, member_id=member_id, role=RoleType(role)),
+                 do.Class(id=class_id, name=class_name, course_id=course_id, is_deleted=is_deleted),
+                 do.Course(id=course_id, name=course_name, type=type, is_deleted=is_deleted))
+                for (class_id, member_id, role,
+                     class_id, class_name, course_id, is_deleted,
+                     course_id, course_name, type, is_deleted) in records]
 
 
 async def browse_members(class_id: int) -> Sequence[do.ClassMember]:

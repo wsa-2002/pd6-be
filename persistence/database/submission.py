@@ -2,9 +2,11 @@ from datetime import datetime
 from typing import Sequence
 from uuid import UUID
 
-from base import do, enum
+from base import do
+from base.popo import Filter, Sorter
 
 from .base import SafeExecutor
+from .util import execute_count, compile_filters
 
 
 # Submission Language
@@ -112,19 +114,13 @@ async def edit(submission_id: int, content_file_uuid: UUID, content_length: int,
         pass
 
 
-# TODO: more filters
-async def browse(account_id: int = None, problem_id: int = None, language_id: int = None) \
-        -> Sequence[do.Submission]:
-    conditions = {}
+async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter]) \
+        -> tuple[Sequence[do.Submission], int]:
 
-    if account_id is not None:
-        conditions['account_id'] = account_id
-    if problem_id is not None:
-        conditions['problem_id'] = problem_id
-    if language_id is not None:
-        conditions['language_id'] = language_id
-
-    cond_sql = ' AND '.join(fr"{field_name} = %({field_name})s" for field_name in conditions)
+    cond_sql, cond_params = compile_filters(filters)
+    sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
+    if sort_sql:
+        sort_sql += ','
 
     async with SafeExecutor(
             event='browse submissions',
@@ -132,15 +128,27 @@ async def browse(account_id: int = None, problem_id: int = None, language_id: in
                 fr'       content_file_uuid, content_length, submit_time'
                 fr'  FROM submission'
                 fr' {f"WHERE {cond_sql}" if cond_sql else ""}'
-                fr' ORDER BY id DESC',
-            **conditions,
+                fr' ORDER BY {sort_sql} id DESC'
+                fr' LIMIT %(limit)s OFFSET %(offset)s',
+            **cond_params,
+            limit=limit, offset=offset,
             fetch='all',
     ) as records:
-        return [do.Submission(id=id_, account_id=account_id, problem_id=problem_id, language_id=language_id,
+        data = [do.Submission(id=id_, account_id=account_id, problem_id=problem_id, language_id=language_id,
                               filename=filename, content_file_uuid=content_file_uuid, content_length=content_length,
                               submit_time=submit_time)
                 for id_, account_id, problem_id, language_id, filename, content_file_uuid, content_length, submit_time
                 in records]
+
+    total_count = await execute_count(
+        sql=fr'SELECT id, account_id, problem_id, language_id, filename,'
+            fr'       content_file_uuid, content_length, submit_time'
+            fr'  FROM submission'
+            fr' {f"WHERE {cond_sql}" if cond_sql else ""}',
+        **cond_params,
+    )
+
+    return data, total_count
 
 
 async def read(submission_id: int) -> do.Submission:
@@ -160,17 +168,70 @@ async def read(submission_id: int) -> do.Submission:
 
 async def read_latest_judgment(submission_id: int) -> do.Judgment:
     async with SafeExecutor(
-        event='read submission latest judgment',
-        sql=fr'SELECT judgment.id, judgment.submission_id, judgment.status, judgment.total_time,'
-            fr'       judgment.max_memory, judgment.score, judgment.judge_time'
-            fr'  FROM judgment'
-            fr' INNER JOIN submission'
-            fr'         ON submission.id = judgment.submission_id'
-            fr' WHERE submission.id = %(submission_id)s'
-            fr' ORDER BY judgment.id DESC'
-            fr' LIMIT 1',
+            event='read submission latest judgment',
+            sql=fr'SELECT judgment.id, judgment.submission_id, judgment.status, judgment.total_time,'
+                fr'       judgment.max_memory, judgment.score, judgment.judge_time'
+                fr'  FROM judgment'
+                fr' INNER JOIN submission'
+                fr'         ON submission.id = judgment.submission_id'
+                fr' WHERE submission.id = %(submission_id)s'
+                fr' ORDER BY judgment.id DESC'
+                fr' LIMIT 1',
             submission_id=submission_id,
             fetch=1,
     ) as (judgment_id, submission_id, status, total_time, max_memory, score, judge_time):
         return do.Judgment(id=judgment_id, submission_id=submission_id, status=status,
                            total_time=total_time, max_memory=max_memory, score=score, judge_time=judge_time)
+
+
+async def browse_under_class(class_id: int,
+                             limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter]) \
+        -> tuple[Sequence[do.Submission], int]:
+
+    filters = [Filter(col_name=f'submission.{filter_.col_name}',
+                      op=filter_.op,
+                      value=filter_.value) for filter_ in filters]
+
+    cond_sql, cond_params = compile_filters(filters)
+    sort_sql = ' ,'.join(f"submission.{sorter.col_name} {sorter.order}" for sorter in sorters)
+    if sort_sql:
+        sort_sql += ','
+
+    async with SafeExecutor(
+            event='browse submissions',
+            sql=fr'SELECT submission.id, submission.account_id, submission.problem_id , submission.language_id, '
+                fr'       submission.filename, submission.content_file_uuid, submission.content_length, submission.submit_time'
+                fr'  FROM submission'
+                fr'  INNER JOIN problem'
+                fr'          ON problem.id = submission.problem_id'
+                fr'  INNER JOIN challenge'
+                fr'          ON challenge.id = problem.challenge_id '
+                fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
+                fr'      AND challenge.class_id = %(class_id)s'
+                fr' ORDER BY {sort_sql} submission.id DESC',
+            **cond_params,
+            class_id=class_id,
+            limit=limit, offset=offset,
+            fetch='all',
+            raise_not_found=False,
+    ) as records:
+        data = [do.Submission(id=id_, account_id=account_id, problem_id=problem_id, language_id=language_id,
+                              filename=filename, content_file_uuid=content_file_uuid, content_length=content_length,
+                              submit_time=submit_time)
+                for id_, account_id, problem_id, language_id, filename, content_file_uuid, content_length, submit_time
+                in records]
+
+    total_count = await execute_count(
+        sql=fr'SELECT submission.id, submission.account_id, submission.problem_id , submission.language_id, '
+            fr'       submission.filename, submission.content_file_uuid, submission.content_length, submission.submit_time'
+            fr'  FROM submission'
+            fr'  INNER JOIN problem'
+            fr'          ON problem.id = submission.problem_id'
+            fr'  INNER JOIN challenge'
+            fr'          ON challenge.id = problem.challenge_id '
+            fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
+            fr'      AND challenge.class_id = %(class_id)s',
+        **cond_params,
+        class_id=class_id,
+    )
+    return data, total_count

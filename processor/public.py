@@ -50,7 +50,7 @@ async def add_account(data: AddAccountInput) -> None:
     if data.student_id != data.institute_email_prefix:
         raise exc.account.StudentIdNotMatchEmail
 
-    if service.student_card.is_duplicate(institute.id, data.student_id):
+    if await service.student_card.is_duplicate(institute.id, data.student_id):
         raise exc.account.StudentCardExists
 
     try:

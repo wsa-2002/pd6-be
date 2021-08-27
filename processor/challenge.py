@@ -3,11 +3,12 @@ from typing import Optional, Sequence
 
 from pydantic import BaseModel
 
-from base import do, enum
-from base.enum import RoleType
+from base import do, enum, popo
+from base.enum import RoleType, FilterOperator
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
 import service
+from util.api_doc import add_to_docstring
 
 from .util import rbac, model
 
@@ -45,9 +46,29 @@ async def add_challenge_under_class(class_id: int, data: AddChallengeInput, requ
     return model.AddOutput(id=challenge_id)
 
 
+BROWSE_CHALLENGE_COLUMNS = {
+    'id': int,
+    'class_id': int,
+    'publicize_type': enum.ChallengePublicizeType,
+    'selection_type': enum.TaskSelectionType,
+    'title': str,
+    'setter_id': int,
+    'description': str,
+    'start_time': model.ServerTZDatetime,
+    'end_time': model.ServerTZDatetime,
+    'is_deleted': bool,
+}
+
+
 @router.get('/class/{class_id}/challenge', tags=['Course'])
 @enveloped
-async def browse_challenge_under_class(class_id: int, request: Request) -> Sequence[do.Challenge]:
+@add_to_docstring({k: v.__name__ for k, v in BROWSE_CHALLENGE_COLUMNS.items()})
+async def browse_challenge_under_class(
+        class_id: int,
+        request: Request,
+        limit: model.Limit = 50, offset: model.Offset = 0,
+        filter: model.FilterStr = None, sort: model.SorterStr = None,
+) -> model.BrowseOutputBase:
     """
     ### 權限
     - Class manager (all)
@@ -58,8 +79,16 @@ async def browse_challenge_under_class(class_id: int, request: Request) -> Seque
     if class_role < RoleType.guest:
         raise exc.NoPermission
 
-    return await service.challenge.browse(class_id=class_id,
-                                          include_scheduled=(class_role == RoleType.manager), ref_time=request.time)
+    filters = model.parse_filter(filter, BROWSE_CHALLENGE_COLUMNS)
+    sorters = model.parse_sorter(sort, BROWSE_CHALLENGE_COLUMNS)
+
+    filters.append(popo.Filter(col_name='class_id',
+                               op=FilterOperator.eq,
+                               value=class_id))
+
+    challenges, total_count = await service.challenge.browse(limit=limit, offset=offset, filters=filters, sorters=sorters,
+                                                             include_scheduled=(class_role == RoleType.manager), ref_time=request.time)
+    return model.BrowseOutputBase(challenges, total_count=total_count)
 
 
 @router.get('/challenge/{challenge_id}')
@@ -265,7 +294,7 @@ class ReadStatusOutput:
 
 @router.get('/challenge/{challenge_id}/task-status')
 @enveloped
-async def browse_task_status_under_challenge(challenge_id: int, request: Request) -> Sequence[ReadStatusOutput]:
+async def browse_all_task_status_under_challenge(challenge_id: int, request: Request) -> Sequence[ReadStatusOutput]:
     """
     ### 權限
     - Self: see self

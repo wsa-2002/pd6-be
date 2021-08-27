@@ -37,18 +37,17 @@ async def get_template_file() -> tuple[do.S3File, str]:
 
 
 async def replace_members(team_id: int, member_roles: Sequence[Tuple[str, enum.RoleType]]) -> None:
-    await db.team.delete_all_members_in_team(team_id=team_id)
-    await db.team.add_members_by_account_referral(team_id=team_id,
-                                                  member_roles=[(account_referral, role)
-                                                                for (account_referral, role) in member_roles])
+    try:
+        await db.team.delete_all_members_in_team(team_id=team_id)
+        await db.team.add_members_by_account_referral(team_id=team_id,
+                                                      member_roles=[(account_referral, role)
+                                                      for (account_referral, role) in member_roles])
+    except:
+        raise exc.IllegalInput
 
 
 async def import_team(team_file: typing.IO, class_id: int):
     rows = csv.DictReader(codecs.iterdecode(team_file, 'utf_8_sig'))
     for row in rows:
-        try:
-            team = await db.team.read_by_team_name(class_id=class_id, team_name=row['TeamName'], label=row['Label'])
-            team_id = team.id
-        except exc.persistence.NotFound:
-            team_id = await db.team.add(name=row['TeamName'], class_id=class_id, label=row['Label'])
-        await db.team.add_member(team_id=team_id, account_referral=row['TeamMember'], role=enum.RoleType(row['Role']))
+        await db.team.add_team_and_add_member(team_name=row['TeamName'], class_id=class_id, team_label=row['Label'],
+                                              account_referral=row['TeamMember'], role=enum.RoleType(row['Role']))

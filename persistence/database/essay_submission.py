@@ -3,31 +3,44 @@ from typing import Sequence
 from uuid import UUID
 
 from base import do
+from base.popo import Filter, Sorter
 
 from .base import SafeExecutor
+from .util import execute_count, compile_filters
 
 
-async def browse(account_id: int = None, essay_id: int = None) -> Sequence[do.EssaySubmission]:
-    conditions = {}
-    if account_id is not None:
-        conditions['account_id'] = account_id
-    if essay_id is not None:
-        conditions['essay_id'] = essay_id
+async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter]) \
+        -> tuple[Sequence[do.EssaySubmission], int]:
 
-    cond_sql = ' AND '.join(fr"{field_name} = %({field_name})s" for field_name in conditions)
+    cond_sql, cond_params = compile_filters(filters)
+    sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
+    if sort_sql:
+        sort_sql += ','
 
     async with SafeExecutor(
             event='browse essay_submission',
             sql=fr'SELECT id, account_id, essay_id, content_file_uuid, filename, submit_time'
                 fr'  FROM essay_submission'
-                fr' {f" WHERE {cond_sql}" if cond_sql else ""}'
-                fr' ORDER BY id DESC',
-            **conditions,
+                fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
+                fr' ORDER BY {sort_sql} id DESC'
+                fr' LIMIT %(limit)s OFFSET %(offset)s',
+            **cond_params,
+            limit=limit, offset=offset,
             fetch='all',
+            raise_not_found=False,
     ) as records:
-        return [do.EssaySubmission(id=id_, account_id=account_id, essay_id=essay_id,
+        data = [do.EssaySubmission(id=id_, account_id=account_id, essay_id=essay_id,
                                    content_file_uuid=content_file_uuid, filename=filename, submit_time=submit_time)
                 for (id_, account_id, essay_id, content_file_uuid, filename, submit_time) in records]
+
+    total_count = await execute_count(
+        sql=fr'SELECT id, account_id, essay_id, content_file_uuid, filename, submit_time'
+            fr'  FROM essay_submission'
+            fr'{f" WHERE {cond_sql}" if cond_sql else ""}',
+        **cond_params,
+    )
+
+    return data, total_count
 
 
 async def read(essay_submission_id: int) -> do.EssaySubmission:

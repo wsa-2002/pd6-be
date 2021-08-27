@@ -6,13 +6,12 @@ from fastapi import UploadFile, File, BackgroundTasks
 from pydantic import BaseModel
 
 from base import do
-from base.enum import RoleType, ChallengePublicizeType
+from base.enum import RoleType, ChallengePublicizeType, TaskSelectionType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
 import service
 
 from .util import rbac, model
-
 
 router = APIRouter(
     tags=['Problem'],
@@ -21,6 +20,7 @@ router = APIRouter(
 )
 
 
+# TODO: Browse method
 @router.get('/problem')
 @enveloped
 async def browse_problem_set(request: Request) -> Sequence[do.Problem]:
@@ -193,7 +193,8 @@ class ReadAssistingDataOutput:
 
 @router.get('/problem/{problem_id}/assisting-data')
 @enveloped
-async def browse_all_assisting_data_under_problem(problem_id: int, request: Request) -> Sequence[ReadAssistingDataOutput]:
+async def browse_all_assisting_data_under_problem(problem_id: int, request: Request) \
+        -> Sequence[ReadAssistingDataOutput]:
     """
     ### 權限
     - class manager
@@ -283,3 +284,25 @@ async def download_all_non_sample_testcase(problem_id: int, request: Request, as
     background_tasks.add_task(service.testcase.download_all_non_sample,
                               account_id=request.account.id, problem_id=problem_id, as_attachment=as_attachment)
     return
+
+
+@dataclass
+class GetScoreByTypeOutput:
+    challenge_type: TaskSelectionType
+    score: int
+
+
+@router.get('/problem/{problem_id}/score')
+@enveloped
+async def get_score_by_challenge_type_under_problem(problem_id: int, request: Request) -> GetScoreByTypeOutput:
+    """
+    ### 權限
+    - Self
+    """
+    problem = await service.problem.read(problem_id)
+    challenge = await service.challenge.read(challenge_id=problem.challenge_id, include_scheduled=True)
+    submission_judgment = await service.submission.get_problem_score_by_type(problem_id=problem_id,
+                                                                             account_id=request.account.id,  # 只能看自己的
+                                                                             selection_type=challenge.selection_type,
+                                                                             challenge_end_time=challenge.end_time)
+    return GetScoreByTypeOutput(challenge_type=challenge.selection_type, score=submission_judgment.score)
