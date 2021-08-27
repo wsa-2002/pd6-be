@@ -215,17 +215,6 @@ async def add_members(class_id: int, member_roles: Collection[Tuple[int, RoleTyp
         )
 
 
-async def add_members_by_account_referral(class_id: int, member_roles: Sequence[Tuple[str, RoleType]]):
-    async with SafeConnection(event='add members to class') as conn:
-        await conn.executemany(
-            command=r'INSERT INTO class_member'
-                    r'            (class_id, member_id, role)'
-                    r'     VALUES ($1, account_referral_to_id($2), $3)',
-            args=[(class_id, account_referral, role)
-                  for account_referral, role in member_roles],
-        )
-
-
 async def browse_role_by_account_id(account_id: int) \
         -> Sequence[Tuple[do.ClassMember, do.Class, do.Course]]:
     async with SafeExecutor(
@@ -302,16 +291,6 @@ async def delete_member(class_id: int, member_id: int):
         pass
 
 
-async def delete_all_members_in_class(class_id: int):
-    async with SafeExecutor(
-            event='HARD DELETE all class member',
-            sql=r'DELETE FROM class_member'
-                r'      WHERE class_id = %(class_id)s',
-            class_id=class_id,
-    ):
-        pass
-
-
 async def browse_member_emails(class_id: int, role: RoleType = None) -> Sequence[str]:
     conditions = {}
     if role is not None:
@@ -330,3 +309,19 @@ async def browse_member_emails(class_id: int, role: RoleType = None) -> Sequence
             fetch='all',
     ) as records:
         return [institute_email for institute_email, in records]
+
+
+async def replace_members(class_id: int, member_roles: Sequence[Tuple[str, RoleType]]) -> None:
+    async with SafeConnection(event=f'replace members from class {class_id=}') as conn:
+        async with conn.transaction():
+            await conn.execute(fr'DELETE FROM class_member'
+                               fr'      WHERE class_id = $1',
+                               class_id)
+
+            await conn.executemany(
+                command=r'INSERT INTO class_member'
+                        r'            (class_id, member_id, role)'
+                        r'     VALUES ($1, account_referral_to_id($2), $3)',
+                args=[(class_id, account_referral, role)
+                      for account_referral, role in member_roles],
+            )
