@@ -1,5 +1,6 @@
+from fastapi import Query
 from dataclasses import dataclass
-from typing import Sequence, Optional
+from typing import Sequence, Optional, List
 
 from pydantic import BaseModel
 
@@ -71,16 +72,61 @@ async def browse_account_with_default_student_id(
     return model.BrowseOutputBase(data, total_count=total_count)
 
 
+@dataclass
+class BatchGetAccountOutput:
+    id: int
+    username: str
+    real_name: str
+
+    student_id: Optional[str]
+
+
+@router.get('/account-summary/batch')
+@enveloped
+async def batch_get_account_with_default_student_id(request: Request, account_ids: List[int] = Query(None)) \
+        -> Sequence[BatchGetAccountOutput]:
+    """
+    ### 權限
+    - System Normal
+    """
+    is_normal = await rbac.validate(request.account.id, RoleType.normal)
+    if not is_normal:
+        raise exc.NoPermission
+
+    result = await service.account.browse_list_with_default_student_card(account_ids=account_ids)
+    return [BatchGetAccountOutput(id=account.id, username=account.username, real_name=account.real_name,
+                                  student_id=student_card.student_id)
+            for account, student_card in result]
+
+@dataclass
+class BrowseAccountWithRoleOutput:
+    member_id: int
+    role: RoleType
+    class_id: int
+    class_name: str
+    course_id: int
+    course_name: str
+
+
 @router.get('/account/{account_id}/class')
 @enveloped
-async def browse_all_account_with_class_role(account_id: int, request: Request) -> Sequence[do.ClassMember]:
+async def browse_all_account_with_class_role(account_id: int, request: Request) \
+        -> Sequence[BrowseAccountWithRoleOutput]:
     """
     ### 權限
     - Self
     """
     if account_id is not request.account.id:
         raise exc.NoPermission
-    return await service.account.browse_with_class_role(account_id=account_id)
+    results = await service.account.browse_with_class_role(account_id=account_id)
+
+    return [BrowseAccountWithRoleOutput(member_id=class_member.member_id,
+                                        role=class_member.role,
+                                        class_id=class_member.class_id,
+                                        class_name=class_.name,
+                                        course_id=course.id,
+                                        course_name=course.name)
+            for class_member, class_, course in results]
 
 
 @dataclass

@@ -226,17 +226,28 @@ async def add_members_by_account_referral(class_id: int, member_roles: Sequence[
         )
 
 
-async def browse_role_by_account_id(account_id: int) -> Sequence[do.ClassMember]:
+async def browse_role_by_account_id(account_id: int) \
+        -> Sequence[Tuple[do.ClassMember, do.Class, do.Course]]:
     async with SafeExecutor(
             event='browse class role by account_id',
-            sql=fr'SELECT class_id, member_id, role'
-                fr'  FROM class_member'
-                fr' WHERE member_id = %(account_id)s',
+            sql=fr'SELECT class_member.class_id, class_member.member_id, class_member.role,'
+                fr'       class.id, class.name, class.course_id, class.is_deleted,'
+                fr'       course.id, course.name, course.type, course.is_deleted'
+                fr' FROM class_member'
+                fr' INNER JOIN class'
+                fr'         ON class.id = class_member.class_id'
+                fr' INNER JOIN course'
+                fr'         ON course.id = class.course_id'
+                fr' WHERE class_member.member_id = %(account_id)s',
             account_id=account_id,
             fetch='all',
     ) as records:
-        return [do.ClassMember(class_id=class_id, member_id=member_id, role=RoleType(role))
-                for (class_id, member_id, role) in records]
+        return [(do.ClassMember(class_id=class_id, member_id=member_id, role=RoleType(role)),
+                 do.Class(id=class_id, name=class_name, course_id=course_id, is_deleted=is_deleted),
+                 do.Course(id=course_id, name=course_name, type=type, is_deleted=is_deleted))
+                for (class_id, member_id, role,
+                     class_id, class_name, course_id, is_deleted,
+                     course_id, course_name, type, is_deleted) in records]
 
 
 async def browse_members(class_id: int) -> Sequence[do.ClassMember]:
