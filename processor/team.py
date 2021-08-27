@@ -136,6 +136,8 @@ async def browse_team_member(team_id: int, request: Request,
     """
     ### 權限
     - Class normal
+
+    ### Available columns
     """
     # 因為需要 class_id 才能判斷權限，所以先 read team 再判斷要不要噴 NoPermission
     team = await service.team.read(team_id)

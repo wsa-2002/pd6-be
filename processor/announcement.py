@@ -66,6 +66,8 @@ async def browse_announcement(
     ### 權限
     - System manager (all)
     - System guest (limited)
+
+    ### Available columns
     """
     system_role = await rbac.get_role(request.account.id)
     if not system_role >= RoleType.guest:

@@ -126,6 +126,8 @@ async def browse_submission(account_id: int, request: Request, limit: model.Limi
     """
     ### 權限
     - Self: see self
+
+    ### Available columns
     """
     if account_id is not request.account.id:
         raise exc.NoPermission

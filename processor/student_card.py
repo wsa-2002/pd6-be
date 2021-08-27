@@ -1,5 +1,3 @@
-from typing import Sequence
-
 from pydantic import BaseModel
 
 from base import do, popo
@@ -73,6 +71,8 @@ async def browse_account_student_card(account_id: int, request: Request,
     ### 權限
     - System manager
     - Self
+
+    ### Available columns
     """
     is_manager = await rbac.validate(request.account.id, RoleType.manager)
     is_self = request.account.id is account_id
