@@ -193,10 +193,21 @@ async def read_submission_latest_judgment(submission_id: int, request: Request) 
     """
     ### 權限
     - Self: see self
+    - Class manager: see class
     """
     submission = await service.submission.read(submission_id=submission_id)
 
     # 可以看自己的
-    if submission.account_id is not request.account.id:
-        raise exc.NoPermission
-    return await service.submission.read_latest_judgment(submission_id=submission_id)
+    if submission.account_id is request.account.id:
+        return await service.submission.read_latest_judgment(submission_id=submission_id)
+
+    problem = await service.problem.read(problem_id=submission.problem_id)
+    challenge = await service.challenge.read(challenge_id=problem.challenge_id, include_scheduled=True)
+
+    # 助教可以看管理的 class 的
+    if rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+        return await service.submission.read_latest_judgment(submission_id=submission_id)
+
+    raise exc.NoPermission
+
+
