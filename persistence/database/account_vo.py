@@ -8,9 +8,14 @@ from .base import SafeExecutor
 from .util import execute_count, compile_filters
 
 
-async def browse_with_default_student_card(limit: int, offset: int, filters: Sequence[Filter],
-                                           sorters: Sequence[Sorter], include_deleted: bool = False) \
+async def browse_with_default_student_card(limit: int, offset: int, filters: list[Filter],
+                                           sorters: list[Sorter], include_deleted: bool = False) \
         -> tuple[Sequence[Tuple[do.Account, do.StudentCard]], int]:
+
+    if not include_deleted:
+        filters.append(Filter(col_name='is_deleted',
+                              op=enum.FilterOperator.eq,
+                              value=False))
 
     filters = [Filter(col_name=f'account.{filter_.col_name}',
                       op=filter_.op,
@@ -32,7 +37,6 @@ async def browse_with_default_student_card(limit: int, offset: int, filters: Seq
                 fr'              ON student_card.account_id = account.id'
                 fr'             AND student_card.is_default'
                 fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
-                fr'{" AND NOT account.is_deleted" if not include_deleted else ""}'
                 fr' ORDER BY {sort_sql} account.id ASC'
                 fr' LIMIT %(limit)s OFFSET %(offset)s',
             **cond_params,
