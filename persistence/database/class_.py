@@ -43,6 +43,7 @@ async def browse(course_id: int = None, include_deleted=False) -> Sequence[do.Cl
                 fr' ORDER BY course_id ASC, id ASC',
             **conditions,
             fetch='all',
+            raise_not_found=False,
     ) as records:
         return [do.Class(id=id_, name=name, course_id=course_id, is_deleted=is_deleted)
                 for (id_, name, course_id, is_deleted) in records]
