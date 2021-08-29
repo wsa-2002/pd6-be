@@ -80,24 +80,6 @@ async def email_verification(code: str):
         return 'Your email has been verified.'
 
 
-class LoginInput(BaseModel):
-    username: str
-    password: str
-
-
-@dataclass
-class LoginOutput:
-    token: str
-    account_id: int
-
-
-@router.post('/account/jwt', tags=['Account'], response_class=JSONResponse)
-@enveloped
-async def login(data: LoginInput) -> LoginOutput:
-    login_token, account_id = await service.public.login(username=data.username, password=data.password)
-    return LoginOutput(token=login_token, account_id=account_id)
-
-
 class ForgetPasswordInput(BaseModel):
     email: str
 
