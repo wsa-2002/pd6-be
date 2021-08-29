@@ -44,15 +44,15 @@ async def add_student_card_to_account(account_id: int, data: AddStudentCardInput
     except exc.persistence.NotFound:
         raise exc.account.InvalidInstitute
 
-    if data.student_id.capitalize() != data.institute_email_prefix.capitalize():
+    if data.student_id != data.institute_email_prefix:
         raise exc.account.StudentIdNotMatchEmail
 
-    if service.student_card.is_duplicate(institute.id, data.student_id.capitalize()):
+    if service.student_card.is_duplicate(institute.id, data.student_id):
         raise exc.account.StudentCardExists
 
     institute_email = f"{data.institute_email_prefix}@{institute.email_domain}"
     await service.student_card.add(account_id=account_id, institute_email=institute_email,
-                                   institute_id=institute.id, student_id=data.student_id.capitalize())
+                                   institute_id=institute.id, student_id=data.student_id)
 
 
 @router.get('/account/{account_id}/student-card', tags=['Account'])

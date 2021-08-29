@@ -52,10 +52,10 @@ async def add_account(data: AddAccountInput) -> None:
     except exc.persistence.NotFound:
         raise exc.account.InvalidInstitute
 
-    if data.student_id.capitalize() != data.institute_email_prefix.capitalize():
+    if data.student_id != data.institute_email_prefix:
         raise exc.account.StudentIdNotMatchEmail
 
-    if await service.student_card.is_duplicate(institute.id, data.student_id.capitalize()):
+    if await service.student_card.is_duplicate(institute.id, data.student_id):
         raise exc.account.StudentCardExists
 
     try:
@@ -66,7 +66,7 @@ async def add_account(data: AddAccountInput) -> None:
 
     institute_email = f"{data.institute_email_prefix}@{institute.email_domain}"
     await service.student_card.add(account_id=account_id, institute_email=institute_email,
-                                   institute_id=institute.id, student_id=data.student_id.capitalize())
+                                   institute_id=institute.id, student_id=data.student_id)
     if data.alternative_email:
         await service.account.edit_alternative_email(account_id=account_id, alternative_email=data.alternative_email)
 
