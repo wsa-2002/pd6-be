@@ -14,6 +14,7 @@ async def browse(include_deleted=False) -> Sequence[do.AssistingData]:
                 fr'{" WHERE NOT is_deleted" if not include_deleted else ""}'
                 fr' ORDER by id ASC',
             fetch='all',
+            raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return [do.AssistingData(id=id_, problem_id=problem_id, s3_file_uuid=s3_file_uuid,
                                  filename=filename, is_deleted=is_deleted)
@@ -30,6 +31,7 @@ async def browse_with_problem_id(problem_id: int, include_deleted=False) -> Sequ
                 fr' ORDER by id ASC',
             problem_id=problem_id,
             fetch='all',
+            raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return [do.AssistingData(id=id_, problem_id=problem_id, s3_file_uuid=s3_file_uuid,
                                  filename=filename, is_deleted=is_deleted)

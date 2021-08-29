@@ -58,6 +58,7 @@ async def browse(problem_id: int, include_disabled=True, include_deleted=False) 
                 fr' ORDER BY is_sample DESC, id ASC',
             problem_id=problem_id,
             fetch='all',
+            raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return [do.Testcase(id=id_, problem_id=problem_id, is_sample=is_sample, score=score,
                             input_file_uuid=input_file_uuid, output_file_uuid=output_file_uuid,

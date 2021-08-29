@@ -35,6 +35,7 @@ async def browse(*, include_deleted=False) -> Sequence[do.Course]:
                 fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
                 fr' ORDER BY id ASC',
             fetch='all',
+            raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return [do.Course(id=id_, name=name, type=CourseType(c_type), is_deleted=is_deleted)
                 for (id_, name, c_type, is_deleted) in records]

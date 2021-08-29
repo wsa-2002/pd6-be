@@ -48,6 +48,7 @@ async def browse(account_id: int) -> Sequence[do.StudentCard]:
                 fr' WHERE account_id = %(account_id)s',
             account_id=account_id,
             fetch='all',
+            raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return [do.StudentCard(id=id_, institute_id=institute_id, student_id=student_id,
                                email=email, is_default=is_default)

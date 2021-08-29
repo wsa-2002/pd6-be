@@ -43,7 +43,7 @@ async def browse(course_id: int = None, include_deleted=False) -> Sequence[do.Cl
                 fr' ORDER BY course_id ASC, id ASC',
             **conditions,
             fetch='all',
-            raise_not_found=False,
+            raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return [do.Class(id=id_, name=name, course_id=course_id, is_deleted=is_deleted)
                 for (id_, name, course_id, is_deleted) in records]
@@ -76,7 +76,7 @@ async def browse_with_filter(limit: int, offset: int, filters: Sequence[Filter],
             **cond_params,
             limit=limit, offset=offset,
             fetch='all',
-            raise_not_found=False,
+            raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         data = [do.Class(id=id_, name=name, course_id=course_id, is_deleted=is_deleted)
                 for (id_, name, course_id, is_deleted) in records]
@@ -106,6 +106,7 @@ async def browse_from_member_role(member_id: int, role: RoleType, include_delete
             role=role,
             member_id=member_id,
             fetch='all',
+            raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return [do.Class(id=id_, name=name, course_id=course_id, is_deleted=is_deleted)
                 for (id_, name, course_id, is_deleted) in records]
@@ -231,6 +232,7 @@ async def browse_role_by_account_id(account_id: int) \
                 fr' WHERE class_member.member_id = %(account_id)s',
             account_id=account_id,
             fetch='all',
+            raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return [(do.ClassMember(class_id=class_id, member_id=member_id, role=RoleType(role)),
                  do.Class(id=class_id, name=class_name, course_id=course_id, is_deleted=is_deleted),
@@ -250,6 +252,7 @@ async def browse_members(class_id: int) -> Sequence[do.ClassMember]:
                 r' ORDER BY class_member.role DESC, account.id ASC',
             class_id=class_id,
             fetch='all',
+            raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return [do.ClassMember(member_id=id_, class_id=class_id, role=RoleType(role_str))
                 for id_, class_id, role_str in records]
@@ -308,6 +311,7 @@ async def browse_member_emails(class_id: int, role: RoleType = None) -> Sequence
             class_id=class_id,
             **conditions,
             fetch='all',
+            raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return [institute_email for institute_email, in records]
 

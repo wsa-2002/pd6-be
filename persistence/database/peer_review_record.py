@@ -55,7 +55,7 @@ async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Se
             **cond_params,
             limit=limit, offset=offset,
             fetch='all',
-            raise_not_found=False,
+            raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         data = [do.PeerReviewRecord(id=id_, peer_review_id=peer_review_id,
                                     grader_id=grader_id, receiver_id=receiver_id,
