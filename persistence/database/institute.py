@@ -29,6 +29,7 @@ async def browse(*, include_disabled=True) -> Sequence[do.Institute]:
                 fr'{" WHERE NOT is_disabled" if not include_disabled else ""}'
                 fr' ORDER BY id ASC',
             fetch='all',
+            raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return [do.Institute(id=id_, abbreviated_name=abbreviated_name, full_name=full_name, email_domain=email_domain,
                              is_disabled=is_disabled)

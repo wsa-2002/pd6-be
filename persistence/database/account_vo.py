@@ -8,9 +8,14 @@ from .base import SafeExecutor
 from .util import execute_count, compile_filters
 
 
-async def browse_with_default_student_card(limit: int, offset: int, filters: Sequence[Filter],
-                                           sorters: Sequence[Sorter], include_deleted: bool = False) \
+async def browse_with_default_student_card(limit: int, offset: int, filters: list[Filter],
+                                           sorters: list[Sorter], include_deleted: bool = False) \
         -> tuple[Sequence[Tuple[do.Account, do.StudentCard]], int]:
+
+    if not include_deleted:
+        filters.append(Filter(col_name='is_deleted',
+                              op=enum.FilterOperator.eq,
+                              value=False))
 
     filters = [Filter(col_name=f'account.{filter_.col_name}',
                       op=filter_.op,
@@ -32,13 +37,12 @@ async def browse_with_default_student_card(limit: int, offset: int, filters: Seq
                 fr'              ON student_card.account_id = account.id'
                 fr'             AND student_card.is_default'
                 fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
-                fr'{" AND NOT account.is_deleted" if not include_deleted else ""}'
                 fr' ORDER BY {sort_sql} account.id ASC'
                 fr' LIMIT %(limit)s OFFSET %(offset)s',
             **cond_params,
             limit=limit, offset=offset,
             fetch='all',
-            raise_not_found=False,
+            raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         data = [(do.Account(id=account_id, username=username, nickname=nickname, real_name=real_name,
                             role=enum.RoleType(role), is_deleted=is_deleted, alternative_email=alternative_email),
@@ -74,6 +78,7 @@ async def browse_list_with_default_student_card(account_ids: List[int], include_
                 fr'{" WHERE NOT account.is_deleted" if not include_deleted else ""}'
                 fr'         AND account.id IN ({cond_sql})',
             fetch='all',
+            raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return [(do.Account(id=account_id, username=username, nickname=nickname, real_name=real_name,
                             role=enum.RoleType(role), is_deleted=is_deleted, alternative_email=alternative_email),

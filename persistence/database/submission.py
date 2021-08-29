@@ -60,6 +60,7 @@ async def browse_language(include_disabled=True) -> Sequence[do.SubmissionLangua
                 fr'{" WHERE NOT is_disabled" if not include_disabled else ""}'
                 fr' ORDER BY name ASC, version ASC',
             fetch='all',
+            raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return [do.SubmissionLanguage(id=id_, name=name, version=version, is_disabled=is_disabled)
                 for id_, name, version, is_disabled in records]
@@ -133,6 +134,7 @@ async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Se
             **cond_params,
             limit=limit, offset=offset,
             fetch='all',
+            raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         data = [do.Submission(id=id_, account_id=account_id, problem_id=problem_id, language_id=language_id,
                               filename=filename, content_file_uuid=content_file_uuid, content_length=content_length,
@@ -213,7 +215,7 @@ async def browse_under_class(class_id: int,
             class_id=class_id,
             limit=limit, offset=offset,
             fetch='all',
-            raise_not_found=False,
+            raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         data = [do.Submission(id=id_, account_id=account_id, problem_id=problem_id, language_id=language_id,
                               filename=filename, content_file_uuid=content_file_uuid, content_length=content_length,

@@ -43,6 +43,7 @@ async def browse(include_deleted=False) -> Sequence[do.PeerReview]:
                 fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
                 fr' ORDER BY id ASC',
             fetch='all',
+            raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return [do.PeerReview(id=id_, challenge_id=challenge_id, challenge_label=challenge_label, title=title,
                               target_problem_id=target_problem_id, setter_id=setter_id, description=description,
@@ -66,6 +67,7 @@ async def browse_by_challenge(challenge_id: int, include_deleted=False) \
                 fr' ORDER BY id ASC',
             challenge_id=challenge_id,
             fetch='all',
+            raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return [do.PeerReview(id=id_, challenge_id=challenge_id, challenge_label=challenge_label, title=title,
                               target_problem_id=target_problem_id, setter_id=setter_id, description=description,

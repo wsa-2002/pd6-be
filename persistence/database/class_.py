@@ -43,6 +43,7 @@ async def browse(course_id: int = None, include_deleted=False) -> Sequence[do.Cl
                 fr' ORDER BY course_id ASC, id ASC',
             **conditions,
             fetch='all',
+            raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return [do.Class(id=id_, name=name, course_id=course_id, is_deleted=is_deleted)
                 for (id_, name, course_id, is_deleted) in records]
@@ -75,7 +76,7 @@ async def browse_with_filter(limit: int, offset: int, filters: Sequence[Filter],
             **cond_params,
             limit=limit, offset=offset,
             fetch='all',
-            raise_not_found=False,
+            raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         data = [do.Class(id=id_, name=name, course_id=course_id, is_deleted=is_deleted)
                 for (id_, name, course_id, is_deleted) in records]
@@ -105,6 +106,7 @@ async def browse_from_member_role(member_id: int, role: RoleType, include_delete
             role=role,
             member_id=member_id,
             fetch='all',
+            raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return [do.Class(id=id_, name=name, course_id=course_id, is_deleted=is_deleted)
                 for (id_, name, course_id, is_deleted) in records]
@@ -215,17 +217,6 @@ async def add_members(class_id: int, member_roles: Collection[Tuple[int, RoleTyp
         )
 
 
-async def add_members_by_account_referral(class_id: int, member_roles: Sequence[Tuple[str, RoleType]]):
-    async with SafeConnection(event='add members to class') as conn:
-        await conn.executemany(
-            command=r'INSERT INTO class_member'
-                    r'            (class_id, member_id, role)'
-                    r'     VALUES ($1, account_referral_to_id($2), $3)',
-            args=[(class_id, account_referral, role)
-                  for account_referral, role in member_roles],
-        )
-
-
 async def browse_role_by_account_id(account_id: int) \
         -> Sequence[Tuple[do.ClassMember, do.Class, do.Course]]:
     async with SafeExecutor(
@@ -241,6 +232,7 @@ async def browse_role_by_account_id(account_id: int) \
                 fr' WHERE class_member.member_id = %(account_id)s',
             account_id=account_id,
             fetch='all',
+            raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return [(do.ClassMember(class_id=class_id, member_id=member_id, role=RoleType(role)),
                  do.Class(id=class_id, name=class_name, course_id=course_id, is_deleted=is_deleted),
@@ -260,6 +252,7 @@ async def browse_members(class_id: int) -> Sequence[do.ClassMember]:
                 r' ORDER BY class_member.role DESC, account.id ASC',
             class_id=class_id,
             fetch='all',
+            raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return [do.ClassMember(member_id=id_, class_id=class_id, role=RoleType(role_str))
                 for id_, class_id, role_str in records]
@@ -302,16 +295,6 @@ async def delete_member(class_id: int, member_id: int):
         pass
 
 
-async def delete_all_members_in_class(class_id: int):
-    async with SafeExecutor(
-            event='HARD DELETE all class member',
-            sql=r'DELETE FROM class_member'
-                r'      WHERE class_id = %(class_id)s',
-            class_id=class_id,
-    ):
-        pass
-
-
 async def browse_member_emails(class_id: int, role: RoleType = None) -> Sequence[str]:
     conditions = {}
     if role is not None:
@@ -328,5 +311,22 @@ async def browse_member_emails(class_id: int, role: RoleType = None) -> Sequence
             class_id=class_id,
             **conditions,
             fetch='all',
+            raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return [institute_email for institute_email, in records]
+
+
+async def replace_members(class_id: int, member_roles: Sequence[Tuple[str, RoleType]]) -> None:
+    async with SafeConnection(event=f'replace members from class {class_id=}') as conn:
+        async with conn.transaction():
+            await conn.execute(fr'DELETE FROM class_member'
+                               fr'      WHERE class_id = $1',
+                               class_id)
+
+            await conn.executemany(
+                command=r'INSERT INTO class_member'
+                        r'            (class_id, member_id, role)'
+                        r'     VALUES ($1, account_referral_to_id($2), $3)',
+                args=[(class_id, account_referral, role)
+                      for account_referral, role in member_roles],
+            )

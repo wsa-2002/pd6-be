@@ -56,6 +56,8 @@ async def browse_class_grade(class_id: int, request: Request,
     ### 權限
     - Class manager (all)
     - Class normal (self)
+
+    ### Available columns
     """
 
     filters = model.parse_filter(filter, BROWSE_CLASS_GRADE_COLUMNS)
@@ -94,6 +96,8 @@ async def browse_account_grade(account_id: int, request: Request,
     """
     ### 權限
     - Self
+
+    ### Available columns
     """
     if request.account.id is not account_id:  # only self
         raise exc.NoPermission

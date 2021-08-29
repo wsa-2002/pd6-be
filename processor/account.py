@@ -115,6 +115,8 @@ async def browse_all_account_with_class_role(account_id: int, request: Request) 
     """
     ### 權限
     - Self
+
+    ### Available columns
     """
     if account_id is not request.account.id:
         raise exc.NoPermission
@@ -175,7 +177,7 @@ async def read_account_with_default_student_id(account_id: int, request: Request
 
 class EditAccountInput(BaseModel):
     nickname: str = None
-    alternative_email: str = None
+    alternative_email: str = model.can_omit
     real_name: str = None
 
 
