@@ -72,13 +72,14 @@ async def browse_challenge_under_class(
     """
     ### 權限
     - Class manager (all)
-    - Class guest (not scheduled)
+    - System normal (not scheduled)
 
     ### Available columns
     """
+    system_role = await rbac.get_role(request.account.id)
     class_role = await rbac.get_role(request.account.id, class_id=class_id)
 
-    if class_role < RoleType.guest:
+    if system_role < RoleType.normal:
         raise exc.NoPermission
 
     filters = model.parse_filter(filter, BROWSE_CHALLENGE_COLUMNS)
