@@ -177,7 +177,7 @@ async def read_account_with_default_student_id(account_id: int, request: Request
 
 class EditAccountInput(BaseModel):
     nickname: str = None
-    alternative_email: str = model.can_omit
+    alternative_email: Optional[str] = model.can_omit
     real_name: str = None
 
 
@@ -199,31 +199,6 @@ async def edit_account(account_id: int, data: EditAccountInput, request: Request
 
     await service.account.edit_general(account_id=account_id, nickname=data.nickname, real_name=data.real_name)
 
-
-class EditPasswordInput(BaseModel):
-    old_password: Optional[str]
-    new_password: str
-
-
-@router.put('/account/{account_id}/pass_hash')
-@enveloped
-async def edit_password(account_id: int, data: EditPasswordInput, request: Request):
-    """
-    ### 權限
-    - System Manager
-    - Self (need old password)
-    """
-
-    is_self = request.account.id is account_id
-    if is_self:
-        return await service.account.edit_password(account_id=account_id,
-                                                   old_password=data.old_password, new_password=data.new_password)
-
-    is_manager = await rbac.validate(request.account.id, RoleType.manager)
-    if is_manager:
-        return await service.account.force_edit_password(account_id=account_id, new_password=data.new_password)
-
-    raise exc.NoPermission
 
 
 @router.delete('/account/{account_id}')
