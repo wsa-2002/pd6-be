@@ -103,3 +103,13 @@ async def edit_password(account_id: int, data: EditPasswordInput, request: Reque
         return await service.account.force_edit_password(account_id=account_id, new_password=data.new_password)
 
     raise exc.NoPermission
+
+
+class ResetPasswordInput(BaseModel):
+    code: str
+    password: str
+
+
+@router.post('/account/reset-password', tags=['Account'], response_class=JSONResponse)
+async def reset_password(data: ResetPasswordInput) -> None:
+    await service.public.reset_password(code=data.code, password=data.password)

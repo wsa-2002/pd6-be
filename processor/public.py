@@ -40,13 +40,3 @@ class ForgetPasswordInput(BaseModel):
 @enveloped
 async def forget_password(data: ForgetPasswordInput) -> None:
     await service.public.forget_password(account_email=data.email)
-
-
-class ResetPasswordInput(BaseModel):
-    code: str
-    password: str
-
-
-@router.post('/account/reset-password', tags=['Account'], response_class=JSONResponse)
-async def reset_password(data: ResetPasswordInput) -> None:
-    await service.public.reset_password(code=data.code, password=data.password)
