@@ -47,4 +47,4 @@ def verify_password(to_test: str, hashed: str) -> bool:
 
 
 def verify_password_4s(to_test: str, hashed: str) -> bool:
-    return hashlib.md5((to_test + pd4s_config.pd4s_salt).encode()).hexdigest() == hashed
+    return hashlib.sha1((to_test + pd4s_config.pd4s_salt).encode()).hexdigest() == hashed
