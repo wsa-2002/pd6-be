@@ -44,7 +44,7 @@ async def add_student_card_to_account(account_id: int, data: AddStudentCardInput
     except exc.persistence.NotFound:
         raise exc.account.InvalidInstitute
 
-    if data.student_id != data.institute_email_prefix:
+    if data.student_id.capitalize() != data.institute_email_prefix.capitalize():
         raise exc.account.StudentIdNotMatchEmail
 
     if service.student_card.is_duplicate(institute.id, data.student_id.capitalize()):
