@@ -12,7 +12,7 @@ import persistence.s3 as s3
 
 
 async def add(file: typing.IO, filename: str, account_id: int, problem_id: int, language_id: int,
-              submit_time: datetime) -> int:
+              file_length: int, submit_time: datetime) -> int:
     file_uuid = uuid.uuid4()
     s3_file = await s3.submission.upload(file, file_uuid=file_uuid)
 
@@ -21,8 +21,7 @@ async def add(file: typing.IO, filename: str, account_id: int, problem_id: int, 
     submission_id = await db.submission.add(account_id=account_id, problem_id=problem_id,
                                             language_id=language_id,
                                             content_file_uuid=content_file_uuid,
-                                            content_length=len(file.read()),
-                                            filename=filename,
+                                            content_length=file_length, filename=filename,
                                             submit_time=submit_time)
 
     return submission_id
