@@ -13,6 +13,7 @@ async def browse() -> Sequence[do.S3File]:
                 fr'  FROM s3_file'
                 fr' ORDER BY uuid ASC',
             fetch='all',
+            raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return [do.S3File(uuid=uuid, bucket=bucket, key=key)
                 for (uuid, bucket, key)

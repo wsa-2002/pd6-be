@@ -44,6 +44,7 @@ async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Se
             **cond_params,
             limit=limit, offset=offset,
             fetch='all',
+            raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         data = [do.Grade(id=id_, receiver_id=receiver_id, grader_id=grader_id, class_id=class_id,
                          title=title, score=score, comment=comment, update_time=update_time,

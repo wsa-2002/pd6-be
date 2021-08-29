@@ -14,6 +14,7 @@ async def browse(include_deleted=False) -> Sequence[do.Essay]:
                 fr'{" WHERE NOT is_deleted" if not include_deleted else ""}'
                 fr' ORDER BY id ASC',
             fetch='all',
+            raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return [do.Essay(id=id_, challenge_id=challenge_id, challenge_label=challenge_label, title=title,
                          setter_id=setter_id, description=description, is_deleted=is_deleted)
@@ -30,6 +31,7 @@ async def browse_by_challenge(challenge_id: int, include_deleted=False) -> Seque
                 fr' ORDER BY id ASC',
             challenge_id=challenge_id,
             fetch='all',
+            raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return [do.Essay(id=id_, challenge_id=challenge_id, challenge_label=challenge_label, title=title,
                          setter_id=setter_id, description=description, is_deleted=is_deleted)
