@@ -1,0 +1,1 @@
+USERNAME_PROHIBITED_CHARS = r'`#$%&*\/?'
