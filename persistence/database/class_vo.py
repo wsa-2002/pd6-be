@@ -38,7 +38,7 @@ async def browse_member_account_with_student_card_and_institute(
                 fr' INNER JOIN institute'
                 fr'         ON student_card.institute_id = institute.id'
                 fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
-                fr'{f" ORDER BY {sort_sql}" if sort_sql else ""}'
+                fr' ORDER BY{f" {sort_sql} ASC" if sort_sql else ""} class_member.role DESC'
                 fr' LIMIT %(limit)s OFFSET %(offset)s',
             **cond_params,
             limit=limit, offset=offset,
