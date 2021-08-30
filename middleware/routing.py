@@ -273,7 +273,7 @@ def get_request_handler(
     return app
 
 
-class APIRoute(fastapi.routing.APIRoute):
+class SecretAPIRoute(fastapi.routing.APIRoute):
     def get_route_handler(self) -> Callable[[fastapi.routing.Request], fastapi.routing.Coroutine[Any, Any, Response]]:
         original_route_handler = get_request_handler(
             dependant=self.dependant,
@@ -292,11 +292,26 @@ class APIRoute(fastapi.routing.APIRoute):
 
         async def custom_route_handler(request: fastapi.Request) -> fastapi.Response:
             """
-            Replace request and logs body
+            Replace request
             """
             from . import Request
             request = Request(request.scope, request.receive)
 
+            response = await original_route_handler(request)
+
+            return response
+
+        return custom_route_handler
+
+
+class APIRoute(SecretAPIRoute):
+    def get_route_handler(self) -> Callable[[fastapi.routing.Request], fastapi.routing.Coroutine[Any, Any, Response]]:
+        original_route_handler = super().get_route_handler()
+
+        async def custom_route_handler(request: fastapi.Request) -> fastapi.Response:
+            """
+            Replace request logs body
+            """
             request_body = ''
             if 'json' in request.headers.get('Content-Type', ''):
                 request_body = await request.body()
@@ -316,3 +331,4 @@ class APIRoute(fastapi.routing.APIRoute):
             return response
 
         return custom_route_handler
+

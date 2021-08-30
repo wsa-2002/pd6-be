@@ -8,12 +8,15 @@ from pydantic import BaseModel
 from base.enum import RoleType
 import const
 import exceptions as exc
-from middleware import APIRouter, JSONResponse, enveloped, Request
+from middleware import APIRouter, JSONResponse, enveloped, Request, auth, routing
 import service
 
 from .util import model, rbac
 
-router = APIRouter(route_class=fastapi.routing.APIRoute)  # Does not log the I/O data
+router = APIRouter(
+    route_class=routing.SecretAPIRoute,  # Does not log the I/O data
+    dependencies=auth.doc_dependencies,
+)
 
 
 class LoginInput(BaseModel):
