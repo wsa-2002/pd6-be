@@ -1,7 +1,7 @@
 from typing import Sequence, Tuple
 
 from base import do
-from base.enum import RoleType
+from base.enum import RoleType, SortOrder
 from base.popo import Filter, Sorter
 
 from .base import SafeExecutor
@@ -9,12 +9,15 @@ from .util import execute_count, compile_filters
 
 
 async def browse_member_account_with_student_card_and_institute(
-        limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter], include_deleted: bool = False) \
+        limit: int, offset: int, filters: list[Filter], sorters: list[Sorter], include_deleted: bool = False) \
         -> tuple[Sequence[Tuple[do.ClassMember, do.Account, do.StudentCard, do.Institute]], int]:
 
     filters = [Filter(col_name=f'class_member.{filter_.col_name}',
                       op=filter_.op,
                       value=filter_.value) for filter_ in filters]
+
+    sorters.append(Sorter(col_name='role',
+                          order=SortOrder.desc))
 
     cond_sql, cond_params = compile_filters(filters)
     sort_sql = ' ,'.join(f"class_member.{sorter.col_name} {sorter.order}" for sorter in sorters)
@@ -38,7 +41,7 @@ async def browse_member_account_with_student_card_and_institute(
                 fr' INNER JOIN institute'
                 fr'         ON student_card.institute_id = institute.id'
                 fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
-                fr' ORDER BY{f" {sort_sql} ASC" if sort_sql else ""} class_member.role DESC'
+                fr'{f" ORDER BY {sort_sql}" if sort_sql else ""}'
                 fr' LIMIT %(limit)s OFFSET %(offset)s',
             **cond_params,
             limit=limit, offset=offset,
