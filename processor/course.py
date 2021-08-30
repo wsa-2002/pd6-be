@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from base import do
 from base.enum import CourseType, RoleType
 import exceptions as exc
-from middleware import APIRouter, response, enveloped, auth, Request, routing
+from middleware import APIRouter, response, enveloped, auth, Request
 import service
 
 from .util import rbac, model
@@ -13,7 +13,6 @@ from .util import rbac, model
 
 router = APIRouter(
     tags=['Course'],
-    route_class=routing.APIRoute,
     default_response_class=response.JSONResponse,
     dependencies=auth.doc_dependencies,
 )
