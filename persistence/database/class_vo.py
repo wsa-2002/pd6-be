@@ -1,7 +1,7 @@
 from typing import Sequence, Tuple
 
 from base import do
-from base.enum import RoleType
+from base.enum import RoleType, SortOrder
 from base.popo import Filter, Sorter
 
 from .base import SafeExecutor
@@ -15,6 +15,9 @@ async def browse_member_account_with_student_card_and_institute(
     filters = [Filter(col_name=f'class_member.{filter_.col_name}',
                       op=filter_.op,
                       value=filter_.value) for filter_ in filters]
+
+    sorters += [Sorter(col_name='role',
+                       order=SortOrder.desc)]
 
     cond_sql, cond_params = compile_filters(filters)
     sort_sql = ' ,'.join(f"class_member.{sorter.col_name} {sorter.order}" for sorter in sorters)
