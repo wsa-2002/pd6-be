@@ -1,3 +1,4 @@
+import pydantic
 from fastapi import Query
 from dataclasses import dataclass
 from typing import Sequence, Optional, List
@@ -83,12 +84,17 @@ class BatchGetAccountOutput:
 
 @router.get('/account-summary/batch')
 @enveloped
-async def batch_get_account_with_default_student_id(request: Request, account_ids: List[int] = Query(None)) \
+async def batch_get_account_with_default_student_id(request: Request, account_ids: pydantic.Json) \
         -> Sequence[BatchGetAccountOutput]:
     """
     ### 權限
     - System Normal
+
+    ### Notes
+    - `account_ids`: list of int
     """
+    account_ids = pydantic.parse_obj_as(list[int], account_ids)
+
     is_normal = await rbac.validate(request.account.id, RoleType.normal)
     if not is_normal:
         raise exc.NoPermission
