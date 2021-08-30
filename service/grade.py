@@ -11,7 +11,7 @@ import persistence.s3 as s3
 from base import do
 
 
-GRADE_TEMPLATE = b'Receiver,Score,Comment,Grader\nB05705088,10,here for comment,B99705006'
+GRADE_TEMPLATE = b'Receiver,Score,Comment,Grader\nB05705088,10,"here for comment",B99705006'
 GRADE_TEMPLATE_FILENAME = 'grade_template.csv'
 
 
