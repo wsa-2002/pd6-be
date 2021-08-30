@@ -304,14 +304,30 @@ class SecretAPIRoute(fastapi.routing.APIRoute):
         return custom_route_handler
 
 
-class APIRoute(SecretAPIRoute):
+class APIRoute(fastapi.routing.APIRoute):
     def get_route_handler(self) -> Callable[[fastapi.routing.Request], fastapi.routing.Coroutine[Any, Any, Response]]:
-        original_route_handler = super().get_route_handler()
+        original_route_handler = get_request_handler(
+            dependant=self.dependant,
+            body_field=self.body_field,
+            status_code=self.status_code,
+            response_class=self.response_class,
+            response_field=self.secure_cloned_response_field,
+            response_model_include=self.response_model_include,
+            response_model_exclude=self.response_model_exclude,
+            response_model_by_alias=self.response_model_by_alias,
+            response_model_exclude_unset=self.response_model_exclude_unset,
+            response_model_exclude_defaults=self.response_model_exclude_defaults,
+            response_model_exclude_none=self.response_model_exclude_none,
+            dependency_overrides_provider=self.dependency_overrides_provider,
+        )
 
         async def custom_route_handler(request: fastapi.Request) -> fastapi.Response:
             """
             Replace request logs body
             """
+            from . import Request
+            request = Request(request.scope, request.receive)
+
             request_body = ''
             if 'json' in request.headers.get('Content-Type', ''):
                 request_body = await request.body()
