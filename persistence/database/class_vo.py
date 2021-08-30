@@ -35,7 +35,7 @@ async def browse_member_account_with_student_card_and_institute(
                 fr'  LEFT JOIN student_card'  # some account might not have student card, so left join
                 fr'         ON account.id = student_card.account_id'
                 fr'        AND student_card.is_default'
-                fr' INNER JOIN institute'
+                fr'  LEFT JOIN institute'
                 fr'         ON student_card.institute_id = institute.id'
                 fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
                 fr'{f" ORDER BY {sort_sql}" if sort_sql else ""}'
