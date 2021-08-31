@@ -52,14 +52,14 @@ async def browse(course_id: int = None, include_deleted=False) -> Sequence[do.Cl
 async def browse_with_filter(limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter],
                              course_id: int = None, include_deleted=False) -> tuple[Sequence[do.Class], int]:
     if course_id is not None:
-        filters.append(Filter(col_name='course_id',
-                              op=FilterOperator.eq,
-                              value=course_id))
+        filters += [Filter(col_name='course_id',
+                           op=FilterOperator.eq,
+                           value=course_id)]
 
     if not include_deleted:
-        filters.append(Filter(col_name='is_deleted',
-                              op=FilterOperator.eq,
-                              value=include_deleted))
+        filters += [Filter(col_name='is_deleted',
+                           op=FilterOperator.eq,
+                           value=include_deleted)]
 
     cond_sql, cond_params = compile_filters(filters)
     sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
@@ -332,3 +332,16 @@ async def replace_members(class_id: int, member_roles: Sequence[Tuple[str, RoleT
                 args=[(class_id, account_referral, role)
                       for account_referral, role in member_roles],
             )
+
+
+async def browse_member_referrals(class_id: int, role: RoleType) -> Sequence[str]:
+    async with SafeExecutor(
+            event='get member account referral by role',
+            sql=fr'SELECT account_id_to_referral(member_id)'
+                fr'  FROM class_member'
+                fr' WHERE class_id = %(class_id)s'
+                fr'   AND role = %(role)s',
+            class_id=class_id, role=role,
+            fetch='all',
+    ) as records:
+        return [referral for referral, in records]
