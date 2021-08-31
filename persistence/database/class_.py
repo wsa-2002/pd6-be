@@ -332,14 +332,14 @@ async def replace_members(class_id: int, member_roles: Sequence[Tuple[str, RoleT
             )
 
 
-async def browse_role_ids(class_id: int, role: RoleType) -> Sequence[int]:
+async def browse_role_account_referrals(class_id: int, role: RoleType) -> Sequence[str]:
     async with SafeExecutor(
             event='get member id by role',
-            sql=fr'SELECT member_id'
+            sql=fr'SELECT account_id_to_referral(member_id)'
                 fr'  FROM class_member'
                 fr' WHERE class_id = %(class_id)s'
                 fr'   AND role = %(role)s',
             class_id=class_id, role=role,
             fetch='all',
     ) as records:
-        return [member_id for member_id, in records]
+        return [referral for referral, in records]
