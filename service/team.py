@@ -36,11 +36,11 @@ async def get_template_file() -> tuple[do.S3File, str]:
         return s3_file, TEAM_TEMPLATE_FILENAME
 
 
-async def replace_members(team_id: int, member_roles: Sequence[Tuple[str, enum.RoleType]]) -> None:
+async def put_members(team_id: int, member_roles: Sequence[Tuple[str, enum.RoleType]]) -> None:
     try:
-        await db.team.replace_members(team_id=team_id,
-                                      member_roles=[(account_referral, role)
-                                      for (account_referral, role) in member_roles])
+        await db.team.put_members(team_id=team_id,
+                                  member_roles=[(account_referral, role)
+                                                for (account_referral, role) in member_roles])
     except:
         raise exc.IllegalInput
 
