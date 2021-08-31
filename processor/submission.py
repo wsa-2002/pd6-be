@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 from base import do, popo
 from base.enum import RoleType, ChallengePublicizeType, FilterOperator
+import const
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
 import service
@@ -74,7 +75,7 @@ async def edit_submission_language(language_id: int, data: EditSubmissionLanguag
 
 
 @router.post('/problem/{problem_id}/submission', tags=['Problem'],
-             dependencies=[Depends(file_upload_limit.valid_code_length)])
+             dependencies=[Depends(file_upload_limit.valid_file_length(file_length=const.CODE_UPLOAD_LIMIT))])
 @enveloped
 async def submit(problem_id: int, language_id: int, request: Request, content_file: UploadFile = File(...)) \
         -> model.AddOutput:

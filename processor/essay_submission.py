@@ -4,6 +4,7 @@ from fastapi import File, UploadFile, Depends
 
 from base.enum import RoleType, FilterOperator
 from base import do, popo
+import const
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
 import service
@@ -19,7 +20,8 @@ router = APIRouter(
 )
 
 
-@router.post('/essay/{essay_id}/essay-submission', dependencies=[Depends(file_upload_limit.valid_essay_size)])
+@router.post('/essay/{essay_id}/essay-submission',
+             dependencies=[Depends(file_upload_limit.valid_file_length(file_length=const.ESSAY_UPLOAD_LIMIT))])
 @enveloped
 async def upload_essay(essay_id: int, request: Request, essay_file: UploadFile = File(...)) -> int:
     """
@@ -116,7 +118,8 @@ async def read_essay_submission(essay_submission_id: int, request: Request) -> d
     raise exc.NoPermission
 
 
-@router.put('/essay-submission/{essay_submission_id}', dependencies=[Depends(file_upload_limit.valid_essay_size)])
+@router.put('/essay-submission/{essay_submission_id}',
+            dependencies=[Depends(file_upload_limit.valid_file_length(file_length=const.ESSAY_UPLOAD_LIMIT))])
 @enveloped
 async def reupload_essay(essay_submission_id: int, request: Request, essay_file: UploadFile = File(...)):
     """
