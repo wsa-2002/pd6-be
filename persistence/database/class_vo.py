@@ -1,7 +1,7 @@
 from typing import Sequence, Tuple
 
 from base import do
-from base.enum import RoleType
+from base.enum import RoleType, SortOrder
 from base.popo import Filter, Sorter
 
 from .base import SafeExecutor
@@ -15,6 +15,9 @@ async def browse_member_account_with_student_card_and_institute(
     filters = [Filter(col_name=f'class_member.{filter_.col_name}',
                       op=filter_.op,
                       value=filter_.value) for filter_ in filters]
+
+    sorters += [Sorter(col_name='role',
+                       order=SortOrder.desc)]
 
     cond_sql, cond_params = compile_filters(filters)
     sort_sql = ' ,'.join(f"class_member.{sorter.col_name} {sorter.order}" for sorter in sorters)
@@ -35,7 +38,7 @@ async def browse_member_account_with_student_card_and_institute(
                 fr'  LEFT JOIN student_card'  # some account might not have student card, so left join
                 fr'         ON account.id = student_card.account_id'
                 fr'        AND student_card.is_default'
-                fr' INNER JOIN institute'
+                fr'  LEFT JOIN institute'
                 fr'         ON student_card.institute_id = institute.id'
                 fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
                 fr'{f" ORDER BY {sort_sql}" if sort_sql else ""}'
@@ -43,7 +46,7 @@ async def browse_member_account_with_student_card_and_institute(
             **cond_params,
             limit=limit, offset=offset,
             fetch='all',
-            raise_not_found=False,
+            raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         data = [(do.ClassMember(member_id=member_id, class_id=class_id, role=RoleType(class_role)),
                  do.Account(id=account_id, username=username, nickname=nickname, real_name=real_name,
@@ -93,6 +96,7 @@ async def browse_class_member_with_account_id(class_id: int, include_deleted: bo
                 fr' WHERE class_member.class_id = %(class_id)s',
             class_id=class_id,
             fetch='all',
+            raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return [(do.ClassMember(member_id=member_id, class_id=class_id, role=RoleType(role_str)), account_id)
                 for (member_id, class_id, role_str, account_id) in records]
@@ -123,7 +127,7 @@ async def browse_class_member_with_account_referral(limit: int, offset: int, fil
             **cond_params,
             limit=limit, offset=offset,
             fetch='all',
-            raise_not_found=False,
+            raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         data = [(do.ClassMember(member_id=member_id, class_id=class_id, role=RoleType(role_str)), account_referral)
                 for (member_id, class_id, role_str, account_referral) in records]

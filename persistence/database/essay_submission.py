@@ -27,7 +27,7 @@ async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Se
             **cond_params,
             limit=limit, offset=offset,
             fetch='all',
-            raise_not_found=False,
+            raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         data = [do.EssaySubmission(id=id_, account_id=account_id, essay_id=essay_id,
                                    content_file_uuid=content_file_uuid, filename=filename, submit_time=submit_time)

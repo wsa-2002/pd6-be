@@ -42,7 +42,7 @@ async def browse_with_default_student_card(limit: int, offset: int, filters: lis
             **cond_params,
             limit=limit, offset=offset,
             fetch='all',
-            raise_not_found=False,
+            raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         data = [(do.Account(id=account_id, username=username, nickname=nickname, real_name=real_name,
                             role=enum.RoleType(role), is_deleted=is_deleted, alternative_email=alternative_email),
@@ -78,6 +78,7 @@ async def browse_list_with_default_student_card(account_ids: List[int], include_
                 fr'{" WHERE NOT account.is_deleted" if not include_deleted else ""}'
                 fr'         AND account.id IN ({cond_sql})',
             fetch='all',
+            raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return [(do.Account(id=account_id, username=username, nickname=nickname, real_name=real_name,
                             role=enum.RoleType(role), is_deleted=is_deleted, alternative_email=alternative_email),

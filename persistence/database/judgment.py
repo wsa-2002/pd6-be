@@ -15,6 +15,7 @@ async def browse(submission_id: int) -> Sequence[do.Judgment]:
                 fr' ORDER BY id DESC',
             submission_id=submission_id,
             fetch='all',
+            raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return [do.Judgment(id=id_, submission_id=submission_id, status=enum.JudgmentStatusType(status),
                             total_time=total_time, max_memory=max_memory, score=score, judge_time=judge_time)
@@ -46,6 +47,7 @@ async def browse_cases(judgment_id: int) -> Sequence[do.JudgeCase]:
                 fr' ORDER BY testcase.is_sample DESC, testcase_id ASC',
             judgment_id=judgment_id,
             fetch='all',
+            raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return [do.JudgeCase(judgment_id=judgment_id, testcase_id=testcase_id, status=enum.JudgmentStatusType(status),
                              time_lapse=time_lapse, peak_memory=peak_memory, score=score)

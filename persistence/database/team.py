@@ -47,7 +47,7 @@ async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Se
             **cond_params,
             limit=limit, offset=offset,
             fetch='all',
-            raise_not_found=False,
+            raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         data = [do.Team(id=id_, name=name, class_id=class_id, is_deleted=is_deleted, label=label)
                 for (id_, name, class_id, is_deleted, label) in records]
@@ -151,6 +151,7 @@ async def browse_members(limit: int, offset: int, filters: Sequence[Filter], sor
             **cond_params,
             limit=limit, offset=offset,
             fetch='all',
+            raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         data = [do.TeamMember(member_id=id_, team_id=team_id, role=RoleType(role_str))
                 for id_, team_id, role_str in records]
