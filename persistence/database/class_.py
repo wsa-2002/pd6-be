@@ -316,7 +316,7 @@ async def browse_member_emails(class_id: int, role: RoleType = None) -> Sequence
         return [institute_email for institute_email, in records]
 
 
-async def put_members(class_id: int, member_roles: Sequence[Tuple[str, RoleType]]) -> None:
+async def replace_members(class_id: int, member_roles: Sequence[Tuple[str, RoleType]]) -> None:
     async with SafeConnection(event=f'replace members from class {class_id=}') as conn:
         async with conn.transaction():
             await conn.execute(fr'DELETE FROM class_member'

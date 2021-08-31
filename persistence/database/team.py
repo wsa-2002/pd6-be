@@ -235,7 +235,7 @@ async def edit_member(team_id: int, member_id: int, role: RoleType):
         pass
 
 
-async def put_members(team_id: int, member_roles: Sequence[Tuple[str, RoleType]]) -> None:
+async def replace_members(team_id: int, member_roles: Sequence[Tuple[str, RoleType]]) -> None:
     async with SafeConnection(event=f'replace members from team {team_id=}') as conn:
         async with conn.transaction():
             await conn.execute(fr'DELETE FROM team_member'
