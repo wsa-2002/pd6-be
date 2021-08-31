@@ -1,6 +1,7 @@
 from typing import Tuple, Sequence
 
 from base import do
+from base.enum import RoleType
 import persistence.database as db
 
 import exceptions as exc
@@ -72,24 +73,25 @@ async def get_member_submission_statistics(challenge_id: int) \
     essays = await db.essay.browse_by_challenge(challenge_id=challenge_id)
     result = []
     for class_member in class_members:
-        problem_judgments = []
-        for problem in problems:
-            try:
-                problem_judgments.append(await db.judgment.get_submission_judgment_by_challenge_type(
-                    problem_id=problem.id,
-                    account_id=class_member.member_id,
-                    selection_type=challenge.selection_type,
-                    challenge_end_time=challenge.end_time))
-            except exc.persistence.NotFound:
-                pass
+        if class_member.role == RoleType.normal:
+            problem_judgments = []
+            for problem in problems:
+                try:
+                    problem_judgments.append(await db.judgment.get_submission_judgment_by_challenge_type(
+                        problem_id=problem.id,
+                        account_id=class_member.member_id,
+                        selection_type=challenge.selection_type,
+                        challenge_end_time=challenge.end_time))
+                except exc.persistence.NotFound:
+                    pass
 
-        essay_submissions = []
-        for essay in essays:
-            try:
-                essay_submissions.append(
-                    await db.essay_submission.get_latest_essay_submission(account_id=class_member.member_id,
-                                                                          essay_id=essay.id))
-            except exc.persistence.NotFound:
-                pass
-        result.append((class_member.member_id, problem_judgments, essay_submissions))
+            essay_submissions = []
+            for essay in essays:
+                try:
+                    essay_submissions.append(
+                        await db.essay_submission.get_latest_essay_submission(account_id=class_member.member_id,
+                                                                              essay_id=essay.id))
+                except exc.persistence.NotFound:
+                    pass
+            result.append((class_member.member_id, problem_judgments, essay_submissions))
     return result
