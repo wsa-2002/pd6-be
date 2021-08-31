@@ -1,6 +1,7 @@
 from typing import Tuple, Sequence
 
 from base import do
+from base.enum import RoleType
 import persistence.database as db
 
 import exceptions as exc
@@ -72,6 +73,9 @@ async def get_member_submission_statistics(challenge_id: int) \
     essays = await db.essay.browse_by_challenge(challenge_id=challenge_id)
     result = []
     for class_member in class_members:
+        if class_member.role != RoleType.normal:
+            continue
+
         problem_judgments = []
         for problem in problems:
             try:
