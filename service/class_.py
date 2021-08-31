@@ -21,13 +21,13 @@ delete_member = db.class_.delete_member
 
 
 async def edit_member(class_id: int, member_roles: Sequence[Tuple[int, RoleType]], operator_id: int) -> None:
-    cm_before = set(await db.class_.browse_role_account_referrals(class_id=class_id, role=RoleType.manager))
+    cm_before = set(await db.class_.browse_member_referrals(class_id=class_id, role=RoleType.manager))
     emails_before = set(await db.class_.browse_member_emails(class_id=class_id, role=RoleType.manager))
 
     for member_id, role in member_roles:
         await db.class_.edit_member(class_id=class_id, member_id=member_id, role=role)
 
-    cm_after = set(await db.class_.browse_role_account_referrals(class_id=class_id, role=RoleType.manager))
+    cm_after = set(await db.class_.browse_member_referrals(class_id=class_id, role=RoleType.manager))
     emails_after = set(await db.class_.browse_member_emails(class_id=class_id, role=RoleType.manager))
 
     if cm_before != cm_after:
@@ -42,7 +42,7 @@ async def edit_member(class_id: int, member_roles: Sequence[Tuple[int, RoleType]
 
 
 async def replace_members(class_id: int, member_roles: Sequence[Tuple[str, RoleType]], operator_id: int) -> None:
-    cm_before = set(await db.class_.browse_role_account_referrals(class_id=class_id, role=RoleType.manager))
+    cm_before = set(await db.class_.browse_member_referrals(class_id=class_id, role=RoleType.manager))
     emails_before = set(await db.class_.browse_member_emails(class_id=class_id, role=RoleType.manager))
 
     try:
@@ -52,7 +52,7 @@ async def replace_members(class_id: int, member_roles: Sequence[Tuple[str, RoleT
     except:
         raise exc.IllegalInput
 
-    cm_after = set(await db.class_.browse_role_account_referrals(class_id=class_id, role=RoleType.manager))
+    cm_after = set(await db.class_.browse_member_referrals(class_id=class_id, role=RoleType.manager))
     emails_after = set(await db.class_.browse_member_emails(class_id=class_id, role=RoleType.manager))
 
     if cm_before != cm_after:

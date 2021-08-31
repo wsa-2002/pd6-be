@@ -53,13 +53,13 @@ async def browse_with_filter(limit: int, offset: int, filters: Sequence[Filter],
                              course_id: int = None, include_deleted=False) -> tuple[Sequence[do.Class], int]:
     if course_id is not None:
         filters += [Filter(col_name='course_id',
-                              op=FilterOperator.eq,
-                              value=course_id)]
+                           op=FilterOperator.eq,
+                           value=course_id)]
 
     if not include_deleted:
         filters += [Filter(col_name='is_deleted',
-                              op=FilterOperator.eq,
-                              value=include_deleted)]
+                           op=FilterOperator.eq,
+                           value=include_deleted)]
 
     cond_sql, cond_params = compile_filters(filters)
     sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
@@ -332,9 +332,9 @@ async def replace_members(class_id: int, member_roles: Sequence[Tuple[str, RoleT
             )
 
 
-async def browse_role_account_referrals(class_id: int, role: RoleType) -> Sequence[str]:
+async def browse_member_referrals(class_id: int, role: RoleType) -> Sequence[str]:
     async with SafeExecutor(
-            event='get member id by role',
+            event='get member account referral by role',
             sql=fr'SELECT account_id_to_referral(member_id)'
                 fr'  FROM class_member'
                 fr' WHERE class_id = %(class_id)s'
