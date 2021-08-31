@@ -21,12 +21,15 @@ async def send(to: str = None, msg: str = "", bcc: str = None, subject='PDOGS No
 
 
 # update class manager change
-async def notify_cm_change(tos: Sequence[str], account_ids: Sequence[int], class_id: int, operator_id: int):
+async def notify_cm_change(tos: Sequence[str], class_id: int, operator_id: int,
+                           added_account_ids: Sequence[int] = None,
+                           removed_account_ids: Sequence[int] = None):
     bccs = ', '.join(tos)
     msg = fr"""
 Class Manager Has Been Updated:
 Class ID: {class_id}
-Added CMs: {', '.join(str(account_id) for account_id in account_ids)}
+{f"Added CMs: {', '.join(str(account_id) for account_id in added_account_ids)}" if added_account_ids else ""}
+{f"Removed CMs: {', '.join(str(account_id) for account_id in removed_account_ids)}" if removed_account_ids else ""}
 Operator: {operator_id}        
 """
     subject = "PDOGS Notification (Class Manager Updates)"
