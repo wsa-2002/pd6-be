@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Sequence, Optional
 
-from base import do
+from base import do, enum
 from base.popo import Filter, Sorter
 
 from .base import SafeExecutor
@@ -27,6 +27,10 @@ async def add(receiver: str, grader: str, class_id: int, title: str, score: Opti
 
 async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter]) \
         -> tuple[Sequence[do.Grade], int]:
+
+    filters += [Filter(col_name='is_deleted',
+                       op=enum.FilterOperator.eq,
+                       value=False)]
 
     cond_sql, cond_params = compile_filters(filters)
     sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
