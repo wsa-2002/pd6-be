@@ -31,8 +31,8 @@ async def notify_cm_change(tos: Sequence[str], class_name: str, course_name:str,
 Class Manager Has Been Updated:
 Course Name: {course_name}
 Class Name: {class_name}
-Added CMs: {f"{added_cms}" if added_cms else "None"}
-Removed CMs: {f"{removed_cms}" if removed_cms else "None"}
+Added CMs: {added_cms or "None"}
+Removed CMs: {removed_cms or "None"}
 Operator: {operator_account_referral}      
 """
     subject = "PDOGS Notification (Class Manager Updates)"
