@@ -28,7 +28,7 @@ async def notify_cm_change(tos: Sequence[str], class_name: str, course_name:str,
     added_cms = ', '.join(account_referral for account_referral in added_account_referrals)
     removed_cms = ', '.join(account_referral for account_referral in removed_account_referrals)
     msg = fr"""
-Class Manager Has Been Updated:\
+Class Manager Has Been Updated:
 Course Name: {course_name}
 Class Name: {class_name}
 Added CMs: {f"{added_cms}" if added_cms else "None"}
