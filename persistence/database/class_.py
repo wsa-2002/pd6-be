@@ -227,10 +227,12 @@ async def browse_role_by_account_id(account_id: int) \
                 fr' FROM class_member'
                 fr' INNER JOIN class'
                 fr'         ON class.id = class_member.class_id'
+                fr'        AND class.is_deleted = %(class_deleted)s'
                 fr' INNER JOIN course'
                 fr'         ON course.id = class.course_id'
+                fr'        AND course.is_deleted = %(course_deleted)s'
                 fr' WHERE class_member.member_id = %(account_id)s',
-            account_id=account_id,
+            account_id=account_id, class_deleted=False, course_deleted=False,
             fetch='all',
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
