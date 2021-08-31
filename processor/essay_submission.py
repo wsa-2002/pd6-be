@@ -1,15 +1,16 @@
 from uuid import UUID
 
-from fastapi import File, UploadFile
+from fastapi import File, UploadFile, Depends
 
 from base.enum import RoleType, FilterOperator
 from base import do, popo
+import const
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
 import service
 from util.api_doc import add_to_docstring
 
-from .util import rbac, model
+from .util import rbac, model, file_upload_limit
 
 
 router = APIRouter(
@@ -19,14 +20,17 @@ router = APIRouter(
 )
 
 
-@router.post('/essay/{essay_id}/essay-submission')
+@router.post('/essay/{essay_id}/essay-submission',
+             dependencies=[Depends(file_upload_limit.valid_file_length(file_length=const.ESSAY_UPLOAD_LIMIT))])
 @enveloped
 async def upload_essay(essay_id: int, request: Request, essay_file: UploadFile = File(...)) -> int:
     """
     ### 權限
     - class normal
+
+    ### 限制
+    - 上傳檔案 < 10mb
     """
-    # TODO: limit file size
 
     essay = await service.essay.read(essay_id=essay_id)
     challenge = await service.challenge.read(essay.challenge_id, include_scheduled=True, ref_time=request.time)
@@ -114,12 +118,16 @@ async def read_essay_submission(essay_submission_id: int, request: Request) -> d
     raise exc.NoPermission
 
 
-@router.put('/essay-submission/{essay_submission_id}')
+@router.put('/essay-submission/{essay_submission_id}',
+            dependencies=[Depends(file_upload_limit.valid_file_length(file_length=const.ESSAY_UPLOAD_LIMIT))])
 @enveloped
 async def reupload_essay(essay_submission_id: int, request: Request, essay_file: UploadFile = File(...)):
     """
     ### 權限
     - self
+
+    ### 限制
+    - 上傳檔案 < 10mb
     """
     essay_submission = await service.essay_submission.read(essay_submission_id=essay_submission_id)
     essay = await service.essay.read(essay_id=essay_submission.essay_id)
