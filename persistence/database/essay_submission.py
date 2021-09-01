@@ -43,6 +43,26 @@ async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Se
     return data, total_count
 
 
+async def browse_with_essay_id(essay_id: int, include_deleted=False) \
+        -> Sequence[do.EssaySubmission]:
+    async with SafeExecutor(
+            event='browse testcases with problem id',
+            sql=fr'SELECT essay_submission.id, essay_submission.account_id, essay_submission.essay_id,' 
+                fr'       essay_submission.content_file_uuid, essay_submission.filename, essay_submission.submit_time'
+                fr'  FROM essay_submission'
+                fr' INNER JOIN essay'
+                fr'         ON essay.id = essay_submission.essay_id'
+                fr'      WHERE essay_submission.essay_id = %(essay_id)s'
+                fr'{"  AND NOT essay.is_deleted" if not include_deleted else ""}',
+            essay_id=essay_id,
+            fetch='all',
+    ) as records:
+        return [do.EssaySubmission(id=id_, account_id=account_id, essay_id=essay_id,
+                                   content_file_uuid=content_file_uuid, filename=filename, submit_time=submit_time)
+                for (id_, account_id, essay_id, content_file_uuid, filename, submit_time)
+                in records]
+
+
 async def read(essay_submission_id: int) -> do.EssaySubmission:
     async with SafeExecutor(
             event='read essay_submission',

@@ -7,7 +7,7 @@ import service.s3_file as s3_tool
 import persistence.email as email
 
 
-ESSAY_FILENAME = 'essay.zip'
+ESSAY_FILENAME = 'essay_submission.zip'
 
 
 add = db.essay.add
@@ -18,7 +18,7 @@ delete = db.essay.delete
 
 
 async def download_all(account_id: int, essay_id: int, as_attachment: bool) -> None:
-    result = await db.essay_submission.browse(essay_id=essay_id)
+    result = await db.essay_submission.browse_with_essay_id(essay_id=essay_id)
     files = {}
     for essay_submission in result:
         s3_file = await db.s3_file.read(s3_file_uuid=essay_submission.content_file_uuid)

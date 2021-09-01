@@ -90,7 +90,7 @@ async def download_all_essay_submission(essay_id: int, request: Request, as_atta
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     essay = await service.essay.read(essay_id=essay_id)
     challenge = await service.challenge.read(essay.challenge_id, include_scheduled=True, ref_time=request.time)
-    if not rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
     background_tasks.add_task(service.essay.download_all,
