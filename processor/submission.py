@@ -1,5 +1,6 @@
 from typing import Sequence
 
+import pydantic
 from fastapi import File, UploadFile, Depends
 from pydantic import BaseModel
 
@@ -149,6 +150,24 @@ async def browse_submission(account_id: int, request: Request, limit: model.Limi
                                                                filters=filters, sorters=sorters)
 
     return model.BrowseOutputBase(submissions, total_count=total_count)
+
+
+@router.get('/submission/judgment/batch')
+@enveloped
+async def batch_get_submission_judgment(request: Request, submission_ids: pydantic.Json) -> Sequence[do.Judgment]:
+    """
+    ### 權限
+    - System Normal
+
+    ### Notes
+    - `submission_ids`: list of int
+    """
+    submission_ids = pydantic.parse_obj_as(list[int], submission_ids)
+
+    if not rbac.validate(request.account.id, RoleType.normal):
+        raise exc.NoPermission
+
+    return await service.submission.browse_list(submission_ids=submission_ids)
 
 
 @router.get('/submission/{submission_id}')
