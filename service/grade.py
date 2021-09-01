@@ -7,6 +7,7 @@ import typing
 
 import persistence.database as db
 import persistence.s3 as s3
+import exceptions as exc
 
 from base import do
 
@@ -23,11 +24,14 @@ delete = db.grade.delete
 
 
 async def import_class_grade(grade_file: typing.IO, title: str, class_id: int, update_time: datetime):
-    rows = csv.DictReader(codecs.iterdecode(grade_file, 'utf_8_sig'))
-    for row in rows:
-        await db.grade.add(receiver=row['Receiver'], grader=row['Grader'], class_id=class_id,
-                           comment=row['Comment'], score=row['Score'], title=title,
-                           update_time=update_time)
+    try:
+        rows = csv.DictReader(codecs.iterdecode(grade_file, 'utf_8_sig'))
+        for row in rows:
+            await db.grade.add(receiver=row['Receiver'], grader=row['Grader'], class_id=class_id,
+                               comment=row['Comment'], score=row['Score'], title=title,
+                               update_time=update_time)
+    except:
+        raise exc.IllegalInput
 
 
 async def get_template_file() -> Tuple[do.S3File, str]:
