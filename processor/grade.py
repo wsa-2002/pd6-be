@@ -173,8 +173,8 @@ async def edit_grade(grade_id: int, data: EditGradeInput, request: Request) -> N
     if not is_class_manager:
         raise exc.NoPermission
 
-    await service.grade.edit(grade_id=grade_id, title=data.title, score=data.score, comment=data.comment,
-                             update_time=request.time)
+    await service.grade.edit(grade_id=grade_id, grader_id=request.account.id, title=data.title, score=data.score,
+                             comment=data.comment, update_time=request.time)
 
 
 @router.delete('/grade/{grade_id}')
