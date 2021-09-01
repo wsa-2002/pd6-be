@@ -23,23 +23,21 @@ async def browse(submission_id: int) -> Sequence[do.Judgment]:
 
 
 async def browse_with_submission_ids(submission_ids: list[int]) -> Sequence[do.Judgment]:
-    cond_sql = ', '.join(str(submission_id) for submission_id in submission_ids)
+    cond_sql = '), ('.join(str(submission_id) for submission_id in submission_ids)
     async with SafeExecutor(
             event='browse judgments with submission ids',
-            sql=fr'SELECT DISTINCT ON (submission_id) '
-                  '       id, submission_id, total_time, max_memory, score, judge_time,'
-                fr'       FIRST_VALUE(status)'
-                fr'                   OVER (PARTITION BY submission_id order by judge_time desc)'
-                fr'                     AS latest_status'
-                fr'  FROM judgment'
-                fr' WHERE submission_id IN ({cond_sql})'
-                fr' ORDER BY submission_id',
+            sql=fr'SELECT DISTINCT ON (from_submission.id) judgment.*'
+                fr'  FROM (VALUES ({cond_sql})) '
+                fr'    AS from_submission(id)'
+                fr' INNER JOIN judgment'
+                fr'    ON from_submission.id = judgment.submission_id'
+                fr' ORDER BY from_submission.id, judgment.judge_time DESC',
             fetch='all',
             raise_not_found=False,
     ) as records:
         return [do.Judgment(id=id_, submission_id=submission_id, status=enum.JudgmentStatusType(status),
                             total_time=total_time, max_memory=max_memory, score=score, judge_time=judge_time)
-                for (id_, submission_id, total_time, max_memory, score, judge_time, status) in records]
+                for (id_, submission_id, status, total_time, max_memory, score, judge_time) in records]
 
 
 async def read(judgment_id: int) -> do.Judgment:
