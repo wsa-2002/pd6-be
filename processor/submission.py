@@ -167,7 +167,7 @@ async def batch_get_submission_judgment(request: Request, submission_ids: pydant
     if not rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
-    return await service.submission.browse_list(submission_ids=submission_ids)
+    return await service.submission.browse_with_submission_ids(submission_ids=submission_ids)
 
 
 @router.get('/submission/{submission_id}')

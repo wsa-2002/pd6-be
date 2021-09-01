@@ -22,7 +22,7 @@ async def browse(submission_id: int) -> Sequence[do.Judgment]:
                 for id_, status, total_time, max_memory, score, judge_time in records]
 
 
-async def browse_list(submission_ids: list[int]) -> Sequence[do.Judgment]:
+async def browse_with_submission_ids(submission_ids: list[int]) -> Sequence[do.Judgment]:
     cond_sql = ', '.join(str(submission_id) for submission_id in submission_ids)
     async with SafeExecutor(
             event='browse judgments with submission ids',

@@ -23,7 +23,7 @@ async def add(file: typing.IO, filename: str, account_id: int, problem_id: int, 
 
 
 browse = db.submission.browse
-browse_list = db.judgment.browse_list
+browse_with_submission_ids = db.judgment.browse_with_submission_ids
 edit = db.submission.edit
 browse_under_class = db.submission.browse_under_class
 read = db.submission.read
