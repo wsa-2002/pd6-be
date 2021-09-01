@@ -343,5 +343,6 @@ async def browse_member_referrals(class_id: int, role: RoleType) -> Sequence[str
                 fr'   AND role = %(role)s',
             class_id=class_id, role=role,
             fetch='all',
+            raise_not_found=False,
     ) as records:
         return [referral for referral, in records]
