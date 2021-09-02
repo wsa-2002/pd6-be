@@ -21,7 +21,7 @@ router = APIRouter(
 )
 
 
-@router.post('/class/{class_id}/grade', tags=['Class'])
+@router.post('/class/{class_id}/grade-import', tags=['Class'])
 @enveloped
 async def import_class_grade(class_id: int, title: str, request: Request, grade_file: UploadFile = File(...)):
     """
@@ -33,6 +33,31 @@ async def import_class_grade(class_id: int, title: str, request: Request, grade_
 
     await service.grade.import_class_grade(grade_file=grade_file.file, class_id=class_id,
                                            title=title, update_time=request.time)
+
+
+class AddGradeInput(BaseModel):
+    receiver_referral: str
+    grader_referral: str
+    title: str
+    score: str
+    comment: str
+
+
+@router.post('/class/{class_id}/grade')
+@enveloped
+async def add_grade(class_id: int, data: AddGradeInput, request: Request) -> model.AddOutput:
+    """
+    ### 權限
+    - Class Manager
+    """
+    if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id):
+        raise exc.NoPermission
+
+    grade_id = await service.grade.add(receiver=data.receiver_referral, grader=data.grader_referral, class_id=class_id,
+                                       title=data.title, score=data.score, comment=data.comment,
+                                       update_time=request.time)
+
+    return model.AddOutput(id=grade_id)
 
 
 BROWSE_CLASS_GRADE_COLUMNS = {
@@ -51,7 +76,7 @@ BROWSE_CLASS_GRADE_COLUMNS = {
 @add_to_docstring({k: v.__name__ for k, v in BROWSE_CLASS_GRADE_COLUMNS.items()})
 async def browse_class_grade(class_id: int, request: Request,
                              limit: int = 50, offset: int = 0,
-                             filter: model.FilterStr = None, sort: model.SorterStr = None)\
+                             filter: model.FilterStr = None, sort: model.SorterStr = None) \
         -> model.BrowseOutputBase:
     """
     ### 權限
