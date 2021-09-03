@@ -6,7 +6,8 @@ from base.popo import Filter, Sorter
 
 
 from .base import SafeExecutor, SafeConnection
-from .util import execute_count, compile_filters
+from .util import execute_count, compile_filters, compile_values
+from .account import account_referral_to_id
 
 
 async def add(name: str, class_id: int, label: str) -> int:
@@ -242,12 +243,17 @@ async def replace_members(team_id: int, member_roles: Sequence[Tuple[str, RoleTy
                                fr'      WHERE team_id = $1',
                                team_id)
 
-            values_sql = ', '.join(fr"({team_id}, account_referral_to_id('{account_referral}'), '{role}')"
-                                   for account_referral, role in member_roles)
+            values = []
+            for account_referral, role in member_roles:
+                member_id = await account_referral_to_id(account_referral)
+                values.append((team_id, member_id, role))
+
+            value_sql, value_params = compile_values(values=values)
 
             await conn.execute(fr'INSERT INTO team_member'
                                fr'            (team_id, member_id, role)'
-                               fr'     VALUES {values_sql}')
+                               fr'     VALUES {value_sql}',
+                               *value_params)
 
 
 async def delete_member(team_id: int, member_id: int):
