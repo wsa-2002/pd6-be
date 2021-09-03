@@ -93,7 +93,7 @@ async def browse_class_member_with_account_id(class_id: int, include_deleted: bo
                 fr'  FROM class_member'
                 fr' INNER JOIN account'
                 fr'         ON class_member.member_id = account.id'
-                fr'{f"     AND NOT account.is_deleted" if include_deleted else ""}'
+                fr'{f"     AND NOT account.is_deleted" if not include_deleted else ""}'
                 fr' WHERE class_member.class_id = %(class_id)s',
             class_id=class_id,
             fetch='all',
@@ -122,7 +122,7 @@ async def browse_class_member_with_account_referral(limit: int, offset: int, fil
                 fr' INNER JOIN account'
                 fr'         ON class_member.member_id = account.id'
                 fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
-                fr'{f"   AND NOT account.is_deleted" if include_deleted else ""}'
+                fr'{f"   AND NOT account.is_deleted" if not include_deleted else ""}'
                 fr'{f" ORDER BY {sort_sql}" if sort_sql else ""}'
                 fr' LIMIT %(limit)s OFFSET %(offset)s',
             **cond_params,
@@ -140,7 +140,7 @@ async def browse_class_member_with_account_referral(limit: int, offset: int, fil
             fr' INNER JOIN account'
             fr'         ON class_member.member_id = account.id'
             fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
-            fr'{f"   AND NOT account.is_deleted" if include_deleted else ""}',
+            fr'{f"   AND NOT account.is_deleted" if not include_deleted else ""}',
         **cond_params,
     )
     return data, total_count

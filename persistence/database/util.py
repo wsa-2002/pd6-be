@@ -100,13 +100,13 @@ def compile_values(values: list) -> tuple[str, list]:  # sql, param_list
         return sql, params
 
     value_count = 1
-
     value_sql = []
     for items in values:
         value_list = []
         for i in range(len(items)):
             value_list.append(f'${value_count + i}')
             params.append(items[i])
+
         value_str = ', '.join(value_list)
         value_sql.append(f'({value_str})')
         value_count += len(items)
