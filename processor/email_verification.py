@@ -15,7 +15,7 @@ router = APIRouter(
 
 @router.post('/email-verification/{email_verification_id}/resend')
 @enveloped
-async def resend_verification_email(email_verification_id: int, request: Request) -> None:
+async def resend_email_verification(email_verification_id: int, request: Request) -> None:
     """
     ### 權限
     - System manager
