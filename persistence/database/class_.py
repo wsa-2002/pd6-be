@@ -325,13 +325,12 @@ async def replace_members(class_id: int, member_roles: Sequence[Tuple[str, RoleT
                                fr'      WHERE class_id = $1',
                                class_id)
 
-            await conn.executemany(
-                command=r'INSERT INTO class_member'
-                        r'            (class_id, member_id, role)'
-                        r'     VALUES ($1, account_referral_to_id($2), $3)',
-                args=[(class_id, account_referral, role)
-                      for account_referral, role in member_roles],
-            )
+            values_sql = ', '.join(fr"({class_id}, account_referral_to_id('{account_referral}'), '{role}')"
+                                   for account_referral, role in member_roles)
+
+            await conn.execute(fr'INSERT INTO class_member'
+                               fr'            (class_id, member_id, role)'
+                               fr'     VALUES {values_sql}')
 
 
 async def browse_member_referrals(class_id: int, role: RoleType) -> Sequence[str]:
