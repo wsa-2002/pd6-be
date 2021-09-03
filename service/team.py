@@ -47,7 +47,10 @@ async def replace_members(team_id: int, member_roles: Sequence[Tuple[str, enum.R
 
 
 async def import_team(team_file: typing.IO, class_id: int):
-    rows = csv.DictReader(codecs.iterdecode(team_file, 'utf_8_sig'))
-    for row in rows:
-        await db.team.add_team_and_add_member(team_name=row['TeamName'], class_id=class_id, team_label=row['Label'],
-                                              account_referral=row['TeamMember'], role=enum.RoleType(row['Role']))
+    try:
+        rows = csv.DictReader(codecs.iterdecode(team_file, 'utf_8_sig'))
+        for row in rows:
+            await db.team.add_team_and_add_member(team_name=row['TeamName'], class_id=class_id, team_label=row['Label'],
+                                                  account_referral=row['TeamMember'], role=enum.RoleType(row['Role']))
+    except:
+        raise exc.IllegalInput

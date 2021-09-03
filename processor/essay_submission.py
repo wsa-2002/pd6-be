@@ -1,15 +1,16 @@
 from uuid import UUID
 
-from fastapi import File, UploadFile
+from fastapi import File, UploadFile, Depends
 
-from base.enum import RoleType, ChallengePublicizeType, FilterOperator
+from base.enum import RoleType, FilterOperator
 from base import do, popo
+import const
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
 import service
 from util.api_doc import add_to_docstring
 
-from .util import rbac, model
+from .util import rbac, model, file_upload_limit
 
 
 router = APIRouter(
@@ -19,24 +20,23 @@ router = APIRouter(
 )
 
 
-@router.post('/essay/{essay_id}/essay-submission')
+@router.post('/essay/{essay_id}/essay-submission',
+             dependencies=[Depends(file_upload_limit.valid_file_length(file_length=const.ESSAY_UPLOAD_LIMIT))])
 @enveloped
 async def upload_essay(essay_id: int, request: Request, essay_file: UploadFile = File(...)) -> int:
     """
     ### 權限
     - class normal
+
+    ### 限制
+    - 上傳檔案 < 10mb
     """
-    # TODO: limit file size
 
     essay = await service.essay.read(essay_id=essay_id)
     challenge = await service.challenge.read(essay.challenge_id, include_scheduled=True, ref_time=request.time)
 
-    publicize_time = (challenge.start_time if challenge.publicize_type == ChallengePublicizeType.start_time
-                      else challenge.end_time)
-    is_challenge_publicized = request.time >= publicize_time
-
-    if not (is_challenge_publicized
-            and await rbac.validate(request.account.id, RoleType.normal, class_id=challenge.class_id)):
+    if not (await rbac.validate(request.account.id, RoleType.normal, class_id=challenge.class_id)
+            and request.time <= challenge.end_time):
         raise exc.NoPermission
 
     return await service.essay_submission.add(file=essay_file.file, filename=essay_file.filename,
@@ -76,7 +76,7 @@ async def browse_essay_submission_by_essay_id(
 
     class_role = await rbac.get_role(request.account.id, class_id=challenge.class_id)
 
-    if (not class_role is RoleType.manager and not class_role is RoleType.normal):
+    if not (class_role is RoleType.manager or class_role is RoleType.normal):
         raise exc.NoPermission
 
     filters = model.parse_filter(filter, BROWSE_ESSAY_SUBMISSION_COLUMNS)
@@ -118,16 +118,22 @@ async def read_essay_submission(essay_submission_id: int, request: Request) -> d
     raise exc.NoPermission
 
 
-@router.put('/essay-submission/{essay_submission_id}')
+@router.put('/essay-submission/{essay_submission_id}',
+            dependencies=[Depends(file_upload_limit.valid_file_length(file_length=const.ESSAY_UPLOAD_LIMIT))])
 @enveloped
 async def reupload_essay(essay_submission_id: int, request: Request, essay_file: UploadFile = File(...)):
     """
     ### 權限
     - self
+
+    ### 限制
+    - 上傳檔案 < 10mb
     """
     essay_submission = await service.essay_submission.read(essay_submission_id=essay_submission_id)
+    essay = await service.essay.read(essay_id=essay_submission.essay_id)
+    challenge = await service.challenge.read(challenge_id=essay.challenge_id, include_scheduled=True)
 
-    if request.account.id is not essay_submission.account_id:
+    if not (request.account.id is essay_submission.account_id and request.time <= challenge.end_time):
         raise exc.NoPermission
 
     return await service.essay_submission.edit(file=essay_file.file, filename=essay_file.filename,

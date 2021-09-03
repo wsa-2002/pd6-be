@@ -1,17 +1,17 @@
 from typing import Sequence
 
-from fastapi import File, UploadFile
+from fastapi import File, UploadFile, Depends
 from pydantic import BaseModel
 
 from base import do, popo
 from base.enum import RoleType, ChallengePublicizeType, FilterOperator
+import const
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
 import service
 from util.api_doc import add_to_docstring
 
-from .util import rbac, model
-
+from .util import rbac, model, file_upload_limit
 
 router = APIRouter(
     tags=['Submission'],
@@ -74,7 +74,8 @@ async def edit_submission_language(language_id: int, data: EditSubmissionLanguag
                                                   name=data.name, version=data.version, is_disabled=data.is_disabled)
 
 
-@router.post('/problem/{problem_id}/submission', tags=['Problem'])
+@router.post('/problem/{problem_id}/submission', tags=['Problem'],
+             dependencies=[Depends(file_upload_limit.valid_file_length(file_length=const.CODE_UPLOAD_LIMIT))])
 @enveloped
 async def submit(problem_id: int, language_id: int, request: Request, content_file: UploadFile = File(...)) \
         -> model.AddOutput:
@@ -82,6 +83,9 @@ async def submit(problem_id: int, language_id: int, request: Request, content_fi
     ### 權限
     - System Manager (all)
     - System normal (non scheduled)
+
+    ### 限制
+    - 上傳檔案 < 1mb
     """
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
@@ -105,6 +109,7 @@ async def submit(problem_id: int, language_id: int, request: Request, content_fi
 
     submission_id = await service.submission.add(file=content_file.file, filename=content_file.filename,
                                                  account_id=request.account.id, problem_id=problem.id,
+                                                 file_length=len(content_file.file.read()),
                                                  language_id=language.id, submit_time=request.time)
 
     return model.AddOutput(id=submission_id)
@@ -209,5 +214,3 @@ async def read_submission_latest_judgment(submission_id: int, request: Request) 
         return await service.submission.read_latest_judgment(submission_id=submission_id)
 
     raise exc.NoPermission
-
-

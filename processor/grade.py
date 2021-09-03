@@ -23,7 +23,7 @@ router = APIRouter(
 
 @router.post('/class/{class_id}/grade', tags=['Class'])
 @enveloped
-async def import_class_grade(class_id: int, request: Request, grade_file: UploadFile = File(...)):
+async def import_class_grade(class_id: int, title: str, request: Request, grade_file: UploadFile = File(...)):
     """
     ### 權限
     - Class manager
@@ -31,7 +31,8 @@ async def import_class_grade(class_id: int, request: Request, grade_file: Upload
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
 
-    await service.grade.import_class_grade(grade_file=grade_file.file, class_id=class_id, update_time=request.time)
+    await service.grade.import_class_grade(grade_file=grade_file.file, class_id=class_id,
+                                           title=title, update_time=request.time)
 
 
 BROWSE_CLASS_GRADE_COLUMNS = {
@@ -172,8 +173,8 @@ async def edit_grade(grade_id: int, data: EditGradeInput, request: Request) -> N
     if not is_class_manager:
         raise exc.NoPermission
 
-    await service.grade.edit(grade_id=grade_id, title=data.title, score=data.score, comment=data.comment,
-                             update_time=request.time)
+    await service.grade.edit(grade_id=grade_id, grader_id=request.account.id, title=data.title, score=data.score,
+                             comment=data.comment, update_time=request.time)
 
 
 @router.delete('/grade/{grade_id}')
