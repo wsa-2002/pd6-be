@@ -6,7 +6,8 @@ from base.popo import Filter, Sorter
 
 from . import team, challenge
 from .base import SafeExecutor, SafeConnection
-from .util import execute_count, compile_filters
+from .util import execute_count, compile_filters, compile_values
+from .account import account_referral_to_id
 
 
 async def add(name: str, course_id: int) -> int:
@@ -325,13 +326,16 @@ async def replace_members(class_id: int, member_roles: Sequence[Tuple[str, RoleT
                                fr'      WHERE class_id = $1',
                                class_id)
 
-            await conn.executemany(
-                command=r'INSERT INTO class_member'
-                        r'            (class_id, member_id, role)'
-                        r'     VALUES ($1, account_referral_to_id($2), $3)',
-                args=[(class_id, account_referral, role)
-                      for account_referral, role in member_roles],
-            )
+            values = [(class_id,
+                       await account_referral_to_id(account_referral),
+                       role) for account_referral, role in member_roles]
+
+            value_sql, value_params = compile_values(values=values)
+
+            await conn.execute(fr'INSERT INTO class_member'
+                               fr'            (class_id, member_id, role)'
+                               fr'     VALUES {value_sql}',
+                               *value_params)
 
 
 async def browse_member_referrals(class_id: int, role: RoleType) -> Sequence[str]:

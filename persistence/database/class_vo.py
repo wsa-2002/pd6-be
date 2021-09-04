@@ -1,7 +1,7 @@
 from typing import Sequence, Tuple
 
 from base import do
-from base.enum import RoleType, SortOrder
+from base.enum import RoleType, SortOrder, FilterOperator
 from base.popo import Filter, Sorter
 
 from .base import SafeExecutor
@@ -34,7 +34,7 @@ async def browse_member_account_with_student_card_and_institute(
                 fr'  FROM class_member'
                 fr' INNER JOIN account'
                 fr'         ON class_member.member_id = account.id'
-                fr'{f"     AND NOT account.is_deleted" if include_deleted else ""}'
+                fr'{"      AND NOT account.is_deleted" if not include_deleted else ""}'
                 fr'  LEFT JOIN student_card'  # some account might not have student card, so left join
                 fr'         ON account.id = student_card.account_id'
                 fr'        AND student_card.is_default'
@@ -60,24 +60,25 @@ async def browse_member_account_with_student_card_and_institute(
                      student_card_id, institute_id, student_id, email, is_default,
                      institute_id, abbreviated_name, full_name, email_domain, is_disabled)
                 in records]
+
     total_count = await execute_count(
         sql=fr'SELECT class_member.member_id, class_member.class_id, class_member.role,'
-                fr'       account.id, account.username, account.nickname, account.real_name, account.role,'
-                fr'       account.is_deleted, account.alternative_email,'
-                fr'       student_card.id, student_card.institute_id, student_card.student_id,'
-                fr'       student_card.email, student_card.is_default,'
-                fr'       institute.id, institute.abbreviated_name, institute.full_name,'
-                fr'       institute.email_domain, institute.is_disabled'
-                fr'  FROM class_member'
-                fr' INNER JOIN account'
-                fr'         ON class_member.member_id = account.id'
-                fr'{f"     AND NOT account.is_deleted" if include_deleted else ""}'
-                fr'  LEFT JOIN student_card'  # some account might not have student card, so left join
-                fr'         ON account.id = student_card.account_id'
-                fr'        AND student_card.is_default'
-                fr' INNER JOIN institute'
-                fr'         ON student_card.institute_id = institute.id'
-                fr'{f" WHERE {cond_sql}" if cond_sql else ""}',
+            fr'       account.id, account.username, account.nickname, account.real_name, account.role,'
+            fr'       account.is_deleted, account.alternative_email,'
+            fr'       student_card.id, student_card.institute_id, student_card.student_id,'
+            fr'       student_card.email, student_card.is_default,'
+            fr'       institute.id, institute.abbreviated_name, institute.full_name,'
+            fr'       institute.email_domain, institute.is_disabled'
+            fr'  FROM class_member'
+            fr' INNER JOIN account'
+            fr'         ON class_member.member_id = account.id'
+            fr'{"      AND NOT account.is_deleted" if not include_deleted else ""}'
+            fr'  LEFT JOIN student_card'  # some account might not have student card, so left join
+            fr'         ON account.id = student_card.account_id'
+            fr'        AND student_card.is_default'
+            fr'  LEFT JOIN institute'
+            fr'         ON student_card.institute_id = institute.id'
+            fr'{f" WHERE {cond_sql}" if cond_sql else ""}',
         **cond_params,
     )
     return data, total_count
@@ -92,7 +93,7 @@ async def browse_class_member_with_account_id(class_id: int, include_deleted: bo
                 fr'  FROM class_member'
                 fr' INNER JOIN account'
                 fr'         ON class_member.member_id = account.id'
-                fr'{f"     AND NOT account.is_deleted" if include_deleted else ""}'
+                fr'{f"     AND NOT account.is_deleted" if not include_deleted else ""}'
                 fr' WHERE class_member.class_id = %(class_id)s',
             class_id=class_id,
             fetch='all',
@@ -121,7 +122,7 @@ async def browse_class_member_with_account_referral(limit: int, offset: int, fil
                 fr' INNER JOIN account'
                 fr'         ON class_member.member_id = account.id'
                 fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
-                fr'{f"   AND NOT account.is_deleted" if include_deleted else ""}'
+                fr'{f"   AND NOT account.is_deleted" if not include_deleted else ""}'
                 fr'{f" ORDER BY {sort_sql}" if sort_sql else ""}'
                 fr' LIMIT %(limit)s OFFSET %(offset)s',
             **cond_params,
@@ -139,7 +140,7 @@ async def browse_class_member_with_account_referral(limit: int, offset: int, fil
             fr' INNER JOIN account'
             fr'         ON class_member.member_id = account.id'
             fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
-            fr'{f"   AND NOT account.is_deleted" if include_deleted else ""}',
+            fr'{f"   AND NOT account.is_deleted" if not include_deleted else ""}',
         **cond_params,
     )
     return data, total_count

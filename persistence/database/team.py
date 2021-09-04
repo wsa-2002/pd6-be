@@ -6,7 +6,8 @@ from base.popo import Filter, Sorter
 
 
 from .base import SafeExecutor, SafeConnection
-from .util import execute_count, compile_filters
+from .util import execute_count, compile_filters, compile_values
+from .account import account_referral_to_id
 
 
 async def add(name: str, class_id: int, label: str) -> int:
@@ -222,17 +223,6 @@ async def add_team_and_add_member(team_name: str, class_id: int, team_label: str
             )
 
 
-async def add_members_by_account_referral(team_id: int, member_roles: Sequence[Tuple[str, RoleType]]):
-    async with SafeConnection(event='add members to team') as conn:
-        await conn.executemany(
-            command=r'INSERT INTO team_member'
-                    r'            (team_id, member_id, role)'
-                    r'     VALUES ($1, account_referral_to_id($2), $3)',
-            args=[(team_id, account_referral, role)
-                  for account_referral, role in member_roles],
-        )
-
-
 async def edit_member(team_id: int, member_id: int, role: RoleType):
     async with SafeExecutor(
             event='set team member',
@@ -253,15 +243,5 @@ async def delete_member(team_id: int, member_id: int):
                 r'      WHERE team_id = %(team_id)s AND member_id = %(member_id)s',
             team_id=team_id,
             member_id=member_id,
-    ):
-        pass
-
-
-async def delete_all_members_in_team(team_id: int):
-    async with SafeExecutor(
-            event='HARD DELETE team member',
-            sql=r'DELETE FROM team_member'
-                r'      WHERE team_id = %(team_id)s',
-            team_id=team_id,
     ):
         pass
