@@ -15,14 +15,14 @@ router = APIRouter(
 )
 
 
-@router.get('/judgment/status', tags=['Administrative', 'Public'])
+@router.get('/judgment/verdict', tags=['Administrative', 'Public'])
 @enveloped
-async def browse_all_judgment_status() -> Sequence[enum.JudgmentStatusType]:
+async def browse_all_judgment_verdict() -> Sequence[enum.JudgmentVerdictType]:
     """
     ### 權限
     - Public
     """
-    return list(enum.JudgmentStatusType)
+    return list(enum.JudgmentVerdictType)
 
 
 @router.get('/judgment/{judgment_id}')

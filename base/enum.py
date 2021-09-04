@@ -37,7 +37,7 @@ class TaskSelectionType(StrEnum):
     best = 'BEST'
 
 
-class JudgmentStatusType(StrEnum):
+class JudgmentVerdictType(StrEnum):
     wfj = 'WAITING FOR JUDGE'
     judging = 'JUDGING'
     ac = 'ACCEPTED'
