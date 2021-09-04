@@ -326,11 +326,9 @@ async def replace_members(class_id: int, member_roles: Sequence[Tuple[str, RoleT
                                fr'      WHERE class_id = $1',
                                class_id)
 
-            values = [(
-                class_id,
-                await account_referral_to_id(account_referral),
-                role,
-            ) for account_referral, role in member_roles]
+            values = [(class_id,
+                       await account_referral_to_id(account_referral),
+                       role) for account_referral, role in member_roles]
 
             value_sql, value_params = compile_values(values=values)
 

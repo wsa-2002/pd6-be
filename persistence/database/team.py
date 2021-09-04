@@ -236,26 +236,6 @@ async def edit_member(team_id: int, member_id: int, role: RoleType):
         pass
 
 
-async def replace_members(team_id: int, member_roles: Sequence[Tuple[str, RoleType]]) -> None:
-    async with SafeConnection(event=f'replace members from team {team_id=}') as conn:
-        async with conn.transaction():
-            await conn.execute(fr'DELETE FROM team_member'
-                               fr'      WHERE team_id = $1',
-                               team_id)
-
-            values = []
-            for account_referral, role in member_roles:
-                member_id = await account_referral_to_id(account_referral)
-                values.append((team_id, member_id, role))
-
-            value_sql, value_params = compile_values(values=values)
-
-            await conn.execute(fr'INSERT INTO team_member'
-                               fr'            (team_id, member_id, role)'
-                               fr'     VALUES {value_sql}',
-                               *value_params)
-
-
 async def delete_member(team_id: int, member_id: int):
     async with SafeExecutor(
             event='HARD DELETE team member',
