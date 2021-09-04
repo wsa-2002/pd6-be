@@ -4,6 +4,7 @@ from . import (
     institute,
     account,
     student_card,
+    email_verification,
 
     course,
     class_,

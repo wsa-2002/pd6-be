@@ -1,7 +1,6 @@
 import pydantic
-from fastapi import Query
 from dataclasses import dataclass
-from typing import Sequence, Optional, List
+from typing import Sequence, Optional
 
 from pydantic import BaseModel
 
@@ -103,6 +102,7 @@ async def batch_get_account_with_default_student_id(request: Request, account_id
     return [BatchGetAccountOutput(id=account.id, username=account.username, real_name=account.real_name,
                                   student_id=student_card.student_id)
             for account, student_card in result]
+
 
 @dataclass
 class BrowseAccountWithRoleOutput:
@@ -206,7 +206,6 @@ async def edit_account(account_id: int, data: EditAccountInput, request: Request
     await service.account.edit_general(account_id=account_id, nickname=data.nickname, real_name=data.real_name)
 
 
-
 @router.delete('/account/{account_id}')
 @enveloped
 async def delete_account(account_id: int, request: Request) -> None:
@@ -247,3 +246,18 @@ async def make_student_card_default(account_id: int, data: DefaultStudentCardInp
         raise exc.NoPermission
 
     await service.account.edit_default_student_card(account_id=account_id, student_card_id=data.student_card_id)
+
+
+@router.get('/account/{account_id}/email-verification')
+@enveloped
+async def browse_all_account_pending_email_verification(account_id: int, request: Request) \
+        -> Sequence[do.EmailVerification]:
+    """
+    ### 權限
+    - System manager
+    - Self
+    """
+    if not (await rbac.validate(request.account.id, RoleType.manager) or request.account.id is account_id):
+        raise exc.NoPermission
+
+    return await service.email_verification.browse(account_id=account_id)

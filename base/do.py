@@ -39,6 +39,16 @@ class StudentCard:
 
 
 @dataclass
+class EmailVerification:
+    id: int
+    email: str
+    account_id: int
+    institute_id: int
+    student_id: int
+    is_consumed: bool
+
+
+@dataclass
 class Course:
     id: int
     name: str
