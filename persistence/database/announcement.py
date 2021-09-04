@@ -84,7 +84,7 @@ async def read(announcement_id: int, include_scheduled: bool, ref_time: datetime
             sql=fr'SELECT id, title, content, author_id, post_time, expire_time, is_deleted'
                 fr'  FROM announcement'
                 fr' WHERE id = %(announcement_id)s'
-                fr'{" AND post_time <= %(ref_time)s AND expire_time > %(ref_time)s" if not include_scheduled else ""}'
+                fr'{" AND post_time <= %(ref_time)s" if not include_scheduled else ""}'
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}',
             announcement_id=announcement_id,
             ref_time=ref_time,
