@@ -30,7 +30,7 @@ class GetTeamTemplateOutput:
 
 @router.post('/class/{class_id}/team-import', tags=['Class'])
 @enveloped
-async def import_team(class_id: int, request: Request, team_file: UploadFile = File(...)):
+async def import_team(class_id: int, label: str, request: Request, team_file: UploadFile = File(...)):
     """
     ### 權限
     - Class manager
@@ -38,7 +38,7 @@ async def import_team(class_id: int, request: Request, team_file: UploadFile = F
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
 
-    await service.team.import_team(team_file.file, class_id=class_id)
+    await service.team.import_team(team_file.file, class_id=class_id, label=label)
 
 
 @router.get('/team/template')
