@@ -176,7 +176,7 @@ class Submission:
 class Judgment:
     id: int
     submission_id: int
-    verdict: enum.JudgmentVerdictType
+    verdict: enum.VerdictType
     total_time: int
     max_memory: int
     score: int
@@ -187,7 +187,7 @@ class Judgment:
 class JudgeCase:
     judgment_id: int
     testcase_id: int
-    verdict: enum.JudgmentVerdictType
+    verdict: enum.VerdictType
     time_lapse: int
     peak_memory: int
     score: int
