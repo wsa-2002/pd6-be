@@ -43,14 +43,29 @@ async def browse_with_submission_ids(submission_ids: list[int]) -> Sequence[do.J
 async def read(judgment_id: int) -> do.Judgment:
     async with SafeExecutor(
             event='read judgment',
-            sql=fr'SELECT submission_id, status, total_time, max_memory, score, judge_time'
+            sql=fr'SELECT id, submission_id, status, total_time, max_memory, score, judge_time'
                 fr'  FROM judgment'
                 fr' WHERE id = %(judgment_id)s',
             judgment_id=judgment_id,
             fetch=1,
-    ) as (submission_id, status, total_time, max_memory, score, judge_time):
-        return do.Judgment(id=judgment_id, submission_id=submission_id, status=enum.JudgmentStatusType(status),
+    ) as (id_, submission_id, status, total_time, max_memory, score, judge_time):
+        return do.Judgment(id=id_, submission_id=submission_id, status=enum.JudgmentStatusType(status),
                            total_time=total_time, max_memory=max_memory, score=score, judge_time=judge_time)
+
+
+async def add(submission_id: int, verdict: enum.Verdict, total_time: int, max_memory: int,
+              score: int, judge_time: datetime) -> int:
+    async with SafeExecutor(
+            event='add judgment',
+            sql=fr'INSERT INTO judgment (submission_id, status, total_time, max_memory, score, judge_time)'
+                fr'     VALUES (%(submission_id)s, %(status)s, %(total_time)s,'
+                fr'             %(max_memory)s, %(score)s, %(judge_time)s)'
+                fr'  RETURNING id',
+            submission_id=submission_id, status=verdict, total_time=total_time, max_memory=max_memory,
+            score=score, judge_time=judge_time,
+            fetch=1,
+    ) as (judgment_id,):
+        return judgment_id
 
 
 async def browse_cases(judgment_id: int) -> Sequence[do.JudgeCase]:
@@ -84,6 +99,19 @@ async def read_case(judgment_id: int, testcase_id: int) -> do.JudgeCase:
     ) as (judgment_id, testcase_id, status, time_lapse, peak_memory, score):
         return do.JudgeCase(judgment_id=judgment_id, testcase_id=testcase_id, status=enum.JudgmentStatusType(status),
                             time_lapse=time_lapse, peak_memory=peak_memory, score=score)
+
+
+async def add_case(judgment_id: int, testcase_id: int, verdict: enum.Verdict,
+                   time_lapse: int, peak_memory: int, score: int) -> None:
+    async with SafeExecutor(
+            event='add judgment',
+            sql=fr'INSERT INTO judge_case (judgment_id, testcase_id, status, time_lapse, peak_memory, score)'
+                fr'     VALUES (%(judgment_id)s, %(testcase_id)s, %(status)s,'
+                fr'             %(time_lapse)s, %(peak_memory)s, %(score)s)',
+            judgment_id=judgment_id, testcase_id=testcase_id, status=verdict,
+            time_lapse=time_lapse, peak_memory=peak_memory, score=score,
+    ):
+        pass
 
 
 async def get_submission_judgment_by_challenge_type(problem_id: int, account_id: int,

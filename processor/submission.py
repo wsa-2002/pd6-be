@@ -112,6 +112,7 @@ async def submit(problem_id: int, language_id: int, request: Request, content_fi
                                                  account_id=request.account.id, problem_id=problem.id,
                                                  file_length=len(content_file.file.read()),
                                                  language_id=language.id, submit_time=request.time)
+    await service.judgment.judge_submission(submission_id)
 
     return model.AddOutput(id=submission_id)
 
