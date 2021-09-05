@@ -112,6 +112,7 @@ async def submit(problem_id: int, language_id: int, request: Request, content_fi
                                                  account_id=request.account.id, problem_id=problem.id,
                                                  file_length=len(content_file.file.read()),
                                                  language_id=language.id, submit_time=request.time)
+    await service.judgment.judge_submission(submission_id)
 
     return model.AddOutput(id=submission_id)
 
@@ -233,3 +234,22 @@ async def read_submission_latest_judgment(submission_id: int, request: Request) 
         return await service.submission.read_latest_judgment(submission_id=submission_id)
 
     raise exc.NoPermission
+
+
+@router.post('/submission/{submission_id}/rejudge')
+@enveloped
+async def rejudge_submission(submission_id: int, request: Request) -> None:
+    """
+    ### 權限
+    - Class manager
+    """
+    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
+    submission = await service.submission.read(submission_id=submission_id)
+    problem = await service.problem.read(problem_id=submission.problem_id)
+    challenge = await service.challenge.read(challenge_id=problem.challenge_id, include_scheduled=True)
+
+    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+        raise exc.NoPermission
+
+    await service.judgment.judge_submission(submission.id)
+

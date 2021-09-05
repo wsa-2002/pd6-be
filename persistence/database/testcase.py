@@ -46,13 +46,16 @@ async def read(testcase_id: int, include_disabled=True, include_deleted=False) -
                            is_disabled=is_disabled, is_deleted=is_deleted)
 
 
-async def browse(problem_id: int, include_disabled=True, include_deleted=False) -> Sequence[do.Testcase]:
+async def browse(problem_id: int, is_sample=None, include_disabled=False, include_deleted=False) \
+        -> Sequence[do.Testcase]:
     async with SafeExecutor(
             event='browse testcases with problem id',
             sql=fr'SELECT id, problem_id, is_sample, score, input_file_uuid, output_file_uuid, input_filename,'
                 fr'       output_filename, time_limit, memory_limit, is_disabled, is_deleted'
                 fr'  FROM testcase'
                 fr' WHERE problem_id = %(problem_id)s'
+                fr'{" AND is_sample" if is_sample is True else ""}'
+                fr'{" AND NOT is_sample" if is_sample is False else ""}'
                 fr'{" AND NOT is_disabled" if not include_disabled else ""}'
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}'
                 fr' ORDER BY is_sample DESC, id ASC',
