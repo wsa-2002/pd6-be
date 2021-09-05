@@ -6,22 +6,7 @@ from base import do
 from .base import SafeExecutor
 
 
-async def browse(include_deleted=False) -> Sequence[do.AssistingData]:
-    async with SafeExecutor(
-            event='browse assisting data',
-            sql=fr'SELECT id, problem_id, s3_file_uuid, filename, is_deleted'
-                fr'  FROM assisting_data'
-                fr'{" WHERE NOT is_deleted" if not include_deleted else ""}'
-                fr' ORDER by id ASC',
-            fetch='all',
-            raise_not_found=False,  # Issue #134: return [] for browse
-    ) as records:
-        return [do.AssistingData(id=id_, problem_id=problem_id, s3_file_uuid=s3_file_uuid,
-                                 filename=filename, is_deleted=is_deleted)
-                for (id_, problem_id, s3_file_uuid, filename, is_deleted) in records]
-
-
-async def browse_with_problem_id(problem_id: int, include_deleted=False) -> Sequence[do.AssistingData]:
+async def browse(problem_id: int, include_deleted=False) -> Sequence[do.AssistingData]:
     async with SafeExecutor(
             event='browse assisting data',
             sql=fr'SELECT id, problem_id, s3_file_uuid, filename, is_deleted'
