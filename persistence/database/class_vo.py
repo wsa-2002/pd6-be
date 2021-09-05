@@ -103,17 +103,8 @@ async def browse_class_member_with_account_id(class_id: int, include_deleted: bo
                 for (member_id, class_id, role_str, account_id) in records]
 
 
-async def browse_class_member_with_account_referral(limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter],
-                                                    include_deleted: bool = False) \
-        -> tuple[Sequence[Tuple[do.ClassMember, str]], int]:
-
-    filters = [Filter(col_name=f'class_member.{filter_.col_name}',
-                      op=filter_.op,
-                      value=filter_.value) for filter_ in filters]
-
-    cond_sql, cond_params = compile_filters(filters)
-    sort_sql = ' ,'.join(f"class_member.{sorter.col_name} {sorter.order}" for sorter in sorters)
-
+async def browse_class_member_with_account_referral(include_deleted: bool = False) \
+        -> Sequence[Tuple[do.ClassMember, str]]:
     async with SafeExecutor(
             event='browse class members with account referral',
             sql=fr'SELECT class_member.member_id, class_member.class_id, class_member.role, '
@@ -121,26 +112,9 @@ async def browse_class_member_with_account_referral(limit: int, offset: int, fil
                 fr'  FROM class_member'
                 fr' INNER JOIN account'
                 fr'         ON class_member.member_id = account.id'
-                fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
-                fr'{f"   AND NOT account.is_deleted" if not include_deleted else ""}'
-                fr'{f" ORDER BY {sort_sql}" if sort_sql else ""}'
-                fr' LIMIT %(limit)s OFFSET %(offset)s',
-            **cond_params,
-            limit=limit, offset=offset,
+                fr'{f" WHERE NOT account.is_deleted" if not include_deleted else ""}',
             fetch='all',
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
-        data = [(do.ClassMember(member_id=member_id, class_id=class_id, role=RoleType(role_str)), account_referral)
+        return [(do.ClassMember(member_id=member_id, class_id=class_id, role=RoleType(role_str)), account_referral)
                 for (member_id, class_id, role_str, account_referral) in records]
-
-    total_count = await execute_count(
-        sql=fr'SELECT class_member.member_id, class_member.class_id, class_member.role, '
-            fr'       account_id_to_referral(class_member.member_id)'
-            fr'  FROM class_member'
-            fr' INNER JOIN account'
-            fr'         ON class_member.member_id = account.id'
-            fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
-            fr'{f"   AND NOT account.is_deleted" if not include_deleted else ""}',
-        **cond_params,
-    )
-    return data, total_count
