@@ -40,11 +40,12 @@ def _gen_enum_doc():
         - enum val1
         - enum val2
     """
-    from base import enum
+    from base import cls, enum
     return '\n'.join('- ' + to_collapsible(title=f"`{name}`",
                                            content="\n".join(indent(f"- `{enum_obj._value_}`: {enum_obj._name_}", '  ')
                                                              for enum_obj in enum_cls))
-                     for name, enum_cls in _get_members(enum, enum.StrEnum))
+                     for name, enum_cls in _get_members(enum, cls.enum.Enum)
+                     if len(enum_cls) > 0)
 
 
 def gen_err_doc():
