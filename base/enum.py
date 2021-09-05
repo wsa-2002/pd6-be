@@ -1,5 +1,7 @@
 from typing import TypeVar, Optional
 
+import judge_core_common.enum
+
 from .cls import OrderedMixin, StrEnum
 
 
@@ -35,6 +37,9 @@ class ChallengePublicizeType(StrEnum):
 class TaskSelectionType(StrEnum):
     last = 'LAST'
     best = 'BEST'
+
+
+Verdict = judge_core_common.enum.Verdict
 
 
 class JudgmentStatusType(StrEnum):

@@ -66,6 +66,13 @@ class S3Config:
     secret_key = env_values.get('S3_SECRET_KEY')
 
 
+class AmqpConfig:
+    host = env_values.get('AMQP_HOST')
+    port = int(env_values.get('AMQP_PORT'))
+    report_queue_name = env_values.get('REPORT_QUEUE_NAME', 'report')
+    prefetch_count = int(env_values.get('AMQP_PREFETCH_COUNT', '1'))
+
+
 # default config objects
 config = Config()
 service_config = ServiceConfig()
@@ -75,3 +82,4 @@ smtp_config = SMTPConfig()
 logger_config = LoggerConfig()
 pd4s_config = PD4SConfig()
 s3_config = S3Config()
+amqp_config = AmqpConfig()
