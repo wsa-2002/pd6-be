@@ -39,7 +39,7 @@ class TaskSelectionType(StrEnum):
     best = 'BEST'
 
 
-VerdictType = judge_core_common.enum.Verdict
+VerdictType = judge_core_common.enum.VerdictType
 
 
 class FilterOperator(StrEnum):
