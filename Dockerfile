@@ -14,10 +14,12 @@ COPY ./docker_script/gunicorn_conf.py /gunicorn_conf.py
 COPY ./docker_script/start-reload.sh /start-reload.sh
 RUN chmod +x /start-reload.sh
 
-COPY . /app
-WORKDIR /app/
+WORKDIR /app
 
+COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt
+
+COPY . .
 
 ENV PYTHONPATH=/app
 
