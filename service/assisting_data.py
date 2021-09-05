@@ -12,7 +12,7 @@ import persistence.email as email
 ASSISTING_DATA_FILENAME = 'assisting_data.zip'
 
 
-browse_with_problem_id = db.assisting_data.browse_with_problem_id
+browse_with_problem_id = db.assisting_data.browse
 read = db.assisting_data.read
 delete = db.assisting_data.delete
 
@@ -38,7 +38,7 @@ async def edit(file: typing.IO, filename: str, assisting_data_id: int) -> None:
 
 
 async def download_all(account_id: int, problem_id: int, as_attachment: bool) -> None:
-    result = await db.assisting_data.browse_with_problem_id(problem_id=problem_id)
+    result = await db.assisting_data.browse(problem_id=problem_id)
     files = {}
     for assisting_data in result:
         s3_file = await db.s3_file.read(s3_file_uuid=assisting_data.s3_file_uuid)
