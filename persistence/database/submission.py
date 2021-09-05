@@ -182,7 +182,7 @@ async def read_latest_judgment(submission_id: int) -> do.Judgment:
             submission_id=submission_id,
             fetch=1,
     ) as (judgment_id, submission_id, verdict, total_time, max_memory, score, judge_time):
-        return do.Judgment(id=judgment_id, submission_id=submission_id, verdict=enum.JudgmentVerdictType(verdict),
+        return do.Judgment(id=judgment_id, submission_id=submission_id, verdict=enum.VerdictType(verdict),
                            total_time=total_time, max_memory=max_memory, score=score, judge_time=judge_time)
 
 

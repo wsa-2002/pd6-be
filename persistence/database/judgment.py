@@ -135,5 +135,5 @@ async def get_submission_judgment_by_challenge_type(problem_id: int, account_id:
             account_id=account_id, challenge_end_time=challenge_end_time, problem_id=problem_id,
             fetch=1,
     ) as (id_, submission_id, verdict, total_time, max_memory, score, judge_time):
-        return do.Judgment(id=id_, submission_id=submission_id, verdict=enum.JudgmentVerdictType(verdict),
+        return do.Judgment(id=id_, submission_id=submission_id, verdict=enum.VerdictType(verdict),
                            total_time=total_time, max_memory=max_memory, score=score, judge_time=judge_time)
