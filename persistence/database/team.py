@@ -191,7 +191,8 @@ async def add_member(team_id: int, account_referral: str, role: RoleType):
         pass
 
 
-async def add_team_and_add_member(team_name: str, class_id: int, team_label: str, account_referral: str, role: RoleType):
+async def add_team_and_add_member(team_name: str, class_id: int, team_label: str,
+                                  member_roles: Sequence[tuple[str, RoleType]]):
     async with SafeConnection(event='add member with team name') as conn:
         async with conn.transaction():
             (team_id,) = await conn.fetchrow(
@@ -215,11 +216,18 @@ async def add_team_and_add_member(team_name: str, class_id: int, team_label: str
                 team_name, class_id, team_label, False,
             )
 
+            values = [(team_id,
+                       await account_referral_to_id(account_referral),
+                       role)
+                      for account_referral, role in member_roles]
+
+            value_sql, value_params = compile_values(values=values)
+
             await conn.execute(
                 fr'INSERT INTO team_member'
                 fr'            (team_id, member_id, role)'
-                fr'     VALUES ($1, account_referral_to_id($2), $3)',
-                team_id, account_referral, role,
+                fr'     VALUES {value_sql}',
+                *value_params
             )
 
 
