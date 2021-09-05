@@ -162,47 +162,23 @@ class ReadClassMemberOutput:
     member_referral: Optional[str]
 
 
-BROWSE_CLASS_MEMBER_WITH_REFERRAL_COLUMNS = {
-    'member_id': int,
-    'class_id': int,
-    'role': enum.RoleType,
-}
-
-
 @router.get('/class/{class_id}/member/account-referral')
 @enveloped
-@add_to_docstring({k: v.__name__ for k, v in BROWSE_CLASS_MEMBER_WITH_REFERRAL_COLUMNS.items()})
-async def browse_class_member_with_account_referral(
-        class_id: int,
-        request: Request,
-        limit: model.Limit = 50, offset: model.Offset = 0,
-        filter: model.FilterStr = None, sort: model.SorterStr = None,
-) -> model.BrowseOutputBase:  # -> Sequence[ReadClassMemberOutput]:
+async def browse_all_class_member_with_account_referral(class_id: int, request: Request) \
+        -> Sequence[ReadClassMemberOutput]:
     """
     ### 權限
     - Class normal
     - Class+ manager
-
-    ### Available columns
     """
     if (not await rbac.validate(request.account.id, RoleType.normal, class_id=class_id)
             and not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id, inherit=True)):
         raise exc.NoPermission
 
-    filters = model.parse_filter(filter, BROWSE_CLASS_MEMBER_WITH_REFERRAL_COLUMNS)
-    sorters = model.parse_sorter(sort, BROWSE_CLASS_MEMBER_WITH_REFERRAL_COLUMNS)
-
-    filters.append(popo.Filter(col_name='class_id',
-                               op=FilterOperator.eq,
-                               value=class_id))
-
-    results, total_count = await service.class_.browse_class_member_with_account_referral(limit=limit, offset=offset,
-                                                                                          filters=filters, sorters=sorters)
-    data = [ReadClassMemberOutput(member_id=member.member_id,
+    results = await service.class_.browse_class_member_with_account_referral()
+    return [ReadClassMemberOutput(member_id=member.member_id,
                                   member_referral=member_referral)
             for (member, member_referral) in results]
-
-    return model.BrowseOutputBase(data, total_count=total_count)
 
 
 class EditClassMemberInput(BaseModel):
