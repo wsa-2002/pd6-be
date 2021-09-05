@@ -315,7 +315,7 @@ class RejudgeProblemOutput:
 
 @router.post('/problem/{problem_id}/rejudge')
 @enveloped
-async def rejudge_problem(problem_id: int, data: AddTestcaseInput, request: Request) -> RejudgeProblemOutput:
+async def rejudge_problem(problem_id: int, request: Request) -> RejudgeProblemOutput:
     """
     ### 權限
     - Class manager
