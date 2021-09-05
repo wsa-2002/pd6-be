@@ -248,7 +248,7 @@ async def rejudge_submission(submission_id: int, request: Request) -> None:
     problem = await service.problem.read(problem_id=submission.problem_id)
     challenge = await service.challenge.read(challenge_id=problem.challenge_id, include_scheduled=True)
 
-    if not rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
     await service.judgment.judge_submission(submission.id)
