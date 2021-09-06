@@ -21,15 +21,11 @@ async def default_page():
 
 # Warning: this location is statically used in email string
 # Use "get" for convenience (access from browser)
-@router.get('/email-verification', tags=['Account', 'Student Card'], response_class=HTMLResponse)
-@router.post('/email-verification', tags=['Account', 'Student Card'], response_class=HTMLResponse)
+@router.get('/email-verification', tags=['Account', 'Student Card'])
+@router.post('/email-verification', tags=['Account', 'Student Card'])
+@enveloped
 async def email_verification(code: str):
-    try:
-        await service.account.verify_email(code=code)
-    except exc.persistence.NotFound:
-        return 'Your verification code is not valid.'
-    else:
-        return 'Your email has been verified.'
+    await service.account.verify_email(code=code)
 
 
 class ForgetPasswordInput(BaseModel):
