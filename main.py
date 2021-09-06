@@ -66,7 +66,7 @@ async def app_startup():
     log.info('AMQP Consumer initializing...')
     from persistence.amqp_consumer import make_consumer
     import processor.amqp
-    report_consumer = make_consumer(amqp_config.host, amqp_config.port,
+    report_consumer = make_consumer(amqp_config=amqp_config,
                                     queue_name=amqp_config.report_queue_name,
                                     consume_function=processor.amqp.save_report)
     import asyncio
