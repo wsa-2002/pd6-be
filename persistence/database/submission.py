@@ -231,11 +231,12 @@ async def browse_under_class(class_id: int,
             fr'  FROM submission'
             fr'  INNER JOIN problem'
             fr'          ON problem.id = submission.problem_id'
+            fr'         AND problem.is_deleted = %(problem_is_deleted)s'
             fr'  INNER JOIN challenge'
             fr'          ON challenge.id = problem.challenge_id '
             fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
             fr'      AND challenge.class_id = %(class_id)s',
-        **cond_params,
+        **cond_params, problem_is_deleted=False,
         class_id=class_id,
     )
     return data, total_count
