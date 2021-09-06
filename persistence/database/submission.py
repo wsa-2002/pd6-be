@@ -206,13 +206,15 @@ async def browse_under_class(class_id: int,
                 fr'  FROM submission'
                 fr'  INNER JOIN problem'
                 fr'          ON problem.id = submission.problem_id'
+                fr'         AND problem.is_deleted = %(problem_is_deleted)s'
                 fr'  INNER JOIN challenge'
                 fr'          ON challenge.id = problem.challenge_id '
                 fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
                 fr'      AND challenge.class_id = %(class_id)s'
-                fr' ORDER BY {sort_sql} submission.id DESC',
+                fr' ORDER BY {sort_sql} submission.id DESC'
+                fr' LIMIT %(limit)s OFFSET %(offset)s',
             **cond_params,
-            class_id=class_id,
+            class_id=class_id, problem_is_deleted=False,
             limit=limit, offset=offset,
             fetch='all',
             raise_not_found=False,  # Issue #134: return [] for browse
