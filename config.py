@@ -69,6 +69,8 @@ class S3Config:
 class AmqpConfig:
     host = env_values.get('AMQP_HOST')
     port = int(env_values.get('AMQP_PORT'))
+    username = env_values.get('AMQP_USERNAME')
+    password = env_values.get('AMQP_PASSWORD')
     report_queue_name = env_values.get('REPORT_QUEUE_NAME', 'report')
     prefetch_count = int(env_values.get('AMQP_PREFETCH_COUNT', '1'))
 

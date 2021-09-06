@@ -3,20 +3,24 @@ from typing import Callable, Coroutine, Any
 
 import aio_pika
 
+from config import AmqpConfig
 import log
 
 
-def make_consumer(host: str, port: int, queue_name: str,
+def make_consumer(amqp_config: AmqpConfig, queue_name: str,
                   consume_function: Callable[[bytes], Coroutine[Any, Any, None]]) \
         -> Callable[[asyncio.events.AbstractEventLoop], Coroutine[Any, Any, None]]:
     async def main(loop: asyncio.events.AbstractEventLoop):
-        log.info(f"Creating AMQP connection to {host=} {port=}")
+        log.info(f"Creating AMQP connection to {amqp_config.host=} {amqp_config.port=}")
         async with await aio_pika.connect(
-            host=host,
-            port=port,
+            host=amqp_config.host,
+            port=amqp_config.port,
+            login=amqp_config.username,
+            password=amqp_config.password,
             loop=loop,
         ) as connection:
-            log.info(f'Created AMQP connection to {host=} {port=}, creating channel and queue {queue_name=}')
+            log.info(f'Created AMQP connection to {amqp_config.host=} {amqp_config.port=},'
+                     f' creating channel and queue {queue_name=}')
 
             channel: aio_pika.RobustChannel = await connection.channel()
             queue = await channel.declare_queue(

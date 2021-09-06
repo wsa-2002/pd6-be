@@ -13,6 +13,8 @@ class AmqpPublishHandler(metaclass=mcs.Singleton):
         self._connection = await aio_pika.connect(
             host=amqp_config.host,
             port=amqp_config.port,
+            login=amqp_config.username,
+            password=amqp_config.password,
         )
         self._channel = await self._connection.channel().__aenter__()
 
