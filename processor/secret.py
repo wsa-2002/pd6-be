@@ -113,5 +113,6 @@ class ResetPasswordInput(BaseModel):
 
 
 @router.post('/account/reset-password', tags=['Account'], response_class=JSONResponse)
+@enveloped
 async def reset_password(data: ResetPasswordInput) -> None:
     await service.public.reset_password(code=data.code, password=data.password)
