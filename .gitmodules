@@ -1,6 +1,3 @@
 [submodule "judge_core_common"]
 	path = judge_core_common
 	url = https://nas.pdogs.ntu.im:30443/pdogs/pdogs-6/judge-core/judge-core-common.git
-[submodule "judge-core-common"]
-	path = judge-core-common
-	url = ssh://git@nas.pdogs.ntu.im:30001/pdogs/pdogs-6/judge-core/judge-core-common.git
