@@ -61,6 +61,7 @@ async def read_problem(problem_id: int, request: Request) -> do.Problem:
 
 
 class EditProblemInput(BaseModel):
+    challenge_label: str = None
     title: str = None
     full_score: int = None
     testcase_disabled: bool = None
@@ -83,7 +84,7 @@ async def edit_problem(problem_id: int, data: EditProblemInput, request: Request
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
-    return await service.problem.edit(problem_id, title=data.title, full_score=data.full_score,
+    return await service.problem.edit(problem_id, challenge_label=data.challenge_label, title=data.title, full_score=data.full_score,
                                       testcase_disabled=data.testcase_disabled,
                                       description=data.description, io_description=data.io_description,
                                       source=data.source, hint=data.hint)
