@@ -108,9 +108,11 @@ async def submit(problem_id: int, language_id: int, request: Request, content_fi
     if language.is_disabled:
         raise exc.IllegalInput
 
+    file_length = len(await content_file.read())
+    await content_file.seek(0)
     submission_id = await service.submission.add(file=content_file.file, filename=content_file.filename,
                                                  account_id=request.account.id, problem_id=problem.id,
-                                                 file_length=len(content_file.file.read()),
+                                                 file_length=file_length,
                                                  language_id=language.id, submit_time=request.time)
     await service.judgment.judge_submission(submission_id)
 
