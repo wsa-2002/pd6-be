@@ -43,8 +43,8 @@ class EmailVerification:
     id: int
     email: str
     account_id: int
-    institute_id: int
-    student_id: int
+    institute_id: Optional[int]
+    student_id: Optional[str]
     is_consumed: bool
 
 
