@@ -103,7 +103,7 @@ async def browse_class_member_with_account_id(class_id: int, include_deleted: bo
                 for (member_id, class_id, role_str, account_id) in records]
 
 
-async def browse_class_member_with_account_referral(include_deleted: bool = False) \
+async def browse_class_member_with_account_referral(class_id: int, include_deleted: bool = False) \
         -> Sequence[Tuple[do.ClassMember, str]]:
     async with SafeExecutor(
             event='browse class members with account referral',
@@ -112,7 +112,9 @@ async def browse_class_member_with_account_referral(include_deleted: bool = Fals
                 fr'  FROM class_member'
                 fr' INNER JOIN account'
                 fr'         ON class_member.member_id = account.id'
-                fr'{f" WHERE NOT account.is_deleted" if not include_deleted else ""}',
+                fr' WHERE class_member.class_id = %(class_id)s'
+                fr'{f" AND NOT account.is_deleted" if not include_deleted else ""}',
+            class_id=class_id,
             fetch='all',
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:

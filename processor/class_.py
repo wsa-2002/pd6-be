@@ -175,7 +175,7 @@ async def browse_all_class_member_with_account_referral(class_id: int, request: 
             and not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id, inherit=True)):
         raise exc.NoPermission
 
-    results = await service.class_.browse_class_member_with_account_referral()
+    results = await service.class_.browse_class_member_with_account_referral(class_id=class_id)
     return [ReadClassMemberOutput(member_id=member.member_id,
                                   member_referral=member_referral)
             for (member, member_referral) in results]
