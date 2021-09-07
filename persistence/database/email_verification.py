@@ -49,7 +49,7 @@ async def read_verification_code(email_verification_id: int) -> str:
 async def delete(email_verification_id: int) -> None:
     async with SafeExecutor(
             event='HARD delete email verification',
-            sql=fr'DELETE FROM email verification'
+            sql=fr'DELETE FROM email_verification'
                 fr' WHERE id = %(email_verification_id)s',
             email_verification_id=email_verification_id,
     ):
