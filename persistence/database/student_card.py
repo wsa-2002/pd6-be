@@ -61,7 +61,7 @@ async def is_duplicate(institute_id: int, student_id: str) -> bool:
             sql=fr'SELECT count(*)'
                 fr'  FROM student_card'
                 fr' WHERE institute_id = %(institute_id)s'
-                fr'   AND student_id = %(student_id)s',
+                fr'   AND LOWER(student_id) = LOWER(%(student_id)s)',
             institute_id=institute_id,
             student_id=student_id,
             fetch=1,
