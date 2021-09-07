@@ -93,6 +93,8 @@ async def batch_get_account_with_default_student_id(request: Request, account_id
     - `account_ids`: list of int
     """
     account_ids = pydantic.parse_obj_as(list[int], account_ids)
+    if not account_ids:
+        return []
 
     is_normal = await rbac.validate(request.account.id, RoleType.normal)
     if not is_normal:
