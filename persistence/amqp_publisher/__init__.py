@@ -2,6 +2,7 @@ import aio_pika
 
 from base import mcs
 from config import AmqpConfig
+import log
 
 
 class AmqpPublishHandler(metaclass=mcs.Singleton):
@@ -23,6 +24,7 @@ class AmqpPublishHandler(metaclass=mcs.Singleton):
         await self._connection.close()
 
     async def publish(self, queue_name: str, message: bytes):
+        log.info(f'AMQP Publish to {queue_name=}, message={message.decode()}')
         await self._channel.default_exchange.publish(aio_pika.Message(
             body=message,
         ), routing_key=queue_name)
