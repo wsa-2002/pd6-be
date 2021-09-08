@@ -160,6 +160,7 @@ async def browse_class_member(
 class ReadClassMemberOutput:
     member_id: Optional[int]
     member_referral: Optional[str]
+    member_role: Optional[RoleType]
 
 
 @router.get('/class/{class_id}/member/account-referral')
@@ -177,7 +178,8 @@ async def browse_all_class_member_with_account_referral(class_id: int, request: 
 
     results = await service.class_.browse_class_member_with_account_referral(class_id=class_id)
     return [ReadClassMemberOutput(member_id=member.member_id,
-                                  member_referral=member_referral)
+                                  member_referral=member_referral,
+                                  member_role=member.role)
             for (member, member_referral) in results]
 
 
