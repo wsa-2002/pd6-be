@@ -45,7 +45,7 @@ async def import_team(team_file: typing.IO, class_id: int, label: str):
                     continue
                 if str(item) == 'Manager':  # column name is 'Manager'
                     member_roles += [(row[str(item)], enum.RoleType.manager)]
-                elif row[str(item)] is not None:
+                elif row[str(item)]:
                     member_roles += [(row[str(item)], enum.RoleType.normal)]
 
             await db.team.add_team_and_add_member(team_name=row['TeamName'], class_id=class_id,
