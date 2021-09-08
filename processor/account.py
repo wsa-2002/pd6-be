@@ -126,7 +126,7 @@ async def browse_all_account_with_class_role(account_id: int, request: Request) 
 
     ### Available columns
     """
-    if account_id is not request.account.id:
+    if account_id != request.account.id:
         raise exc.NoPermission
     results = await service.account.browse_with_class_role(account_id=account_id)
 
