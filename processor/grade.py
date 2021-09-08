@@ -125,7 +125,7 @@ async def browse_account_grade(account_id: int, request: Request,
 
     ### Available columns
     """
-    if request.account.id == not account_id:  # only self
+    if request.account.id != account_id:  # only self
         raise exc.NoPermission
 
     filters = model.parse_filter(filter, BROWSE_ACCOUNT_GRADE_COLUMNS)
