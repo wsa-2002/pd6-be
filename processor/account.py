@@ -144,7 +144,7 @@ class ReadAccountOutput:
     id: int
     username: str
     nickname: str
-    role: str
+    role: Optional[str]
     real_name: str
     alternative_email: Optional[str]
 
@@ -162,7 +162,7 @@ async def read_account_with_default_student_id(account_id: int, request: Request
     """
     is_manager = await rbac.validate(request.account.id, RoleType.manager)
     is_normal = await rbac.validate(request.account.id, RoleType.normal)
-    is_self = request.account.id is account_id
+    is_self = request.account.id == account_id
 
     if not (is_manager or is_normal or is_self):
         raise exc.NoPermission
@@ -198,7 +198,7 @@ async def edit_account(account_id: int, data: EditAccountInput, request: Request
     - Self
     """
     is_manager = await rbac.validate(request.account.id, RoleType.manager)
-    is_self = request.account.id is account_id
+    is_self = request.account.id == account_id
 
     if not ((is_self and not data.real_name) or is_manager):
         raise exc.NoPermission
@@ -217,7 +217,7 @@ async def delete_account(account_id: int, request: Request) -> None:
     - Self
     """
     is_manager = await rbac.validate(request.account.id, RoleType.manager)
-    is_self = request.account.id is account_id
+    is_self = request.account.id == account_id
 
     if not (is_manager or is_self):
         raise exc.NoPermission
@@ -242,7 +242,7 @@ async def make_student_card_default(account_id: int, data: DefaultStudentCardInp
         raise exc.account.StudentCardDoesNotBelong
 
     is_manager = await rbac.validate(request.account.id, RoleType.manager)
-    is_self = request.account.id is owner_id
+    is_self = request.account.id == owner_id
 
     if not (is_manager or is_self):
         raise exc.NoPermission
@@ -259,7 +259,7 @@ async def browse_all_account_pending_email_verification(account_id: int, request
     - System manager
     - Self
     """
-    if not (await rbac.validate(request.account.id, RoleType.manager) or request.account.id is account_id):
+    if not (await rbac.validate(request.account.id, RoleType.manager) or request.account.id == account_id):
         raise exc.NoPermission
 
     return await service.email_verification.browse(account_id=account_id)

@@ -106,7 +106,7 @@ async def read_essay_submission(essay_submission_id: int, request: Request) -> d
     """
     essay_submission = await service.essay_submission.read(essay_submission_id=essay_submission_id)
 
-    if request.account.id is essay_submission.account_id:
+    if request.account.id == essay_submission.account_id:
         return essay_submission
 
     essay = await service.essay.read(essay_id=essay_submission.essay_id)
@@ -133,7 +133,7 @@ async def reupload_essay(essay_submission_id: int, request: Request, essay_file:
     essay = await service.essay.read(essay_id=essay_submission.essay_id)
     challenge = await service.challenge.read(challenge_id=essay.challenge_id, include_scheduled=True)
 
-    if not (request.account.id is essay_submission.account_id and request.time <= challenge.end_time):
+    if not (request.account.id == essay_submission.account_id and request.time <= challenge.end_time):
         raise exc.NoPermission
 
     return await service.essay_submission.edit(file=essay_file.file, filename=essay_file.filename,
