@@ -325,17 +325,17 @@ async def replace_members(class_id: int, member_roles: Sequence[Tuple[str, RoleT
             await conn.execute(fr'DELETE FROM class_member'
                                fr'      WHERE class_id = $1',
                                class_id)
+            if member_roles:
+                values = [(class_id,
+                           await account_referral_to_id(account_referral),
+                           role) for account_referral, role in member_roles]
 
-            values = [(class_id,
-                       await account_referral_to_id(account_referral),
-                       role) for account_referral, role in member_roles]
+                value_sql, value_params = compile_values(values=values)
 
-            value_sql, value_params = compile_values(values=values)
-
-            await conn.execute(fr'INSERT INTO class_member'
-                               fr'            (class_id, member_id, role)'
-                               fr'     VALUES {value_sql}',
-                               *value_params)
+                await conn.execute(fr'INSERT INTO class_member'
+                                   fr'            (class_id, member_id, role)'
+                                   fr'     VALUES {value_sql}',
+                                   *value_params)
 
 
 async def browse_member_referrals(class_id: int, role: RoleType) -> Sequence[str]:
