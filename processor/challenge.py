@@ -239,7 +239,7 @@ async def add_peer_review_under_challenge(challenge_id: int, data: AddPeerReview
     target_problem_challenge = await service.challenge.read(target_problem.challenge_id)
 
     # Only allow peer review to target to same class
-    if challenge.class_id is not target_problem_challenge.class_id:
+    if challenge.class_id != target_problem_challenge.class_id:
         raise exc.IllegalInput
 
     peer_review_id = await service.peer_review.add(challenge_id=challenge_id,
