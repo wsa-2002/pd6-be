@@ -138,7 +138,7 @@ async def browse_submission(account_id: int, request: Request, limit: model.Limi
 
     ### Available columns
     """
-    if account_id is not request.account.id:
+    if account_id != request.account.id:
         raise exc.NoPermission
 
     filters = model.parse_filter(filter, BROWSE_SUBMISSION_COLUMNS)
@@ -184,7 +184,7 @@ async def read_submission(submission_id: int, request: Request) -> do.Submission
     submission = await service.submission.read(submission_id=submission_id)
 
     # 可以看自己的
-    if submission.account_id is request.account.id:
+    if submission.account_id == request.account.id:
         return submission
 
     # 助教可以看他的 class 的
@@ -225,7 +225,7 @@ async def read_submission_latest_judgment(submission_id: int, request: Request) 
     submission = await service.submission.read(submission_id=submission_id)
 
     # 可以看自己的
-    if submission.account_id is request.account.id:
+    if submission.account_id == request.account.id:
         return await service.submission.read_latest_judgment(submission_id=submission_id)
 
     problem = await service.problem.read(problem_id=submission.problem_id)

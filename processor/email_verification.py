@@ -25,7 +25,7 @@ async def resend_email_verification(email_verification_id: int, request: Request
     email_verification = await service.email_verification.read(email_verification_id=email_verification_id)
 
     if not (await rbac.validate(request.account.id, RoleType.manager)
-            or request.account.id is email_verification.account_id):
+            or request.account.id == email_verification.account_id):
         raise exc.NoPermission
 
     await service.email_verification.resend(email_verification_id=email_verification_id)
@@ -43,7 +43,7 @@ async def delete_pending_email_verification(email_verification_id: int, request:
     email_verification = await service.email_verification.read(email_verification_id)
 
     if not (await rbac.validate(request.account.id, RoleType.manager)
-            or request.account.id is email_verification.account_id):
+            or request.account.id == email_verification.account_id):
         raise exc.NoPermission
 
     await service.email_verification.delete(email_verification_id)

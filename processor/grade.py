@@ -125,7 +125,7 @@ async def browse_account_grade(account_id: int, request: Request,
 
     ### Available columns
     """
-    if request.account.id is not account_id:  # only self
+    if request.account.id != account_id:  # only self
         raise exc.NoPermission
 
     filters = model.parse_filter(filter, BROWSE_ACCOUNT_GRADE_COLUMNS)
@@ -170,7 +170,7 @@ async def get_grade(grade_id: int, request: Request) -> do.Grade:
     grade = await service.grade.read(grade_id=grade_id)
 
     is_class_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=grade.class_id)
-    is_self = request.account.id is grade.receiver_id
+    is_self = request.account.id == grade.receiver_id
 
     if not (is_class_manager or is_self):
         raise exc.NoPermission

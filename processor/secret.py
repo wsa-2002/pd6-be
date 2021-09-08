@@ -95,7 +95,7 @@ async def edit_password(account_id: int, data: EditPasswordInput, request: Reque
     - Self (need old password)
     """
 
-    is_self = request.account.id is account_id
+    is_self = request.account.id == account_id
     if is_self:
         return await service.account.edit_password(account_id=account_id,
                                                    old_password=data.old_password, new_password=data.new_password)

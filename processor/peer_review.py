@@ -188,7 +188,7 @@ async def read_peer_review_record(peer_review_record_id: int, request: Request) 
 
     is_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)
 
-    if not (is_manager or (request.account.id is peer_review_record.receiver_id)):
+    if not (is_manager or (request.account.id == peer_review_record.receiver_id)):
         raise exc.NoPermission
 
     return ReadPeerReviewRecordOutput(

@@ -105,10 +105,10 @@ async def add_case(judgment_id: int, testcase_id: int, verdict: enum.VerdictType
                    time_lapse: int, peak_memory: int, score: int) -> None:
     async with SafeExecutor(
             event='add judge case',
-            sql=fr'INSERT INTO judge_case (judgment_id, testcase_id, status, time_lapse, peak_memory, score)'
-                fr'     VALUES (%(judgment_id)s, %(testcase_id)s, %(status)s,'
+            sql=fr'INSERT INTO judge_case (judgment_id, testcase_id, verdict, time_lapse, peak_memory, score)'
+                fr'     VALUES (%(judgment_id)s, %(testcase_id)s, %(verdict)s,'
                 fr'             %(time_lapse)s, %(peak_memory)s, %(score)s)',
-            judgment_id=judgment_id, testcase_id=testcase_id, status=verdict,
+            judgment_id=judgment_id, testcase_id=testcase_id, verdict=verdict,
             time_lapse=time_lapse, peak_memory=peak_memory, score=score,
     ):
         pass
