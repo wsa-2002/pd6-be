@@ -355,7 +355,7 @@ class ProblemScores:
 @dataclass
 class MemberSubmissionStatOutput:
     id: int
-    problem_scores: Optional[ProblemScores]
+    problem_scores: Optional[Sequence[ProblemScores]]
     essay_submissions: Optional[Sequence[do.EssaySubmission]]
 
 
@@ -380,7 +380,7 @@ async def get_member_submission_statistics(challenge_id: int, request: Request) 
     member_submission_stat = GetMemberSubmissionStatOutput(
         member=[MemberSubmissionStatOutput(
             id=member_id,
-            problem_scores=ProblemScores(problem_id=problem_scores[0][0], judgment=problem_scores[0][1]) if problem_scores else None,
+            problem_scores=[ProblemScores(problem_id=problem_id, judgment=judgment) for problem_id, judgment in problem_scores],
             essay_submissions=essays if essays else None)
             for member_id, problem_scores, essays in results])
 
