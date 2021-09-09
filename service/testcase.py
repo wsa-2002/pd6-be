@@ -2,7 +2,6 @@ import io
 import zipfile
 import typing
 import uuid
-from typing import Sequence
 
 import exceptions as exc
 
@@ -10,7 +9,6 @@ import persistence.database as db
 import persistence.s3 as s3
 import service.s3_file as s3_tool
 import persistence.email as email
-from base import do
 
 
 SAMPLE_FILENAME = 'sample_testcase.zip'
