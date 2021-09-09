@@ -6,7 +6,7 @@ read = db.email_verification.read
 delete = db.email_verification.delete
 
 
-async def resend(email_verification_id: int):
+async def resend(email_verification_id: int, username: str):
     email_verification = await db.email_verification.read(email_verification_id)
     code = await db.email_verification.read_verification_code(email_verification_id)
-    await email.verification.send(to=email_verification.email, code=code)
+    await email.verification.send(to=email_verification.email, code=code, username=username)

@@ -1,6 +1,7 @@
 from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
+from persistence import database as db
 import service
 
 from .util import rbac
@@ -28,7 +29,8 @@ async def resend_email_verification(email_verification_id: int, request: Request
             or request.account.id == email_verification.account_id):
         raise exc.NoPermission
 
-    await service.email_verification.resend(email_verification_id=email_verification_id)
+    account = await db.account.read(email_verification.account_id)
+    await service.email_verification.resend(email_verification_id=email_verification_id, username=account.username)
 
 
 @router.delete('/email-verification/{email_verification_id}')
