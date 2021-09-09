@@ -29,7 +29,8 @@ async def edit_alternative_email(account_id: int, alternative_email: str = None)
         return
     if alternative_email:  # 加或改 alternative email
         code = await db.account.add_email_verification(email=alternative_email, account_id=account_id)
-        await email.verification.send(to=alternative_email, code=code)
+        account = await db.account.read(account_id)
+        await email.verification.send(to=alternative_email, code=code, username=account.username)
     else:  # 刪掉 alternative email
         await db.account.delete_alternative_email_by_id(account_id=account_id)
 
