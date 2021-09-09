@@ -134,37 +134,19 @@ async def _delete_cascade_from_class(class_id: int, conn) -> None:
 # === member control
 
 
-async def browse_members(limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter]) \
-        -> tuple[Sequence[do.TeamMember], int]:
-
-    cond_sql, cond_params = compile_filters(filters)
-    sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
-    if sort_sql:
-        sort_sql += ','
-
+async def browse_members(team_id: int) -> [Sequence[do.TeamMember]]:
     async with SafeExecutor(
             event='get team members id',
             sql=fr'SELECT member_id, team_id, role'
                 fr'  FROM team_member'
-                fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
-                fr' ORDER BY {sort_sql} team_id ASC'
-                fr' LIMIT %(limit)s OFFSET %(offset)s',
-            **cond_params,
-            limit=limit, offset=offset,
+                fr' WHERE team_id = %(team_id)s'
+                fr' ORDER BY role DESC',
+            team_id=team_id,
             fetch='all',
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
-        data = [do.TeamMember(member_id=id_, team_id=team_id, role=RoleType(role_str))
+        return [do.TeamMember(member_id=id_, team_id=team_id, role=RoleType(role_str))
                 for id_, team_id, role_str in records]
-
-    total_count = await execute_count(
-        sql=fr'SELECT member_id, team_id, role'
-            fr'  FROM team_member'
-            fr'{f" WHERE {cond_sql}" if cond_sql else ""}',
-        **cond_params,
-    )
-
-    return data, total_count
 
 
 async def read_member(team_id: int, member_id: int) -> do.TeamMember:
