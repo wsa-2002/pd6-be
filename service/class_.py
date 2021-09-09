@@ -5,7 +5,6 @@ import exceptions as exc
 import persistence.database as db
 import persistence.email as email
 
-
 add = db.class_.add
 edit = db.class_.edit
 browse = db.class_.browse
@@ -66,7 +65,9 @@ async def replace_members(class_id: int, member_roles: Sequence[Tuple[str, RoleT
         removed_cms = list(cm_before.difference(cm_after))
         class_manager_emails = list(emails_after | emails_before)
 
-        operator = await db.account.read(account_id=operator_id)
-        await email.notification.notify_cm_change(tos=class_manager_emails, added_account_referrals=added_cms,
-                                                  removed_account_referrals=removed_cms,
-                                                  class_name=class_.name, course_name=course.name, operator_account_referral=operator.username)
+        if class_manager_emails:
+            operator = await db.account.read(account_id=operator_id)
+            await email.notification.notify_cm_change(tos=class_manager_emails, added_account_referrals=added_cms,
+                                                      removed_account_referrals=removed_cms,
+                                                      class_name=class_.name, course_name=course.name,
+                                                      operator_account_referral=operator.username)
