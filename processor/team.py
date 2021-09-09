@@ -120,24 +120,12 @@ async def delete_team(team_id: int, request: Request) -> None:
     await service.team.delete(team_id)
 
 
-BROWSE_TEAM_MEMBER_COLUMNS = {
-    'member_id': int,
-    'role': RoleType,
-}
-
-
 @router.get('/team/{team_id}/member')
 @enveloped
-@add_to_docstring({k: v.__name__ for k, v in BROWSE_TEAM_MEMBER_COLUMNS.items()})
-async def browse_team_member(team_id: int, request: Request,
-                             limit: model.Limit = 50, offset: model.Offset = 0,
-                             filter: model.FilterStr = None, sorter: model.SorterStr = None) \
-        -> model.BrowseOutputBase:
+async def browse_team_all_member(team_id: int, request: Request,) -> Sequence[do.TeamMember]:
     """
     ### 權限
     - Class normal
-
-    ### Available columns
     """
     # 因為需要 class_id 才能判斷權限，所以先 read team 再判斷要不要噴 NoPermission
     team = await service.team.read(team_id)
@@ -145,16 +133,7 @@ async def browse_team_member(team_id: int, request: Request,
     if not await rbac.validate(request.account.id, RoleType.normal, class_id=team.class_id):
         raise exc.NoPermission
 
-    filters = model.parse_filter(filter, BROWSE_TEAM_MEMBER_COLUMNS)
-    sorters = model.parse_sorter(sorter, BROWSE_TEAM_MEMBER_COLUMNS)
-
-    filters.append(popo.Filter(col_name='team_id',
-                               op=FilterOperator.eq,
-                               value=team_id))
-
-    team_members, total_count = await service.team.browse_members(limit=limit, offset=offset,
-                                                                  filters=filters, sorters=sorters)
-    return model.BrowseOutputBase(team_members, total_count=total_count)
+    return await service.team.browse_members(team_id=team_id)
 
 
 class AddMemberInput(BaseModel):
