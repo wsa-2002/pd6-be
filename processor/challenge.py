@@ -239,7 +239,7 @@ async def add_peer_review_under_challenge(challenge_id: int, data: AddPeerReview
     target_problem_challenge = await service.challenge.read(target_problem.challenge_id)
 
     # Only allow peer review to target to same class
-    if challenge.class_id != target_problem_challenge.class_id:
+    if challenge.class_id is not target_problem_challenge.class_id:
         raise exc.IllegalInput
 
     peer_review_id = await service.peer_review.add(challenge_id=challenge_id,
@@ -347,9 +347,15 @@ async def get_challenge_statistics(challenge_id: int, request: Request) -> GetCh
 
 
 @dataclass
+class ProblemScores:
+    problem_id: int
+    judgment: do.Judgment
+
+
+@dataclass
 class MemberSubmissionStatOutput:
     id: int
-    problem_scores: Optional[Sequence[do.Judgment]]
+    problem_scores: Optional[ProblemScores]
     essay_submissions: Optional[Sequence[do.EssaySubmission]]
 
 
@@ -374,7 +380,7 @@ async def get_member_submission_statistics(challenge_id: int, request: Request) 
     member_submission_stat = GetMemberSubmissionStatOutput(
         member=[MemberSubmissionStatOutput(
             id=member_id,
-            problem_scores=problem_scores if problem_scores else None,
+            problem_scores=ProblemScores(problem_id=problem_scores[0][0], judgment=problem_scores[0][1]) if problem_scores else None,
             essay_submissions=essays if essays else None)
             for member_id, problem_scores, essays in results])
 
