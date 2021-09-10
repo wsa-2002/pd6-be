@@ -67,8 +67,12 @@ def parse_filter(json_obj: FilterStr, column_types: dict[str, type]) -> list[bas
         if filter_.op in (FilterOperator.between, FilterOperator.not_between):
             if len(converted.value) != 2:
                 raise exc.IllegalInput
+        if filter_.op in (FilterOperator.like, FilterOperator.not_like):
+            if column_types[converted.col_name] != str:
+                raise exc.IllegalInput
 
         filters[i] = converted
+
     return filters
 
 
