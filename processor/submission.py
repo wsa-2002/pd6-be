@@ -1,5 +1,6 @@
 from typing import Sequence
 
+import pydantic
 from fastapi import File, UploadFile, Depends
 from pydantic import BaseModel
 
@@ -107,10 +108,13 @@ async def submit(problem_id: int, language_id: int, request: Request, content_fi
     if language.is_disabled:
         raise exc.IllegalInput
 
+    file_length = len(await content_file.read())
+    await content_file.seek(0)
     submission_id = await service.submission.add(file=content_file.file, filename=content_file.filename,
                                                  account_id=request.account.id, problem_id=problem.id,
-                                                 file_length=len(content_file.file.read()),
+                                                 file_length=file_length,
                                                  language_id=language.id, submit_time=request.time)
+    await service.judgment.judge_submission(submission_id)
 
     return model.AddOutput(id=submission_id)
 
@@ -134,7 +138,7 @@ async def browse_submission(account_id: int, request: Request, limit: model.Limi
 
     ### Available columns
     """
-    if account_id is not request.account.id:
+    if account_id != request.account.id:
         raise exc.NoPermission
 
     filters = model.parse_filter(filter, BROWSE_SUBMISSION_COLUMNS)
@@ -151,6 +155,24 @@ async def browse_submission(account_id: int, request: Request, limit: model.Limi
     return model.BrowseOutputBase(submissions, total_count=total_count)
 
 
+@router.get('/submission/judgment/batch')
+@enveloped
+async def batch_get_submission_judgment(request: Request, submission_ids: pydantic.Json) -> Sequence[do.Judgment]:
+    """
+    ### 權限
+    - System Normal
+
+    ### Notes
+    - `submission_ids`: list of int
+    """
+    submission_ids = pydantic.parse_obj_as(list[int], submission_ids)
+
+    if not await rbac.validate(request.account.id, RoleType.normal):
+        raise exc.NoPermission
+
+    return await service.submission.browse_with_submission_ids(submission_ids=submission_ids)
+
+
 @router.get('/submission/{submission_id}')
 @enveloped
 async def read_submission(submission_id: int, request: Request) -> do.Submission:
@@ -162,7 +184,7 @@ async def read_submission(submission_id: int, request: Request) -> do.Submission
     submission = await service.submission.read(submission_id=submission_id)
 
     # 可以看自己的
-    if submission.account_id is request.account.id:
+    if submission.account_id == request.account.id:
         return submission
 
     # 助教可以看他的 class 的
@@ -203,7 +225,7 @@ async def read_submission_latest_judgment(submission_id: int, request: Request) 
     submission = await service.submission.read(submission_id=submission_id)
 
     # 可以看自己的
-    if submission.account_id is request.account.id:
+    if submission.account_id == request.account.id:
         return await service.submission.read_latest_judgment(submission_id=submission_id)
 
     problem = await service.problem.read(problem_id=submission.problem_id)
@@ -214,3 +236,22 @@ async def read_submission_latest_judgment(submission_id: int, request: Request) 
         return await service.submission.read_latest_judgment(submission_id=submission_id)
 
     raise exc.NoPermission
+
+
+@router.post('/submission/{submission_id}/rejudge')
+@enveloped
+async def rejudge_submission(submission_id: int, request: Request) -> None:
+    """
+    ### 權限
+    - Class manager
+    """
+    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
+    submission = await service.submission.read(submission_id=submission_id)
+    problem = await service.problem.read(problem_id=submission.problem_id)
+    challenge = await service.challenge.read(challenge_id=problem.challenge_id, include_scheduled=True)
+
+    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+        raise exc.NoPermission
+
+    await service.judgment.judge_submission(submission.id)
+

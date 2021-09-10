@@ -6,7 +6,8 @@ from base.popo import Filter, Sorter
 
 
 from .base import SafeExecutor, SafeConnection
-from .util import execute_count, compile_filters
+from .util import execute_count, compile_filters, compile_values
+from .account import account_referral_to_id
 
 
 async def add(name: str, class_id: int, label: str) -> int:
@@ -133,37 +134,19 @@ async def _delete_cascade_from_class(class_id: int, conn) -> None:
 # === member control
 
 
-async def browse_members(limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter]) \
-        -> tuple[Sequence[do.TeamMember], int]:
-
-    cond_sql, cond_params = compile_filters(filters)
-    sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
-    if sort_sql:
-        sort_sql += ','
-
+async def browse_members(team_id: int) -> [Sequence[do.TeamMember]]:
     async with SafeExecutor(
             event='get team members id',
             sql=fr'SELECT member_id, team_id, role'
                 fr'  FROM team_member'
-                fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
-                fr' ORDER BY {sort_sql} team_id ASC'
-                fr' LIMIT %(limit)s OFFSET %(offset)s',
-            **cond_params,
-            limit=limit, offset=offset,
+                fr' WHERE team_id = %(team_id)s'
+                fr' ORDER BY role DESC',
+            team_id=team_id,
             fetch='all',
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
-        data = [do.TeamMember(member_id=id_, team_id=team_id, role=RoleType(role_str))
+        return [do.TeamMember(member_id=id_, team_id=team_id, role=RoleType(role_str))
                 for id_, team_id, role_str in records]
-
-    total_count = await execute_count(
-        sql=fr'SELECT member_id, team_id, role'
-            fr'  FROM team_member'
-            fr'{f" WHERE {cond_sql}" if cond_sql else ""}',
-        **cond_params,
-    )
-
-    return data, total_count
 
 
 async def read_member(team_id: int, member_id: int) -> do.TeamMember:
@@ -190,7 +173,8 @@ async def add_member(team_id: int, account_referral: str, role: RoleType):
         pass
 
 
-async def add_team_and_add_member(team_name: str, class_id: int, team_label: str, account_referral: str, role: RoleType):
+async def add_team_and_add_member(team_name: str, class_id: int, team_label: str,
+                                  member_roles: Sequence[tuple[str, RoleType]]):
     async with SafeConnection(event='add member with team name') as conn:
         async with conn.transaction():
             (team_id,) = await conn.fetchrow(
@@ -214,23 +198,19 @@ async def add_team_and_add_member(team_name: str, class_id: int, team_label: str
                 team_name, class_id, team_label, False,
             )
 
+            values = [(team_id,
+                       await account_referral_to_id(account_referral),
+                       role)
+                      for account_referral, role in member_roles]
+
+            value_sql, value_params = compile_values(values=values)
+
             await conn.execute(
                 fr'INSERT INTO team_member'
                 fr'            (team_id, member_id, role)'
-                fr'     VALUES ($1, account_referral_to_id($2), $3)',
-                team_id, account_referral, role,
+                fr'     VALUES {value_sql}',
+                *value_params
             )
-
-
-async def add_members_by_account_referral(team_id: int, member_roles: Sequence[Tuple[str, RoleType]]):
-    async with SafeConnection(event='add members to team') as conn:
-        await conn.executemany(
-            command=r'INSERT INTO team_member'
-                    r'            (team_id, member_id, role)'
-                    r'     VALUES ($1, account_referral_to_id($2), $3)',
-            args=[(team_id, account_referral, role)
-                  for account_referral, role in member_roles],
-        )
 
 
 async def edit_member(team_id: int, member_id: int, role: RoleType):
@@ -253,15 +233,5 @@ async def delete_member(team_id: int, member_id: int):
                 r'      WHERE team_id = %(team_id)s AND member_id = %(member_id)s',
             team_id=team_id,
             member_id=member_id,
-    ):
-        pass
-
-
-async def delete_all_members_in_team(team_id: int):
-    async with SafeExecutor(
-            event='HARD DELETE team member',
-            sql=r'DELETE FROM team_member'
-                r'      WHERE team_id = %(team_id)s',
-            team_id=team_id,
     ):
         pass

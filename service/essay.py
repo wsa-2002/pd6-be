@@ -19,15 +19,15 @@ delete = db.essay.delete
 
 async def download_all(account_id: int, essay_id: int, as_attachment: bool) -> None:
     result = await db.essay_submission.browse_with_essay_id(essay_id=essay_id)
-    files = {}
+    files = []
     for essay_submission in result:
         s3_file = await db.s3_file.read(s3_file_uuid=essay_submission.content_file_uuid)
-        files[essay_submission.filename] = s3_file.key
+        files.append((s3_file, essay_submission.filename))
 
     zip_buffer = io.BytesIO()
     with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zipper:
-        for filename in files:
-            infile_content = await s3.essay_submission.get_file_content(key=files[filename])
+        for file, filename in files:
+            infile_content = await s3.tools.get_file_content(bucket=file.bucket, key=file.key)
             zipper.writestr(filename, infile_content)
 
     s3_file = await s3.temp.put_object(body=zip_buffer.getvalue())

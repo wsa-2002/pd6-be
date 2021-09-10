@@ -62,7 +62,7 @@ async def get_challenge_statistics(challenge_id: int) -> Sequence[Tuple[str, int
 
 
 async def get_member_submission_statistics(challenge_id: int) \
-        -> Sequence[Tuple[int, Sequence[do.Judgment], Sequence[do.EssaySubmission]]]:
+        -> Sequence[Tuple[int, Sequence[tuple[int, do.Judgment]], Sequence[do.EssaySubmission]]]:
     """
     :return: [id, [submission_id, submission_score], [essay_submission]]
     """
@@ -79,11 +79,12 @@ async def get_member_submission_statistics(challenge_id: int) \
         problem_judgments = []
         for problem in problems:
             try:
-                problem_judgments.append(await db.judgment.get_submission_judgment_by_challenge_type(
+                judgment = await db.judgment.get_submission_judgment_by_challenge_type(
                     problem_id=problem.id,
                     account_id=class_member.member_id,
                     selection_type=challenge.selection_type,
-                    challenge_end_time=challenge.end_time))
+                    challenge_end_time=challenge.end_time)
+                problem_judgments.append((problem.id, judgment))
             except exc.persistence.NotFound:
                 pass
 

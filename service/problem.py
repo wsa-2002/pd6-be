@@ -13,6 +13,7 @@ read_task_status_by_type = db.problem.read_task_status_by_type
 
 
 async def edit(problem_id: int,
+               challenge_label: str = None,
                title: str = None,
                full_score: int = None,
                testcase_disabled: bool = None,
@@ -21,7 +22,7 @@ async def edit(problem_id: int,
                source: Optional[str] = ...,
                hint: Optional[str] = ...,) -> None:
 
-    await db.problem.edit(problem_id, title=title, full_score=full_score, description=description,
+    await db.problem.edit(problem_id, challenge_label=challenge_label, title=title, full_score=full_score, description=description,
                           io_description=io_description, source=source, hint=hint)
     if testcase_disabled is not None:
         await db.testcase.disable_enable_testcase_by_problem(problem_id=problem_id,

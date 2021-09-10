@@ -15,14 +15,14 @@ router = APIRouter(
 )
 
 
-@router.get('/judgment/status', tags=['Administrative', 'Public'])
+@router.get('/judgment/verdict', tags=['Administrative', 'Public'])
 @enveloped
-async def browse_all_judgment_status() -> Sequence[enum.JudgmentStatusType]:
+async def browse_all_judgment_verdict() -> Sequence[enum.VerdictType]:
     """
     ### 權限
     - Public
     """
-    return list(enum.JudgmentStatusType)
+    return list(enum.VerdictType)
 
 
 @router.get('/judgment/{judgment_id}')
@@ -38,7 +38,7 @@ async def read_judgment(judgment_id: int, request: Request) -> do.Judgment:
     submission = await service.submission.read(submission_id=judgment.submission_id)
 
     # 可以看自己的
-    if request.account.id is submission.account_id:
+    if request.account.id == submission.account_id:
         return judgment
 
     problem = await service.problem.read(problem_id=submission.problem_id)
@@ -66,7 +66,7 @@ async def browse_all_judgment_judge_case(judgment_id: int, request: Request) -> 
     challenge = await service.challenge.read(challenge_id=problem.challenge_id, include_scheduled=True)
 
     if not (await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)
-            or request.account.id is submission.account_id):
+            or request.account.id == submission.account_id):
         raise exc.NoPermission
 
     return await service.judgment.browse_cases(judgment_id=judgment_id)

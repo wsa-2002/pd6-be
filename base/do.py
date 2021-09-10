@@ -39,6 +39,16 @@ class StudentCard:
 
 
 @dataclass
+class EmailVerification:
+    id: int
+    email: str
+    account_id: int
+    institute_id: Optional[int]
+    student_id: Optional[str]
+    is_consumed: bool
+
+
+@dataclass
 class Course:
     id: int
     name: str
@@ -166,7 +176,7 @@ class Submission:
 class Judgment:
     id: int
     submission_id: int
-    status: enum.JudgmentStatusType
+    verdict: enum.VerdictType
     total_time: int
     max_memory: int
     score: int
@@ -177,7 +187,7 @@ class Judgment:
 class JudgeCase:
     judgment_id: int
     testcase_id: int
-    status: enum.JudgmentStatusType
+    verdict: enum.VerdictType
     time_lapse: int
     peak_memory: int
     score: int

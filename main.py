@@ -9,6 +9,9 @@ with open('logging.yaml', 'r') as conf:
     logging.config.dictConfig(log_config)
 
 
+import log
+
+
 # Create the FastAPI application
 
 from config import app_config
@@ -34,17 +37,41 @@ app = FastAPI(
 
 @app.on_event('startup')
 async def app_startup():
+    log.info('Database initializing...')
     from config import db_config
     from persistence.database import pool_handler
     await pool_handler.initialize(db_config=db_config)
+    log.info('Database initialized')
 
+    log.info('SMTP initializing...')
     from config import smtp_config
     from persistence.email import smtp_handler
     await smtp_handler.initialize(smtp_config=smtp_config)
+    log.info('SMTP initialized')
 
+    log.info('S3 initializing...')
     from config import s3_config
     from persistence.s3 import s3_handler
     await s3_handler.initialize(s3_config=s3_config)
+    log.info('S3 initialized')
+
+    log.info('AMQP initializing...')
+    from config import amqp_config
+
+    log.info('AMQP Publisher initializing...')
+    from persistence.amqp_publisher import amqp_publish_handler
+    await amqp_publish_handler.initialize(amqp_config=amqp_config)
+    log.info('AMQP Publisher initialized')
+
+    log.info('AMQP Consumer initializing...')
+    from persistence.amqp_consumer import make_consumer
+    import processor.amqp
+    report_consumer = make_consumer(amqp_config=amqp_config,
+                                    queue_name=amqp_config.report_queue_name,
+                                    consume_function=processor.amqp.save_report)
+    import asyncio
+    asyncio.ensure_future(report_consumer(asyncio.get_event_loop()))
+    log.info('AMQP Consumer initialized')
 
 
 @app.on_event('shutdown')

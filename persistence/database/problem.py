@@ -137,7 +137,7 @@ async def read_task_status_by_type(problem_id: int, account_id: int,
 
     is_last = selection_type is enum.TaskSelectionType.last
     async with SafeExecutor(
-            event='read problem submission status by task selection type',
+            event='read problem submission verdict by task selection type',
             sql=fr'SELECT problem.id, problem.challenge_id, problem.challenge_label, problem.title,'
                 fr'       problem.setter_id, problem.full_score, problem.description, problem.io_description,'
                 fr'       problem.source, problem.hint, problem.is_deleted,'
@@ -154,7 +154,7 @@ async def read_task_status_by_type(problem_id: int, account_id: int,
                 fr'   AND submission.account_id = %(account_id)s'
                 fr'{" AND NOT problem.is_deleted" if not include_deleted else ""}'
                 fr' ORDER BY '
-                fr'{"submission.submit_time" if is_last else "judgment.status, judgment.score"} DESC'
+                fr'{"submission.submit_time" if is_last else "judgment.verdict, judgment.score"} DESC'
                 fr' LIMIT 1',
             problem_id=problem_id,
             challenge_end_time=challenge_end_time,
@@ -264,14 +264,14 @@ async def total_ac_member_count(problem_id: int) -> int:
                 fr'         ON submission.account_id = class_member.member_id'
                 fr' INNER JOIN judgment'
                 fr'         ON judgment.submission_id = submission.id'
-                fr'        AND judgment.status = %(judgment_status)s'
+                fr'        AND judgment.verdict = %(judgment_verdict)s'
                 fr' INNER JOIN challenge'
                 fr'         ON class_member.class_id = challenge.class_id'
                 fr'        AND submission.submit_time <= challenge.end_time'
                 fr'        AND not challenge.is_deleted'
                 fr' WHERE class_member.role = %(role)s'
                 fr'   AND submission.problem_id = %(problem_id)s',
-            judgment_status=enum.JudgmentStatusType.ac, role=enum.RoleType.normal,
+            judgment_verdict=enum.VerdictType.accepted, role=enum.RoleType.normal,
             problem_id=problem_id,
             fetch=1,
     ) as (count,):

@@ -47,6 +47,7 @@ from . import (
     account_vo,
     institute,
     student_card,
+    email_verification,
     rbac,
 
     course,

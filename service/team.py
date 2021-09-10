@@ -11,8 +11,7 @@ import persistence.s3 as s3
 
 from base import do
 
-
-TEAM_TEMPLATE = b'Label,TeamName,TeamMember,Role'
+TEAM_TEMPLATE = b'TeamName,Manager,Member 2,Member 3,Member 4,Member 5,Member 6,Member 7,Member 8,Member 9,Member 10'
 TEAM_TEMPLATE_FILENAME = 'team_template.csv'
 
 add = db.team.add
@@ -36,21 +35,21 @@ async def get_template_file() -> tuple[do.S3File, str]:
         return s3_file, TEAM_TEMPLATE_FILENAME
 
 
-async def replace_members(team_id: int, member_roles: Sequence[Tuple[str, enum.RoleType]]) -> None:
-    try:
-        await db.team.delete_all_members_in_team(team_id=team_id)
-        await db.team.add_members_by_account_referral(team_id=team_id,
-                                                      member_roles=[(account_referral, role)
-                                                      for (account_referral, role) in member_roles])
-    except:
-        raise exc.IllegalInput
-
-
-async def import_team(team_file: typing.IO, class_id: int):
+async def import_team(team_file: typing.IO, class_id: int, label: str):
     try:
         rows = csv.DictReader(codecs.iterdecode(team_file, 'utf_8_sig'))
         for row in rows:
-            await db.team.add_team_and_add_member(team_name=row['TeamName'], class_id=class_id, team_label=row['Label'],
-                                                  account_referral=row['TeamMember'], role=enum.RoleType(row['Role']))
+            member_roles = []
+            for item in row:
+                if str(item) == 'TeamName':  # column name is 'TeamName'
+                    continue
+                if str(item) == 'Manager':  # column name is 'Manager'
+                    member_roles += [(row[str(item)], enum.RoleType.manager)]
+                elif row[str(item)]:
+                    member_roles += [(row[str(item)], enum.RoleType.normal)]
+
+            await db.team.add_team_and_add_member(team_name=row['TeamName'], class_id=class_id,
+                                                  team_label=label, member_roles=member_roles)
     except:
         raise exc.IllegalInput
+

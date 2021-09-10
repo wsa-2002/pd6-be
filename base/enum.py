@@ -1,5 +1,7 @@
 from typing import TypeVar, Optional
 
+import judge_core_common.enum
+
 from .cls import OrderedMixin, StrEnum
 
 
@@ -37,18 +39,7 @@ class TaskSelectionType(StrEnum):
     best = 'BEST'
 
 
-class JudgmentStatusType(StrEnum):
-    wfj = 'WAITING FOR JUDGE'
-    judging = 'JUDGING'
-    ac = 'ACCEPTED'
-    wa = 'WRONG ANSWER'
-    mle = 'MEMORY LIMIT EXCEED'
-    tle = 'TIME LIMIT EXCEED'
-    re = 'RUNTIME ERROR'
-    ce = 'COMPILE ERROR'
-    other = 'OTHER - CONTACT STAFF'
-    rf = 'RESTRICTED FUNCTION'
-    se = 'SYSTEM ERROR'
+VerdictType = judge_core_common.enum.VerdictType
 
 
 class FilterOperator(StrEnum):

@@ -11,3 +11,4 @@ pyyaml
 aioboto3
 python-multipart  # required for fastapi.UploadFile
 email-validator  # required for pydantic.EmailStr
+aio-pika

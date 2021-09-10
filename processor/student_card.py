@@ -34,7 +34,7 @@ async def add_student_card_to_account(account_id: int, data: AddStudentCardInput
     - Self
     """
     is_manager = await rbac.validate(request.account.id, RoleType.manager)
-    is_self = request.account.id is account_id
+    is_self = request.account.id == account_id
 
     if not (is_manager or is_self):
         raise exc.NoPermission
@@ -44,7 +44,7 @@ async def add_student_card_to_account(account_id: int, data: AddStudentCardInput
     except exc.persistence.NotFound:
         raise exc.account.InvalidInstitute
 
-    if data.student_id != data.institute_email_prefix:
+    if data.student_id.lower() != data.institute_email_prefix.lower():
         raise exc.account.StudentIdNotMatchEmail
 
     if await service.student_card.is_duplicate(institute.id, data.student_id):
@@ -64,7 +64,7 @@ async def browse_all_account_student_card(account_id: int, request: Request,) ->
     - Self
     """
     is_manager = await rbac.validate(request.account.id, RoleType.manager)
-    is_self = request.account.id is account_id
+    is_self = request.account.id == account_id
 
     if not (is_manager or is_self):
         raise exc.NoPermission
@@ -84,7 +84,7 @@ async def read_student_card(student_card_id: int, request: Request) -> do.Studen
     """
     is_manager = await rbac.validate(request.account.id, RoleType.manager)
     owner_id = await service.student_card.read_owner_id(student_card_id=student_card_id)
-    is_self = request.account.id is owner_id
+    is_self = request.account.id == owner_id
 
     if not (is_manager or is_self):
         raise exc.NoPermission

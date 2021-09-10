@@ -21,7 +21,7 @@ router = APIRouter(
 )
 
 
-@router.post('/class/{class_id}/grade', tags=['Class'])
+@router.post('/class/{class_id}/grade-import', tags=['Class'])
 @enveloped
 async def import_class_grade(class_id: int, title: str, request: Request, grade_file: UploadFile = File(...)):
     """
@@ -33,6 +33,31 @@ async def import_class_grade(class_id: int, title: str, request: Request, grade_
 
     await service.grade.import_class_grade(grade_file=grade_file.file, class_id=class_id,
                                            title=title, update_time=request.time)
+
+
+class AddGradeInput(BaseModel):
+    receiver_referral: str
+    grader_referral: str
+    title: str
+    score: str
+    comment: str
+
+
+@router.post('/class/{class_id}/grade')
+@enveloped
+async def add_grade(class_id: int, data: AddGradeInput, request: Request) -> model.AddOutput:
+    """
+    ### 權限
+    - Class Manager
+    """
+    if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id):
+        raise exc.NoPermission
+
+    grade_id = await service.grade.add(receiver=data.receiver_referral, grader=data.grader_referral, class_id=class_id,
+                                       title=data.title, score=data.score, comment=data.comment,
+                                       update_time=request.time)
+
+    return model.AddOutput(id=grade_id)
 
 
 BROWSE_CLASS_GRADE_COLUMNS = {
@@ -51,7 +76,7 @@ BROWSE_CLASS_GRADE_COLUMNS = {
 @add_to_docstring({k: v.__name__ for k, v in BROWSE_CLASS_GRADE_COLUMNS.items()})
 async def browse_class_grade(class_id: int, request: Request,
                              limit: int = 50, offset: int = 0,
-                             filter: model.FilterStr = None, sort: model.SorterStr = None)\
+                             filter: model.FilterStr = None, sort: model.SorterStr = None) \
         -> model.BrowseOutputBase:
     """
     ### 權限
@@ -100,7 +125,7 @@ async def browse_account_grade(account_id: int, request: Request,
 
     ### Available columns
     """
-    if request.account.id is not account_id:  # only self
+    if request.account.id != account_id:  # only self
         raise exc.NoPermission
 
     filters = model.parse_filter(filter, BROWSE_ACCOUNT_GRADE_COLUMNS)
@@ -145,7 +170,7 @@ async def get_grade(grade_id: int, request: Request) -> do.Grade:
     grade = await service.grade.read(grade_id=grade_id)
 
     is_class_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=grade.class_id)
-    is_self = request.account.id is grade.receiver_id
+    is_self = request.account.id == grade.receiver_id
 
     if not (is_class_manager or is_self):
         raise exc.NoPermission

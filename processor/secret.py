@@ -55,7 +55,7 @@ async def add_account(data: AddAccountInput) -> None:
     except exc.persistence.NotFound:
         raise exc.account.InvalidInstitute
 
-    if data.student_id != data.institute_email_prefix:
+    if data.student_id.lower() != data.institute_email_prefix.lower():
         raise exc.account.StudentIdNotMatchEmail
 
     if await service.student_card.is_duplicate(institute.id, data.student_id):
@@ -95,7 +95,7 @@ async def edit_password(account_id: int, data: EditPasswordInput, request: Reque
     - Self (need old password)
     """
 
-    is_self = request.account.id is account_id
+    is_self = request.account.id == account_id
     if is_self:
         return await service.account.edit_password(account_id=account_id,
                                                    old_password=data.old_password, new_password=data.new_password)
@@ -113,5 +113,6 @@ class ResetPasswordInput(BaseModel):
 
 
 @router.post('/account/reset-password', tags=['Account'], response_class=JSONResponse)
+@enveloped
 async def reset_password(data: ResetPasswordInput) -> None:
     await service.public.reset_password(code=data.code, password=data.password)

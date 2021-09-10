@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Sequence
 from uuid import UUID
 
-from base import do
+from base import do, enum
 from base.popo import Filter, Sorter
 
 from .base import SafeExecutor
@@ -171,7 +171,7 @@ async def read(submission_id: int) -> do.Submission:
 async def read_latest_judgment(submission_id: int) -> do.Judgment:
     async with SafeExecutor(
             event='read submission latest judgment',
-            sql=fr'SELECT judgment.id, judgment.submission_id, judgment.status, judgment.total_time,'
+            sql=fr'SELECT judgment.id, judgment.submission_id, judgment.verdict, judgment.total_time,'
                 fr'       judgment.max_memory, judgment.score, judgment.judge_time'
                 fr'  FROM judgment'
                 fr' INNER JOIN submission'
@@ -181,8 +181,8 @@ async def read_latest_judgment(submission_id: int) -> do.Judgment:
                 fr' LIMIT 1',
             submission_id=submission_id,
             fetch=1,
-    ) as (judgment_id, submission_id, status, total_time, max_memory, score, judge_time):
-        return do.Judgment(id=judgment_id, submission_id=submission_id, status=status,
+    ) as (judgment_id, submission_id, verdict, total_time, max_memory, score, judge_time):
+        return do.Judgment(id=judgment_id, submission_id=submission_id, verdict=enum.VerdictType(verdict),
                            total_time=total_time, max_memory=max_memory, score=score, judge_time=judge_time)
 
 
@@ -206,13 +206,15 @@ async def browse_under_class(class_id: int,
                 fr'  FROM submission'
                 fr'  INNER JOIN problem'
                 fr'          ON problem.id = submission.problem_id'
+                fr'         AND problem.is_deleted = %(problem_is_deleted)s'
                 fr'  INNER JOIN challenge'
                 fr'          ON challenge.id = problem.challenge_id '
                 fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
                 fr'      AND challenge.class_id = %(class_id)s'
-                fr' ORDER BY {sort_sql} submission.id DESC',
+                fr' ORDER BY {sort_sql} submission.id DESC'
+                fr' LIMIT %(limit)s OFFSET %(offset)s',
             **cond_params,
-            class_id=class_id,
+            class_id=class_id, problem_is_deleted=False,
             limit=limit, offset=offset,
             fetch='all',
             raise_not_found=False,  # Issue #134: return [] for browse
@@ -229,11 +231,12 @@ async def browse_under_class(class_id: int,
             fr'  FROM submission'
             fr'  INNER JOIN problem'
             fr'          ON problem.id = submission.problem_id'
+            fr'         AND problem.is_deleted = %(problem_is_deleted)s'
             fr'  INNER JOIN challenge'
             fr'          ON challenge.id = problem.challenge_id '
             fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
             fr'      AND challenge.class_id = %(class_id)s',
-        **cond_params,
+        **cond_params, problem_is_deleted=False,
         class_id=class_id,
     )
     return data, total_count

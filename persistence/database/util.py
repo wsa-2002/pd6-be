@@ -91,3 +91,17 @@ def compile_filters(filters: Sequence[Filter]) -> tuple[str, dict]:
         params |= param_dict
 
     return ' AND '.join(conditions), params
+
+
+def compile_values(values: Sequence[Sequence]) -> tuple[str, list]:  # sql, param_list
+    value_sql, params = [], []
+    for items in values:
+        value_sql.append(
+            '('
+            + ', '.join(f'${i}' for i, _ in enumerate(items, start=len(params) + 1))
+            + ')'
+        )
+        params += items
+
+    sql = ', '.join(value_sql)
+    return sql, params
