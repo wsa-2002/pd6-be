@@ -156,7 +156,7 @@ class ReadTestcaseOutput:
 async def browse_all_testcase_under_problem(problem_id: int, request: Request) -> Sequence[ReadTestcaseOutput]:
     """
     ### 權限
-    - System normal (sample data)
+    - System normal (data without file uuid)
     - CM (all data)
     """
     if not await rbac.validate(request.account.id, RoleType.normal):
@@ -167,7 +167,7 @@ async def browse_all_testcase_under_problem(problem_id: int, request: Request) -
     challenge = await service.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
     is_class_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)
 
-    testcases = await service.testcase.browse(problem_id=problem_id)
+    testcases = await service.testcase.browse(problem_id=problem_id, include_disabled=True)
     return [ReadTestcaseOutput(
         id=testcase.id,
         problem_id=testcase.problem_id,
