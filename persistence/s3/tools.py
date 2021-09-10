@@ -21,3 +21,10 @@ async def sign_url_from_do(s3_file: do.S3File, expire_secs: int, filename: str, 
         expire_secs=expire_secs,
         as_attachment=as_attachment,
     )
+
+
+async def get_file_content(bucket: str, key: str):
+    """
+    :return: infile content
+    """
+    return await s3_handler.get_file_content(bucket=bucket, key=key)
