@@ -81,7 +81,7 @@ async def read_language(language_id: int, include_disabled=True) -> do.Submissio
 
 async def read_language_queue_name(language_id: int, include_disabled=True) -> str:
     async with SafeExecutor(
-            event='read submission language',
+            event='read submission language queue name',
             sql=fr'SELECT queue_name'
                 fr'  FROM submission_language'
                 fr' WHERE id = %(id)s'
