@@ -89,7 +89,7 @@ async def _judge(submission: do.Submission, judge_problem: judge_do.Problem,
         ),
         testcases=judge_testcases,
         assisting_data=judge_assisting_datas,
-    ), language_name=submission_language.name, language_version=submission_language.version)
+    ), language_queue_name=await db.submission.read_language_queue_name(submission.id))
 
 
 async def _sign_file_url(uuid: UUID, filename: str):
