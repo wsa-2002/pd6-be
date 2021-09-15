@@ -94,13 +94,14 @@ async def submit(problem_id: int, language_id: int, request: Request, content_fi
     # Validate problem
     problem = await service.problem.read(problem_id)
     challenge = await service.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
-
+    class_role = await rbac.get_role(request.account.id, class_id=challenge.class_id)
     publicize_time = (challenge.start_time if challenge.publicize_type == ChallengePublicizeType.start_time
                       else challenge.end_time)
     is_challenge_publicized = request.time >= publicize_time
 
     if not (is_challenge_publicized
-            or await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)):
+            or (class_role and request.time >= challenge.start_time)
+            or class_role == RoleType.manager):
         raise exc.NoPermission
 
     # Validate language
