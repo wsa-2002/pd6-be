@@ -114,9 +114,9 @@ async def read_challenge(challenge_id: int, request: Request) -> do.Challenge:
                       else challenge.end_time)
     is_challenge_publicized = request.time >= publicize_time
 
-    if not (class_role == RoleType.manager
+    if not (is_challenge_publicized
             or (class_role and request.time >= challenge.start_time)
-            or is_challenge_publicized):
+            or class_role == RoleType.manager):
         raise exc.NoPermission
 
     return challenge
