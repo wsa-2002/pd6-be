@@ -297,8 +297,8 @@ async def browse_all_task_under_challenge(challenge_id: int, request: Request) -
 
     return BrowseTaskOutput(
         problem=problems,
-        peer_review=peer_reviews if class_role else None,
-        essay=essays if class_role else None,
+        peer_review=peer_reviews if class_role else [],
+        essay=essays if class_role else [],
     )
 
 
