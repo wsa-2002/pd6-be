@@ -88,6 +88,8 @@ async def submit(problem_id: int, language_id: int, request: Request, content_fi
     ### 限制
     - 上傳檔案 < 1mb
     """
+    if not await rbac.validate(request.account.id, RoleType.normal):
+        raise exc.NoPermission
 
     # Validate problem
     problem = await service.problem.read(problem_id)
