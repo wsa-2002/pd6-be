@@ -4,7 +4,7 @@ from typing import Optional, Sequence
 from pydantic import BaseModel
 
 from base import do, enum, popo
-from base.enum import RoleType, FilterOperator
+from base.enum import RoleType, FilterOperator, ChallengePublicizeType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
 import service
@@ -257,8 +257,8 @@ async def add_peer_review_under_challenge(challenge_id: int, data: AddPeerReview
 @dataclass
 class BrowseTaskOutput:
     problem: Sequence[do.Problem]
-    peer_review: Sequence[do.PeerReview]
-    essay: Sequence[do.Essay]
+    peer_review: Optional[Sequence[do.PeerReview]]
+    essay: Optional[Sequence[do.Essay]]
 
 
 @router.get('/challenge/{challenge_id}/task')
@@ -268,19 +268,27 @@ async def browse_all_task_under_challenge(challenge_id: int, request: Request) -
     ### 權限
     - Class manager (all)
     - Class guest (active/archived challenges)
+    - System Normal (by challenge publicize type)
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     challenge = await service.challenge.read(challenge_id=challenge_id, include_scheduled=True, ref_time=request.time)
     class_role = await rbac.get_role(request.account.id, class_id=challenge.class_id)
-    if class_role < RoleType.normal:
+
+    publicize_time = (challenge.start_time if challenge.publicize_type == ChallengePublicizeType.start_time
+                      else challenge.end_time)
+    is_challenge_publicized = request.time >= publicize_time
+
+    if not ((class_role >= RoleType.guest and request.time >= challenge.start_time)                    # Class guest
+            or (await rbac.validate(request.account.id, RoleType.normal) and is_challenge_publicized)  # System normal
+            or class_role == RoleType.manager):                                                        # Class manager
         raise exc.NoPermission
 
     problems, peer_reviews, essays = await service.challenge.browse_task(challenge.id)
 
     return BrowseTaskOutput(
         problem=problems,
-        peer_review=peer_reviews,
-        essay=essays,
+        peer_review=peer_reviews if class_role else None,
+        essay=essays if class_role else None,
     )
 
 
