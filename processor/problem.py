@@ -48,13 +48,15 @@ async def read_problem(problem_id: int, request: Request) -> do.Problem:
     challenge = await service.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
 
     is_system_normal = await rbac.validate(request.account.id, RoleType.normal)
-    is_class_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)
+    class_role = await rbac.get_role(request.account.id, class_id=challenge.class_id)
 
     publicize_time = (challenge.start_time if challenge.publicize_type == ChallengePublicizeType.start_time
                       else challenge.end_time)
     is_challenge_publicized = request.time >= publicize_time
 
-    if not (is_class_manager or (is_system_normal and is_challenge_publicized)):
+    if not (class_role == RoleType.manager
+            or (class_role == RoleType.normal and request.time >= challenge.start_time)
+            or (is_system_normal and is_challenge_publicized)):
         raise exc.NoPermission
 
     return problem
