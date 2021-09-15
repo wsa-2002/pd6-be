@@ -100,13 +100,21 @@ async def read_challenge(challenge_id: int, request: Request) -> do.Challenge:
     """
     ### 權限
     - Class manager (all)
-    - Class guest (not scheduled)
+    - Class normal & guest (after start time)
+    - System normal (after scheduled time)
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     challenge = await service.challenge.read(challenge_id=challenge_id, include_scheduled=True, ref_time=request.time)
     class_role = await rbac.get_role(request.account.id, class_id=challenge.class_id)
+    is_system_normal = await rbac.get_role(request.account.id)
 
-    if class_role < RoleType.guest or (class_role < RoleType.manager and request.time < challenge.start_time):
+    publicize_time = (challenge.start_time if challenge.publicize_type == ChallengePublicizeType.start_time
+                      else challenge.end_time)
+    is_challenge_publicized = request.time >= publicize_time
+
+    if not (class_role == RoleType.manager
+            or (class_role and request.time >= challenge.start_time)
+            or (is_system_normal and is_challenge_publicized)):
         raise exc.NoPermission
 
     return challenge
