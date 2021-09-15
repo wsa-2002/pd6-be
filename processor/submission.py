@@ -97,7 +97,7 @@ async def submit(problem_id: int, language_id: int, request: Request, content_fi
                       else challenge.end_time)
     is_challenge_publicized = request.time >= publicize_time
 
-    if not (is_challenge_publicized
+    if not ((is_challenge_publicized and await rbac.validate(request.account.id, RoleType.normal))
             or (await rbac.validate(request.account.id, RoleType.normal, class_id=challenge.class_id)
                 and request.time >= challenge.start_time)
             or await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)):
