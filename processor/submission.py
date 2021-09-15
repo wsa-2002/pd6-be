@@ -88,8 +88,6 @@ async def submit(problem_id: int, language_id: int, request: Request, content_fi
     ### 限制
     - 上傳檔案 < 1mb
     """
-    if not await rbac.validate(request.account.id, RoleType.normal):
-        raise exc.NoPermission
 
     # Validate problem
     problem = await service.problem.read(problem_id)
@@ -100,6 +98,8 @@ async def submit(problem_id: int, language_id: int, request: Request, content_fi
     is_challenge_publicized = request.time >= publicize_time
 
     if not (is_challenge_publicized
+            or (await rbac.validate(request.account.id, RoleType.normal, class_id=challenge.class_id)
+                and request.time >= challenge.start_time)
             or await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)):
         raise exc.NoPermission
 
