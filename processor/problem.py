@@ -55,7 +55,7 @@ async def read_problem(problem_id: int, request: Request) -> do.Problem:
     is_challenge_publicized = request.time >= publicize_time
 
     if not (class_role == RoleType.manager
-            or (class_role == RoleType.normal and request.time >= challenge.start_time)
+            or (class_role and request.time >= challenge.start_time)
             or (is_system_normal and is_challenge_publicized)):
         raise exc.NoPermission
 
