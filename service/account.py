@@ -1,13 +1,50 @@
-from base import enum
+import csv
+import codecs
+import datetime
+import io
+from typing import Tuple
+import typing
+
+from base import enum, do
 import exceptions as exc
 import persistence.database as db
 import persistence.email as email
+import persistence.s3 as s3
 from util import security
+
+
+ACCOUNT_TEMPLATE = b'"RealName",Username,Password,"AlternativeEmail",Nickname'
+ACCOUNT_TEMPLATE_FILENAME = 'account_template.csv'
 
 
 async def add(username: str, password: str, nickname: str, real_name: str, role=enum.RoleType.guest):
     return await db.account.add(username=username, pass_hash=security.hash_password(password),
                                 nickname=nickname, real_name=real_name, role=role)
+
+
+async def add_normal(username: str, password: str, real_name: str, alternative_email: str):
+    return await db.account.add_normal(username=username, pass_hash=security.hash_password(password),
+                                       real_name=real_name, alternative_email=alternative_email)
+
+
+async def import_account(account_file: typing.IO):
+    try:
+        rows = csv.DictReader(codecs.iterdecode(account_file, 'utf_8_sig'))
+        for row in rows:
+            await db.account.add_normal(real_name=row['Real_Name'], username=row['Username'],
+                                        pass_hash=security.hash_password(row['Password']),
+                                        alternative_email=row['Alternative_Email'], nickname=row['Nickname'])
+    except:
+        raise exc.IllegalInput
+
+
+async def get_template_file() -> Tuple[do.S3File, str]:
+    """
+    :return: do.S3File and filename
+    """
+    with io.BytesIO(ACCOUNT_TEMPLATE) as file:
+        s3_file = await s3.temp.upload(file=file)
+        return s3_file, ACCOUNT_TEMPLATE_FILENAME
 
 
 browse_with_default_student_card = db.account_vo.browse_with_default_student_card
