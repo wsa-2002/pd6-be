@@ -41,7 +41,7 @@ async def browse(course_id: int = None, include_deleted=False) -> Sequence[do.Cl
             sql=fr'SELECT id, name, course_id, is_deleted'
                 fr'  FROM class'
                 fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
-                fr' ORDER BY course_id ASC, id ASC',
+                fr' ORDER BY course_id ASC, name DESC, id ASC',
             **conditions,
             fetch='all',
             raise_not_found=False,  # Issue #134: return [] for browse
