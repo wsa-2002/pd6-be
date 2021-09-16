@@ -31,9 +31,9 @@ async def import_account(account_file: typing.IO):
     try:
         rows = csv.DictReader(codecs.iterdecode(account_file, 'utf_8_sig'))
         for row in rows:
-            await db.account.add_normal(real_name=row['Real_Name'], username=row['Username'],
+            await db.account.add_normal(real_name=row['RealName'], username=row['Username'],
                                         pass_hash=security.hash_password(row['Password']),
-                                        alternative_email=row['Alternative_Email'], nickname=row['Nickname'])
+                                        alternative_email=row['AlternativeEmail'], nickname=row['Nickname'])
     except:
         raise exc.IllegalInput
 
