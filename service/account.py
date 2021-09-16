@@ -13,7 +13,7 @@ import persistence.s3 as s3
 from util import security
 
 
-ACCOUNT_TEMPLATE = b'"RealName",Username,Password,"AlternativeEmail",Nickname'
+ACCOUNT_TEMPLATE = b'RealName,Username,Password,AlternativeEmail,Nickname'
 ACCOUNT_TEMPLATE_FILENAME = 'account_template.csv'
 
 
