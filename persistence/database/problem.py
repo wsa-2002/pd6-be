@@ -305,14 +305,13 @@ async def total_member_count(problem_id: int) -> int:
                 fr'  FROM class_member'
                 fr' INNER JOIN submission'
                 fr'         ON submission.account_id = class_member.member_id'
-                fr' INNER JOIN judgment'
-                fr'         ON judgment.submission_id = submission.id'
                 fr' INNER JOIN problem'
                 fr'         ON problem.id = submission.problem_id'
+                fr'        AND NOT problem.is_deleted'
                 fr' INNER JOIN challenge'
                 fr'         ON problem.challenge_id = challenge.id'
                 fr'        AND submission.submit_time <= challenge.end_time'
-                fr'        AND not challenge.is_deleted'
+                fr'        AND NOT challenge.is_deleted'
                 fr' WHERE class_member.role = %(role)s'
                 fr'   AND submission.problem_id = %(problem_id)s',
             role=enum.RoleType.normal, problem_id=problem_id,
