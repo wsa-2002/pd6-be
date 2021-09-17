@@ -33,6 +33,8 @@ async def import_account(account_file: typing.IO):
             await db.account.add_normal(real_name=row['RealName'], username=row['Username'],
                                         pass_hash=security.hash_password(row['Password']),
                                         alternative_email=row['AlternativeEmail'], nickname=row['Nickname'])
+    except UnicodeDecodeError:
+        raise exc.FileDecodeError
     except:
         raise exc.IllegalInput
 
