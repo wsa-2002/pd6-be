@@ -207,7 +207,6 @@ async def read_account_with_default_student_id(account_id: int, request: Request
 
 
 class AddNormalAccountInput(BaseModel):
-    # Account
     real_name: str
     username: str
     password: str
