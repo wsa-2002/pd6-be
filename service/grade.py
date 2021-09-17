@@ -30,6 +30,8 @@ async def import_class_grade(grade_file: typing.IO, title: str, class_id: int, u
             await db.grade.add(receiver=row['Receiver'], grader=row['Grader'], class_id=class_id,
                                comment=row['Comment'], score=row['Score'], title=title,
                                update_time=update_time)
+    except UnicodeDecodeError:
+        raise exc.FileDecodeError
     except:
         raise exc.IllegalInput
 
