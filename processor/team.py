@@ -48,7 +48,7 @@ async def get_team_template_file(request: Request) -> GetTeamTemplateOutput:
     ### 權限
     - system normal
     """
-    if not rbac.validate(request.account.id, RoleType.normal):
+    if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
     s3_file, filename = await service.team.get_template_file()
