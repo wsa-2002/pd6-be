@@ -42,6 +42,12 @@ class IllegalInput(_CauseMixin, PdogsException):
     """
 
 
+class FileDecodeError(PdogsException):
+    """
+    File format not in utf-8
+    """
+
+
 # For import usage
 from . import (
     account,
