@@ -50,6 +50,8 @@ async def import_team(team_file: typing.IO, class_id: int, label: str):
 
             await db.team.add_team_and_add_member(team_name=row['TeamName'], class_id=class_id,
                                                   team_label=label, member_roles=member_roles)
+    except UnicodeDecodeError:
+        raise exc.FileDecodeError
     except:
         raise exc.IllegalInput
 
