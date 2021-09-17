@@ -1,6 +1,7 @@
 from typing import Optional
 from dataclasses import dataclass
 
+from fastapi import UploadFile, File
 import fastapi.routing
 import pydantic
 from pydantic import BaseModel
@@ -88,7 +89,7 @@ class AddNormalAccountInput(BaseModel):
     alternative_email: Optional[pydantic.EmailStr] = model.can_omit
 
 
-@router.post('/account-normal')
+@router.post('/account-normal', tags=['Account'], response_class=JSONResponse)
 @enveloped
 async def add_normal_account(data: AddNormalAccountInput, request: Request) -> None:
     """
@@ -109,7 +110,7 @@ async def add_normal_account(data: AddNormalAccountInput, request: Request) -> N
         raise exc.account.UsernameExists
 
 
-@router.post('/account-import')
+@router.post('/account-import', tags=['Account'], response_class=JSONResponse)
 @enveloped
 async def import_account(request: Request, account_file: UploadFile = File(...)):
     """
