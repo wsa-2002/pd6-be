@@ -21,7 +21,7 @@ async def add(username: str, password: str, nickname: str, real_name: str, role=
                                 nickname=nickname, real_name=real_name, role=role)
 
 
-async def add_normal(username: str, password: str, nickname: str, real_name: str, alternative_email: str = ...):
+async def add_normal(username: str, password: str, nickname: str, real_name: str, alternative_email: str = ...) -> int:
     return await db.account.add_normal(username=username, pass_hash=security.hash_password(password),
                                        real_name=real_name, nickname=nickname,
                                        alternative_email=alternative_email if alternative_email is not ... else None)
