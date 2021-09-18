@@ -86,6 +86,7 @@ class AddNormalAccountInput(BaseModel):
     real_name: str
     username: str
     password: str
+    nickname: str = ''
     alternative_email: Optional[pydantic.EmailStr] = model.can_omit
 
 
@@ -105,7 +106,8 @@ async def add_normal_account(data: AddNormalAccountInput, request: Request) -> N
 
     try:
         await service.account.add_normal(real_name=data.real_name, username=data.username,
-                                         password=data.password, alternative_email=data.alternative_email)
+                                         password=data.password, alternative_email=data.alternative_email,
+                                         nickname=data.nickname)
     except exc.persistence.UniqueViolationError:
         raise exc.account.UsernameExists
 

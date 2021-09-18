@@ -20,8 +20,8 @@ async def add(username: str, pass_hash: str, nickname: str, real_name: str, role
         return account_id
 
 
-async def add_normal(username: str, pass_hash: str, real_name: str, alternative_email: str,
-                     nickname: str = None, role=RoleType.normal) -> int:
+async def add_normal(username: str, pass_hash: str, real_name: str, nickname: str,
+                     alternative_email: str = None, role=RoleType.normal) -> int:
     async with SafeExecutor(
             event='add account',
             sql=r'INSERT INTO account'
