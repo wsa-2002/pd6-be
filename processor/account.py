@@ -145,7 +145,7 @@ class ReadAccountOutput:
     username: str
     nickname: str
     role: Optional[str]
-    real_name: str
+    real_name: Optional[str]
     alternative_email: Optional[str]
 
     student_id: Optional[str]
