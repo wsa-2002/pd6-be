@@ -270,7 +270,7 @@ async def total_ac_member_count(problem_id: int) -> int:
                 fr' INNER JOIN challenge'
                 fr'         ON challenge.id = problem.challenge_id'
                 fr'        AND submission.submit_time <= challenge.end_time'
-                fr'        AND not challenge.is_deleted'
+                fr'        AND NOT challenge.is_deleted'
                 fr' WHERE class_member.role = %(role)s'
                 fr'   AND submission.problem_id = %(problem_id)s',
             judgment_verdict=enum.VerdictType.accepted, role=enum.RoleType.normal,
