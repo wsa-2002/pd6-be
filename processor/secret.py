@@ -1,6 +1,7 @@
 from typing import Optional
 from dataclasses import dataclass
 
+from fastapi import UploadFile, File
 import fastapi.routing
 import pydantic
 from pydantic import BaseModel
@@ -79,6 +80,47 @@ async def add_account(data: AddAccountInput) -> None:
 async def login(data: LoginInput) -> LoginOutput:
     login_token, account_id = await service.public.login(username=data.username, password=data.password)
     return LoginOutput(token=login_token, account_id=account_id)
+
+
+class AddNormalAccountInput(BaseModel):
+    real_name: str
+    username: str
+    password: str
+    alternative_email: Optional[pydantic.EmailStr] = model.can_omit
+
+
+@router.post('/account-normal', tags=['Account'], response_class=JSONResponse)
+@enveloped
+async def add_normal_account(data: AddNormalAccountInput, request: Request) -> None:
+    """
+    ### 權限
+    - System Manager
+    """
+    if not await rbac.validate(request.account.id, RoleType.manager):
+        raise exc.NoPermission
+
+    # 要先檢查以免創立了帳號後才出事
+    if any(char in data.username for char in const.USERNAME_PROHIBITED_CHARS):
+        raise exc.account.IllegalCharacter
+
+    try:
+        await service.account.add_normal(real_name=data.real_name, username=data.username,
+                                         password=data.password, alternative_email=data.alternative_email)
+    except exc.persistence.UniqueViolationError:
+        raise exc.account.UsernameExists
+
+
+@router.post('/account-import', tags=['Account'], response_class=JSONResponse)
+@enveloped
+async def import_account(request: Request, account_file: UploadFile = File(...)):
+    """
+    ### 權限
+    - System Manager
+    """
+    if not await rbac.validate(request.account.id, RoleType.manager):
+        raise exc.NoPermission
+
+    await service.account.import_account(account_file=account_file.file)
 
 
 class EditPasswordInput(BaseModel):

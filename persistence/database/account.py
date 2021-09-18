@@ -20,6 +20,21 @@ async def add(username: str, pass_hash: str, nickname: str, real_name: str, role
         return account_id
 
 
+async def add_normal(username: str, pass_hash: str, real_name: str, alternative_email: str,
+                     nickname: str = None, role=RoleType.normal) -> int:
+    async with SafeExecutor(
+            event='add account',
+            sql=r'INSERT INTO account'
+                r'            (username, pass_hash, real_name, role, alternative_email, nickname)'
+                r'     VALUES (%(username)s, %(pass_hash)s, %(real_name)s, %(role)s, %(alternative_email)s, %(nickname)s)'
+                r'  RETURNING id',
+            username=username, pass_hash=pass_hash, real_name=real_name,
+            role=role, alternative_email=alternative_email, nickname=nickname,
+            fetch=1,
+    ) as (account_id,):
+        return account_id
+
+
 async def read(account_id: int, *, include_deleted: bool = False) -> do.Account:
     async with SafeExecutor(
             event='read account info',
