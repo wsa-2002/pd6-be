@@ -48,7 +48,7 @@ async def get_team_template_file(request: Request) -> GetTeamTemplateOutput:
     ### 權限
     - system normal
     """
-    if not rbac.validate(request.account.id, RoleType.normal):
+    if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
     s3_file, filename = await service.team.get_template_file()
@@ -151,8 +151,10 @@ async def add_team_member(team_id: int, data: Sequence[AddMemberInput], request:
     team = await service.team.read(team_id=team_id)
     if not rbac.validate(request.account.id, RoleType.manager, class_id=team.class_id):
         raise exc.NoPermission
-    for member in data:
-        await service.team.add_member(team_id=team.id, account_referral=member.account_referral, role=member.role)
+
+    await service.team.add_members(team_id=team.id,
+                                   member_roles=[(member.account_referral, member.role)
+                                                 for member in data])
 
 
 class EditMemberInput(BaseModel):

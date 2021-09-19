@@ -20,6 +20,21 @@ async def add(username: str, pass_hash: str, nickname: str, real_name: str, role
         return account_id
 
 
+async def add_normal(username: str, pass_hash: str, real_name: str, nickname: str,
+                     alternative_email: str = None, role=RoleType.normal) -> int:
+    async with SafeExecutor(
+            event='add account',
+            sql=r'INSERT INTO account'
+                r'            (username, pass_hash, real_name, role, alternative_email, nickname)'
+                r'     VALUES (%(username)s, %(pass_hash)s, %(real_name)s, %(role)s, %(alternative_email)s, %(nickname)s)'
+                r'  RETURNING id',
+            username=username, pass_hash=pass_hash, real_name=real_name,
+            role=role, alternative_email=alternative_email, nickname=nickname,
+            fetch=1,
+    ) as (account_id,):
+        return account_id
+
+
 async def read(account_id: int, *, include_deleted: bool = False) -> do.Account:
     async with SafeExecutor(
             event='read account info',
@@ -59,15 +74,20 @@ async def edit(account_id: int, real_name: str = None, nickname: str = None) -> 
 
 
 async def delete(account_id: int) -> None:
-    async with SafeExecutor(
-            event='soft delete account',
-            sql=fr'UPDATE account'
-                fr'   SET is_deleted = %(is_deleted)s'
-                fr' WHERE id = %(account_id)s',
-            account_id=account_id,
-            is_deleted=True,
-    ):
-        return
+    async with SafeConnection(event='soft delete account and HARD delete student card') as conn:
+        async with conn.transaction():
+            await conn.execute(
+                r'DELETE FROM student_card'
+                r' WHERE account_id = $1',
+                account_id,
+            )
+
+            await conn.execute(
+                r'UPDATE account'
+                r'   SET is_deleted = $1'
+                r' WHERE id = $2',
+                True, account_id,
+            )
 
 
 async def delete_alternative_email_by_id(account_id: int) -> None:

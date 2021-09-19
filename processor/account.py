@@ -1,11 +1,14 @@
 import pydantic
 from dataclasses import dataclass
 from typing import Sequence, Optional
+from uuid import UUID
 
+from fastapi import UploadFile, File
 from pydantic import BaseModel
 
 from base.enum import RoleType
 from base import do
+import const
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
 import service
@@ -140,12 +143,32 @@ async def browse_all_account_with_class_role(account_id: int, request: Request) 
 
 
 @dataclass
+class GetAccountTemplateOutput:
+    s3_file_uuid: UUID
+    filename: str
+
+
+@router.get('/account/template')
+@enveloped
+async def get_account_template_file(request: Request) -> GetAccountTemplateOutput:
+    """
+    ### 權限
+    - system normal
+    """
+    if not await rbac.validate(request.account.id, RoleType.normal):
+        raise exc.NoPermission
+
+    s3_file, filename = await service.account.get_template_file()
+    return GetAccountTemplateOutput(s3_file_uuid=s3_file.uuid, filename=filename)
+
+
+@dataclass
 class ReadAccountOutput:
     id: int
     username: str
     nickname: str
     role: Optional[str]
-    real_name: str
+    real_name: Optional[str]
     alternative_email: Optional[str]
 
     student_id: Optional[str]
@@ -175,7 +198,7 @@ async def read_account_with_default_student_id(account_id: int, request: Request
         username=account.username,
         nickname=account.nickname,
         role=account.role,
-        real_name=account.real_name if view_personal else None,
+        real_name=account.real_name,
         alternative_email=account.alternative_email if view_personal else None,
         student_id=student_card.student_id if view_personal else None,
     )
