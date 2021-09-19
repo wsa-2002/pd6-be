@@ -86,12 +86,13 @@ class AddNormalAccountInput(BaseModel):
     real_name: str
     username: str
     password: str
+    nickname: str = ''
     alternative_email: Optional[pydantic.EmailStr] = model.can_omit
 
 
 @router.post('/account-normal', tags=['Account'], response_class=JSONResponse)
 @enveloped
-async def add_normal_account(data: AddNormalAccountInput, request: Request) -> None:
+async def add_normal_account(data: AddNormalAccountInput, request: Request) -> model.AddOutput:
     """
     ### 權限
     - System Manager
@@ -104,10 +105,13 @@ async def add_normal_account(data: AddNormalAccountInput, request: Request) -> N
         raise exc.account.IllegalCharacter
 
     try:
-        await service.account.add_normal(real_name=data.real_name, username=data.username,
-                                         password=data.password, alternative_email=data.alternative_email)
+        account_id = await service.account.add_normal(real_name=data.real_name, username=data.username,
+                                                      password=data.password, alternative_email=data.alternative_email,
+                                                      nickname=data.nickname)
     except exc.persistence.UniqueViolationError:
         raise exc.account.UsernameExists
+
+    return model.AddOutput(id=account_id)
 
 
 @router.post('/account-import', tags=['Account'], response_class=JSONResponse)
