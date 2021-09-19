@@ -30,4 +30,6 @@ from . import (
     access_log,
 
     s3_file,
+
+    view,
 )
