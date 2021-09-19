@@ -74,15 +74,20 @@ async def edit(account_id: int, real_name: str = None, nickname: str = None) -> 
 
 
 async def delete(account_id: int) -> None:
-    async with SafeExecutor(
-            event='soft delete account',
-            sql=fr'UPDATE account'
-                fr'   SET is_deleted = %(is_deleted)s'
-                fr' WHERE id = %(account_id)s',
-            account_id=account_id,
-            is_deleted=True,
-    ):
-        return
+    async with SafeConnection(event='soft delete account and HARD delete student card') as conn:
+        async with conn.transaction():
+            await conn.execute(
+                r'DELETE FROM student_card'
+                r' WHERE account_id = $1',
+                account_id,
+            )
+
+            await conn.execute(
+                r'UPDATE account'
+                r'   SET is_deleted = $1'
+                r' WHERE id = $2',
+                True, account_id,
+            )
 
 
 async def delete_alternative_email_by_id(account_id: int) -> None:

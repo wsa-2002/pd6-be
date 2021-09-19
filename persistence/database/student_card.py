@@ -79,14 +79,3 @@ async def read_owner_id(student_card_id: int) -> int:
             fetch=1,
     ) as (id_,):
         return id_
-
-
-async def delete_by_account_id(account_id: int):
-    async with SafeExecutor(
-            event='HARD delete student card by account id',
-            sql=fr'DELETE FROM student_card'
-                fr' WHERE account_id = %(account_id)s',
-            account_id=account_id,
-            fetch=None,
-    ):
-        pass
