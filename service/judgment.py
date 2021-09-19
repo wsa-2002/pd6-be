@@ -27,14 +27,15 @@ async def judge_problem_submissions(problem_id: int) -> Sequence[do.Submission]:
     judge_problem, judge_testcases, judge_assisting_datas = await _prepare_problem(problem_id)
 
     submissions = []
-    batch_size = 100
+    offset, batch_size = 0, 100
     while True:
-        batch_submissions, batch_count = await db.submission.browse(offset=0, limit=batch_size, filters=[
+        batch_submissions, batch_count = await db.submission.browse(offset=offset, limit=batch_size, filters=[
             popo.Filter(col_name='problem_id', op=enum.FilterOperator.equal, value=problem_id),
         ], sorters=[])
         if not batch_submissions:
             break
         submissions += batch_submissions
+        offset += batch_count
 
     for submission in submissions:
         await _judge(submission, judge_problem=judge_problem,
