@@ -86,4 +86,8 @@ async def force_edit_password(account_id: int, new_password: str):
 
 
 verify_email = db.account.verify_email
-delete = db.account.delete
+
+
+async def delete(account_id: int):
+    await db.student_card.delete_by_account_id(account_id=account_id)
+    await db.account.delete(account_id=account_id)
