@@ -4,8 +4,9 @@ from typing import Sequence, Optional
 from base import do, enum
 from base.popo import Filter, Sorter
 
-from .base import SafeExecutor
-from .util import execute_count, compile_filters
+from .base import SafeExecutor, SafeConnection
+from .util import execute_count, compile_filters, compile_values
+from .account import account_referral_to_id
 
 
 async def add(receiver: str, grader: str, class_id: int, title: str, score: Optional[str], comment: Optional[str],
@@ -23,6 +24,27 @@ async def add(receiver: str, grader: str, class_id: int, title: str, score: Opti
             fetch=1,
     ) as (grade_id,):
         return grade_id
+
+
+async def batch_add(class_id: int, title: str, grades: Sequence[tuple[str, str, str, str]], update_time: datetime):
+    # grade in grades : receiver, score, comment, grader
+    values = [(await account_referral_to_id(receiver),
+               score,
+               comment,
+               await account_referral_to_id(grader),
+               class_id,
+               title,
+               update_time)
+              for receiver, score, comment, grader in grades]
+
+    value_sql, value_params = compile_values(values)
+
+    async with SafeConnection(event=f'batch import grade into class {class_id}') as conn:
+        async with conn.transaction():
+            await conn.execute(fr'INSERT INTO grade'
+                               fr'            (receiver_id, score, comment, grader_id, class_id, title, update_time)'
+                               fr'     VALUES {value_sql}',
+                               *value_params)
 
 
 async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter]) \
