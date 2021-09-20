@@ -56,9 +56,9 @@ async def import_team(team_file: typing.IO, class_id: int, label: str):
         raise exc.IllegalInput
 
 
-async def add_members(team_id: int, member_roles: Sequence[Tuple[str, enum.RoleType]]) -> None:
+async def add_members(team_id: int, member_roles: Sequence[Tuple[str, enum.RoleType]]) -> Sequence[int]:
     try:
-        await db.team.add_members(team_id=team_id, member_roles=member_roles)
+        return await db.team.add_members(team_id=team_id, member_roles=member_roles)
     except:
         raise exc.IllegalInput
 
