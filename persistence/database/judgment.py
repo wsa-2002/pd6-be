@@ -128,7 +128,7 @@ async def get_submission_judgment_by_challenge_type(problem_id: int, account_id:
                 fr'        AND submission.account_id = %(account_id)s'
                 fr'        AND submission.submit_time <= %(challenge_end_time)s'
                 fr'        AND submission.problem_id = %(problem_id)s'
-                fr' ORDER BY judge_time DESC,'
+                fr' ORDER BY judgment.judge_time DESC,'
                 fr'          {"submission.id" if is_last else "judgment.score"} DESC'
                 fr' LIMIT 1',
             account_id=account_id, challenge_end_time=challenge_end_time, problem_id=problem_id,
