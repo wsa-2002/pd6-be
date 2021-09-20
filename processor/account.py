@@ -1,9 +1,7 @@
 import pydantic
 from dataclasses import dataclass
 from typing import Sequence, Optional
-from uuid import UUID
 
-from fastapi import UploadFile, File
 from pydantic import BaseModel
 
 from base.enum import RoleType
@@ -140,26 +138,6 @@ async def browse_all_account_with_class_role(account_id: int, request: Request) 
                                         course_id=course.id,
                                         course_name=course.name)
             for class_member, class_, course in results]
-
-
-@dataclass
-class GetAccountTemplateOutput:
-    s3_file_uuid: UUID
-    filename: str
-
-
-@router.get('/account/template')
-@enveloped
-async def get_account_template_file(request: Request) -> GetAccountTemplateOutput:
-    """
-    ### 權限
-    - system normal
-    """
-    if not await rbac.validate(request.account.id, RoleType.normal):
-        raise exc.NoPermission
-
-    s3_file, filename = await service.account.get_template_file()
-    return GetAccountTemplateOutput(s3_file_uuid=s3_file.uuid, filename=filename)
 
 
 @dataclass

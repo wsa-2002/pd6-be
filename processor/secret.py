@@ -1,5 +1,6 @@
 from typing import Optional
 from dataclasses import dataclass
+from uuid import UUID
 
 from fastapi import UploadFile, File
 import fastapi.routing
@@ -112,6 +113,26 @@ async def add_normal_account(data: AddNormalAccountInput, request: Request) -> m
         raise exc.account.UsernameExists
 
     return model.AddOutput(id=account_id)
+
+
+@dataclass
+class GetAccountTemplateOutput:
+    s3_file_uuid: UUID
+    filename: str
+
+
+@router.get('/account/template')
+@enveloped
+async def get_account_template_file(request: Request) -> GetAccountTemplateOutput:
+    """
+    ### 權限
+    - System Manager
+    """
+    if not await rbac.validate(request.account.id, RoleType.manager):
+        raise exc.NoPermission
+
+    s3_file, filename = await service.account.get_template_file()
+    return GetAccountTemplateOutput(s3_file_uuid=s3_file.uuid, filename=filename)
 
 
 @router.post('/account-import', tags=['Account'], response_class=JSONResponse)
