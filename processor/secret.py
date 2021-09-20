@@ -121,7 +121,7 @@ class GetAccountTemplateOutput:
     filename: str
 
 
-@router.get('/account/template')
+@router.get('/account/template', tags=['Account'], response_class=JSONResponse)
 @enveloped
 async def get_account_template_file(request: Request) -> GetAccountTemplateOutput:
     """
