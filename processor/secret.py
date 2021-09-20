@@ -1,6 +1,5 @@
 from typing import Optional
 from dataclasses import dataclass
-from uuid import UUID
 
 from fastapi import UploadFile, File
 import fastapi.routing
