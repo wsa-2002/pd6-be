@@ -103,38 +103,37 @@ class SafeExecutor:
         log.info(f"Starting {self.__class__.__name__}: {self._event}, sql: {self._sql}, params: {self._parameters}")
 
         async with pool_handler.pool.acquire() as conn:
-            conn: asyncpg.connection.Connection
+            try:
+                results = await self._exec(conn)
+            except asyncpg.exceptions.UniqueViolationError as e:
+                raise exc.persistence.UniqueViolationError(cause=e)
 
-            results = None
+        exec_time_ms = (datetime.now() - start_time).total_seconds() * 1000
+        log.info(f"Ended {self.__class__.__name__}: {self._event} after {exec_time_ms} ms")
 
-            if not self._fetch:
-                await conn.execute(self._sql, *self._parameters)
-            elif isinstance(self._fetch, int):
-                if self._fetch == 1:
-                    results = await conn.fetchrow(self._sql, *self._parameters)
-                elif self._fetch > 1:
-                    cur = await conn.cursor(self._sql, *self._parameters)
-                    results = await cur.fetch(self._fetch)
-                else:
-                    raise ValueError
-            elif isinstance(self._fetch, str):
-                if self._fetch == 'all':
-                    results = await conn.fetch(self._sql, *self._parameters)
-                else:
-                    raise ValueError
-            else:
-                raise ValueError
+        if self._fetch and not results and self._raise_not_found:
+            raise exc.persistence.NotFound
 
-            exec_time_ms = (datetime.now() - start_time).total_seconds() * 1000
-            log.info(f"Ended {self.__class__.__name__}: {self._event} after {exec_time_ms} ms")
+        return results
 
-            if self._fetch and not results and self._raise_not_found:
-                raise exc.persistence.NotFound
+    async def _exec(self, conn: asyncpg.connection.Connection):
+        if not self._fetch:
+            await conn.execute(self._sql, *self._parameters)
+            return None
 
-            return results
+        if isinstance(self._fetch, int):
+            if self._fetch == 1:
+                return await conn.fetchrow(self._sql, *self._parameters)
+            if self._fetch > 1:
+                cur = await conn.cursor(self._sql, *self._parameters)
+                return await cur.fetch(self._fetch)
+
+        if isinstance(self._fetch, str):
+            if self._fetch == 'all':
+                return await conn.fetch(self._sql, *self._parameters)
+
+        raise ValueError
 
     async def __aexit__(self, exc_type, exc_value, traceback):
         if self._fetch == 'one' or self._fetch == 1 and exc_type is TypeError:  # Handles TypeError: value unpack
             raise exc.persistence.NotFound
-        if exc_type is asyncpg.exceptions.UniqueViolationError:
-            raise exc.persistence.UniqueViolationError(cause=exc_value)
