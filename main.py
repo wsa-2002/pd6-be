@@ -114,3 +114,9 @@ middleware.envelope.hook_exception_envelope_handler(app)
 # Register routers
 from processor import register_routers
 register_routers(app)
+
+
+# Instrument for prometheus
+from prometheus_fastapi_instrumentator import Instrumentator
+
+Instrumentator().instrument(app).expose(app)
