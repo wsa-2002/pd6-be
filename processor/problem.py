@@ -311,6 +311,25 @@ async def get_score_by_challenge_type_under_problem(problem_id: int, request: Re
     return GetScoreByTypeOutput(challenge_type=challenge.selection_type, score=submission_judgment.score)
 
 
+@router.get('/problem/{problem_id}/best-score')
+@enveloped
+async def get_score_by_best_under_problem(problem_id: int, request: Request):
+    """
+    ### 權限
+    - Self
+    """
+    problem = await service.problem.read(problem_id)
+    challenge = await service.challenge.read(challenge_id=problem.challenge_id, include_scheduled=True)
+    submission_judgment = await service.submission.get_problem_score_by_type(problem_id=problem_id,
+                                                                             account_id=request.account.id,  # 只能看自己的
+                                                                             selection_type=TaskSelectionType.best,
+                                                                             challenge_end_time=challenge.end_time)
+    return GetScoreByTypeOutput(challenge_type=challenge.selection_type, score=submission_judgment.score)
+
+
+
+
+
 @dataclass
 class RejudgeProblemOutput:
     submission_count: int
