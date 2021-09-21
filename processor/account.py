@@ -153,9 +153,9 @@ class GetAccountTemplateOutput:
 async def get_account_template_file(request: Request) -> GetAccountTemplateOutput:
     """
     ### 權限
-    - system normal
+    - System Manager
     """
-    if not await rbac.validate(request.account.id, RoleType.normal):
+    if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
     s3_file, filename = await service.account.get_template_file()
