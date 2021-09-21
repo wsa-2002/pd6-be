@@ -327,9 +327,6 @@ async def get_score_by_best_under_problem(problem_id: int, request: Request) -> 
     return GetScoreByTypeOutput(challenge_type=TaskSelectionType.best, score=submission_judgment.score)
 
 
-
-
-
 @dataclass
 class RejudgeProblemOutput:
     submission_count: int
