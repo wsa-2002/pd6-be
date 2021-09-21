@@ -313,7 +313,7 @@ async def get_score_by_challenge_type_under_problem(problem_id: int, request: Re
 
 @router.get('/problem/{problem_id}/best-score')
 @enveloped
-async def get_score_by_best_under_problem(problem_id: int, request: Request):
+async def get_score_by_best_under_problem(problem_id: int, request: Request) -> GetScoreByTypeOutput:
     """
     ### 權限
     - Self
@@ -324,7 +324,7 @@ async def get_score_by_best_under_problem(problem_id: int, request: Request):
                                                                              account_id=request.account.id,  # 只能看自己的
                                                                              selection_type=TaskSelectionType.best,
                                                                              challenge_end_time=challenge.end_time)
-    return GetScoreByTypeOutput(challenge_type=challenge.selection_type, score=submission_judgment.score)
+    return GetScoreByTypeOutput(challenge_type=TaskSelectionType.best, score=submission_judgment.score)
 
 
 
