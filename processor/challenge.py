@@ -38,6 +38,9 @@ async def add_challenge_under_class(class_id: int, data: AddChallengeInput, requ
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
 
+    if data.start_time > data.end_time:
+        raise exc.IllegalInput
+
     challenge_id = await service.challenge.add(
         class_id=class_id, publicize_type=data.publicize_type, selection_type=data.selection_type,
         title=data.title, setter_id=request.account.id, description=data.description,
