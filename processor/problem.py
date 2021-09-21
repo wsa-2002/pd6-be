@@ -65,7 +65,7 @@ async def read_problem(problem_id: int, request: Request) -> do.Problem:
 class EditProblemInput(BaseModel):
     challenge_label: str = None
     title: str = None
-    full_score: int = None
+    full_score: Optional[int] =  model.can_omit
     testcase_disabled: bool = None
     description: Optional[str] = model.can_omit
     io_description: Optional[str] = model.can_omit

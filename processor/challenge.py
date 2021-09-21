@@ -168,7 +168,7 @@ async def delete_challenge(challenge_id: int, request: Request) -> None:
 class AddProblemInput(BaseModel):
     challenge_label: str
     title: str
-    full_score: int
+    full_score: Optional[int]
     description: Optional[str]
     io_description: Optional[str]
     source: Optional[str]
