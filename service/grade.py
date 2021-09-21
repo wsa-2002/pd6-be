@@ -26,10 +26,10 @@ delete = db.grade.delete
 async def import_class_grade(grade_file: typing.IO, title: str, class_id: int, update_time: datetime):
     try:
         rows = csv.DictReader(codecs.iterdecode(grade_file, 'utf_8_sig'))
+        data = []
         for row in rows:
-            await db.grade.add(receiver=row['Receiver'], grader=row['Grader'], class_id=class_id,
-                               comment=row['Comment'], score=row['Score'], title=title,
-                               update_time=update_time)
+            data.append((row['Receiver'], row['Score'], row['Comment'], row['Grader']))
+        await db.grade.batch_add(class_id=class_id, title=title, grades=data, update_time=update_time)
     except UnicodeDecodeError:
         raise exc.FileDecodeError
     except:
