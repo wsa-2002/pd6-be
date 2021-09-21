@@ -1,5 +1,6 @@
 starlette-context
 fastapi==0.63.0  # version fixed due to complete re-overriding fastapi objects
+prometheus-fastapi-instrumentator
 pydantic  # version fixed by fastapi
 asyncpg
 pyjwt
