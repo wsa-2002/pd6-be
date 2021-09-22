@@ -75,8 +75,8 @@ async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Se
             fr'       setter_id, description, start_time, end_time, is_deleted'
             fr'  FROM challenge'
             fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
-            fr'{" AND ((publicize_type = %(end_time)s AND end_time <= %(ref_time)s)" if by_publicize_type else ""}'
-            fr'{"       OR (publicize_type = %(start_time)s AND start_time <= %(ref_time)s))" if by_publicize_type else ""}',
+            fr'{" AND ((publicize_type = %(end_time)s AND end_time <= %(ref_time)s)" if by_publicize_type and cond_sql else ""}'
+            fr'{"       OR (publicize_type = %(start_time)s AND start_time <= %(ref_time)s))" if by_publicize_type and cond_sql else ""}',
         **cond_params,
         end_time=enum.ChallengePublicizeType.end_time, start_time=enum.ChallengePublicizeType.start_time,
         ref_time=ref_time,
