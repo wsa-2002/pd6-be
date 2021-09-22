@@ -92,8 +92,12 @@ async def browse_challenge_under_class(
                                op=FilterOperator.eq,
                                value=class_id))
 
-    challenges, total_count = await service.challenge.browse(limit=limit, offset=offset, filters=filters, sorters=sorters,
-                                                             include_scheduled=(class_role == RoleType.manager), ref_time=request.time)
+    challenges, total_count = await service.challenge.browse(limit=limit, offset=offset, filters=filters,
+                                                             sorters=sorters,
+                                                             include_scheduled=(class_role == RoleType.manager),
+                                                             ref_time=request.time,
+                                                             by_publicize_type=True if not class_role else False)
+
     return model.BrowseOutputBase(challenges, total_count=total_count)
 
 
