@@ -65,3 +65,17 @@ log_data = {
     "port": port,
 }
 print(json.dumps(log_data))
+
+
+# https://github.com/trallnag/prometheus-fastapi-instrumentator/issues/50#issuecomment-900259972
+
+from prometheus_client import multiprocess, CollectorRegistry
+
+
+def when_ready(server):
+    registry = CollectorRegistry()
+    multiprocess.MultiProcessCollector(registry)
+
+
+def child_exit(server, worker):
+    multiprocess.mark_process_dead(worker.pid)
