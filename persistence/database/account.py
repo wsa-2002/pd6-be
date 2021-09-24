@@ -1,10 +1,11 @@
-from typing import Tuple
+from typing import Tuple, Sequence
 
 from base import do
 from base.enum import RoleType
 import exceptions as exc
 
 from .base import SafeExecutor, SafeConnection
+from .util import compile_values
 
 
 async def add(username: str, pass_hash: str, nickname: str, real_name: str, role: RoleType) -> int:
@@ -18,6 +19,22 @@ async def add(username: str, pass_hash: str, nickname: str, real_name: str, role
             fetch=1,
     ) as (account_id,):
         return account_id
+
+
+async def batch_add_normal(accounts: Sequence[tuple[str, str, str, str, str]], role=RoleType.normal):
+    # account in accounts: Real name, username, pass_hash, alternative email, nickname
+    async with SafeConnection(event='batch add normal account') as conn:
+        async with conn.transaction():
+            values = [(real_name, username, pass_hash, alternative_email, nickname, role)
+                      for real_name, username, pass_hash, alternative_email, nickname in accounts]
+
+            value_sql, value_params = compile_values(values)
+
+            await conn.execute(
+                fr'INSERT INTO account'
+                fr'            (real_name, username, pass_hash, alternative_email, nickname, role)'
+                fr'     VALUES {value_sql}',
+                *value_params)
 
 
 async def add_normal(username: str, pass_hash: str, real_name: str, nickname: str,

@@ -191,44 +191,45 @@ async def add_members(team_id: int, member_roles: Sequence[Tuple[str, RoleType]]
                 return account_ids
 
 
-async def add_team_and_add_member(team_name: str, class_id: int, team_label: str,
-                                  member_roles: Sequence[tuple[str, RoleType]]):
+async def add_team_and_add_member(class_id: int, team_label: str,
+                                  datas: Sequence[tuple[str, Sequence[tuple[str, RoleType]]]]):
     async with SafeConnection(event='add member with team name') as conn:
         async with conn.transaction():
-            (team_id,) = await conn.fetchrow(
-                fr'WITH get AS ('
-                fr'     SELECT id'
-                fr'       FROM team'
-                fr'      WHERE team.name = $1'
-                fr'        AND team.class_id = $2'
-                fr'        AND team.label = $3'
-                fr'        AND is_deleted = $4'
-                fr'), new_team AS ('
-                fr'     INSERT INTO team'
-                fr'                 (name, class_id, label)'
-                fr'          VALUES ($1, $2, $3)'
-                fr'     ON CONFLICT DO NOTHING'
-                fr'     RETURNING id'
-                fr')'
-                fr'SELECT id FROM get'
-                fr' UNION ALL'
-                fr' SELECT id FROM new_team',
-                team_name, class_id, team_label, False,
-            )
+            for team_name, member_roles in datas:
+                (team_id,) = await conn.fetchrow(
+                    fr'WITH get AS ('
+                    fr'     SELECT id'
+                    fr'       FROM team'
+                    fr'      WHERE team.name = $1'
+                    fr'        AND team.class_id = $2'
+                    fr'        AND team.label = $3'
+                    fr'        AND is_deleted = $4'
+                    fr'), new_team AS ('
+                    fr'     INSERT INTO team'
+                    fr'                 (name, class_id, label)'
+                    fr'          VALUES ($1, $2, $3)'
+                    fr'     ON CONFLICT DO NOTHING'
+                    fr'     RETURNING id'
+                    fr')'
+                    fr'SELECT id FROM get'
+                    fr' UNION ALL'
+                    fr' SELECT id FROM new_team',
+                    team_name, class_id, team_label, False,
+                )
 
-            values = [(team_id,
-                       await account_referral_to_id(account_referral),
-                       role)
-                      for account_referral, role in member_roles]
+                values = [(team_id,
+                           await account_referral_to_id(account_referral),
+                           role)
+                          for account_referral, role in member_roles]
 
-            value_sql, value_params = compile_values(values=values)
+                value_sql, value_params = compile_values(values=values)
 
-            await conn.execute(
-                fr'INSERT INTO team_member'
-                fr'            (team_id, member_id, role)'
-                fr'     VALUES {value_sql}',
-                *value_params
-            )
+                await conn.execute(
+                    fr'INSERT INTO team_member'
+                    fr'            (team_id, member_id, role)'
+                    fr'     VALUES {value_sql}',
+                    *value_params
+                )
 
 
 async def edit_member(team_id: int, member_id: int, role: RoleType):

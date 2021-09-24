@@ -167,6 +167,8 @@ async def batch_get_submission_judgment(request: Request, submission_ids: pydant
     - `submission_ids`: list of int
     """
     submission_ids = pydantic.parse_obj_as(list[int], submission_ids)
+    if not submission_ids:
+        return []
 
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission

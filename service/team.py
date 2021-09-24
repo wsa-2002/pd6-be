@@ -38,6 +38,7 @@ async def get_template_file() -> tuple[do.S3File, str]:
 async def import_team(team_file: typing.IO, class_id: int, label: str):
     try:
         rows = csv.DictReader(codecs.iterdecode(team_file, 'utf_8_sig'))
+        data = []
         for row in rows:
             member_roles = []
             for item in row:
@@ -47,9 +48,8 @@ async def import_team(team_file: typing.IO, class_id: int, label: str):
                     member_roles += [(row[str(item)], enum.RoleType.manager)]
                 elif row[str(item)]:
                     member_roles += [(row[str(item)], enum.RoleType.normal)]
-
-            await db.team.add_team_and_add_member(team_name=row['TeamName'], class_id=class_id,
-                                                  team_label=label, member_roles=member_roles)
+            data.append((row['TeamName'], member_roles))
+        await db.team.add_team_and_add_member(class_id=class_id, team_label=label, datas=data)
     except UnicodeDecodeError:
         raise exc.FileDecodeError
     except:

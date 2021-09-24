@@ -8,8 +8,8 @@ from .base import SafeExecutor, SafeConnection
 
 
 async def add(challenge_id: int, challenge_label: str,
-              title: str, setter_id: int, full_score: int, description: Optional[str], io_description: Optional[str],
-              source: Optional[str], hint: Optional[str]) -> int:
+              title: str, setter_id: int, full_score: Optional[int], description: Optional[str],
+              io_description: Optional[str], source: Optional[str], hint: Optional[str]) -> int:
     async with SafeExecutor(
             event='Add problem',
             sql="INSERT INTO problem"
@@ -174,7 +174,7 @@ async def read_task_status_by_type(problem_id: int, account_id: int,
 async def edit(problem_id: int,
                challenge_label: str = None,
                title: str = None,
-               full_score: int = None,
+               full_score: Optional[int] = ...,
                description: Optional[str] = ...,
                io_description: Optional[str] = ...,
                source: Optional[str] = ...,
@@ -185,7 +185,7 @@ async def edit(problem_id: int,
         to_updates['challenge_label'] = challenge_label
     if title is not None:
         to_updates['title'] = title
-    if full_score is not None:
+    if full_score is not ...:
         to_updates['full_score'] = full_score
     if description is not ...:
         to_updates['description'] = description

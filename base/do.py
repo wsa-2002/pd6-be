@@ -121,7 +121,7 @@ class Problem:
     challenge_label: str
     title: str
     setter_id: int
-    full_score: int
+    full_score: Optional[int]
     description: Optional[str]
     io_description: Optional[str]
     source: Optional[str]

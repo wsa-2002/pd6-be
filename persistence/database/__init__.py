@@ -71,5 +71,7 @@ from . import (
     peer_review_record,
 
     announcement,
-    access_log
+    access_log,
+
+    view,
 )
