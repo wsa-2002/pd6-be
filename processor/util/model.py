@@ -23,6 +23,11 @@ class AddOutput:
 
 
 @dataclass
+class AddListOutput:
+    id: list[int]
+
+
+@dataclass
 class BrowseOutputBase:
     data: typing.Any
     total_count: int
