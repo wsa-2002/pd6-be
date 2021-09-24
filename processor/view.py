@@ -217,7 +217,7 @@ async def browse_problem_set_under_class(
                                value=class_id))
 
     result, total_count = await service.view.problem_set(limit=limit, offset=offset,
-                                                         filters=filters, sorters=sorters)
+                                                         filters=filters, sorters=sorters, ref_time=request.time)
     return model.BrowseOutputBase(result, total_count=total_count)
 
 

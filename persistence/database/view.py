@@ -1,7 +1,8 @@
 from typing import Sequence
+from datetime import datetime
 
 from base import vo
-from base.enum import SortOrder, FilterOperator
+from base.enum import SortOrder, FilterOperator, ChallengePublicizeType
 from base.popo import Filter, Sorter
 
 from .base import SafeExecutor
@@ -185,7 +186,7 @@ async def my_submission(limit: int, offset: int, filters: Sequence[Filter], sort
     return data, total_count
 
 
-async def problem_set(limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter]) \
+async def problem_set(limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter], ref_time: datetime)\
         -> tuple[Sequence[vo.ViewProblemSet], int]:
 
     cond_sql, cond_params = compile_filters(filters)
@@ -198,10 +199,17 @@ async def problem_set(limit: int, offset: int, filters: Sequence[Filter], sorter
             sql=fr'SELECT challenge_id, challenge_title, problem_id, '
                 fr'       challenge_label, problem_title, class_id'
                 fr'  FROM view_problem_set'
-                fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
+                fr'{f" WHERE {cond_sql} AND" if cond_sql else " WHERE "}'
+                fr'  CASE WHEN publicize_type = %(start_time)s'
+                fr'            THEN start_time <= %(ref_time)s'
+                fr'       WHEN publicize_type = %(end_time)s'
+                fr'            THEN end_time <= %(ref_time)s'
+                fr'   END'
                 fr' ORDER BY {sort_sql} problem_id ASC'
                 fr' LIMIT %(limit)s OFFSET %(offset)s',
             **cond_params,
+            start_time=ChallengePublicizeType.start_time, end_time=ChallengePublicizeType.end_time,
+            ref_time=ref_time,
             limit=limit, offset=offset,
             fetch='all',
             raise_not_found=False,  # Issue #134: return [] for browse
