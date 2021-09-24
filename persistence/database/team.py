@@ -173,7 +173,7 @@ async def add_member(team_id: int, account_referral: str, role: RoleType):
         pass
 
 
-async def add_members(team_id: int, member_roles: Sequence[Tuple[str, RoleType]]) -> Sequence[int]:
+async def add_members(team_id: int, member_roles: Sequence[Tuple[str, RoleType]]) -> list[int]:
     async with SafeConnection(event=f'add members to team {team_id=}') as conn:
         async with conn.transaction():
             if member_roles:

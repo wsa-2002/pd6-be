@@ -143,7 +143,7 @@ class AddMemberInput(BaseModel):
 
 @router.post('/team/{team_id}/member')
 @enveloped
-async def add_team_member(team_id: int, data: Sequence[AddMemberInput], request: Request) -> Sequence[model.AddOutput]:
+async def add_team_member(team_id: int, data: Sequence[AddMemberInput], request: Request) -> model.AddListOutput:
     """
     ### 權限
     - class manager
@@ -155,7 +155,7 @@ async def add_team_member(team_id: int, data: Sequence[AddMemberInput], request:
     account_ids = await service.team.add_members(team_id=team.id,
                                                  member_roles=[(member.account_referral, member.role)
                                                                for member in data])
-    return [model.AddOutput(id=account_id) for account_id in account_ids]
+    return model.AddListOutput(id=account_ids)
 
 
 class EditMemberInput(BaseModel):
