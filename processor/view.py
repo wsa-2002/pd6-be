@@ -1,5 +1,8 @@
+from dataclasses import dataclass
+from typing import Sequence
+
 from base.enum import RoleType, FilterOperator, VerdictType
-from base import popo
+from base import popo, vo
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
 import service
@@ -23,6 +26,11 @@ BROWSE_ACCOUNT_COLUMNS = {
 }
 
 
+@dataclass
+class ViewAccountOutput(model.BrowseOutputBase):
+    data: Sequence[vo.ViewAccount]
+
+
 @router.get('/view/account')
 @enveloped
 @add_to_docstring({k: v.__name__ for k, v in BROWSE_ACCOUNT_COLUMNS.items()})
@@ -30,7 +38,7 @@ async def browse_account_with_default_student_id(
         request: Request,
         limit: model.Limit = 50, offset: model.Offset = 0,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
-) -> model.BrowseOutputBase:
+) -> ViewAccountOutput:
     """
     ### 權限
     - System Manager
@@ -46,7 +54,7 @@ async def browse_account_with_default_student_id(
 
     result, total_count = await service.view.account(limit=limit, offset=offset, filters=filters, sorters=sorters)
 
-    return model.BrowseOutputBase(result, total_count=total_count)
+    return ViewAccountOutput(result, total_count=total_count)
 
 
 BROWSE_CLASS_MEMBER_COLUMNS = {
@@ -60,6 +68,11 @@ BROWSE_CLASS_MEMBER_COLUMNS = {
 }
 
 
+@dataclass
+class ViewClassMemberOutput(model.BrowseOutputBase):
+    data: Sequence[vo.ViewClassMember]
+
+
 @router.get('/class/{class_id}/view/member')
 @enveloped
 @add_to_docstring({k: v.__name__ for k, v in BROWSE_CLASS_MEMBER_COLUMNS.items()})
@@ -68,7 +81,7 @@ async def browse_class_member(
         request: Request,
         limit: model.Limit = 50, offset: model.Offset = 0,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
-) -> model.BrowseOutputBase:
+) -> ViewClassMemberOutput:
     """
     ### 權限
     - Class normal
@@ -89,7 +102,7 @@ async def browse_class_member(
 
     result, total_count = await service.view.class_member(limit=limit, offset=offset, filters=filters, sorters=sorters)
 
-    return model.BrowseOutputBase(result, total_count=total_count)
+    return ViewClassMemberOutput(result, total_count=total_count)
 
 
 BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS = {
@@ -108,6 +121,11 @@ BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS = {
 }
 
 
+@dataclass
+class ViewSubmissionUnderClassOutput(model.BrowseOutputBase):
+    data: Sequence[vo.ViewSubmissionUnderClass]
+
+
 @router.get('/class/{class_id}/view/submission')
 @enveloped
 @add_to_docstring({k: v.__name__ for k, v in BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS.items()})
@@ -116,7 +134,7 @@ async def browse_submission_under_class(
         request: Request,
         limit: model.Limit = 50, offset: model.Offset = 0,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
-) -> model.BrowseOutputBase:
+) -> ViewSubmissionUnderClassOutput:
     """
     ### 權限
     - Class manager
@@ -132,7 +150,7 @@ async def browse_submission_under_class(
     submissions, total_count = await service.view.class_submission(class_id=class_id,
                                                                    limit=limit, offset=offset,
                                                                    filters=filters, sorters=sorters)
-    return model.BrowseOutputBase(submissions, total_count=total_count)
+    return ViewSubmissionUnderClassOutput(submissions, total_count=total_count)
 
 
 BROWSE_SUBMISSION_COLUMNS = {
@@ -151,12 +169,17 @@ BROWSE_SUBMISSION_COLUMNS = {
 }
 
 
+@dataclass
+class ViewMySubmissionOutput(model.BrowseOutputBase):
+    data: Sequence[vo.ViewMySubmission]
+
+
 @router.get('/view/my-submission')
 @enveloped
 @add_to_docstring({k: v.__name__ for k, v in BROWSE_SUBMISSION_COLUMNS.items()})
 async def browse_submission(account_id: int, request: Request, limit: model.Limit = 50, offset: model.Offset = 0,
                             filter: model.FilterStr = None, sort: model.SorterStr = None) \
-        -> model.BrowseOutputBase:
+        -> ViewMySubmissionOutput:
     """
     ### 權限
     - Self: see self
@@ -177,7 +200,7 @@ async def browse_submission(account_id: int, request: Request, limit: model.Limi
     submissions, total_count = await service.view.my_submission(limit=limit, offset=offset,
                                                                 filters=filters, sorters=sorters)
 
-    return model.BrowseOutputBase(submissions, total_count=total_count)
+    return ViewMySubmissionOutput(submissions, total_count=total_count)
 
 
 BROWSE_PROBLEM_SET_COLUMNS = {
@@ -190,6 +213,11 @@ BROWSE_PROBLEM_SET_COLUMNS = {
 }
 
 
+@dataclass
+class ViewProblemSetOutput(model.BrowseOutputBase):
+    data: Sequence[vo.ViewProblemSet]
+
+
 @router.get('/class/{class_id}/view/problem-set')
 @enveloped
 @add_to_docstring({k: v.__name__ for k, v in BROWSE_PROBLEM_SET_COLUMNS.items()})
@@ -198,7 +226,7 @@ async def browse_problem_set_under_class(
         request: Request,
         limit: model.Limit = 50, offset: model.Offset = 0,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
-) -> model.BrowseOutputBase:
+) -> ViewProblemSetOutput:
     """
     ### 權限
     - System normal (not hidden)
@@ -218,7 +246,7 @@ async def browse_problem_set_under_class(
 
     result, total_count = await service.view.problem_set(limit=limit, offset=offset,
                                                          filters=filters, sorters=sorters, ref_time=request.time)
-    return model.BrowseOutputBase(result, total_count=total_count)
+    return ViewProblemSetOutput(result, total_count=total_count)
 
 
 BROWSE_CLASS_GRADE_COLUMNS = {
@@ -234,13 +262,18 @@ BROWSE_CLASS_GRADE_COLUMNS = {
 }
 
 
+@dataclass
+class ViewGradeOutput(model.BrowseOutputBase):
+    data: Sequence[vo.ViewGrade]
+
+
 @router.get('/class/{class_id}/view/grade')
 @enveloped
 @add_to_docstring({k: v.__name__ for k, v in BROWSE_CLASS_GRADE_COLUMNS.items()})
 async def browse_class_grade(class_id: int, request: Request,
                              limit: int = 50, offset: int = 0,
                              filter: model.FilterStr = None, sort: model.SorterStr = None) \
-        -> model.BrowseOutputBase:
+        -> ViewGradeOutput:
     """
     ### 權限
     - Class manager (all)
@@ -257,14 +290,14 @@ async def browse_class_grade(class_id: int, request: Request,
 
     if await rbac.validate(request.account.id, RoleType.manager, class_id=class_id):  # Class manager
         grades, total_count = await service.view.grade(limit=limit, offset=offset, filters=filters, sorters=sorters)
-        return model.BrowseOutputBase(grades, total_count=total_count)
+        return ViewGradeOutput(grades, total_count=total_count)
     else:  # Self
         filters.append(popo.Filter(col_name='account_id',
                                    op=FilterOperator.eq,
                                    value=request.account.id))
 
         grades, total_count = await service.view.grade(limit=limit, offset=offset, filters=filters, sorters=sorters)
-        return model.BrowseOutputBase(grades, total_count=total_count)
+        return ViewGradeOutput(grades, total_count=total_count)
 
 
 BROWSE_ACCESS_LOG_COLUMNS = {
@@ -280,6 +313,11 @@ BROWSE_ACCESS_LOG_COLUMNS = {
 }
 
 
+@dataclass
+class ViewAccessLogOutput(model.BrowseOutputBase):
+    data: Sequence[vo.ViewAccessLog]
+
+
 @router.get('/view/access-log')
 @enveloped
 @add_to_docstring({k: v.__name__ for k, v in BROWSE_ACCESS_LOG_COLUMNS.items()})
@@ -287,7 +325,7 @@ async def browse_access_log(
         req: Request,
         limit: model.Limit, offset: model.Offset,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
-) -> model.BrowseOutputBase:
+) -> ViewAccessLogOutput:
     """
     ### 權限
     - Class+ manager
@@ -304,4 +342,4 @@ async def browse_access_log(
 
     access_logs, total_count = await service.view.access_log(limit=limit, offset=offset,
                                                              filters=filters, sorters=sorters)
-    return model.BrowseOutputBase(access_logs, total_count=total_count)
+    return ViewAccessLogOutput(access_logs, total_count=total_count)

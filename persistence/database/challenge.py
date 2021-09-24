@@ -29,33 +29,39 @@ async def add(class_id: int, publicize_type: enum.ChallengePublicizeType, select
 
 async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter],
                  include_scheduled: bool = False, ref_time: datetime = None,
-                 include_deleted: bool = False) -> tuple[Sequence[do.Challenge], int]:
+                 include_deleted: bool = False, by_publicize_type: bool = False) -> tuple[Sequence[do.Challenge], int]:
     if not include_scheduled:
         if not ref_time:
             raise ValueError
-        filters.append(Filter(col_name='start_time',
-                              op=enum.FilterOperator.le,
-                              value=ref_time))
+        filters += [Filter(col_name='start_time',
+                           op=enum.FilterOperator.le,
+                           value=ref_time)]
     if not include_deleted:
-        filters.append(Filter(col_name='is_deleted',
-                              op=enum.FilterOperator.eq,
-                              value=include_deleted))
+        filters += [Filter(col_name='is_deleted',
+                           op=enum.FilterOperator.eq,
+                           value=include_deleted)]
 
     cond_sql, cond_params = compile_filters(filters)
     sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
     if sort_sql:
         sort_sql += ','
 
+    # FIXME: This looks really ugly, only for temp 'All Class'
     async with SafeExecutor(
             event='browse challenges',
             sql=fr'SELECT id, class_id, publicize_type, selection_type, title, setter_id, description,'
                 fr'       start_time, end_time, is_deleted'
                 fr'  FROM challenge'
                 fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
+                fr'{"  WHERE" if (not cond_sql) and by_publicize_type else ""}'
+                fr'{"    AND" if cond_sql and by_publicize_type else ""}'
+                fr'{" ((publicize_type = %(end_time)s AND end_time <= %(ref_time)s)" if by_publicize_type else ""}'
+                fr'{"   OR (publicize_type = %(start_time)s AND start_time <= %(ref_time)s))" if by_publicize_type else ""}'
                 fr' ORDER BY {sort_sql} class_id ASC, id ASC'
                 fr' LIMIT %(limit)s OFFSET %(offset)s',
             **cond_params,
-            limit=limit, offset=offset,
+            end_time=enum.ChallengePublicizeType.end_time, start_time=enum.ChallengePublicizeType.start_time,
+            limit=limit, offset=offset, ref_time=ref_time,
             fetch='all',
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
@@ -70,8 +76,14 @@ async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Se
         sql=fr'SELECT id, class_id, publicize_type, selection_type, title,'
             fr'       setter_id, description, start_time, end_time, is_deleted'
             fr'  FROM challenge'
-            fr'{f" WHERE {cond_sql}" if cond_sql else ""}',
+            fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
+            fr'{"  WHERE" if (not cond_sql) and by_publicize_type else ""}'
+            fr'{"    AND" if cond_sql and by_publicize_type else ""}'
+            fr'{" ((publicize_type = %(end_time)s AND end_time <= %(ref_time)s)" if by_publicize_type else ""}'
+            fr'{"   OR (publicize_type = %(start_time)s AND start_time <= %(ref_time)s))" if by_publicize_type else ""}',
         **cond_params,
+        end_time=enum.ChallengePublicizeType.end_time, start_time=enum.ChallengePublicizeType.start_time,
+        ref_time=ref_time,
     )
 
     return data, total_count
