@@ -73,6 +73,18 @@ class ViewMySubmission:
 
 
 @dataclass
+class ViewMySubmissionUnderProblem:
+    submission_id: int
+    verdict: Optional[enum.VerdictType]
+    score: Optional[int]
+    total_time: Optional[int]
+    max_memory: Optional[int]
+    submit_time: datetime
+    account_id: int
+    problem_id: int
+
+
+@dataclass
 class ViewProblemSet:
     challenge_id: int
     challenge_title: str
