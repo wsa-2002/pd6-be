@@ -223,7 +223,9 @@ class ViewMySubmissionUnderProblemOutput(model.BrowseOutputBase):
 @router.get('/problem/{problem_id}/view/my-submission')
 @enveloped
 @add_to_docstring({k: v.__name__ for k, v in BROWSE_MY_SUBMISSION_UNDER_PROBLEM_COLUMNS.items()})
-async def browse_my_submission_under_problem(account_id: int, request: Request,
+async def browse_my_submission_under_problem(account_id: int,
+                                             problem_id: int,
+                                             request: Request,
                                              limit: model.Limit = 50, offset: model.Offset = 0,
                                              filter: model.FilterStr = None, sort: model.SorterStr = None) \
         -> ViewMySubmissionUnderProblemOutput:
@@ -243,6 +245,10 @@ async def browse_my_submission_under_problem(account_id: int, request: Request,
     filters.append(popo.Filter(col_name='account_id',
                                op=FilterOperator.eq,
                                value=request.account.id))
+
+    filters.append(popo.Filter(col_name='problem_id',
+                               op=FilterOperator.eq,
+                               value=problem_id))
 
     submissions, total_count = await service.view.my_submission_under_problem(limit=limit, offset=offset,
                                                                               filters=filters, sorters=sorters)
