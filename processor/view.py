@@ -203,53 +203,6 @@ async def browse_submission(account_id: int, request: Request, limit: model.Limi
     return ViewMySubmissionOutput(submissions, total_count=total_count)
 
 
-BROWSE_MY_SUBMISSION_UNDER_PROBLEM_COLUMNS = {
-    'submission_id': int,
-    'verdict': VerdictType,
-    'score': int,
-    'total_time': int,
-    'max_memory': int,
-    'submit_time': model.ServerTZDatetime,
-    'account_id': int,
-    'problem_id': int,
-}
-
-
-@dataclass
-class ViewMySubmissionUnderProblemOutput(model.BrowseOutputBase):
-    data: Sequence[vo.ViewMySubmissionUnderProblem]
-
-
-@router.get('/problem/{problem_id}/view/my-submission')
-@enveloped
-@add_to_docstring({k: v.__name__ for k, v in BROWSE_MY_SUBMISSION_UNDER_PROBLEM_COLUMNS.items()})
-async def browse_my_submission_under_problem(account_id: int, request: Request,
-                                             limit: model.Limit = 50, offset: model.Offset = 0,
-                                             filter: model.FilterStr = None, sort: model.SorterStr = None) \
-        -> ViewMySubmissionUnderProblemOutput:
-    """
-    ### 權限
-    - Self: see self
-
-    ### Available columns
-    """
-    if account_id != request.account.id:
-        raise exc.NoPermission
-
-    filters = model.parse_filter(filter, BROWSE_MY_SUBMISSION_UNDER_PROBLEM_COLUMNS)
-    sorters = model.parse_sorter(sort, BROWSE_MY_SUBMISSION_UNDER_PROBLEM_COLUMNS)
-
-    # 只能看自己的
-    filters.append(popo.Filter(col_name='account_id',
-                               op=FilterOperator.eq,
-                               value=request.account.id))
-
-    submissions, total_count = await service.view.my_submission_under_problem(limit=limit, offset=offset,
-                                                                              filters=filters, sorters=sorters)
-
-    return ViewMySubmissionUnderProblemOutput(submissions, total_count=total_count)
-
-
 BROWSE_PROBLEM_SET_COLUMNS = {
     'challenge_id': int,
     'challenge_title': str,
