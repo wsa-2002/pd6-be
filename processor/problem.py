@@ -319,11 +319,9 @@ async def get_score_by_best_under_problem(problem_id: int, request: Request) -> 
     - Self
     """
     problem = await service.problem.read(problem_id)
-    challenge = await service.challenge.read(challenge_id=problem.challenge_id, include_scheduled=True)
-    submission_judgment = await service.submission.get_problem_score_by_type(problem_id=problem_id,
-                                                                             account_id=request.account.id,  # 只能看自己的
-                                                                             selection_type=TaskSelectionType.best,
-                                                                             challenge_end_time=challenge.end_time)
+    # 只能看自己的
+    submission_judgment = await service.submission.get_problem_all_time_best_score(problem_id=problem.id,
+                                                                                   account_id=request.account.id)
     return GetScoreByTypeOutput(challenge_type=TaskSelectionType.best, score=submission_judgment.score)
 
 
