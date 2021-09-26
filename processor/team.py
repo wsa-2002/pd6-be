@@ -143,7 +143,7 @@ class AddMemberInput(BaseModel):
 
 @router.post('/team/{team_id}/member')
 @enveloped
-async def add_team_member(team_id: int, data: Sequence[AddMemberInput], request: Request) -> model.AddListOutput:
+async def add_team_member(team_id: int, data: Sequence[AddMemberInput], request: Request):
     """
     ### 權限
     - class manager
@@ -152,10 +152,9 @@ async def add_team_member(team_id: int, data: Sequence[AddMemberInput], request:
     if not rbac.validate(request.account.id, RoleType.manager, class_id=team.class_id):
         raise exc.NoPermission
 
-    account_ids = await service.team.add_members(team_id=team.id,
-                                                 member_roles=[(member.account_referral, member.role)
-                                                               for member in data])
-    return model.AddListOutput(id=account_ids)
+    await service.team.add_members(team_id=team.id,
+                                   member_roles=[(member.account_referral, member.role)
+                                                 for member in data])
 
 
 class EditMemberInput(BaseModel):
