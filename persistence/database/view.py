@@ -38,7 +38,7 @@ async def account(limit: int, offset: int, filters: list[Filter], sorters: list[
                                username=username,
                                real_name=real_name,
                                student_id=student_id)
-                for (account_id, username, real_name, student_id) in records]
+                for (account_id, username, student_id, real_name) in records]
 
     total_count = await execute_count(
         sql=fr'SELECT *'
