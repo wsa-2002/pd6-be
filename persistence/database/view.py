@@ -14,8 +14,6 @@ async def account(limit: int, offset: int, filters: list[Filter], sorters: list[
 
     cond_sql, cond_params = compile_filters(filters)
     sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
-    if sort_sql:
-        sort_sql += ','
 
     async with SafeExecutor(
             event='browse account with default student card',
@@ -29,7 +27,7 @@ async def account(limit: int, offset: int, filters: list[Filter], sorters: list[
                 fr'        AND student_card.is_default'
                 fr' WHERE NOT account.is_deleted'
                 fr'{f" AND {cond_sql}" if cond_sql else ""}'
-                fr' ORDER BY {sort_sql} account_id ASC'
+                fr' ORDER BY {sort_sql+"," if sort_sql else ""} account_id ASC'
                 fr' LIMIT %(limit)s OFFSET %(offset)s',
             **cond_params,
             limit=limit, offset=offset,
@@ -60,8 +58,6 @@ async def class_member(limit: int, offset: int, filters: Sequence[Filter], sorte
 
     cond_sql, cond_params = compile_filters(filters)
     sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
-    if sort_sql:
-        sort_sql += ','
 
     async with SafeExecutor(
             event='browse class members with student card',
@@ -82,7 +78,7 @@ async def class_member(limit: int, offset: int, filters: Sequence[Filter], sorte
                 fr'  LEFT JOIN institute'
                 fr'         ON student_card.institute_id = institute.id'
                 fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
-                fr' ORDER BY {sort_sql} account_id ASC'
+                fr' ORDER BY {sort_sql+"," if sort_sql else ""} account_id ASC'
                 fr' LIMIT %(limit)s OFFSET %(offset)s',
             **cond_params,
             limit=limit, offset=offset,
@@ -118,8 +114,6 @@ async def class_submission(class_id: int, limit: int, offset: int,
 
     cond_sql, cond_params = compile_filters(filters)
     sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
-    if sort_sql:
-        sort_sql += ','
 
     async with SafeExecutor(
             event='browse submissions',
@@ -156,7 +150,7 @@ async def class_submission(class_id: int, limit: int, offset: int,
                 fr'    {f" WHERE {cond_sql}" if cond_sql else ""}'
                 fr'     ORDER BY submission.id DESC, judgment.judge_time DESC'
                 fr') __TABLE__'
-                fr' ORDER BY {sort_sql}'
+                fr'{f" ORDER BY {sort_sql}" if sort_sql else ""}'
                 fr' LIMIT %(limit)s OFFSET %(offset)s',
             **cond_params,
             limit=limit, offset=offset,
@@ -194,8 +188,6 @@ async def my_submission(limit: int, offset: int, filters: Sequence[Filter], sort
 
     cond_sql, cond_params = compile_filters(filters)
     sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
-    if sort_sql:
-        sort_sql += ','
 
     async with SafeExecutor(
             event='browse submissions',
@@ -234,7 +226,7 @@ async def my_submission(limit: int, offset: int, filters: Sequence[Filter], sort
                 fr' {f" WHERE {cond_sql}" if cond_sql else ""}'
                 fr'     ORDER BY submission.id DESC, judgment.id DESC'
                 fr') __TABLE__'
-                fr' ORDER BY {sort_sql}'
+                fr'{f" ORDER BY {sort_sql}" if sort_sql else ""}'
                 fr' LIMIT %(limit)s OFFSET %(offset)s',
             **cond_params,
             limit=limit, offset=offset,
