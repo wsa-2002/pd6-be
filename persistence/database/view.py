@@ -21,11 +21,7 @@ async def account(limit: int, offset: int, filters: list[Filter], sorters: list[
     filters = [Filter(col_name=column_mapper[f.col_name], op=f.op, value=f.value) for f in filters]
 
     cond_sql, cond_params = compile_filters(filters)
-    sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
-
-    async with SafeExecutor(
-            event='browse account with default student card',
-            sql=fr'SELECT account.id              AS account_id,'
+    view_sql = (fr'SELECT account.id              AS account_id,'
                 fr'       account.username        AS username,'
                 fr'       student_card.student_id AS student_id,'
                 fr'       account.real_name       AS real_name'
@@ -34,8 +30,13 @@ async def account(limit: int, offset: int, filters: list[Filter], sorters: list[
                 fr'         ON student_card.account_id = account.id'
                 fr'        AND student_card.is_default'
                 fr' WHERE NOT account.is_deleted'
-                fr'{f" AND {cond_sql}" if cond_sql else ""}'
-                fr' ORDER BY {sort_sql+"," if sort_sql else ""} account_id ASC'
+                fr'{f" AND {cond_sql}" if cond_sql else ""}')
+    sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
+
+    async with SafeExecutor(
+            event='browse account with default student card',
+            sql=fr'{view_sql}'
+                fr' ORDER BY {sort_sql + "," if sort_sql else ""} account_id ASC'
                 fr' LIMIT %(limit)s OFFSET %(offset)s',
             **cond_params,
             limit=limit, offset=offset,
@@ -48,16 +49,7 @@ async def account(limit: int, offset: int, filters: list[Filter], sorters: list[
                                student_id=student_id)
                 for (account_id, username, student_id, real_name) in records]
 
-    total_count = await execute_count(
-        sql=fr'SELECT *'
-            fr'  FROM account'
-            fr'  LEFT JOIN student_card'
-            fr'         ON student_card.account_id = account.id'
-            fr'        AND student_card.is_default'
-            fr' WHERE NOT account.is_deleted'
-            fr'{f" AND {cond_sql}" if cond_sql else ""}',
-        **cond_params,
-    )
+    total_count = await execute_count(view_sql, **cond_params)
 
     return data, total_count
 
@@ -80,11 +72,7 @@ async def class_member(limit: int, offset: int, filters: Sequence[Filter], sorte
                        order=SortOrder.desc)]
 
     cond_sql, cond_params = compile_filters(filters)
-    sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
-
-    async with SafeExecutor(
-            event='browse class members with student card',
-            sql=fr'SELECT class_member.member_id     AS account_id,'
+    view_sql = (fr'SELECT class_member.member_id     AS account_id,'
                 fr'       account.username           AS username,'
                 fr'       student_card.student_id    AS student_id,'
                 fr'       account.real_name          AS real_name,'
@@ -100,7 +88,12 @@ async def class_member(limit: int, offset: int, filters: Sequence[Filter], sorte
                 fr'        AND student_card.is_default'
                 fr'  LEFT JOIN institute'
                 fr'         ON student_card.institute_id = institute.id'
-                fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
+                fr'{f" WHERE {cond_sql}" if cond_sql else ""}')
+    sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
+
+    async with SafeExecutor(
+            event='browse class members with student card',
+            sql=fr'{view_sql}'
                 fr' ORDER BY {sort_sql+"," if sort_sql else ""} account_id ASC'
                 fr' LIMIT %(limit)s OFFSET %(offset)s',
             **cond_params,
@@ -118,20 +111,8 @@ async def class_member(limit: int, offset: int, filters: Sequence[Filter], sorte
                 for (account_id, username, student_id, real_name, abbreviated_name, role, class_id)
                 in records]
 
-    total_count = await execute_count(
-        sql=fr'SELECT *'
-            fr'  FROM class_member'
-            fr' INNER JOIN account'
-            fr'         ON class_member.member_id = account.id'
-            fr'        AND NOT account.is_deleted'
-            fr'  LEFT JOIN student_card'
-            fr'         ON account.id = student_card.account_id'
-            fr'        AND student_card.is_default'
-            fr'  LEFT JOIN institute'
-            fr'         ON student_card.institute_id = institute.id'
-            fr'{f" WHERE {cond_sql}" if cond_sql else ""}',
-        **cond_params,
-    )
+    total_count = await execute_count(view_sql, **cond_params)
+
     return data, total_count
 
 
@@ -160,11 +141,7 @@ async def class_submission(class_id: int, limit: int, offset: int,
                        value=class_id)]
 
     cond_sql, cond_params = compile_filters(filters)
-    sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
-
-    async with SafeExecutor(
-            event='browse class submissions',
-            sql=fr'SELECT *'
+    view_sql = (fr'SELECT *'
                 fr'FROM ('
                 fr'    SELECT DISTINCT ON (submission.id)'
                 fr'           submission.id           AS submission_id,'
@@ -196,7 +173,12 @@ async def class_submission(class_id: int, limit: int, offset: int,
                 fr'             ON judgment.submission_id = submission.id'
                 fr'    {f" WHERE {cond_sql}" if cond_sql else ""}'
                 fr'     ORDER BY submission.id DESC, judgment.judge_time DESC'
-                fr') __TABLE__'
+                fr') __TABLE__')
+    sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
+
+    async with SafeExecutor(
+            event='browse class submissions',
+            sql=fr'{view_sql}'
                 fr'{f" ORDER BY {sort_sql}" if sort_sql else ""}'
                 fr' LIMIT %(limit)s OFFSET %(offset)s',
             **cond_params,
@@ -220,43 +202,8 @@ async def class_submission(class_id: int, limit: int, offset: int,
                      challenge_title, problem_id, challenge_label, verdict, submit_time, class_id)
                 in records]
 
-    total_count = await execute_count(
-        sql=fr'SELECT *'
-            fr'FROM ('
-            fr'    SELECT DISTINCT ON (submission.id)'
-            fr'           submission.id           AS submission_id,'
-            fr'           account.id              AS account_id,'
-            fr'           account.username        AS username,'
-            fr'           student_card.student_id AS student_id,'
-            fr'           account.real_name       AS real_name,'
-            fr'           problem.challenge_id    AS challenge_id,'
-            fr'           challenge.title         AS challenge_title,'
-            fr'           problem.id              AS problem_id,'
-            fr'           problem.challenge_label AS challenge_label,'
-            fr'           judgment.verdict        AS verdict,'
-            fr'           submission.submit_time  AS submit_time,'
-            fr'           challenge.class_id      AS class_id'
-            fr'      FROM submission'
-            fr'      LEFT JOIN account'
-            fr'             ON account.id = submission.account_id'
-            fr'            AND NOT account.is_deleted'
-            fr'      LEFT JOIN student_card'
-            fr'             ON student_card.account_id = submission.account_id'
-            fr'            AND student_card.is_default'
-            fr'      LEFT JOIN problem'
-            fr'             ON problem.id = submission.problem_id'
-            fr'            AND NOT problem.is_deleted'
-            fr'      LEFT JOIN challenge'
-            fr'             ON challenge.id = problem.challenge_id'
-            fr'            AND NOT challenge.is_deleted'
-            fr'      LEFT JOIN judgment'
-            fr'             ON judgment.submission_id = submission.id'
-            fr'    {f" WHERE {cond_sql}" if cond_sql else ""}'
-            fr'     ORDER BY submission.id DESC, judgment.judge_time DESC'
-            fr') __TABLE__',
-        **cond_params,
-        class_id=class_id,
-    )
+    total_count = await execute_count(view_sql, **cond_params)
+
     return data, total_count
 
 
@@ -280,11 +227,7 @@ async def my_submission(limit: int, offset: int, filters: Sequence[Filter], sort
     filters = [Filter(col_name=column_mapper[f.col_name], op=f.op, value=f.value) for f in filters]
 
     cond_sql, cond_params = compile_filters(filters)
-    sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
-
-    async with SafeExecutor(
-            event='browse my submissions',
-            sql=fr'SELECT *'
+    view_sql = (fr'SELECT *'
                 fr'FROM ('
                 fr'    SELECT DISTINCT ON (submission.id)'
                 fr'           submission.id           AS submission_id,'
@@ -318,7 +261,12 @@ async def my_submission(limit: int, offset: int, filters: Sequence[Filter], sort
                 fr'             ON account.id = submission.account_id'
                 fr' {f" WHERE {cond_sql}" if cond_sql else ""}'
                 fr'     ORDER BY submission.id DESC, judgment.id DESC'
-                fr') __TABLE__'
+                fr') __TABLE__')
+    sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
+
+    async with SafeExecutor(
+            event='browse my submissions',
+            sql=fr'{view_sql}'
                 fr'{f" ORDER BY {sort_sql}" if sort_sql else ""}'
                 fr' LIMIT %(limit)s OFFSET %(offset)s',
             **cond_params,
@@ -342,44 +290,7 @@ async def my_submission(limit: int, offset: int, filters: Sequence[Filter], sort
                      challenge_title, problem_id, challenge_label, verdict, submit_time, account_id)
                 in records]
 
-    total_count = await execute_count(
-        sql=fr'SELECT *'
-            fr'FROM ('
-            fr'    SELECT DISTINCT ON (submission.id)'
-            fr'           submission.id           AS submission_id,'
-            fr'           course.id               AS course_id,'
-            fr'           course.name             AS course_name,'
-            fr'           class.id                AS class_id,'
-            fr'           class.name              AS class_name,'
-            fr'           challenge.id            AS challenge_id,'
-            fr'           challenge.title         AS challenge_title,'
-            fr'           problem.id              AS problem_id,'
-            fr'           problem.challenge_label AS challenge_label,'
-            fr'           judgment.verdict        AS verdict,'
-            fr'           submission.submit_time  AS submit_time,'
-            fr'           account.id              AS account_id'
-            fr'      FROM submission'
-            fr'      LEFT JOIN judgment'
-            fr'             ON submission.id = judgment.submission_id'
-            fr'      LEFT JOIN problem'
-            fr'             ON problem.id = submission.problem_id'
-            fr'            AND NOT problem.is_deleted'
-            fr'      LEFT JOIN challenge'
-            fr'             ON challenge.id = problem.challenge_id'
-            fr'            AND NOT challenge.is_deleted'
-            fr'      LEFT JOIN class'
-            fr'             ON class.id = challenge.class_id'
-            fr'            AND NOT class.is_deleted'
-            fr'      LEFT JOIN course'
-            fr'             ON course.id = class.course_id'
-            fr'            AND NOT course.is_deleted'
-            fr'      LEFT JOIN account'
-            fr'             ON account.id = submission.account_id'
-            fr' {f" WHERE {cond_sql}" if cond_sql else ""}'
-            fr'     ORDER BY submission.id DESC, judgment.id DESC'
-            fr') __TABLE__',
-        **cond_params,
-    )
+    total_count = await execute_count(view_sql, **cond_params)
 
     return data, total_count
 
