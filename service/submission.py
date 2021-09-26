@@ -35,3 +35,4 @@ read_language = db.submission.read_language
 read_latest_judgment = db.submission.read_latest_judgment
 
 get_problem_score_by_type = db.judgment.get_submission_judgment_by_challenge_type
+get_problem_all_time_best_score = db.judgment.get_best_submission_judgment_all_time

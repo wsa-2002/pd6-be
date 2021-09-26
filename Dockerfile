@@ -16,6 +16,10 @@ RUN chmod +x /start-reload.sh
 
 WORKDIR /app
 
+# Prometheus
+ENV PROMETHEUS_MULTIPROC_DIR=/tmp_multiproc
+ENV PRE_START_PATH=/app/prestart.sh
+
 COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt
 
