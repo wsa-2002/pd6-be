@@ -56,7 +56,7 @@ async def get_challenge_statistics(challenge_id: int) -> Sequence[Tuple[str, int
     problems = await db.problem.browse_by_challenge(challenge_id)
     return [(problem.challenge_label,
              await db.problem.total_ac_member_count(problem.id),
-             await db.problem.total_submission_count(problem.id, challenge_id=challenge_id),
+             await db.problem.total_submission_count(problem.id),
              await db.problem.total_member_count(problem.id))
             for problem in problems]
 
