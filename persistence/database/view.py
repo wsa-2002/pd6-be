@@ -12,6 +12,14 @@ from .util import execute_count, compile_filters
 async def account(limit: int, offset: int, filters: list[Filter], sorters: list[Sorter]) \
         -> tuple[Sequence[vo.ViewAccount], int]:
 
+    column_mapper = {
+        'account_id': 'account.id',
+        'username': 'account.username',
+        'student_id': 'student_card.student_id',
+        'real_name': 'account.real_name',
+    }
+    filters = [Filter(col_name=column_mapper[f.col_name], op=f.op, value=f.value) for f in filters]
+
     cond_sql, cond_params = compile_filters(filters)
     sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
 
@@ -52,6 +60,17 @@ async def account(limit: int, offset: int, filters: list[Filter], sorters: list[
 
 async def class_member(limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter]) \
         -> tuple[Sequence[vo.ViewClassMember], int]:
+
+    column_mapper = {
+        'account_id': 'class_member.member_id',
+        'username': 'account.username',
+        'student_id': 'student_card.student_id',
+        'real_name': 'account.real_name',
+        'abbreviated_name': 'institute.abbreviated_name',
+        'role': 'class_member.role',
+        'class_id': 'class_member.class_id',
+    }
+    filters = [Filter(col_name=column_mapper[f.col_name], op=f.op, value=f.value) for f in filters]
 
     sorters += [Sorter(col_name='role',
                        order=SortOrder.desc)]
@@ -108,6 +127,22 @@ async def class_submission(class_id: int, limit: int, offset: int,
                            filters: Sequence[Filter], sorters: Sequence[Sorter]) \
         -> tuple[Sequence[vo.ViewSubmissionUnderClass], int]:
 
+    column_mapper = {
+        'submission_id': 'submission.id',
+        'account_id': 'account.id',
+        'username': 'account.username',
+        'student_id': 'student_card.student_id',
+        'real_name': 'account.real_name',
+        'challenge_id': 'problem.challenge_id',
+        'challenge_title': 'challenge.title',
+        'problem_id': 'problem.id',
+        'challenge_label': 'problem.challenge_label',
+        'verdict': 'judgment.verdict',
+        'submit_time': 'submission.submit_time',
+        'class_id': 'challenge.class_id',
+    }
+    filters = [Filter(col_name=column_mapper[f.col_name], op=f.op, value=f.value) for f in filters]
+
     filters += [Filter(col_name='class_id',
                        op=FilterOperator.eq,
                        value=class_id)]
@@ -116,7 +151,7 @@ async def class_submission(class_id: int, limit: int, offset: int,
     sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
 
     async with SafeExecutor(
-            event='browse submissions',
+            event='browse class submissions',
             sql=fr'SELECT *'
                 fr'FROM ('
                 fr'    SELECT DISTINCT ON (submission.id)'
@@ -186,11 +221,27 @@ async def class_submission(class_id: int, limit: int, offset: int,
 async def my_submission(limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter]) \
         -> tuple[Sequence[vo.ViewMySubmission], int]:
 
+    column_mapper = {
+        'submission_id': 'submission.id',
+        'course_id': 'course.id',
+        'course_name': 'course.name',
+        'class_id': 'class.id',
+        'class_name': 'class.name',
+        'challenge_id': 'challenge.id',
+        'challenge_title': 'challenge.title',
+        'problem_id': 'problem.id',
+        'challenge_label': 'problem.challenge_label',
+        'verdict': 'judgment.verdict',
+        'submit_time': 'submission.submit_time',
+        'account_id': 'account.id',
+    }
+    filters = [Filter(col_name=column_mapper[f.col_name], op=f.op, value=f.value) for f in filters]
+
     cond_sql, cond_params = compile_filters(filters)
     sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
 
     async with SafeExecutor(
-            event='browse submissions',
+            event='browse my submissions',
             sql=fr'SELECT *'
                 fr'FROM ('
                 fr'    SELECT DISTINCT ON (submission.id)'
