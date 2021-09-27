@@ -11,7 +11,6 @@ from .util import execute_count, compile_filters
 
 async def account(limit: int, offset: int, filters: list[Filter], sorters: list[Sorter]) \
         -> tuple[Sequence[vo.ViewAccount], int]:
-
     column_mapper = {
         'account_id': 'account.id',
         'username': 'account.username',
@@ -56,7 +55,6 @@ async def account(limit: int, offset: int, filters: list[Filter], sorters: list[
 
 async def class_member(limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter]) \
         -> tuple[Sequence[vo.ViewClassMember], int]:
-
     column_mapper = {
         'account_id': 'class_member.member_id',
         'username': 'account.username',
@@ -94,7 +92,7 @@ async def class_member(limit: int, offset: int, filters: Sequence[Filter], sorte
     async with SafeExecutor(
             event='browse class members with student card',
             sql=fr'{view_sql}'
-                fr' ORDER BY {sort_sql+"," if sort_sql else ""} account_id ASC'
+                fr' ORDER BY {sort_sql + "," if sort_sql else ""} account_id ASC'
                 fr' LIMIT %(limit)s OFFSET %(offset)s',
             **cond_params,
             limit=limit, offset=offset,
@@ -119,7 +117,6 @@ async def class_member(limit: int, offset: int, filters: Sequence[Filter], sorte
 async def class_submission(class_id: int, limit: int, offset: int,
                            filters: Sequence[Filter], sorters: Sequence[Sorter]) \
         -> tuple[Sequence[vo.ViewSubmissionUnderClass], int]:
-
     column_mapper = {
         'submission_id': 'submission.id',
         'account_id': 'account.id',
@@ -209,7 +206,6 @@ async def class_submission(class_id: int, limit: int, offset: int,
 
 async def my_submission(limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter]) \
         -> tuple[Sequence[vo.ViewMySubmission], int]:
-
     column_mapper = {
         'submission_id': 'submission.id',
         'course_id': 'course.id',
@@ -297,7 +293,6 @@ async def my_submission(limit: int, offset: int, filters: Sequence[Filter], sort
 
 async def my_submission_under_problem(limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter]) \
         -> tuple[Sequence[vo.ViewMySubmissionUnderProblem], int]:
-
     cond_sql, cond_params = compile_filters(filters)
     sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
     if sort_sql:
@@ -336,9 +331,8 @@ async def my_submission_under_problem(limit: int, offset: int, filters: Sequence
     return data, total_count
 
 
-async def problem_set(limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter], ref_time: datetime)\
+async def problem_set(limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter], ref_time: datetime) \
         -> tuple[Sequence[vo.ViewProblemSet], int]:
-
     cond_sql, cond_params = compile_filters(filters)
     sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
     if sort_sql:
@@ -376,8 +370,15 @@ async def problem_set(limit: int, offset: int, filters: Sequence[Filter], sorter
     total_count = await execute_count(
         sql=fr'SELECT *'
             fr'  FROM view_problem_set'
-            fr'{f" WHERE {cond_sql}" if cond_sql else ""}',
+            fr'{f" WHERE {cond_sql} AND" if cond_sql else " WHERE "}'
+            fr'  CASE WHEN publicize_type = %(start_time)s'
+            fr'            THEN start_time <= %(ref_time)s'
+            fr'       WHEN publicize_type = %(end_time)s'
+            fr'            THEN end_time <= %(ref_time)s'
+            fr'   END',
         **cond_params,
+        start_time=ChallengePublicizeType.start_time, end_time=ChallengePublicizeType.end_time,
+        ref_time=ref_time,
     )
 
     return data, total_count
@@ -385,7 +386,6 @@ async def problem_set(limit: int, offset: int, filters: Sequence[Filter], sorter
 
 async def grade(limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter]) \
         -> tuple[Sequence[vo.ViewGrade], int]:
-
     cond_sql, cond_params = compile_filters(filters)
     sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
     if sort_sql:
@@ -428,7 +428,6 @@ async def grade(limit: int, offset: int, filters: Sequence[Filter], sorters: Seq
 
 async def access_log(limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter]) \
         -> tuple[Sequence[vo.ViewAccessLog], int]:
-
     cond_sql, cond_params = compile_filters(filters)
     sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
     if sort_sql:
