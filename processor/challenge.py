@@ -253,7 +253,8 @@ async def add_peer_review_under_challenge(challenge_id: int, data: AddPeerReview
 
     # validate problem belongs to same class
     target_problem = await service.problem.read(problem_id=data.target_problem_id)
-    target_problem_challenge = await service.challenge.read(target_problem.challenge_id)
+    target_problem_challenge = await service.challenge.read(challenge_id=target_problem.challenge_id,
+                                                            include_scheduled=True)
 
     # Only allow peer review to target to same class
     if challenge.class_id is not target_problem_challenge.class_id:
