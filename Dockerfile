@@ -17,7 +17,9 @@ RUN chmod +x /start-reload.sh
 WORKDIR /app
 
 # Prometheus
-ENV PROMETHEUS_MULTIPROC_DIR=/tmp_multiproc
+# Environment variable is in lower case due to implementation of prometheus-fastapi-instrumentator.
+# Can change back to upper case if there is a new fixed version
+ENV prometheus_multiproc_dir=/tmp_multiproc
 ENV PRE_START_PATH=/app/prestart.sh
 
 COPY requirements.txt requirements.txt
