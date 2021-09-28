@@ -18,6 +18,7 @@ WORKDIR /app
 
 # Prometheus
 ENV PROMETHEUS_MULTIPROC_DIR=/tmp_multiproc
+ENV prometheus_multiproc_dir=/tmp_multiproc
 ENV PRE_START_PATH=/app/prestart.sh
 
 COPY requirements.txt requirements.txt
