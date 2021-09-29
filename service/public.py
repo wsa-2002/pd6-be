@@ -64,7 +64,7 @@ async def forget_username(account_email: str) -> None:
     except exc.persistence.NotFound:
         return    # not to let user know there is no related accounts
 
-    await email.forget_username.send(to=account_email, *accounts)
+    await email.forget_username.send(to=account_email, accounts=accounts)
 
 
 async def reset_password(code: str, password: str) -> None:
