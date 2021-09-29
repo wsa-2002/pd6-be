@@ -47,16 +47,24 @@ async def login(username: str, password: str) -> Tuple[str, int]:
 
 
 async def forget_password(username: str, account_email: str) -> None:
+    try:
+        accounts = await db.account.browse_by_email(account_email, username=username)
+    except exc.persistence.NotFound:
+        return    # not to let user know there is no related accounts
+
     # should only be one account, since username is given
-    for account in await db.account.browse_by_email(account_email, username=username):
+    for account in accounts:
         code = await db.account.add_email_verification(email=account_email, account_id=account.id)
         await email.forget_password.send(to=account_email, code=code)
 
 
 async def forget_username(account_email: str) -> None:
-    accounts = await db.account.browse_by_email(account_email, search_exhaustive=True)
-    if accounts:  # not to let user know there is no related accounts
-        await email.forget_username.send(to=account_email, *accounts)
+    try:
+        accounts = await db.account.browse_by_email(account_email, search_exhaustive=True)
+    except exc.persistence.NotFound:
+        return    # not to let user know there is no related accounts
+
+    await email.forget_username.send(to=account_email, *accounts)
 
 
 async def reset_password(code: str, password: str) -> None:
