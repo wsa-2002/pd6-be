@@ -35,4 +35,5 @@ from . import (
     verification,
     notification,
     forget_password,
+    forget_username,
 )
