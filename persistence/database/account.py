@@ -142,7 +142,7 @@ async def browse_by_email(email: str, username: str = None, search_exhaustive=Fa
                 fr'  FROM account'
                 fr' INNER JOIN student_card'
                 fr'         ON student_card.account_id = account.id'
-                fr'        AND student_card.email = %(email)s'
+                fr'        AND LOWER(student_card.email) = LOWER(%(email)s)'
                 fr' WHERE NOT is_deleted'
                 fr' {"AND username = %(username)s" if username else ""}',
             email=email, username=username,
@@ -161,7 +161,7 @@ async def browse_by_email(email: str, username: str = None, search_exhaustive=Fa
             event='batch read account by alternative_email',
             sql=fr'SELECT id, username, nickname, real_name, role, is_deleted, alternative_email'
                 fr'  FROM account'
-                fr' WHERE alternative_email = %(email)s'
+                fr' WHERE LOWER(alternative_email) = LOWER(%(email)s)'
                 fr'   AND NOT is_deleted'
                 fr' {"AND username = %(username)s" if username else ""}',
             email=email, username=username,
