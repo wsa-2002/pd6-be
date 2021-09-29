@@ -54,7 +54,7 @@ async def forget_password(username: str, account_email: str) -> None:
 
 
 async def forget_username(account_email: str) -> None:
-    accounts = await db.account.browse_by_email(account_email)
+    accounts = await db.account.browse_by_email(account_email, search_exhaustive=True)
     await email.forget_username.send(to=account_email, *accounts)
 
 
