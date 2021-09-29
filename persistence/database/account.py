@@ -132,29 +132,50 @@ async def read_login_by_username(username: str, include_deleted: bool = False) -
         return id_, pass_hash, is_4s_hash
 
 
-async def read_id_by_email(email: str) -> int:
-    try:  # institute_email
-        async with SafeExecutor(
-                event='read account by institute_email',
-                sql=fr'SELECT account_id'
-                    fr'  FROM student_card'
-                    fr' WHERE email = %(email)s',
-                email=email,
-                fetch=1,
-        ) as (id_,):
-            return id_
+async def browse_by_email(email: str, username: str = None, search_exhaustive=False) -> Sequence[do.Account]:
+    accounts = []
 
-    except exc.persistence.NotFound:  # alternative_email
-        async with SafeExecutor(
-                event='read account by alternative_email',
-                sql=fr'SELECT id'
-                    fr'  FROM account'
-                    fr' WHERE alternative_email = %(email)s'
-                    fr' AND NOT is_deleted',
-                email=email,
-                fetch=1,
-        ) as (id_,):
-            return id_
+    # institute_email
+    async with SafeExecutor(
+            event='batch read account by institute_email',
+            sql=fr'SELECT account.id, username, nickname, real_name, role, is_deleted, alternative_email'
+                fr'  FROM account'
+                fr' INNER JOIN student_card'
+                fr'         ON student_card.account_id = account.id'
+                fr'        AND student_card.email = %(email)s'
+                fr' WHERE NOT is_deleted'
+                fr' {"AND username = %(username)s" if username else ""}',
+            email=email, username=username,
+            fetch='all',
+            raise_not_found=False,
+    ) as results:
+        accounts += [do.Account(id=id_, username=username, nickname=nickname, real_name=real_name, role=RoleType(role),
+                                is_deleted=is_deleted, alternative_email=alternative_email)
+                     for (id_, username, nickname, real_name, role, is_deleted, alternative_email) in results]
+
+    if accounts and not search_exhaustive:
+        return accounts
+
+    # alternative_email
+    async with SafeExecutor(
+            event='batch read account by alternative_email',
+            sql=fr'SELECT id, username, nickname, real_name, role, is_deleted, alternative_email'
+                fr'  FROM account'
+                fr' WHERE alternative_email = %(email)s'
+                fr'   AND NOT is_deleted'
+                fr' {"AND username = %(username)s" if username else ""}',
+            email=email, username=username,
+            fetch='all',
+            raise_not_found=False,
+    ) as results:
+        accounts += [do.Account(id=id_, username=username, nickname=nickname, real_name=real_name, role=RoleType(role),
+                                is_deleted=is_deleted, alternative_email=alternative_email)
+                     for (id_, username, nickname, real_name, role, is_deleted, alternative_email) in results]
+
+    if not accounts:
+        raise exc.persistence.NotFound
+
+    return accounts
 
 
 async def read_pass_hash(account_id: int, include_4s_hash: bool = False) -> str:
