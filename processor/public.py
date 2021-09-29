@@ -45,5 +45,5 @@ class ForgetUsernameInput(BaseModel):
 
 @router.post('/account/forget-username', tags=['Account'], response_class=JSONResponse)
 @enveloped
-async def forget_password(data: ForgetUsernameInput) -> None:
+async def forget_username(data: ForgetUsernameInput) -> None:
     await service.public.forget_username(account_email=data.email)
