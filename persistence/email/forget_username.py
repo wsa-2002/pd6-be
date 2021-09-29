@@ -1,3 +1,5 @@
+from typing import Collection
+
 from email.message import EmailMessage
 
 import log
@@ -6,7 +8,7 @@ from config import service_config, smtp_config
 from persistence.email import smtp_handler
 
 
-async def send(to: str, *accounts: do.Account, subject='PDOGS Email Notification'):
+async def send(to: str, accounts: Collection[do.Account], subject='PDOGS Email Notification'):
     message = EmailMessage()
     message["From"] = f"{smtp_config.username}@{smtp_config.host}"
     message["To"] = to
