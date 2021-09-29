@@ -29,10 +29,21 @@ async def email_verification(code: str):
 
 
 class ForgetPasswordInput(BaseModel):
+    username: str
     email: str
 
 
 @router.post('/account/forget-password', tags=['Account'], response_class=JSONResponse)
 @enveloped
 async def forget_password(data: ForgetPasswordInput) -> None:
-    await service.public.forget_password(account_email=data.email)
+    await service.public.forget_password(username=data.username, account_email=data.email)
+
+
+class ForgetUsernameInput(BaseModel):
+    email: str
+
+
+@router.post('/account/forget-username', tags=['Account'], response_class=JSONResponse)
+@enveloped
+async def forget_password(data: ForgetUsernameInput) -> None:
+    await service.public.forget_username(account_email=data.email)
