@@ -86,6 +86,25 @@ async def read(peer_review_record_id: int) -> do.PeerReviewRecord:
                                    score=score, comment=comment, submit_time=submit_time)
 
 
+async def read_by_peer_review_id(peer_review_id: int, account_id: int, is_receiver=True) \
+        -> Sequence[do.PeerReviewRecord]:
+    async with SafeExecutor(
+            event='read peer review record by peer review id',
+            sql=fr'SELECT id, peer_review_id, grader_id, receiver_id, score, comment, submit_time'
+                fr'  FROM peer_review_record'
+                fr' WHERE peer_review_id = %(peer_review_id)s'
+                fr'   AND {"receiver_id" if is_receiver else "grader_id"} = %(account_id)s'
+                fr' ORDER BY id asc',
+            peer_review_id=peer_review_id, account_id=account_id,
+            fetch='all',
+            raise_not_found=False,
+    ) as records:
+        return [do.PeerReviewRecord(id=id_, peer_review_id=peer_review_id,
+                                    grader_id=grader_id, receiver_id=receiver_id,
+                                    score=score, comment=comment, submit_time=submit_time)
+                for (id_, peer_review_id, grader_id, receiver_id, score, comment, submit_time) in records]
+
+
 async def add_auto(peer_review_id: int, grader_id: int):
     async with SafeConnection(event='add auto') as conn:
         async with conn.transaction():

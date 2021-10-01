@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -12,7 +13,6 @@ import service
 from util.api_doc import add_to_docstring
 
 from .util import model, rbac
-
 
 router = APIRouter(
     tags=['Peer Review'],
@@ -96,12 +96,23 @@ BROWSE_PEER_REVIEW_RECORD_COLUMNS = {
 }
 
 
+@dataclass
+class BrowsePeerReviewRecordOutput:
+    id: int
+    peer_review_id: int
+    grader_id: Optional[int]
+    receiver_id: int
+    score: int
+    comment: str
+    submit_time: datetime
+
+
 @router.get('/peer-review/{peer_review_id}/record')
 @enveloped
 @add_to_docstring({k: v.__name__ for k, v in BROWSE_PEER_REVIEW_RECORD_COLUMNS.items()})
 async def browse_peer_review_record(peer_review_id: int, request: Request,
                                     limit: model.Limit, offset: model.Offset,
-                                    filter: model.FilterStr = None, sort: model.SorterStr = None,)\
+                                    filter: model.FilterStr = None, sort: model.SorterStr = None, ) \
         -> model.BrowseOutputBase:
     """
     ### 權限
@@ -126,10 +137,10 @@ async def browse_peer_review_record(peer_review_id: int, request: Request,
 
     peer_review_record, total_count = await service.peer_review_record.browse(limit=limit, offset=offset,
                                                                               filters=filters, sorters=sorters)
-    records = [ReadPeerReviewRecordOutput(id=record.id, peer_review_id=record.peer_review_id,
-                                          grader_id=record.grader_id if is_manager else None,  # self 不能看 grader_id
-                                          receiver_id=record.receiver_id,
-                                          score=record.score, comment=record.comment, submit_time=record.submit_time)
+    records = [BrowsePeerReviewRecordOutput(id=record.id, peer_review_id=record.peer_review_id,
+                                            grader_id=record.grader_id if is_manager else None,  # self 不能看 grader_id
+                                            receiver_id=record.receiver_id,
+                                            score=record.score, comment=record.comment, submit_time=record.submit_time)
                for record in peer_review_record]
 
     return model.BrowseOutputBase(records, total_count=total_count)
@@ -164,10 +175,12 @@ class ReadPeerReviewRecordOutput:
     id: int
     peer_review_id: int
     grader_id: Optional[int]
-    receiver_id: int
-    score: int
-    comment: str
-    submit_time: datetime
+    receiver_id: Optional[int]
+    score: Optional[int]
+    comment: Optional[str]
+    submit_time: Optional[datetime]
+    filename: str
+    file_uuid: UUID
 
 
 @router.get('/peer-review-record/{peer_review_record_id}')
@@ -184,18 +197,28 @@ async def read_peer_review_record(peer_review_record_id: int, request: Request) 
     challenge = await service.challenge.read(challenge_id=peer_review.challenge_id, include_scheduled=True)
 
     is_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)
-
-    if not (is_manager or (request.account.id == peer_review_record.receiver_id)):
+    is_grader = request.account.id == peer_review_record.grader_id
+    is_receiver = request.account.id == peer_review_record.receiver_id
+    if not (is_manager or is_grader or is_receiver):
         raise exc.NoPermission
 
+    submission = await service.peer_review_record.get_review_submission(problem_id=peer_review.target_problem_id,
+                                                                        account_id=peer_review_record.receiver_id,
+                                                                        selection_type=challenge.selection_type,
+                                                                        challenge_end_time=challenge.end_time)
+    import log
+    log.info(peer_review_record)
+    log.info(submission)
     return ReadPeerReviewRecordOutput(
         id=peer_review_record.id,
         peer_review_id=peer_review_record.id,
-        grader_id=peer_review_record.grader_id if is_manager else None,
-        receiver_id=peer_review_record.receiver_id,
+        grader_id=peer_review_record.grader_id if not is_receiver else None,
+        receiver_id=peer_review_record.receiver_id if not is_grader else None,
         score=peer_review_record.score,
         comment=peer_review_record.comment,
         submit_time=peer_review_record.submit_time,
+        filename=submission.filename,
+        file_uuid=submission.content_file_uuid,
     )
 
 
@@ -222,5 +245,57 @@ async def submit_peer_review_record(peer_review_record_id: int, data: SubmitPeer
     if class_role is not RoleType.normal:  # only class normal
         raise exc.NoPermission
 
+    # 檢查 score 是否在規定範圍內
+    if not (peer_review.min_score <= data.score <= peer_review.max_score):
+        raise exc.IllegalInput
+
     await service.peer_review_record.edit(peer_review_record.id, score=data.score,
                                           comment=data.comment, submit_time=request.time)
+
+
+@router.get('/peer-review/{peer_review_id}/account/{account_id}/receive')
+@enveloped
+async def browse_account_received_peer_review_record(peer_review_id: int, account_id: int, request: Request) \
+        -> list[int]:
+    """
+    ### 權限
+    - Class Manager (all)
+    - Self
+    """
+    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
+    peer_review = await service.peer_review.read(peer_review_id)
+    challenge = await service.challenge.read(challenge_id=peer_review.challenge_id, include_scheduled=True)
+
+    is_class_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)
+
+    if not (is_class_manager or (request.account.id == account_id)):
+        raise exc.NoPermission
+
+    peer_review_records = await service.peer_review_record.read_by_peer_review_id(peer_review_id,
+                                                                                  account_id=account_id,
+                                                                                  is_receiver=True)
+    return [peer_review_record.id for peer_review_record in peer_review_records]
+
+
+@router.get('/peer-review/{peer_review_id}/account/{account_id}/review')
+@enveloped
+async def browse_account_reviewed_peer_review_record(peer_review_id: int, account_id: int, request: Request) \
+        -> list[int]:
+    """
+    ### 權限
+    - Class Manager (all)
+    - Self
+    """
+    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
+    peer_review = await service.peer_review.read(peer_review_id)
+    challenge = await service.challenge.read(challenge_id=peer_review.challenge_id, include_scheduled=True)
+
+    is_class_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)
+
+    if not (is_class_manager or (request.account.id == account_id)):
+        raise exc.NoPermission
+
+    peer_review_records = await service.peer_review_record.read_by_peer_review_id(peer_review_id,
+                                                                                  account_id=account_id,
+                                                                                  is_receiver=False)
+    return [peer_review_record.id for peer_review_record in peer_review_records]
