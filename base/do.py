@@ -235,8 +235,6 @@ class PeerReview:
     min_score: int
     max_score: int
     max_review_count: int
-    start_time: datetime
-    end_time: datetime
     is_deleted: bool
 
 
