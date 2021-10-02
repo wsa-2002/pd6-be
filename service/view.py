@@ -9,3 +9,4 @@ my_submission_under_problem = db.view.my_submission_under_problem
 problem_set = db.view.problem_set
 grade = db.view.grade
 access_log = db.view.access_log
+view_peer_review_record = db.view.view_peer_review_record

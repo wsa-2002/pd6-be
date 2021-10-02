@@ -466,3 +466,51 @@ async def access_log(limit: int, offset: int, filters: Sequence[Filter], sorters
     )
 
     return data, total_count
+
+
+async def view_peer_review_record(limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter],
+                                  is_receiver: bool) -> tuple[Sequence[vo.ViewPeerReviewRecord], int]:
+    cond_sql, cond_params = compile_filters(filters)
+    sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
+    if sort_sql:
+        sort_sql += ','
+
+    async with SafeExecutor(
+            event=f'view peer review record by {"receiver" if is_receiver else "grader"}',
+            sql=fr'SELECT account.id, account.username, account.real_name,'
+                fr'       student_card.student_id,'
+                fr'       peer_review_record.id'
+                fr'  FROM peer_review_record'
+                fr' INNER JOIN account'
+                fr'    ON account.id = peer_review_record.{"receiver_id" if is_receiver else "grader_id"}'
+                fr'  LEFT JOIN student_card'
+                fr'    ON student_card.account_id = account.id'
+                fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
+                fr' ORDER BY {sort_sql} peer_review_id ASC'
+                fr' LIMIT %(limit)s OFFSET %(offset)s',
+                **cond_params,
+                limit=limit, offset=offset,
+                fetch='all',
+                raise_not_found=False,  # Issue #134: return [] for browse
+    ) as records:
+        data = [vo.ViewPeerReviewRecord(account_id=account_id,
+                                        username=username,
+                                        real_name=real_name,
+                                        student_id=student_id,
+                                        peer_review_record_id=record_id)
+                for (account_id, username, real_name, student_id, record_id) in records]
+
+    total_count = await execute_count(
+        sql=fr'SELECT account.id, account.username, account.real_name,'
+            fr'       student_card.student_id,'
+            fr'       peer_review_record.id'
+            fr'  FROM peer_review_record'
+            fr' INNER JOIN account'
+            fr'    ON account.id = peer_review_record.{"receiver_id" if is_receiver else "grader_id"}'
+            fr'  LEFT JOIN student_card'
+            fr'    ON student_card.account_id = account.id'
+            fr'{f" WHERE {cond_sql}" if cond_sql else ""}',
+        **cond_params,
+    )
+
+    return data, total_count

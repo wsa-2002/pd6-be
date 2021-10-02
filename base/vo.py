@@ -105,3 +105,12 @@ class ViewGrade:
     update_time: datetime
     grade_id: int
     class_id: int
+
+
+@dataclass
+class ViewPeerReviewRecord:
+    account_id: int
+    username: str
+    real_name: str
+    student_id: Optional[str]
+    peer_review_record_id: int
