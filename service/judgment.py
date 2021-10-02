@@ -6,6 +6,7 @@ import log
 from base import do, enum, popo
 import const
 import judge_core_common.do as judge_do
+import judge_core_common.const as judge_const
 import persistence.amqp_publisher as publisher
 import persistence.database as db
 import persistence.s3 as s3
@@ -18,7 +19,7 @@ read = db.judgment.read
 async def judge_submission(submission_id: int, rejudge=False):
     submission = await db.submission.read(submission_id)
     judge_problem, judge_testcases, judge_assisting_datas = await _prepare_problem(submission.problem_id)
-    priority = const.PRIORITY_SUBMIT if not rejudge else const.PRIORITY_REJUDGE_SINGLE
+    priority = judge_const.PRIORITY_SUBMIT if not rejudge else judge_const.PRIORITY_REJUDGE_SINGLE
 
     await _judge(submission, judge_problem=judge_problem, priority=priority,
                  judge_testcases=judge_testcases, judge_assisting_datas=judge_assisting_datas)
@@ -39,7 +40,7 @@ async def judge_problem_submissions(problem_id: int) -> Sequence[do.Submission]:
         offset += batch_count
 
     for submission in submissions:
-        await _judge(submission, judge_problem=judge_problem, priority=const.PRIORITY_REJUDGE_BATCH,
+        await _judge(submission, judge_problem=judge_problem, priority=judge_const.PRIORITY_REJUDGE_BATCH,
                      judge_testcases=judge_testcases, judge_assisting_datas=judge_assisting_datas)
 
     return submissions
