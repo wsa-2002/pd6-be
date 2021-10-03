@@ -44,6 +44,7 @@ async def read_peer_review(peer_review_id: int, request: Request) -> do.PeerRevi
 
 
 class EditPeerReviewInput(BaseModel):
+    challenge_label: str = None
     title: str = None
     description: str = None
     min_score: int = None
@@ -65,6 +66,7 @@ async def edit_peer_review(peer_review_id: int, data: EditPeerReviewInput, reque
         raise exc.NoPermission
 
     return await service.peer_review.edit(peer_review_id=peer_review_id,
+                                          challenge_label=data.challenge_label,
                                           title=data.title,
                                           description=data.description,
                                           min_score=data.min_score, max_score=data.max_score,
