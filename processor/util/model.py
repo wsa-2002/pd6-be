@@ -61,9 +61,6 @@ def parse_filter(json_obj: FilterStr, column_types: dict[str, type]) -> list[bas
         converted = base.popo.Filter(col_name=filter_.col_name, op=filter_.op,
                                      value=pydantic.parse_obj_as(to_parse_type, filter_.value))
 
-        if filter_.op in (FilterOperator.in_, FilterOperator.not_in):
-            if len(converted.value) < 1:
-                raise exc.IllegalInput
         if filter_.op in (FilterOperator.between, FilterOperator.not_between):
             if len(converted.value) != 2:
                 raise exc.IllegalInput
