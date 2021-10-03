@@ -400,6 +400,7 @@ BROWSE_PEER_REVIEW_RECORD_COLUMNS = {
     'username': str,
     'real_name': str,
     'student_id': str,
+    'average_score': float,
 }
 
 
@@ -431,7 +432,8 @@ async def peer_review_summary_review(peer_review_id: int, request: Request,
     filters = model.parse_filter(filter, BROWSE_PEER_REVIEW_RECORD_COLUMNS)
     sorters = model.parse_sorter(sort, BROWSE_PEER_REVIEW_RECORD_COLUMNS)
 
-    peer_review_records, total_count = await service.view.view_peer_review_record(limit=limit, offset=offset,
+    peer_review_records, total_count = await service.view.view_peer_review_record(peer_review_id=peer_review.id,
+                                                                                  limit=limit, offset=offset,
                                                                                   filters=filters, sorters=sorters,
                                                                                   is_receiver=False)
 
@@ -461,7 +463,8 @@ async def peer_review_summary_receive(peer_review_id: int, request: Request,
     filters = model.parse_filter(filter, BROWSE_PEER_REVIEW_RECORD_COLUMNS)
     sorters = model.parse_sorter(sort, BROWSE_PEER_REVIEW_RECORD_COLUMNS)
 
-    peer_review_records, total_count = await service.view.view_peer_review_record(limit=limit, offset=offset,
+    peer_review_records, total_count = await service.view.view_peer_review_record(peer_review_id=peer_review.id,
+                                                                                  limit=limit, offset=offset,
                                                                                   filters=filters, sorters=sorters,
                                                                                   is_receiver=True)
 

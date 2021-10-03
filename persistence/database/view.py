@@ -468,10 +468,14 @@ async def access_log(limit: int, offset: int, filters: Sequence[Filter], sorters
     return data, total_count
 
 
-async def view_peer_review_record(limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter],
+async def view_peer_review_record(peer_review_id: int, limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter],
                                   is_receiver: bool) -> tuple[Sequence[vo.ViewPeerReviewRecord], int]:
     column_mapper = {
-        # TODO
+        'account_id': 'account.id',
+        'username': 'account.username',
+        'real_name': 'account.real_name',
+        'student_id': 'student_card.student_id',
+        'average_score': 'AVG(peer_review_record.score)'
     }
     filters = [Filter(col_name=column_mapper[f.col_name], op=f.op, value=f.value) for f in filters]
 
@@ -509,7 +513,7 @@ async def view_peer_review_record(limit: int, offset: int, filters: Sequence[Fil
                 fr' GROUP BY account.id, student_card.student_id'
                 fr' ORDER BY {sort_sql} peer_review_id ASC'
                 fr' LIMIT %(limit)s OFFSET %(offset)s',
-                **cond_params,
+                **cond_params, peer_review_id=peer_review_id,
                 limit=limit, offset=offset,
                 fetch='all',
                 raise_not_found=False,  # Issue #134: return [] for browse
