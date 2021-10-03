@@ -47,13 +47,13 @@ class ViewSubmissionUnderClass:
     username: str
     student_id: Optional[str]
     real_name: str
-    challenge_id: int
-    challenge_title: str
-    problem_id: int
-    challenge_label: str
+    challenge_id: Optional[int]
+    challenge_title: Optional[str]
+    problem_id: Optional[int]
+    challenge_label: Optional[str]
     verdict: Optional[enum.VerdictType]
     submit_time: datetime
-    class_id: int
+    class_id: Optional[int]
 
 
 @dataclass
@@ -65,8 +65,8 @@ class ViewMySubmission:
     class_name: Optional[str]
     challenge_id: Optional[int]
     challenge_title: Optional[str]
-    problem_id: int
-    challenge_label: str
+    problem_id: Optional[int]
+    challenge_label: Optional[str]
     verdict: Optional[enum.VerdictType]
     submit_time: datetime
     account_id: int
