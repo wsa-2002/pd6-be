@@ -526,16 +526,26 @@ async def view_peer_review_record(peer_review_id: int, limit: int, offset: int, 
                 for (account_id, username, real_name, student_id, record_id) in records]
 
     total_count = await execute_count(
-        sql=fr'SELECT account.id, account.username, account.real_name,'
-            fr'       student_card.student_id,'
-            fr'       peer_review_record.id'
-            fr'  FROM peer_review_record'
+        sql=fr'SELECT account.id, account.username'
+            fr'  FROM class_member'
             fr' INNER JOIN account'
-            fr'    ON account.id = peer_review_record.{"receiver_id" if is_receiver else "grader_id"}'
+            fr'         ON account.id = class_member.member_id'
+            fr'        AND NOT account.is_deleted '
             fr'  LEFT JOIN student_card'
-            fr'    ON student_card.account_id = account.id'
-            fr'{f" WHERE {cond_sql}" if cond_sql else ""}',
-        **cond_params,
+            fr'         ON student_card.account_id = account.id'
+            fr'        AND student_card.is_default '
+            fr'  LEFT JOIN peer_review_record'
+            fr'         ON class_member.member_id = peer_review_record.{"receiver_id" if is_receiver else "grader_id"}'
+            fr'        AND peer_review_record.peer_review_id = %(peer_review_id)s'
+            fr' WHERE class_id = (SELECT challenge.class_id '
+            fr'                     FROM peer_review'
+            fr'                     LEFT JOIN challenge'
+            fr'                            ON peer_review.challenge_id = challenge.id'
+            fr'                           AND NOT challenge.is_deleted'
+            fr'                    WHERE peer_review.id = %(peer_review_id)s)'
+            fr'{f" AND {cond_sql}" if cond_sql else ""}'
+            fr' GROUP BY account.id, student_card.student_id',
+        **cond_params, peer_review_id=peer_review_id,
     )
 
     return data, total_count
