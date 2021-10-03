@@ -234,8 +234,6 @@ class AddPeerReviewInput(BaseModel):
     min_score: int
     max_score: int
     max_review_count: int
-    start_time: model.ServerTZDatetime
-    end_time: model.ServerTZDatetime
 
 
 @router.post('/challenge/{challenge_id}/peer-review', tags=['Peer Review'])
@@ -267,8 +265,7 @@ async def add_peer_review_under_challenge(challenge_id: int, data: AddPeerReview
                                                    setter_id=request.account.id,
                                                    description=data.description,
                                                    min_score=data.min_score, max_score=data.max_score,
-                                                   max_review_count=data.max_review_count,
-                                                   start_time=data.start_time, end_time=data.end_time)
+                                                   max_review_count=data.max_review_count)
     return model.AddOutput(id=peer_review_id)
 
 

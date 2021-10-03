@@ -49,8 +49,6 @@ class EditPeerReviewInput(BaseModel):
     min_score: int = None
     max_score: int = None
     max_review_count: int = None
-    start_time: model.ServerTZDatetime = None
-    end_time: model.ServerTZDatetime = None
 
 
 @router.patch('/peer-review/{peer_review_id}')
@@ -70,8 +68,7 @@ async def edit_peer_review(peer_review_id: int, data: EditPeerReviewInput, reque
                                           title=data.title,
                                           description=data.description,
                                           min_score=data.min_score, max_score=data.max_score,
-                                          max_review_count=data.max_review_count,
-                                          start_time=data.start_time, end_time=data.end_time)
+                                          max_review_count=data.max_review_count)
 
 
 @router.delete('/peer-review/{peer_review_id}')
