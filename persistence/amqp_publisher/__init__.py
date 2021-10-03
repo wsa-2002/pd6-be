@@ -23,10 +23,11 @@ class AmqpPublishHandler(metaclass=mcs.Singleton):
         await self._channel.close()
         await self._connection.close()
 
-    async def publish(self, queue_name: str, message: bytes):
+    async def publish(self, queue_name: str, message: bytes, priority: int = 0):
         log.info(f'AMQP Publish to {queue_name=}, message={message.decode()}')
         await self._channel.default_exchange.publish(aio_pika.Message(
             body=message,
+            priority=priority,
         ), routing_key=queue_name)
 
 
