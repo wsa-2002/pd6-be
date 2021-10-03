@@ -44,6 +44,7 @@ async def read_peer_review(peer_review_id: int, request: Request) -> do.PeerRevi
 
 
 class EditPeerReviewInput(BaseModel):
+    challenge_label: str = None
     title: str = None
     description: str = None
     min_score: int = None
@@ -65,6 +66,7 @@ async def edit_peer_review(peer_review_id: int, data: EditPeerReviewInput, reque
         raise exc.NoPermission
 
     return await service.peer_review.edit(peer_review_id=peer_review_id,
+                                          challenge_label=data.challenge_label,
                                           title=data.title,
                                           description=data.description,
                                           min_score=data.min_score, max_score=data.max_score,
@@ -101,6 +103,7 @@ class BrowsePeerReviewRecordOutput:
     id: int
     peer_review_id: int
     grader_id: Optional[int]
+    submission_id: int
     receiver_id: int
     score: int
     comment: str
@@ -138,6 +141,7 @@ async def browse_peer_review_record(peer_review_id: int, request: Request,
     peer_review_record, total_count = await service.peer_review_record.browse(limit=limit, offset=offset,
                                                                               filters=filters, sorters=sorters)
     records = [BrowsePeerReviewRecordOutput(id=record.id, peer_review_id=record.peer_review_id,
+                                            submission_id=record.submission_id,
                                             grader_id=record.grader_id if is_manager else None,  # self 不能看 grader_id
                                             receiver_id=record.receiver_id,
                                             score=record.score, comment=record.comment, submit_time=record.submit_time)
@@ -174,6 +178,7 @@ async def assign_peer_review_record(peer_review_id: int, request: Request) -> mo
 class ReadPeerReviewRecordOutput:
     id: int
     peer_review_id: int
+    submission_id: int
     grader_id: Optional[int]
     receiver_id: Optional[int]
     score: Optional[int]
@@ -202,16 +207,11 @@ async def read_peer_review_record(peer_review_record_id: int, request: Request) 
     if not (is_manager or is_grader or is_receiver):
         raise exc.NoPermission
 
-    submission = await service.peer_review_record.get_review_submission(problem_id=peer_review.target_problem_id,
-                                                                        account_id=peer_review_record.receiver_id,
-                                                                        selection_type=challenge.selection_type,
-                                                                        challenge_end_time=challenge.end_time)
-    import log
-    log.info(peer_review_record)
-    log.info(submission)
+    submission = await service.submission.read(submission_id=peer_review_record.submission_id)
     return ReadPeerReviewRecordOutput(
         id=peer_review_record.id,
         peer_review_id=peer_review_record.id,
+        submission_id=submission.id,
         grader_id=peer_review_record.grader_id if not is_receiver else None,
         receiver_id=peer_review_record.receiver_id if not is_grader else None,
         score=peer_review_record.score,
