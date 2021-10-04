@@ -99,6 +99,7 @@ async def edit(testcase_id: int,
         to_updates['label'] = input_filename.split('.')[0]
     if output_filename is not None:
         to_updates['output_filename'] = output_filename
+        to_updates['label'] = output_filename.split('.')[0]
     if time_limit is not None:
         to_updates['time_limit'] = time_limit
     if memory_limit is not None:
