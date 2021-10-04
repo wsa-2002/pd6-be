@@ -244,6 +244,7 @@ class PeerReviewRecord:
     peer_review_id: int
     grader_id: int
     receiver_id: int
+    submission_id: int
     score: Optional[int]
     comment: Optional[str]
     submit_time: Optional[datetime]
