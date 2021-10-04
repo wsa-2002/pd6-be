@@ -65,8 +65,8 @@ class ViewMySubmission:
     class_name: Optional[str]
     challenge_id: Optional[int]
     challenge_title: Optional[str]
-    problem_id: int
-    challenge_label: str
+    problem_id: Optional[int]
+    challenge_label: Optional[str]
     verdict: Optional[enum.VerdictType]
     submit_time: datetime
     account_id: int
