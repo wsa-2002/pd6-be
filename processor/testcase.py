@@ -37,6 +37,7 @@ async def read_testcase(testcase_id: int, request: Request) -> ReadTestcaseOutpu
         problem_id=testcase.problem_id,
         is_sample=testcase.is_sample,
         score=testcase.score,
+        label=testcase.label,
         input_file_uuid=testcase.input_file_uuid if (testcase.is_sample or is_class_manager) else None,
         output_file_uuid=testcase.output_file_uuid if (testcase.is_sample or is_class_manager) else None,
         input_filename=testcase.input_filename,
