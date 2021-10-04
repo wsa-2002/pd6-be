@@ -511,7 +511,7 @@ async def view_peer_review_record(peer_review_id: int, limit: int, offset: int, 
                 fr'                    WHERE peer_review.id = %(peer_review_id)s)'
                 fr'{f" AND {cond_sql}" if cond_sql else ""}'
                 fr' GROUP BY account.id, student_card.student_id'
-                fr' ORDER BY {sort_sql} peer_review_id ASC'
+                fr' ORDER BY {sort_sql} account.id ASC'
                 fr' LIMIT %(limit)s OFFSET %(offset)s',
                 **cond_params, peer_review_id=peer_review_id,
                 limit=limit, offset=offset,
@@ -522,8 +522,10 @@ async def view_peer_review_record(peer_review_id: int, limit: int, offset: int, 
                                         username=username,
                                         real_name=real_name,
                                         student_id=student_id,
-                                        peer_review_record_id=record_id)
-                for (account_id, username, real_name, student_id, record_id) in records]
+                                        peer_review_record_ids=record_ids,
+                                        peer_review_record_scores=record_scores,
+                                        average_score=average_score)
+                for (account_id, username, real_name, student_id, record_ids, record_scores, average_score) in records]
 
     total_count = await execute_count(
         sql=fr'SELECT account.id, account.username'

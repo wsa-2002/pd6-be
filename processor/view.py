@@ -436,8 +436,7 @@ async def peer_review_summary_review(peer_review_id: int, request: Request,
                                                                                   limit=limit, offset=offset,
                                                                                   filters=filters, sorters=sorters,
                                                                                   is_receiver=False)
-
-    return ViewPeerReviewRecordOutput(data=peer_review_records, total_count=total_count)
+    return ViewPeerReviewRecordOutput(peer_review_records, total_count=total_count)
 
 
 @router.get('/peer-review/{peer_review_id}/view/receiver-summary')

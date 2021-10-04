@@ -3,7 +3,7 @@ View Objects
 """
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Sequence
 
 from base import enum
 
@@ -113,4 +113,6 @@ class ViewPeerReviewRecord:
     username: str
     real_name: str
     student_id: Optional[str]
-    peer_review_record_id: int
+    peer_review_record_ids: Sequence[int]
+    peer_review_record_scores: Sequence[int]
+    average_score: Optional[float]
