@@ -167,6 +167,12 @@ async def assign_peer_review_record(peer_review_id: int, request: Request) -> mo
 
     if class_role is not RoleType.normal:
         raise exc.NoPermission
+    peer_review_records = await service.peer_review_record.read_by_peer_review_id(peer_review_id=peer_review.id,
+                                                                                  account_id=request.account.id,
+                                                                                  is_receiver=False)
+
+    if len(peer_review_records) >= peer_review.max_review_count:
+        raise exc.MaxPeerReviewCount
 
     peer_review_record_id = await service.peer_review_record.add_auto(peer_review_id=peer_review.id,
                                                                       grader_id=request.account.id)

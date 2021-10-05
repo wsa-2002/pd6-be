@@ -48,6 +48,12 @@ class FileDecodeError(PdogsException):
     """
 
 
+class MaxPeerReviewCount(PdogsException):
+    """
+    User had reach the maximum of peer review count
+    """
+
+
 # For import usage
 from . import (
     account,
