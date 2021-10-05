@@ -413,7 +413,7 @@ class ViewPeerReviewRecordOutput(model.BrowseOutputBase):
 @enveloped
 @add_to_docstring({k: v.__name__ for k, v in BROWSE_PEER_REVIEW_RECORD_COLUMNS.items()})
 async def peer_review_summary_review(peer_review_id: int, request: Request,
-                                     limit: model.Limit, offset: model.Offset,
+                                     limit: model.Limit = 50, offset: model.Offset = 0,
                                      filter: model.FilterStr = None, sort: model.SorterStr = None) \
         -> ViewPeerReviewRecordOutput:
     """
@@ -443,7 +443,7 @@ async def peer_review_summary_review(peer_review_id: int, request: Request,
 @enveloped
 @add_to_docstring({k: v.__name__ for k, v in BROWSE_PEER_REVIEW_RECORD_COLUMNS.items()})
 async def peer_review_summary_receive(peer_review_id: int, request: Request,
-                                      limit: model.Limit, offset: model.Offset,
+                                      limit: model.Limit = 50, offset: model.Offset = 0,
                                       filter: model.FilterStr = None, sort: model.SorterStr = None) \
         -> ViewPeerReviewRecordOutput:
     """
