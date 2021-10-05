@@ -352,11 +352,11 @@ async def replace_members(class_id: int, member_roles: Sequence[Tuple[str, RoleT
                 fr'  RETURNING member_id',
                 *value_params,
             )
-            log.info(f'Inserted {len(inserted_account_ids)} out of {len(account_ids)} new class members')
+            log.info(f'Inserted {len(inserted_account_ids)} out of {len(account_ids)} given new class members')
 
-            # 4. check the failed account ids
-            success_account_ids = set(chain(*inserted_account_ids))
-            return [account_id in success_account_ids for account_id in chain(*account_ids)]
+    # 4. check the failed account ids
+    success_account_ids = set(chain(*inserted_account_ids))
+    return [account_id in success_account_ids for account_id in chain(*account_ids)]
 
 
 async def browse_member_referrals(class_id: int, role: RoleType) -> Sequence[str]:
