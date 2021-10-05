@@ -30,13 +30,16 @@ async def replace_members(class_id: int, member_roles: Sequence[Tuple[str, RoleT
     emails_after = set(await db.class_.browse_member_emails(class_id=class_id, role=RoleType.manager))
 
     if cm_before != cm_after:
+        class_ = await db.class_.read(class_id=class_id)
+        course = await db.course.read(course_id=class_.course_id)
+        operator = await db.account.read(account_id=operator_id)
         await email.notification.notify_cm_change(
             tos=(emails_after | emails_before),
             added_account_referrals=cm_after.difference(cm_before),
             removed_account_referrals=cm_before.difference(cm_after),
-            class_name=(await db.class_.read(class_id=class_id)).name,
-            course_name=(await db.course.read(course_id=class_.course_id)).name,
-            operator_account_referral=(await db.account.read(account_id=operator_id)).username,
+            class_name=class_.name,
+            course_name=course.name,
+            operator_name=operator.username,
         )
 
     return result
