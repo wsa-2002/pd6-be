@@ -1,6 +1,7 @@
 from itertools import chain
 from typing import Sequence, Collection, Tuple
 
+import log
 from base import do
 from base.enum import RoleType, FilterOperator
 from base.popo import Filter, Sorter
@@ -321,6 +322,7 @@ async def replace_members(class_id: int, member_roles: Sequence[Tuple[str, RoleT
                 (account_referral,)
                 for account_referral, _ in member_roles
             ])
+            log.info(f'Fetching account ids with values {value_params}')
             account_ids: list[list[int]] = await conn.fetch(
                 fr'  WITH account_referrals (account_referral)'
                 fr'    AS (VALUES {value_sql})'
@@ -328,17 +330,21 @@ async def replace_members(class_id: int, member_roles: Sequence[Tuple[str, RoleT
                 fr'  FROM account_referrals',
                 *value_params,
             )
+            log.info(f'Fetched account ids: {account_ids}')
 
             # 2. remove the old members
             await conn.execute(fr'DELETE FROM class_member'
                                fr'      WHERE class_id = $1',
                                class_id)
+            log.info('Removed old class members')
 
             # 3. perform insert
             value_sql, value_params = compile_values([
                 (class_id, account_id, role)
-                for account_id, (_, role) in zip(account_ids, member_roles)
+                for (account_id,), (_, role) in zip(account_ids, member_roles)
+                if account_id is not None
             ])
+            log.info(f'Inserting new class members with values {value_params}')
             inserted_account_ids: list[list[int]] = await conn.fetch(
                 fr'INSERT INTO class_member'
                 fr'            (class_id, member_id, role)'
@@ -346,6 +352,7 @@ async def replace_members(class_id: int, member_roles: Sequence[Tuple[str, RoleT
                 fr'  RETURNING member_id',
                 *value_params,
             )
+            log.info(f'Inserted {len(inserted_account_ids)} out of {len(account_ids)} new class members')
 
             # 4. check the failed account ids
             success_account_ids = set(chain(*inserted_account_ids))
