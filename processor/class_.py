@@ -183,25 +183,6 @@ async def browse_all_class_member_with_account_referral(class_id: int, request: 
             for (member, member_referral) in results]
 
 
-class EditClassMemberInput(BaseModel):
-    member_id: int
-    role: RoleType
-
-
-@router.patch('/class/{class_id}/member')
-@enveloped
-async def edit_class_member(class_id: int, data: Sequence[EditClassMemberInput], request: Request) -> None:
-    """
-    ### 權限
-    - Class+ manager
-    """
-    if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id, inherit=True):
-        raise exc.NoPermission
-    await service.class_.edit_member(class_id=class_id,
-                                     member_roles=[(member.member_id, member.role) for member in data],
-                                     operator_id=request.account.id)
-
-
 class SetClassMemberInput(BaseModel):
     account_referral: str
     role: RoleType
@@ -209,7 +190,7 @@ class SetClassMemberInput(BaseModel):
 
 @router.put('/class/{class_id}/member')
 @enveloped
-async def replace_class_members(class_id: int, data: Sequence[SetClassMemberInput], request: Request) -> None:
+async def replace_class_members(class_id: int, data: Sequence[SetClassMemberInput], request: Request) -> Sequence[bool]:
     """
     ### 權限
     - Class+ manager
@@ -217,10 +198,10 @@ async def replace_class_members(class_id: int, data: Sequence[SetClassMemberInpu
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id, inherit=True):
         raise exc.NoPermission
 
-    await service.class_.replace_members(class_id=class_id,
-                                         member_roles=[(member.account_referral, member.role)
-                                                       for member in data],
-                                         operator_id=request.account.id)
+    return await service.class_.replace_members(class_id=class_id,
+                                                member_roles=[(member.account_referral, member.role)
+                                                              for member in data],
+                                                operator_id=request.account.id)
 
 
 @router.delete('/class/{class_id}/member/{member_id}')

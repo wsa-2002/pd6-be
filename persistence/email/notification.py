@@ -2,7 +2,7 @@ from email.message import EmailMessage
 
 from config import service_config, smtp_config
 from persistence.email import smtp_handler
-from typing import Sequence
+from typing import Sequence, Collection
 
 
 # for general msgs
@@ -21,18 +21,18 @@ async def send(to: str = None, msg: str = "", bcc: str = None, subject='PDOGS No
 
 
 # update class manager change
-async def notify_cm_change(tos: Sequence[str], class_name: str, course_name:str, operator_account_referral: str,
-                           added_account_referrals: Sequence[str] = None,
-                           removed_account_referrals: Sequence[str] = None):
+async def notify_cm_change(tos: Collection[str], class_name: str, course_name: str, operator_account_referral: str,
+                           added_account_referrals: Collection[str] = None,
+                           removed_account_referrals: Collection[str] = None):
     bccs = ', '.join(tos)
-    added_cms = ', '.join(account_referral for account_referral in added_account_referrals)
-    removed_cms = ', '.join(account_referral for account_referral in removed_account_referrals)
+    added_cms = ', '.join(added_account_referrals) or 'None'
+    removed_cms = ', '.join(removed_account_referrals) or 'None'
     msg = fr"""
 Class Manager Has Been Updated:
 Course Name: {course_name}
 Class Name: {class_name}
-Added CMs: {added_cms or "None"}
-Removed CMs: {removed_cms or "None"}
+Added CMs: {added_cms}
+Removed CMs: {removed_cms}
 Operator: {operator_account_referral}      
 """
     subject = "PDOGS Notification (Class Manager Updates)"

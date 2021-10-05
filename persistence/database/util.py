@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing import Sequence, Iterable, Any
 
 from base.enum import FilterOperator
 from base.popo import Filter
