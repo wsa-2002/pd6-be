@@ -322,10 +322,10 @@ async def replace_members(class_id: int, member_roles: Sequence[Tuple[str, RoleT
                 for account_referral, _ in member_roles
             ])
             account_ids: list[list[int]] = await conn.fetch(
-                query=fr'  WITH account_referrals (account_referral)'
-                      fr'    AS (VALUES {value_sql})'
-                      fr'SELECT account_referral_to_id(account_referral)'
-                      fr'  FROM account_referrals',
+                fr'  WITH account_referrals (account_referral)'
+                fr'    AS (VALUES {value_sql})'
+                fr'SELECT account_referral_to_id(account_referral)'
+                fr'  FROM account_referrals',
                 *value_params,
             )
 
@@ -340,10 +340,10 @@ async def replace_members(class_id: int, member_roles: Sequence[Tuple[str, RoleT
                 for account_id, (_, role) in zip(account_ids, member_roles)
             ])
             inserted_account_ids: list[list[int]] = await conn.fetch(
-                query=fr'INSERT INTO class_member'
-                      fr'            (class_id, member_id, role)'
-                      fr'     VALUES {value_sql}'
-                      fr'  RETURNING member_id',
+                fr'INSERT INTO class_member'
+                fr'            (class_id, member_id, role)'
+                fr'     VALUES {value_sql}'
+                fr'  RETURNING member_id',
                 *value_params,
             )
 
