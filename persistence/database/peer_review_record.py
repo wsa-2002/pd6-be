@@ -37,7 +37,7 @@ async def edit_score(peer_review_record_id: int, score: int, comment: str, submi
         pass
 
 
-async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter]) \
+async def browse(peer_review_id: int, limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter]) \
         -> tuple[Sequence[do.PeerReviewRecord], int]:
 
     cond_sql, cond_params = compile_filters(filters)
@@ -49,10 +49,11 @@ async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Se
             event='browse peer review records',
             sql=fr'SELECT id, peer_review_id, grader_id, receiver_id, score, comment, submit_time, submission_id'
                 fr'  FROM peer_review_record'
-                fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
+                fr' WHERE peer_review_id = %(peer_review_id)s'
+                fr'{f" AND {cond_sql}" if cond_sql else ""}'
                 fr' ORDER BY {sort_sql} id ASC'
                 fr' LIMIT %(limit)s OFFSET %(offset)s',
-            **cond_params,
+            **cond_params, peer_review_id=peer_review_id,
             limit=limit, offset=offset,
             fetch='all',
             raise_not_found=False,  # Issue #134: return [] for browse
@@ -65,8 +66,9 @@ async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Se
     total_count = await execute_count(
         sql=fr'SELECT id, peer_review_id, grader_id, receiver_id, score, comment, submit_time'
             fr'  FROM peer_review_record'
-            fr'{f" WHERE {cond_sql}" if cond_sql else ""}',
-        **cond_params,
+            fr' WHERE peer_review_id = %(peer_review_id)s'
+            fr'{f" AND {cond_sql}" if cond_sql else ""}',
+        **cond_params, peer_review_id=peer_review_id,
     )
 
     return data, total_count

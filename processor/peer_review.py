@@ -138,8 +138,10 @@ async def browse_peer_review_record(peer_review_id: int, request: Request,
                                    op=FilterOperator.eq,
                                    value=request.account.id))
 
-    peer_review_record, total_count = await service.peer_review_record.browse(limit=limit, offset=offset,
+    peer_review_record, total_count = await service.peer_review_record.browse(peer_review_id=peer_review.id,
+                                                                              limit=limit, offset=offset,
                                                                               filters=filters, sorters=sorters)
+
     records = [BrowsePeerReviewRecordOutput(id=record.id, peer_review_id=record.peer_review_id,
                                             submission_id=record.submission_id,
                                             grader_id=record.grader_id if is_manager else None,  # self 不能看 grader_id
