@@ -113,6 +113,6 @@ class ViewPeerReviewRecord:
     username: str
     real_name: str
     student_id: Optional[str]
-    peer_review_record_ids: Sequence[int]
-    peer_review_record_scores: Sequence[int]
+    peer_review_record_ids: Sequence[Optional[int]]
+    peer_review_record_scores: Sequence[Optional[int]]
     average_score: Optional[float]
