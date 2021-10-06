@@ -50,7 +50,7 @@ class FileDecodeError(PdogsException):
 
 class MaxPeerReviewCount(PdogsException):
     """
-    User had reach the maximum of peer review count
+    User had reached the maximum of peer review count
     """
 
 
