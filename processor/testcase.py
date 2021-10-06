@@ -1,8 +1,11 @@
+from io import BytesIO
+
 from fastapi import File, UploadFile
 from pydantic import BaseModel
 
 from base.enum import RoleType
 import exceptions as exc
+from const import TESTDATA_ENCODING
 from middleware import APIRouter, response, enveloped, auth, Request
 import service
 
@@ -89,7 +92,13 @@ async def upload_testcase_input_data(testcase_id: int, request: Request, input_f
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
-    await service.testcase.edit_input(testcase_id=testcase.id, file=input_file.file, filename=input_file.filename)
+    # Issue #26: CRLF
+    no_cr_file = BytesIO(input_file.file.read()
+                         .decode(TESTDATA_ENCODING)
+                         .replace('\r\n', '\n')
+                         .encode(TESTDATA_ENCODING))
+
+    await service.testcase.edit_input(testcase_id=testcase.id, file=no_cr_file, filename=input_file.filename)
 
 
 @router.put('/testcase/{testcase_id}/output-data')
@@ -106,7 +115,13 @@ async def upload_testcase_output_data(testcase_id: int, request: Request, output
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
-    await service.testcase.edit_output(testcase_id=testcase.id, file=output_file.file, filename=output_file.filename)
+    # Issue #26: CRLF
+    no_cr_file = BytesIO(output_file.file.read()
+                         .decode(TESTDATA_ENCODING)
+                         .replace('\r\n', '\n')
+                         .encode(TESTDATA_ENCODING))
+
+    await service.testcase.edit_output(testcase_id=testcase.id, file=no_cr_file, filename=output_file.filename)
 
 
 @router.delete('/testcase/{testcase_id}')
