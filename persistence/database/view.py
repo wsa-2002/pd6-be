@@ -505,7 +505,7 @@ async def view_peer_review_record(peer_review_id: int, limit: int, offset: int, 
         'username': 'account.username',
         'real_name': 'account.real_name',
         'student_id': 'student_card.student_id',
-        'average_score': 'AVG(peer_review_record.score)'
+        'average_score': 'AVG(peer_review_record.score)',
     }
     filters = [Filter(col_name=column_mapper[f.col_name], op=f.op, value=f.value) for f in filters]
 
