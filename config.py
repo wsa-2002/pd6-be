@@ -20,7 +20,7 @@ class Config:
 class ServiceConfig:
     domain = env_values.get('SERVICE_DOMAIN')
     port = env_values.get('SERVICE_PORT')
-    use_https = strtobool(env_values.get('SERVICE_USE_HTTPS'))
+    use_https = bool(strtobool(env_values.get('SERVICE_USE_HTTPS', 'false')))
 
     @property
     def url(self) -> str:
@@ -75,6 +75,12 @@ class AmqpConfig:
     prefetch_count = int(env_values.get('AMQP_PREFETCH_COUNT', '1'))
 
 
+class ProfilerConfig:
+    enabled = bool(strtobool(env_values.get('PROFILER_ENABLED', 'false')))
+    interval = float(env_values.get('PROFILER_INTERVAL', '0.0001'))
+    file_dir = env_values.get('PROFILER_FILE_DIR')
+
+
 # default config objects
 config = Config()
 service_config = ServiceConfig()
@@ -85,3 +91,4 @@ logger_config = LoggerConfig()
 pd4s_config = PD4SConfig()
 s3_config = S3Config()
 amqp_config = AmqpConfig()
+profiler_config = ProfilerConfig()

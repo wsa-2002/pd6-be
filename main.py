@@ -98,6 +98,11 @@ app.middleware('http')(middleware.auth.middleware)
 import middleware.logging
 app.middleware('http')(middleware.logging.middleware)
 
+from config import profiler_config
+if profiler_config.enabled:
+    import middleware.profiler
+    app.middleware('http')(middleware.profiler.middleware)
+
 import middleware.tracker
 app.middleware('http')(middleware.tracker.middleware)
 
