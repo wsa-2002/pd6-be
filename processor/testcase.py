@@ -55,6 +55,7 @@ class EditTestcaseInput(BaseModel):
     time_limit: int = None
     memory_limit: int = None
     is_disabled: bool = None
+    label: str = None
 
 
 @router.patch('/testcase/{testcase_id}')
@@ -71,7 +72,7 @@ async def edit_testcase(testcase_id: int, data: EditTestcaseInput, request: Requ
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
-    await service.testcase.edit(testcase_id=testcase_id, is_sample=data.is_sample, score=data.score,
+    await service.testcase.edit(testcase_id=testcase_id, is_sample=data.is_sample, score=data.score, label=data.label,
                                 time_limit=data.time_limit, memory_limit=data.memory_limit,
                                 is_disabled=data.is_disabled)
 
