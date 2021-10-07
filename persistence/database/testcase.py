@@ -90,16 +90,16 @@ async def edit(testcase_id: int,
         to_updates['is_sample'] = is_sample
     if score is not None:
         to_updates['score'] = score
+    if label is not None:
+        to_updates['label'] = label
     if input_file_uuid is not None:
         to_updates['input_file_uuid'] = input_file_uuid
     if output_file_uuid is not None:
         to_updates['output_file_uuid'] = output_file_uuid
     if input_filename is not None:
         to_updates['input_filename'] = input_filename
-        to_updates['label'] = input_filename.split('.')[0]
     if output_filename is not None:
         to_updates['output_filename'] = output_filename
-        to_updates['label'] = output_filename.split('.')[0]
     if time_limit is not None:
         to_updates['time_limit'] = time_limit
     if memory_limit is not None:
