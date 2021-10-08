@@ -57,7 +57,7 @@ def _compile_filter(filter_: Filter, suffix='') -> tuple[str, dict]:  # sql, par
     if filter_.op in (FilterOperator.in_, FilterOperator.not_in):
         value_dict = {fr'{filter_.col_name}_{filter_.op.name}{suffix}_{i}': val for i, val in enumerate(filter_.value)}
         if not value_dict:
-            return fr'{filter_.col_name} {filter_.op} (SELECT 0 LIMIT 0)', value_dict
+            return ('FALSE' if filter_.op is FilterOperator.in_ else 'TRUE'), value_dict
         if len(value_dict) > 70:  # https://postgres.cz/wiki/PostgreSQL_SQL_Tricks_I#Predicate_IN_optimalization
             values = ', '.join(fr'(%({key})s)' for key in value_dict)
             return fr'{filter_.col_name} {filter_.op} (VALUES {values})', value_dict
