@@ -5,7 +5,7 @@ from uuid import UUID
 
 from base import do
 
-from . import s3_handler
+from . import s3_handler, tools
 
 
 _BUCKET_NAME = 'essay-submission'
