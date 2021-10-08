@@ -38,13 +38,10 @@ async def get_file_content(bucket: str, key: str):
     return await s3_handler.get_file_content(bucket=bucket, key=key)
 
 
-async def upload(bucket_name: str, file: typing.IO, file_uuid: Optional[UUID] = None) -> do.S3File:
+async def upload(bucket_name: str, file: typing.IO, file_uuid: UUID) -> do.S3File:
     """
     :return: do.S3File
     """
-    if file_uuid is None:
-        file_uuid = uuid.uuid4()
-
     start_time = datetime.now()
     log.info(f'Starting s3 file upload: {bucket_name=}, {file_uuid=}')
 

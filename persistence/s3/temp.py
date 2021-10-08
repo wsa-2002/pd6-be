@@ -12,7 +12,7 @@ _BUCKET_NAME = 'temp'
 
 
 async def upload(file: typing.IO, file_uuid: Optional[UUID] = None) -> do.S3File:
-    return await tools.upload(bucket_name=_BUCKET_NAME, file=file, file_uuid=file_uuid)
+    return await tools.upload(bucket_name=_BUCKET_NAME, file=file, file_uuid=file_uuid or uuid.uuid4())
 
 
 async def put_object(body, file_uuid: Optional[UUID] = None) -> do.S3File:
