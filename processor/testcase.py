@@ -1,11 +1,8 @@
-from io import BytesIO
-
 from fastapi import File, UploadFile
 from pydantic import BaseModel
 
 from base.enum import RoleType
 import exceptions as exc
-from const import TESTDATA_ENCODING
 from middleware import APIRouter, response, enveloped, auth, Request
 import service
 
@@ -113,7 +110,7 @@ async def upload_testcase_output_data(testcase_id: int, request: Request, output
         raise exc.NoPermission
 
     # Issue #26: CRLF
-    no_cr_file = file.replace_cr(input_file.file.read())
+    no_cr_file = file.replace_cr(output_file.file.read())
 
     await service.testcase.edit_output(testcase_id=testcase.id, file=no_cr_file, filename=output_file.filename)
 
