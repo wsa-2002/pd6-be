@@ -41,6 +41,7 @@ class DBConfig:
     username = env_values.get('PG_USERNAME')
     password = env_values.get('PG_PASSWORD')
     db_name = env_values.get('PG_DBNAME')
+    max_pool_size = int(env_values.get('PG_MAX_POOL_SIZE', '10'))
 
 
 class SMTPConfig:
