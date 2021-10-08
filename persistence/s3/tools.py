@@ -3,6 +3,7 @@ import typing
 from typing import Optional
 import uuid
 from uuid import UUID
+from datetime import datetime
 
 import log
 from base import do
@@ -44,8 +45,14 @@ async def upload(bucket_name: str, file: typing.IO, file_uuid: Optional[UUID] = 
     if file_uuid is None:
         file_uuid = uuid.uuid4()
 
+    start_time = datetime.now()
+    log.info(f'Starting s3 file upload: {bucket_name=}, {file_uuid=}')
+
     bucket = await s3_handler.get_bucket(bucket_name)
     key = str(file_uuid)
     await bucket.upload_fileobj(file, key)
-    log.info(f'S3 file uploaded: {bucket_name=}, {file_uuid=}')
+
+    exec_time_ms = (datetime.now() - start_time).total_seconds() * 1000
+    log.info(f'Ended s3 file upload after {exec_time_ms} ms')
+
     return do.S3File(uuid=file_uuid, bucket=bucket_name, key=key)
