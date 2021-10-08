@@ -37,7 +37,7 @@ async def edit_score(peer_review_record_id: int, score: int, comment: str, submi
         pass
 
 
-async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter]) \
+async def browse(peer_review_id: int, limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter]) \
         -> tuple[Sequence[do.PeerReviewRecord], int]:
 
     cond_sql, cond_params = compile_filters(filters)
@@ -47,26 +47,28 @@ async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Se
 
     async with SafeExecutor(
             event='browse peer review records',
-            sql=fr'SELECT id, peer_review_id, grader_id, receiver_id, score, comment, submit_time'
+            sql=fr'SELECT id, peer_review_id, grader_id, receiver_id, score, comment, submit_time, submission_id'
                 fr'  FROM peer_review_record'
-                fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
+                fr' WHERE peer_review_id = %(peer_review_id)s'
+                fr'{f" AND {cond_sql}" if cond_sql else ""}'
                 fr' ORDER BY {sort_sql} id ASC'
                 fr' LIMIT %(limit)s OFFSET %(offset)s',
-            **cond_params,
+            **cond_params, peer_review_id=peer_review_id,
             limit=limit, offset=offset,
             fetch='all',
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         data = [do.PeerReviewRecord(id=id_, peer_review_id=peer_review_id,
                                     grader_id=grader_id, receiver_id=receiver_id,
-                                    score=score, comment=comment, submit_time=submit_time)
-                for (id_, peer_review_id, grader_id, receiver_id, score, comment, submit_time)
+                                    score=score, comment=comment, submit_time=submit_time, submission_id=submission_id)
+                for (id_, peer_review_id, grader_id, receiver_id, score, comment, submit_time, submission_id)
                 in records]
     total_count = await execute_count(
         sql=fr'SELECT id, peer_review_id, grader_id, receiver_id, score, comment, submit_time'
             fr'  FROM peer_review_record'
-            fr'{f" WHERE {cond_sql}" if cond_sql else ""}',
-        **cond_params,
+            fr' WHERE peer_review_id = %(peer_review_id)s'
+            fr'{f" AND {cond_sql}" if cond_sql else ""}',
+        **cond_params, peer_review_id=peer_review_id,
     )
 
     return data, total_count
@@ -75,15 +77,35 @@ async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Se
 async def read(peer_review_record_id: int) -> do.PeerReviewRecord:
     async with SafeExecutor(
             event='read peer review record',
-            sql=fr'SELECT id, peer_review_id, grader_id, receiver_id, score, comment, submit_time'
+            sql=fr'SELECT id, peer_review_id, grader_id, receiver_id, score, comment, submit_time, submission_id'
                 fr'  FROM peer_review_record'
                 fr' WHERE id = %(peer_review_record_id)s',
             peer_review_record_id=peer_review_record_id,
             fetch=1,
-    ) as (id_, peer_review_id, grader_id, receiver_id, score, comment, submit_time):
+    ) as (id_, peer_review_id, grader_id, receiver_id, score, comment, submit_time, submission_id):
         return do.PeerReviewRecord(id=id_, peer_review_id=peer_review_id,
                                    grader_id=grader_id, receiver_id=receiver_id,
-                                   score=score, comment=comment, submit_time=submit_time)
+                                   score=score, comment=comment, submit_time=submit_time, submission_id=submission_id)
+
+
+async def read_by_peer_review_id(peer_review_id: int, account_id: int, is_receiver=True) \
+        -> Sequence[do.PeerReviewRecord]:
+    async with SafeExecutor(
+            event='read peer review record by peer review id',
+            sql=fr'SELECT id, peer_review_id, grader_id, receiver_id, score, comment, submit_time, submission_id'
+                fr'  FROM peer_review_record'
+                fr' WHERE peer_review_id = %(peer_review_id)s'
+                fr'   AND {"receiver_id" if is_receiver else "grader_id"} = %(account_id)s'
+                fr' ORDER BY id asc',
+            peer_review_id=peer_review_id, account_id=account_id,
+            fetch='all',
+            raise_not_found=False,
+    ) as records:
+        return [do.PeerReviewRecord(id=id_, peer_review_id=peer_review_id,
+                                    grader_id=grader_id, receiver_id=receiver_id,
+                                    score=score, comment=comment, submit_time=submit_time, submission_id=submission_id)
+                for (id_, peer_review_id, grader_id, receiver_id, score, comment, submit_time, submission_id)
+                in records]
 
 
 async def add_auto(peer_review_id: int, grader_id: int):

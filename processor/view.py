@@ -10,13 +10,11 @@ from util.api_doc import add_to_docstring
 
 from .util import rbac, model
 
-
 router = APIRouter(
     tags=['View'],
     default_response_class=response.JSONResponse,
     dependencies=auth.doc_dependencies,
 )
-
 
 BROWSE_ACCOUNT_COLUMNS = {
     'account_id': int,
@@ -396,3 +394,77 @@ async def browse_access_log(
     access_logs, total_count = await service.view.access_log(limit=limit, offset=offset,
                                                              filters=filters, sorters=sorters)
     return ViewAccessLogOutput(access_logs, total_count=total_count)
+
+
+BROWSE_PEER_REVIEW_RECORD_COLUMNS = {
+    'username': str,
+    'real_name': str,
+    'student_id': str,
+    'average_score': float,
+}
+
+
+@dataclass
+class ViewPeerReviewRecordOutput(model.BrowseOutputBase):
+    data: Sequence[vo.ViewPeerReviewRecord]
+
+
+@router.get('/peer-review/{peer_review_id}/view/reviewer-summary')
+@enveloped
+@add_to_docstring({k: v.__name__ for k, v in BROWSE_PEER_REVIEW_RECORD_COLUMNS.items()})
+async def peer_review_summary_review(peer_review_id: int, request: Request,
+                                     limit: model.Limit = 50, offset: model.Offset = 0,
+                                     filter: model.FilterStr = None, sort: model.SorterStr = None) \
+        -> ViewPeerReviewRecordOutput:
+    """
+    ### 權限
+    - Class Manager
+
+    ### Available columns
+    """
+    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
+    peer_review = await service.peer_review.read(peer_review_id)
+    challenge = await service.challenge.read(peer_review.challenge_id, include_scheduled=True)
+
+    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+        raise exc.NoPermission
+
+    filters = model.parse_filter(filter, BROWSE_PEER_REVIEW_RECORD_COLUMNS)
+    sorters = model.parse_sorter(sort, BROWSE_PEER_REVIEW_RECORD_COLUMNS)
+
+    peer_review_records, total_count = await service.view.view_peer_review_record(peer_review_id=peer_review.id,
+                                                                                  limit=limit, offset=offset,
+                                                                                  filters=filters, sorters=sorters,
+                                                                                  is_receiver=False)
+    return ViewPeerReviewRecordOutput(peer_review_records, total_count=total_count)
+
+
+@router.get('/peer-review/{peer_review_id}/view/receiver-summary')
+@enveloped
+@add_to_docstring({k: v.__name__ for k, v in BROWSE_PEER_REVIEW_RECORD_COLUMNS.items()})
+async def peer_review_summary_receive(peer_review_id: int, request: Request,
+                                      limit: model.Limit = 50, offset: model.Offset = 0,
+                                      filter: model.FilterStr = None, sort: model.SorterStr = None) \
+        -> ViewPeerReviewRecordOutput:
+    """
+    ### 權限
+    - Class Manager
+
+    ### Available columns
+    """
+    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
+    peer_review = await service.peer_review.read(peer_review_id)
+    challenge = await service.challenge.read(peer_review.challenge_id, include_scheduled=True)
+
+    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+        raise exc.NoPermission
+
+    filters = model.parse_filter(filter, BROWSE_PEER_REVIEW_RECORD_COLUMNS)
+    sorters = model.parse_sorter(sort, BROWSE_PEER_REVIEW_RECORD_COLUMNS)
+
+    peer_review_records, total_count = await service.view.view_peer_review_record(peer_review_id=peer_review.id,
+                                                                                  limit=limit, offset=offset,
+                                                                                  filters=filters, sorters=sorters,
+                                                                                  is_receiver=True)
+
+    return ViewPeerReviewRecordOutput(data=peer_review_records, total_count=total_count)

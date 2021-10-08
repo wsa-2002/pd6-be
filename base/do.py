@@ -235,8 +235,6 @@ class PeerReview:
     min_score: int
     max_score: int
     max_review_count: int
-    start_time: datetime
-    end_time: datetime
     is_deleted: bool
 
 
@@ -246,6 +244,7 @@ class PeerReviewRecord:
     peer_review_id: int
     grader_id: int
     receiver_id: int
+    submission_id: int
     score: Optional[int]
     comment: Optional[str]
     submit_time: Optional[datetime]

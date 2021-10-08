@@ -6,6 +6,7 @@ import log
 from base import do, enum, popo
 import const
 import judge_core_common.do as judge_do
+import judge_core_common.const as judge_const
 import persistence.amqp_publisher as publisher
 import persistence.database as db
 import persistence.s3 as s3
@@ -15,11 +16,12 @@ browse_cases = db.judgment.browse_cases
 read = db.judgment.read
 
 
-async def judge_submission(submission_id: int):
+async def judge_submission(submission_id: int, rejudge=False):
     submission = await db.submission.read(submission_id)
     judge_problem, judge_testcases, judge_assisting_datas = await _prepare_problem(submission.problem_id)
+    priority = judge_const.PRIORITY_SUBMIT if not rejudge else judge_const.PRIORITY_REJUDGE_SINGLE
 
-    await _judge(submission, judge_problem=judge_problem,
+    await _judge(submission, judge_problem=judge_problem, priority=priority,
                  judge_testcases=judge_testcases, judge_assisting_datas=judge_assisting_datas)
 
 
@@ -38,7 +40,7 @@ async def judge_problem_submissions(problem_id: int) -> Sequence[do.Submission]:
         offset += batch_count
 
     for submission in submissions:
-        await _judge(submission, judge_problem=judge_problem,
+        await _judge(submission, judge_problem=judge_problem, priority=judge_const.PRIORITY_REJUDGE_BATCH,
                      judge_testcases=judge_testcases, judge_assisting_datas=judge_assisting_datas)
 
     return submissions
@@ -74,7 +76,7 @@ async def _prepare_problem(problem_id: int) -> tuple[
     return judge_problem, judge_testcases, judge_assisting_datas
 
 
-async def _judge(submission: do.Submission, judge_problem: judge_do.Problem,
+async def _judge(submission: do.Submission, judge_problem: judge_do.Problem, priority: int,
                  judge_testcases: Sequence[judge_do.Testcase], judge_assisting_datas: Sequence[judge_do.AssistingData]):
     submission_language = await db.submission.read_language(submission.language_id)
     if submission_language.is_disabled:
@@ -90,7 +92,8 @@ async def _judge(submission: do.Submission, judge_problem: judge_do.Problem,
         ),
         testcases=judge_testcases,
         assisting_data=judge_assisting_datas,
-    ), language_queue_name=await db.submission.read_language_queue_name(submission_language.id))
+    ), language_queue_name=await db.submission.read_language_queue_name(submission_language.id),
+        priority=priority)
 
 
 async def _sign_file_url(uuid: UUID, filename: str):

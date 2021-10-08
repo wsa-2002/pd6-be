@@ -234,8 +234,6 @@ class AddPeerReviewInput(BaseModel):
     min_score: int
     max_score: int
     max_review_count: int
-    start_time: model.ServerTZDatetime
-    end_time: model.ServerTZDatetime
 
 
 @router.post('/challenge/{challenge_id}/peer-review', tags=['Peer Review'])
@@ -253,7 +251,8 @@ async def add_peer_review_under_challenge(challenge_id: int, data: AddPeerReview
 
     # validate problem belongs to same class
     target_problem = await service.problem.read(problem_id=data.target_problem_id)
-    target_problem_challenge = await service.challenge.read(target_problem.challenge_id)
+    target_problem_challenge = await service.challenge.read(challenge_id=target_problem.challenge_id,
+                                                            include_scheduled=True)
 
     # Only allow peer review to target to same class
     if challenge.class_id is not target_problem_challenge.class_id:
@@ -266,8 +265,7 @@ async def add_peer_review_under_challenge(challenge_id: int, data: AddPeerReview
                                                    setter_id=request.account.id,
                                                    description=data.description,
                                                    min_score=data.min_score, max_score=data.max_score,
-                                                   max_review_count=data.max_review_count,
-                                                   start_time=data.start_time, end_time=data.end_time)
+                                                   max_review_count=data.max_review_count)
     return model.AddOutput(id=peer_review_id)
 
 

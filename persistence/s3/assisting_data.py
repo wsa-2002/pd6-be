@@ -1,4 +1,3 @@
-import io
 import typing
 from typing import Optional
 import uuid
@@ -6,20 +5,11 @@ from uuid import UUID
 
 from base import do
 
-from . import s3_handler
+from . import tools
 
 
 _BUCKET_NAME = 'assisting-data'
 
 
 async def upload(file: typing.IO, file_uuid: Optional[UUID] = None) -> do.S3File:
-    """
-    :return: do.S3File
-    """
-    if file_uuid is None:
-        file_uuid = uuid.uuid4()
-
-    bucket = await s3_handler.get_bucket(_BUCKET_NAME)
-    key = str(file_uuid)
-    await bucket.upload_fileobj(file, key)
-    return do.S3File(uuid=file_uuid, bucket=_BUCKET_NAME, key=key)
+    return await tools.upload(bucket_name=_BUCKET_NAME, file=file, file_uuid=file_uuid or uuid.uuid4())

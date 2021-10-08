@@ -3,7 +3,7 @@ View Objects
 """
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Sequence
 
 from base import enum
 
@@ -65,8 +65,8 @@ class ViewMySubmission:
     class_name: Optional[str]
     challenge_id: Optional[int]
     challenge_title: Optional[str]
-    problem_id: int
-    challenge_label: str
+    problem_id: Optional[int]
+    challenge_label: Optional[str]
     verdict: Optional[enum.VerdictType]
     submit_time: datetime
     account_id: int
@@ -105,3 +105,14 @@ class ViewGrade:
     update_time: datetime
     grade_id: int
     class_id: int
+
+
+@dataclass
+class ViewPeerReviewRecord:
+    account_id: int
+    username: str
+    real_name: str
+    student_id: Optional[str]
+    peer_review_record_ids: Sequence[Optional[int]]
+    peer_review_record_scores: Sequence[Optional[int]]
+    average_score: Optional[float]

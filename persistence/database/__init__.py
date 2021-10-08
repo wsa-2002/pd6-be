@@ -27,6 +27,7 @@ class PoolHandler(metaclass=mcs.Singleton):
                 user=db_config.username,
                 password=db_config.password,
                 database=db_config.db_name,
+                max_size=db_config.max_pool_size,
             )
 
     async def close(self):

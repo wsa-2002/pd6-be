@@ -2,7 +2,7 @@
 
 .env
 logging.yaml
-log/*.log
+log/*
 .version
 
 # === End of project-specific

@@ -1,5 +1,7 @@
+from itertools import chain
 from typing import Sequence, Collection, Tuple
 
+import log
 from base import do
 from base.enum import RoleType, FilterOperator
 from base.popo import Filter, Sorter
@@ -274,19 +276,6 @@ async def read_member(class_id: int, member_id: int) -> do.ClassMember:
         return do.ClassMember(member_id=member_id, class_id=class_id, role=RoleType(role))
 
 
-async def edit_member(class_id: int, member_id: int, role: RoleType):
-    async with SafeExecutor(
-            event='set class member',
-            sql=r'UPDATE class_member'
-                r'   SET role = %(role)s'
-                r' WHERE class_id = %(class_id)s AND member_id = %(member_id)s',
-            role=role,
-            class_id=class_id,
-            member_id=member_id,
-    ):
-        pass
-
-
 async def delete_member(class_id: int, member_id: int):
     async with SafeExecutor(
             event='HARD DELETE class member',
@@ -319,23 +308,55 @@ async def browse_member_emails(class_id: int, role: RoleType = None) -> Sequence
         return [institute_email for institute_email, in records]
 
 
-async def replace_members(class_id: int, member_roles: Sequence[Tuple[str, RoleType]]) -> None:
+async def replace_members(class_id: int, member_roles: Sequence[Tuple[str, RoleType]]) -> Sequence[bool]:
+    """
+    :return: a list of bool indicating if the insertion is successful (true) or not (false)
+    """
+    if not member_roles:
+        return []
+
     async with SafeConnection(event=f'replace members from class {class_id=}') as conn:
         async with conn.transaction():
+            # 1. get the referrals
+            value_sql, value_params = compile_values([
+                (account_referral,)
+                for account_referral, _ in member_roles
+            ])
+            log.info(f'Fetching account ids with values {value_params}')
+            account_ids: list[list[int]] = await conn.fetch(
+                fr'  WITH account_referrals (account_referral)'
+                fr'    AS (VALUES {value_sql})'
+                fr'SELECT account_referral_to_id(account_referral)'
+                fr'  FROM account_referrals',
+                *value_params,
+            )
+            log.info(f'Fetched account ids: {account_ids}')
+
+            # 2. remove the old members
             await conn.execute(fr'DELETE FROM class_member'
                                fr'      WHERE class_id = $1',
                                class_id)
-            if member_roles:
-                values = [(class_id,
-                           await account_referral_to_id(account_referral),
-                           role) for account_referral, role in member_roles]
+            log.info('Removed old class members')
 
-                value_sql, value_params = compile_values(values=values)
+            # 3. perform insert
+            value_sql, value_params = compile_values([
+                (class_id, account_id, role)
+                for (account_id,), (_, role) in zip(account_ids, member_roles)
+                if account_id is not None
+            ])
+            log.info(f'Inserting new class members with values {value_params}')
+            inserted_account_ids: list[list[int]] = await conn.fetch(
+                fr'INSERT INTO class_member'
+                fr'            (class_id, member_id, role)'
+                fr'     VALUES {value_sql}'
+                fr'  RETURNING member_id',
+                *value_params,
+            )
+            log.info(f'Inserted {len(inserted_account_ids)} out of {len(account_ids)} given new class members')
 
-                await conn.execute(fr'INSERT INTO class_member'
-                                   fr'            (class_id, member_id, role)'
-                                   fr'     VALUES {value_sql}',
-                                   *value_params)
+    # 4. check the failed account ids
+    success_account_ids = set(chain(*inserted_account_ids))
+    return [account_id in success_account_ids for account_id in chain(*account_ids)]
 
 
 async def browse_member_referrals(class_id: int, role: RoleType) -> Sequence[str]:
