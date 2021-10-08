@@ -99,7 +99,7 @@ async def _judge(submission: do.Submission, judge_problem: judge_do.Problem, pri
 async def _sign_file_url(uuid: UUID, filename: str):
     return await s3.tools.sign_url_from_do(
         s3_file=await db.s3_file.read(uuid),
-        expire_secs=const.TESTFILE_S3_EXPIRE_SECS,
+        expire_secs=const.S3_EXPIRE_SECS,
         filename=filename,
         as_attachment=True,
     )
