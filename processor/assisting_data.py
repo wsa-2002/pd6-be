@@ -61,7 +61,7 @@ async def edit_assisting_data(assisting_data_id: int, request: Request, assistin
         raise exc.NoPermission
 
     # Issue #26: CRLF
-    no_cr_file = file.replace_cr(assisting_data_file.file.read())
+    no_cr_file = file.replace_cr(assisting_data_file.file)
 
     await service.assisting_data.edit(file=no_cr_file, filename=assisting_data_file.filename,
                                       assisting_data_id=assisting_data.id)

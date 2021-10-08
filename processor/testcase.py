@@ -90,7 +90,7 @@ async def upload_testcase_input_data(testcase_id: int, request: Request, input_f
         raise exc.NoPermission
 
     # Issue #26: CRLF
-    no_cr_file = file.replace_cr(input_file.file.read())
+    no_cr_file = file.replace_cr(input_file.file)
 
     await service.testcase.edit_input(testcase_id=testcase.id, file=no_cr_file, filename=input_file.filename)
 
@@ -110,7 +110,7 @@ async def upload_testcase_output_data(testcase_id: int, request: Request, output
         raise exc.NoPermission
 
     # Issue #26: CRLF
-    no_cr_file = file.replace_cr(output_file.file.read())
+    no_cr_file = file.replace_cr(output_file.file)
 
     await service.testcase.edit_output(testcase_id=testcase.id, file=no_cr_file, filename=output_file.filename)
 
