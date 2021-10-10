@@ -7,7 +7,7 @@ from middleware import APIRouter, response, enveloped, auth, Request
 import service
 
 from .problem import ReadTestcaseOutput
-from .util import rbac
+from .util import rbac, file
 
 router = APIRouter(
     tags=['Testcase'],
@@ -89,7 +89,10 @@ async def upload_testcase_input_data(testcase_id: int, request: Request, input_f
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
-    await service.testcase.edit_input(testcase_id=testcase.id, file=input_file.file, filename=input_file.filename)
+    # Issue #26: CRLF
+    no_cr_file = file.replace_cr(input_file.file)
+
+    await service.testcase.edit_input(testcase_id=testcase.id, file=no_cr_file, filename=input_file.filename)
 
 
 @router.put('/testcase/{testcase_id}/output-data')
@@ -106,7 +109,10 @@ async def upload_testcase_output_data(testcase_id: int, request: Request, output
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
-    await service.testcase.edit_output(testcase_id=testcase.id, file=output_file.file, filename=output_file.filename)
+    # Issue #26: CRLF
+    no_cr_file = file.replace_cr(output_file.file)
+
+    await service.testcase.edit_output(testcase_id=testcase.id, file=no_cr_file, filename=output_file.filename)
 
 
 @router.delete('/testcase/{testcase_id}')

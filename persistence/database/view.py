@@ -428,6 +428,19 @@ async def grade(limit: int, offset: int, filters: Sequence[Filter], sorters: Seq
 
 async def access_log(limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter]) \
         -> tuple[Sequence[vo.ViewAccessLog], int]:
+    column_mapper = {
+        'account_id': 'account.id',
+        'username': 'account.username',
+        'student_id': 'student_card.student_id',
+        'real_name': 'account.real_name',
+        'ip': 'access_log.ip',
+        'resource_path': 'access_log.resource_path',
+        'request_method': 'access_log.request_method',
+        'access_time': 'access_log.access_time',
+        'access_log_id': 'access_log.id',
+    }
+    filters = [Filter(col_name=column_mapper[f.col_name], op=f.op, value=f.value) for f in filters]
+
     cond_sql, cond_params = compile_filters(filters)
     sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
     if sort_sql:
@@ -435,9 +448,21 @@ async def access_log(limit: int, offset: int, filters: Sequence[Filter], sorters
 
     async with SafeExecutor(
             event='browse access_logs',
-            sql=fr'SELECT account_id, username, student_id, real_name, ip, resource_path,'
-                fr'       request_method, access_time, access_log_id'
-                fr'  FROM view_access_log'
+            sql=fr'SELECT account.id                AS account_id,'
+                fr'       account.username          AS username,'
+                fr'       student_card.student_id   AS student_id,'
+                fr'       account.real_name         AS real_name,'
+                fr'       access_log.ip             AS ip,'
+                fr'       access_log.resource_path  AS resource_path,'
+                fr'       access_log.request_method AS request_method,'
+                fr'       access_log.access_time    AS access_time,'
+                fr'       access_log.id             AS access_log_id'
+                fr'  FROM access_log'
+                fr'  LEFT JOIN account'
+                fr'         ON account.id = access_log.account_id'
+                fr'  LEFT JOIN student_card'
+                fr'         ON student_card.account_id = account.id'
+                fr'        AND student_card.is_default'
                 fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
                 fr' ORDER BY {sort_sql} access_log_id ASC'
                 fr' LIMIT %(limit)s OFFSET %(offset)s',
@@ -460,7 +485,12 @@ async def access_log(limit: int, offset: int, filters: Sequence[Filter], sorters
 
     total_count = await execute_count(
         sql=fr'SELECT *'
-            fr'  FROM view_access_log'
+            fr'  FROM access_log'
+            fr'  LEFT JOIN account'
+            fr'         ON account.id = access_log.account_id'
+            fr'  LEFT JOIN student_card'
+            fr'         ON student_card.account_id = account.id'
+            fr'        AND student_card.is_default'
             fr'{f" WHERE {cond_sql}" if cond_sql else ""}',
         **cond_params,
     )
@@ -475,7 +505,7 @@ async def view_peer_review_record(peer_review_id: int, limit: int, offset: int, 
         'username': 'account.username',
         'real_name': 'account.real_name',
         'student_id': 'student_card.student_id',
-        'average_score': 'AVG(peer_review_record.score)'
+        'average_score': 'AVG(peer_review_record.score)',
     }
     filters = [Filter(col_name=column_mapper[f.col_name], op=f.op, value=f.value) for f in filters]
 

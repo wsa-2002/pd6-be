@@ -8,7 +8,7 @@ import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
 import service
 
-from .util import rbac
+from .util import rbac, file
 
 router = APIRouter(
     tags=['Assisting Data'],
@@ -60,7 +60,10 @@ async def edit_assisting_data(assisting_data_id: int, request: Request, assistin
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
-    await service.assisting_data.edit(file=assisting_data_file.file, filename=assisting_data_file.filename,
+    # Issue #26: CRLF
+    no_cr_file = file.replace_cr(assisting_data_file.file)
+
+    await service.assisting_data.edit(file=no_cr_file, filename=assisting_data_file.filename,
                                       assisting_data_id=assisting_data.id)
 
 

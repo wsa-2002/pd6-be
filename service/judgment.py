@@ -31,13 +31,13 @@ async def judge_problem_submissions(problem_id: int) -> Sequence[do.Submission]:
     submissions = []
     offset, batch_size = 0, 100
     while True:
-        batch_submissions, batch_count = await db.submission.browse(offset=offset, limit=batch_size, filters=[
+        batch_submissions, _ = await db.submission.browse(offset=offset, limit=batch_size, filters=[
             popo.Filter(col_name='problem_id', op=enum.FilterOperator.equal, value=problem_id),
         ], sorters=[])
         if not batch_submissions:
             break
         submissions += batch_submissions
-        offset += batch_count
+        offset += batch_size
 
     for submission in submissions:
         await _judge(submission, judge_problem=judge_problem, priority=judge_const.PRIORITY_REJUDGE_BATCH,
@@ -99,7 +99,7 @@ async def _judge(submission: do.Submission, judge_problem: judge_do.Problem, pri
 async def _sign_file_url(uuid: UUID, filename: str):
     return await s3.tools.sign_url_from_do(
         s3_file=await db.s3_file.read(uuid),
-        expire_secs=const.TESTFILE_S3_EXPIRE_SECS,
+        expire_secs=const.S3_EXPIRE_SECS,
         filename=filename,
         as_attachment=True,
     )

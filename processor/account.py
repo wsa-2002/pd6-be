@@ -200,7 +200,7 @@ async def read_account_with_default_student_id(account_id: int, request: Request
         role=account.role,
         real_name=account.real_name,
         alternative_email=account.alternative_email if view_personal else None,
-        student_id=student_card.student_id if view_personal else None,
+        student_id=student_card.student_id,
     )
 
     return result
