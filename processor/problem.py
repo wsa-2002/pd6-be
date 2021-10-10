@@ -345,3 +345,26 @@ async def rejudge_problem(problem_id: int, request: Request) -> RejudgeProblemOu
 
     rejudged_submissions = await service.judgment.judge_problem_submissions(problem.id)
     return RejudgeProblemOutput(submission_count=len(rejudged_submissions))
+
+
+@dataclass
+class GetProblemStatOutput:
+    solved_member_count: int
+    submission_count: int
+    member_count: int
+
+
+@router.get('/problem/{problem_id}/statistics')
+@enveloped
+async def get_problem_statistics(problem_id: int, request: Request) -> GetProblemStatOutput:
+    """
+    ### 權限
+    - System normal
+    """
+    if not await rbac.validate(request.account.id, RoleType.normal):
+        raise exc.NoPermission
+
+    solved_member_count, submission_count, member_count = await service.problem.get_problem_statistics(problem_id=problem_id)
+    return GetProblemStatOutput(solved_member_count=solved_member_count,
+                                submission_count=submission_count,
+                                member_count=member_count)

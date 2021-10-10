@@ -55,9 +55,9 @@ async def browse_task_status(challenge_id: int, account_id: int) \
 async def get_challenge_statistics(challenge_id: int) -> Sequence[Tuple[str, int, int, int]]:
     problems = await db.problem.browse_by_challenge(challenge_id)
     return [(problem.challenge_label,
-             await db.problem.total_ac_member_count(problem.id),
-             await db.problem.total_submission_count(problem.id),
-             await db.problem.total_member_count(problem.id))
+             await db.problem.class_total_ac_member_count(problem_id=problem.id),
+             await db.problem.class_total_submission_count(problem_id=problem.id, challenge_id=challenge_id),
+             await db.problem.class_total_member_count(problem_id=problem.id))
             for problem in problems]
 
 
