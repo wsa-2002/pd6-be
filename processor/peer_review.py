@@ -152,10 +152,15 @@ async def browse_peer_review_record(peer_review_id: int, request: Request,
     return model.BrowseOutputBase(records, total_count=total_count)
 
 
+@dataclass
+class AssignPeerReviewOutput:
+    id: list[int]
+
+
 # 改一下這些 function name
 @router.post('/peer-review/{peer_review_id}/record')
 @enveloped
-async def assign_peer_review_record(peer_review_id: int, request: Request) -> model.AddOutput:
+async def assign_peer_review_record(peer_review_id: int, request: Request) -> AssignPeerReviewOutput:
     """
     發互評 (決定 A 要評誰 )
 
@@ -170,10 +175,10 @@ async def assign_peer_review_record(peer_review_id: int, request: Request) -> mo
     if class_role is not RoleType.normal:
         raise exc.NoPermission
 
-    peer_review_record_id = await service.peer_review_record.add_auto(peer_review_id=peer_review.id,
-                                                                      grader_id=request.account.id)
+    peer_review_record_ids = await service.peer_review_record.add_auto(peer_review_id=peer_review.id,
+                                                                       grader_id=request.account.id)
 
-    return model.AddOutput(id=peer_review_record_id)
+    return AssignPeerReviewOutput(peer_review_record_ids)
 
 
 @dataclass
