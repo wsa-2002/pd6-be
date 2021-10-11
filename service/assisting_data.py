@@ -44,11 +44,7 @@ async def download_all(account_id: int, problem_id: int, as_attachment: bool) ->
         s3_file = await db.s3_file.read(s3_file_uuid=assisting_data.s3_file_uuid)
         files.append((s3_file, assisting_data.filename))
 
-    zip_buffer = io.BytesIO()
-    with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zipper:
-        for file, filename in files:
-            infile_content = await s3.tools.get_file_content(bucket=file.bucket, key=file.key)
-            zipper.writestr(filename, infile_content)
+    zip_buffer = await s3.tools._zipper(files=files)
 
     s3_file = await s3.temp.put_object(body=zip_buffer.getvalue())
 
