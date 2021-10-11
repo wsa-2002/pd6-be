@@ -185,7 +185,7 @@ async def read_latest_judgment(submission_id: int) -> do.Judgment:
     async with SafeExecutor(
             event='read submission latest judgment',
             sql=fr'SELECT judgment.id, judgment.submission_id, judgment.verdict, judgment.total_time,'
-                fr'       judgment.max_memory, judgment.score, judgment.judge_time'
+                fr'       judgment.max_memory, judgment.score, judgment.judge_time, judgment.error_message' 
                 fr'  FROM judgment'
                 fr' INNER JOIN submission'
                 fr'         ON submission.id = judgment.submission_id'
@@ -194,9 +194,10 @@ async def read_latest_judgment(submission_id: int) -> do.Judgment:
                 fr' LIMIT 1',
             submission_id=submission_id,
             fetch=1,
-    ) as (judgment_id, submission_id, verdict, total_time, max_memory, score, judge_time):
+    ) as (judgment_id, submission_id, verdict, total_time, max_memory, score, judge_time, error_message):
         return do.Judgment(id=judgment_id, submission_id=submission_id, verdict=enum.VerdictType(verdict),
-                           total_time=total_time, max_memory=max_memory, score=score, judge_time=judge_time)
+                           total_time=total_time, max_memory=max_memory, score=score, judge_time=judge_time,
+                           error_message=error_message)
 
 
 async def browse_under_class(class_id: int,

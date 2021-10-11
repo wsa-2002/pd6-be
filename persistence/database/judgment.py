@@ -9,7 +9,7 @@ from .base import SafeExecutor
 async def browse(submission_id: int) -> Sequence[do.Judgment]:
     async with SafeExecutor(
             event='browse judgments',
-            sql=fr'SELECT id, verdict, total_time, max_memory, score, judge_time'
+            sql=fr'SELECT id, verdict, total_time, max_memory, score, judge_time, error_message'
                 fr'  FROM judgment'
                 fr' WHERE submission_id = %(submission_id)s'
                 fr' ORDER BY id DESC',
@@ -18,8 +18,9 @@ async def browse(submission_id: int) -> Sequence[do.Judgment]:
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return [do.Judgment(id=id_, submission_id=submission_id, verdict=enum.VerdictType(verdict),
-                            total_time=total_time, max_memory=max_memory, score=score, judge_time=judge_time)
-                for id_, verdict, total_time, max_memory, score, judge_time in records]
+                            total_time=total_time, max_memory=max_memory, score=score, judge_time=judge_time,
+                            error_message=error_message)
+                for id_, verdict, total_time, max_memory, score, judge_time, error_message in records]
 
 
 async def browse_with_submission_ids(submission_ids: list[int]) -> Sequence[do.Judgment]:
@@ -36,33 +37,36 @@ async def browse_with_submission_ids(submission_ids: list[int]) -> Sequence[do.J
             raise_not_found=False,
     ) as records:
         return [do.Judgment(id=id_, submission_id=submission_id, verdict=enum.VerdictType(verdict),
-                            total_time=total_time, max_memory=max_memory, score=score, judge_time=judge_time)
-                for (id_, submission_id, verdict, total_time, max_memory, score, judge_time) in records]
+                            total_time=total_time, max_memory=max_memory, score=score, judge_time=judge_time,
+                            error_message=error_message)
+                for (id_, submission_id, verdict, total_time, max_memory, score, judge_time, error_message) in records]
 
 
 async def read(judgment_id: int) -> do.Judgment:
     async with SafeExecutor(
             event='read judgment',
-            sql=fr'SELECT id, submission_id, verdict, total_time, max_memory, score, judge_time'
+            sql=fr'SELECT id, submission_id, verdict, total_time, max_memory, score, judge_time, error_message'
                 fr'  FROM judgment'
                 fr' WHERE id = %(judgment_id)s',
             judgment_id=judgment_id,
             fetch=1,
-    ) as (id_, submission_id, verdict, total_time, max_memory, score, judge_time):
+    ) as (id_, submission_id, verdict, total_time, max_memory, score, judge_time, error_message):
         return do.Judgment(id=id_, submission_id=submission_id, verdict=enum.VerdictType(verdict),
-                           total_time=total_time, max_memory=max_memory, score=score, judge_time=judge_time)
+                           total_time=total_time, max_memory=max_memory, score=score, judge_time=judge_time,
+                           error_message=error_message)
 
 
 async def add(submission_id: int, verdict: enum.VerdictType, total_time: int, max_memory: int,
-              score: int, judge_time: datetime) -> int:
+              score: int, judge_time: datetime, error_message: str = None) -> int:
     async with SafeExecutor(
             event='add judgment',
-            sql=fr'INSERT INTO judgment (submission_id, verdict, total_time, max_memory, score, judge_time)'
+            sql=fr'INSERT INTO judgment (submission_id, verdict, total_time, max_memory, '
+                fr'                      score, judge_time, error_message)'
                 fr'     VALUES (%(submission_id)s, %(verdict)s, %(total_time)s,'
-                fr'             %(max_memory)s, %(score)s, %(judge_time)s)'
+                fr'             %(max_memory)s, %(score)s, %(judge_time)s, %(error_message)s)'
                 fr'  RETURNING id',
             submission_id=submission_id, verdict=verdict, total_time=total_time, max_memory=max_memory,
-            score=score, judge_time=judge_time,
+            score=score, judge_time=judge_time, error_message=error_message,
             fetch=1,
     ) as (judgment_id,):
         return judgment_id
@@ -121,7 +125,7 @@ async def get_submission_judgment_by_challenge_type(problem_id: int, account_id:
     async with SafeExecutor(
             event='get submission score by LAST',
             sql=fr'SELECT judgment.id, judgment.submission_id, judgment.verdict, judgment.total_time,'
-                fr'       judgment.max_memory, judgment.score, judgment.judge_time'
+                fr'       judgment.max_memory, judgment.score, judgment.judge_time, judgment.error_message'
                 fr'  FROM judgment'
                 fr' INNER JOIN submission'
                 fr'         ON submission.id = judgment.submission_id'
@@ -133,16 +137,17 @@ async def get_submission_judgment_by_challenge_type(problem_id: int, account_id:
                 fr' LIMIT 1',
             account_id=account_id, challenge_end_time=challenge_end_time, problem_id=problem_id,
             fetch=1,
-    ) as (id_, submission_id, verdict, total_time, max_memory, score, judge_time):
+    ) as (id_, submission_id, verdict, total_time, max_memory, score, judge_time, error_message):
         return do.Judgment(id=id_, submission_id=submission_id, verdict=enum.VerdictType(verdict),
-                           total_time=total_time, max_memory=max_memory, score=score, judge_time=judge_time)
+                           total_time=total_time, max_memory=max_memory, score=score, judge_time=judge_time,
+                           error_message=error_message)
 
 
 async def get_best_submission_judgment_all_time(problem_id: int, account_id: int) -> do.Judgment:
     async with SafeExecutor(
             event='get best submission judgment by all time',
             sql=fr'SELECT judgment.id, judgment.submission_id, judgment.verdict, judgment.total_time,'
-                fr'       judgment.max_memory, judgment.score, judgment.judge_time'
+                fr'       judgment.max_memory, judgment.score, judgment.judge_time, judgment.error_message'
                 fr'  FROM judgment'
                 fr' INNER JOIN submission'
                 fr'         ON submission.id = judgment.submission_id'
@@ -152,6 +157,6 @@ async def get_best_submission_judgment_all_time(problem_id: int, account_id: int
                 fr' LIMIT 1',
             account_id=account_id, problem_id=problem_id,
             fetch=1,
-    ) as (id_, submission_id, verdict, total_time, max_memory, score, judge_time):
+    ) as (id_, submission_id, verdict, total_time, max_memory, score, judge_time, error_message):
         return do.Judgment(id=id_, submission_id=submission_id, verdict=verdict, total_time=total_time,
-                           max_memory=max_memory, score=score, judge_time=judge_time)
+                           max_memory=max_memory, score=score, judge_time=judge_time, error_message=error_message)
