@@ -65,7 +65,7 @@ async def upload(bucket_name: str, file: typing.IO, file_uuid: UUID) -> do.S3Fil
     return do.S3File(uuid=file_uuid, bucket=bucket_name, key=key)
 
 
-async def _zipper(files: list[(do.S3File, str)]) -> io.BytesIO():
+async def zipper(files: list[(do.S3File, str)]) -> io.BytesIO():
     start_time = datetime.now()
     log.info('Start zipping S3 files ...')
 

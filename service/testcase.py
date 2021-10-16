@@ -59,7 +59,7 @@ async def download_all_sample(account_id: int, problem_id: int, as_attachment: b
         except:
             pass
 
-    zip_buffer = await s3.tools._zipper(files=files)
+    zip_buffer = await s3.tools.zipper(files=files)
 
     s3_file = await s3.temp.put_object(body=zip_buffer.getvalue())
 
@@ -82,7 +82,7 @@ async def download_all_non_sample(account_id: int, problem_id: int, as_attachmen
         except:
             pass
 
-    zip_buffer = await s3.tools._zipper(files=files)
+    zip_buffer = await s3.tools.zipper(files=files)
 
     s3_file = await s3.temp.put_object(body=zip_buffer.getvalue())
 

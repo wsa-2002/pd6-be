@@ -24,7 +24,7 @@ async def download_all(account_id: int, essay_id: int, as_attachment: bool) -> N
         s3_file = await db.s3_file.read(s3_file_uuid=essay_submission.content_file_uuid)
         files.append((s3_file, essay_submission.filename))
 
-    zip_buffer = await s3.tools._zipper(files=files)
+    zip_buffer = await s3.tools.zipper(files=files)
 
     s3_file = await s3.temp.put_object(body=zip_buffer.getvalue())
 
