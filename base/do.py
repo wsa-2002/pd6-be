@@ -135,6 +135,7 @@ class Testcase:
     problem_id: int
     is_sample: bool
     score: int
+    label: Optional[str]
     input_file_uuid: Optional[UUID]
     output_file_uuid: Optional[UUID]
     input_filename: Optional[str]

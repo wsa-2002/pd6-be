@@ -114,6 +114,7 @@ class AddTestcaseInput(BaseModel):
     time_limit: int
     memory_limit: int
     is_disabled: bool
+    label: str
 
 
 @router.post('/problem/{problem_id}/testcase', tags=['Testcase'])
@@ -130,7 +131,7 @@ async def add_testcase_under_problem(problem_id: int, data: AddTestcaseInput, re
         raise exc.NoPermission
 
     testcase_id = await service.testcase.add(problem_id=problem_id, is_sample=data.is_sample, score=data.score,
-                                             input_file_uuid=None, output_file_uuid=None,
+                                             label=data.label, input_file_uuid=None, output_file_uuid=None,
                                              input_filename=None, output_filename=None,
                                              time_limit=data.time_limit, memory_limit=data.memory_limit,
                                              is_disabled=data.is_disabled)
@@ -143,6 +144,7 @@ class ReadTestcaseOutput:
     problem_id: int
     is_sample: bool
     score: int
+    label: Optional[str]
     input_file_uuid: Optional[UUID]
     output_file_uuid: Optional[UUID]
     input_filename: Optional[str]
@@ -175,6 +177,7 @@ async def browse_all_testcase_under_problem(problem_id: int, request: Request) -
         problem_id=testcase.problem_id,
         is_sample=testcase.is_sample,
         score=testcase.score,
+        label=testcase.label,
         input_file_uuid=testcase.input_file_uuid if (testcase.is_sample or is_class_manager) else None,
         output_file_uuid=testcase.output_file_uuid if (testcase.is_sample or is_class_manager) else None,
         input_filename=testcase.input_filename,
