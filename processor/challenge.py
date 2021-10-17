@@ -269,6 +269,33 @@ async def add_peer_review_under_challenge(challenge_id: int, data: AddPeerReview
     return model.AddOutput(id=peer_review_id)
 
 
+class AddTeamProjectScoreboardInput(BaseModel):
+    label: str
+    title: str
+    target_problem_ids: Sequence[int]
+    type: ScoreboardType
+
+    # team_project_scoreboard
+    scoring_formula: str
+    baseline_team_id: Optional[int]
+    rank_by_total_score: bool
+    team_label_filter: Optional[str]
+
+
+@router.post('/challenge/{challenge_id}/team-project-scoreboard', tags=['Team Project Scoreboard'])
+@enveloped
+async def add_team_project_scoreboard_under_challenge(challenge_id: int, data: AddTeamProjectScoreboardInput,
+                                                      request: Request) -> model.AddOutput:
+
+    scoreboard_id = await service.scoreboard_setting_team_project.add_under_scoreboard(
+        challenge_id=challenge_id, label=data.label, title=data.title, target_problem_ids=data.target_problem_ids,
+        type=data.type, scoring_formula=data.scoring_formula, baseline_team_id=data.baseline_team_id,
+        rank_by_total_score=data.rank_by_total_score, team_label_filter=data.team_label_filter,
+    )
+
+    return model.AddOutput(id=scoreboard_id)
+
+
 @dataclass
 class BrowseTaskOutput:
     problem: Sequence[do.Problem]

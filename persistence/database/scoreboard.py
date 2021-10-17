@@ -64,3 +64,15 @@ async def read_with_scoreboard_setting_data(scoreboard_id: int, include_deleted=
                                                                                  team_label_filter=result.team_label_filter)
 
             return (scoreboard, scoreboard_setting_data)
+
+
+async def delete(scoreboard_id: int) -> None:
+    async with SafeExecutor(
+            event='soft delete scoreboard',
+            sql=fr'UPDATE scoreboard'
+                fr'   SET is_deleted = %(is_deleted)s'
+                fr' WHERE id = %(scoreboard_id)s',
+            is_deleted=True,
+            scoreboard_id=scoreboard_id,
+    ):
+        return
