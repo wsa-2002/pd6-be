@@ -1,4 +1,5 @@
 import persistence.database as db
 
 
-add = db.scoreboard_setting_team_project.add
+add_under_scoreboard = db.scoreboard_setting_team_project.add_under_scoreboard
+edit_with_scoreboard = db.scoreboard_setting_team_project.edit_with_scoreboard
