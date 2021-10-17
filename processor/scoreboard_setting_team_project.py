@@ -31,7 +31,7 @@ class EditScoreboardInput(BaseModel):
 
 @router.patch('/team-project-scoreboard/{scoreboard_id}')
 @enveloped
-async def edit_scoreboard(scoreboard_id: int, data: EditScoreboardInput, request: Request) -> None:
+async def edit_team_project_scoreboard(scoreboard_id: int, data: EditScoreboardInput, request: Request) -> None:
 
     await service.scoreboard_setting_team_project.edit_with_scoreboard(
         scoreboard_id=scoreboard_id, label=data.label, title=data.title, target_problem_ids=data.target_problem_ids,
