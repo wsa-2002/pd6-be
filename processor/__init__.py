@@ -72,7 +72,7 @@ def register_routers(app: fastapi.FastAPI):
     app.include_router(peer_review.router)
 
     app.include_router(scoreboard.router)
-    app.include_router(scoreboard_setting_team_project)
+    app.include_router(scoreboard_setting_team_project.router)
 
     app.include_router(announcement.router)
     app.include_router(system.router)

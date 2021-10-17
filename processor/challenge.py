@@ -4,7 +4,7 @@ from typing import Optional, Sequence
 from pydantic import BaseModel
 
 from base import do, enum, popo
-from base.enum import RoleType, FilterOperator, ChallengePublicizeType
+from base.enum import RoleType, FilterOperator, ChallengePublicizeType, ScoreboardType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
 import service

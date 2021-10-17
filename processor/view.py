@@ -468,3 +468,11 @@ async def peer_review_summary_receive(peer_review_id: int, request: Request,
                                                                                   is_receiver=True)
 
     return ViewPeerReviewRecordOutput(data=peer_review_records, total_count=total_count)
+
+
+# @router.get('/team-project-scoreboard/view/{scoreboard_id}')
+# @enveloped
+# async def view_team_project_scoreboard(class_id: int, request: Request) -> ViewGradeOutput:
+#
+#         grades, total_count = await service.view.grade(limit=limit, offset=offset, filters=filters, sorters=sorters)
+#         return ViewGradeOutput(grades, total_count=total_count)
