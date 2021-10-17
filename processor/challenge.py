@@ -274,6 +274,7 @@ class BrowseTaskOutput:
     problem: Sequence[do.Problem]
     peer_review: Optional[Sequence[do.PeerReview]]
     essay: Optional[Sequence[do.Essay]]
+    scoreboard: Optional[Sequence[do.Scoreboard]]
 
 
 @router.get('/challenge/{challenge_id}/task')
@@ -298,12 +299,13 @@ async def browse_all_task_under_challenge(challenge_id: int, request: Request) -
             or class_role == RoleType.manager):                                                        # Class manager
         raise exc.NoPermission
 
-    problems, peer_reviews, essays = await service.challenge.browse_task(challenge.id)
+    problems, peer_reviews, essays, scoreboard = await service.challenge.browse_task(challenge.id)
 
     return BrowseTaskOutput(
         problem=problems,
         peer_review=peer_reviews if class_role else [],
         essay=essays if class_role else [],
+        scoreboard=scoreboard if class_role else [],
     )
 
 

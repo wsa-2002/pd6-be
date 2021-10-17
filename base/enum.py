@@ -62,3 +62,8 @@ class FilterOperator(StrEnum):
 class SortOrder(StrEnum):
     asc = 'ASC'
     desc = 'DESC'
+
+
+class ScoreboardType(StrEnum):
+    team_project = 'TEAM_PROJECT'
+    team_contest = 'TEAM_CONTEST'

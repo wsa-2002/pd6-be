@@ -26,6 +26,9 @@ from . import (
     peer_review,
     peer_review_record,
 
+    scoreboard,
+    scoreboard_setting_team_project,
+
     announcement,
     access_log,
 
