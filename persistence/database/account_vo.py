@@ -6,7 +6,6 @@ from base.popo import Filter, Sorter
 
 from .base import SafeExecutor, SafeConnection
 from .util import execute_count, compile_filters, compile_values
-from .account import account_referral_to_id
 
 
 async def browse_with_default_student_card(limit: int, offset: int, filters: list[Filter],
@@ -113,9 +112,6 @@ async def read_with_default_student_card(account_id: int, include_deleted: bool 
                                student_id=student_id, email=email, is_default=is_default))
 
 
-import log
-
-
 async def batch_read_by_account_referral(account_referrals: Sequence[str]) \
         -> Sequence[tuple[do.Account, do.StudentCard]]:
     async with SafeConnection(event='batch read account by account referrals') as conn:
@@ -137,6 +133,7 @@ async def batch_read_by_account_referral(account_referrals: Sequence[str]) \
             ])
             if not value_sql:
                 return []
+
             records = await conn.fetch(
                 fr'SELECT account.id, account.username, account.nickname, account.real_name, account.role,'
                 fr'       account.is_deleted, account.alternative_email,'
