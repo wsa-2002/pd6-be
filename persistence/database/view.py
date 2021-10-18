@@ -300,8 +300,12 @@ async def my_submission_under_problem(limit: int, offset: int, filters: Sequence
 
     async with SafeExecutor(
             event='browse my submissions under problem',
-            sql=fr'SELECT submission_id, verdict, score, total_time, max_memory, submit_time, account_id, problem_id'
-                fr'  FROM view_my_submission_by_problem'
+            sql=fr'SELECT submission_id, verdict, score, total_time, max_memory, submit_time, account_id, problem_id '
+                fr'FROM ('
+                fr'     SELECT DISTINCT ON (submission_id) *'
+                fr'       FROM view_my_submission_by_problem'
+                fr'      ORDER BY submission_id DESC, submit_time DESC'
+                fr') latest_submission'
                 fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
                 fr' ORDER BY {sort_sql} submission_id DESC'
                 fr' LIMIT %(limit)s OFFSET %(offset)s',
@@ -322,8 +326,12 @@ async def my_submission_under_problem(limit: int, offset: int, filters: Sequence
                 in records]
 
     total_count = await execute_count(
-        sql=fr'SELECT *'
-            fr'  FROM view_my_submission_by_problem'
+        sql=fr'SELECT submission_id, verdict, score, total_time, max_memory, submit_time, account_id, problem_id '
+            fr'FROM ('
+            fr'     SELECT DISTINCT ON (submission_id) *'
+            fr'       FROM view_my_submission_by_problem'
+            fr'      ORDER BY submission_id DESC, submit_time DESC'
+            fr') latest_submission'
             fr'{f" WHERE {cond_sql}" if cond_sql else ""}',
         **cond_params,
     )
