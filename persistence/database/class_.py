@@ -1,4 +1,5 @@
 from itertools import chain
+from operator import itemgetter
 from typing import Sequence, Collection, Tuple
 
 import log
@@ -339,17 +340,18 @@ async def replace_members(class_id: int, member_roles: Sequence[Tuple[str, RoleT
             log.info('Removed old class members')
 
             # 3. perform insert
-            value_sql, value_params = compile_values([
+            value_sql, value_params = compile_values(sorted((
                 (class_id, account_id, role)
                 for (account_id,), (_, role) in zip(account_ids, member_roles)
                 if account_id is not None
-            ])
+            ), key=itemgetter(2), reverse=True))
             log.info(f'Inserting new class members with values {value_params}')
             inserted_account_ids: list[list[int]] = await conn.fetch(
-                fr'INSERT INTO class_member'
-                fr'            (class_id, member_id, role)'
-                fr'     VALUES {value_sql}'
-                fr'  RETURNING member_id',
+                fr' INSERT INTO class_member'
+                fr'             (class_id, member_id, role)'
+                fr'      VALUES {value_sql}'
+                fr' ON CONFLICT DO NOTHING'
+                fr'   RETURNING member_id',
                 *value_params,
             )
             log.info(f'Inserted {len(inserted_account_ids)} out of {len(account_ids)} given new class members')
