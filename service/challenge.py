@@ -79,7 +79,7 @@ async def get_member_submission_statistics(challenge_id: int) \
         problem_judgments = []
         for problem in problems:
             try:
-                judgment = await db.judgment.get_submission_judgment_by_challenge_type(
+                judgment = await db.judgment.read_by_challenge_type(
                     problem_id=problem.id,
                     account_id=class_member.member_id,
                     selection_type=challenge.selection_type,
