@@ -293,21 +293,44 @@ async def my_submission(limit: int, offset: int, filters: Sequence[Filter], sort
 
 async def my_submission_under_problem(limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter]) \
         -> tuple[Sequence[vo.ViewMySubmissionUnderProblem], int]:
+    column_mapper = {
+        'submission_id': 'submission.id',
+        'judgment_id': 'judgment.id',
+        'verdict': 'judgment.verdict',
+        'score': 'judgment.score',
+        'total_time': 'judgment.total_time',
+        'max_memory': 'judgment.max_memory',
+        'submit_time': 'submission.submit_time',
+        'account_id': 'submission.account_id',
+        'problem_id': 'submission.problem_id',
+    }
+    filters = [Filter(col_name=column_mapper[f.col_name], op=f.op, value=f.value) for f in filters]
+
     cond_sql, cond_params = compile_filters(filters)
+    view_sql = (fr'SELECT * '
+                fr'FROM ('
+                fr'    SELECT DISTINCT ON (submission.id)'
+                fr'           submission.id           AS submission_id,'
+                fr'           judgment.id             AS judgment_id,'
+                fr'           judgment.verdict        AS verdict,'
+                fr'           judgment.score          AS score,'
+                fr'           judgment.total_time     AS total_time,'
+                fr'           judgment.max_memory     AS max_memory,'
+                fr'           submission.submit_time  AS submit_time,'
+                fr'           submission.account_id   AS account_id,'
+                fr'           submission.problem_id   AS problem_id'
+                fr'      FROM submission'
+                fr'      LEFT JOIN judgment'
+                fr'             ON submission.id = judgment.submission_id'
+                fr' {f" WHERE {cond_sql}" if cond_sql else ""}'
+                fr'     ORDER BY submission.id DESC, judgment.id DESC'
+                fr') __TABLE__')
     sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
-    if sort_sql:
-        sort_sql += ','
 
     async with SafeExecutor(
-            event='browse my submissions under problem',
-            sql=fr'SELECT submission_id, verdict, score, total_time, max_memory, submit_time, account_id, problem_id '
-                fr'FROM ('
-                fr'     SELECT DISTINCT ON (submission_id) *'
-                fr'       FROM view_my_submission_by_problem'
-                fr'      ORDER BY submission_id DESC, submit_time DESC'
-                fr') latest_submission'
-                fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
-                fr' ORDER BY {sort_sql} submission_id DESC'
+            event='browse my submission under problem',
+            sql=fr'{view_sql}'
+                fr'{f" ORDER BY {sort_sql}" if sort_sql else ""}'
                 fr' LIMIT %(limit)s OFFSET %(offset)s',
             **cond_params,
             limit=limit, offset=offset,
@@ -315,6 +338,7 @@ async def my_submission_under_problem(limit: int, offset: int, filters: Sequence
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         data = [vo.ViewMySubmissionUnderProblem(submission_id=submission_id,
+                                                judgment_id=judgment_id,
                                                 verdict=verdict,
                                                 score=score,
                                                 total_time=total_time,
@@ -322,19 +346,11 @@ async def my_submission_under_problem(limit: int, offset: int, filters: Sequence
                                                 submit_time=submit_time,
                                                 account_id=account_id,
                                                 problem_id=problem_id)
-                for (submission_id, verdict, score, total_time, max_memory, submit_time, account_id, problem_id)
+                for (submission_id, judgment_id, verdict, score, total_time,
+                     max_memory, submit_time, account_id, problem_id)
                 in records]
 
-    total_count = await execute_count(
-        sql=fr'SELECT submission_id, verdict, score, total_time, max_memory, submit_time, account_id, problem_id '
-            fr'FROM ('
-            fr'     SELECT DISTINCT ON (submission_id) *'
-            fr'       FROM view_my_submission_by_problem'
-            fr'      ORDER BY submission_id DESC, submit_time DESC'
-            fr') latest_submission'
-            fr'{f" WHERE {cond_sql}" if cond_sql else ""}',
-        **cond_params,
-    )
+    total_count = await execute_count(view_sql, **cond_params)
 
     return data, total_count
 
