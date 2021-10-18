@@ -30,7 +30,7 @@ async def browse_latest_with_submission_ids(submission_ids: list[int]) -> Sequen
                 fr'       judgment.total_time, judgment.max_memory, judgment.score, judgment.judge_time'
                 fr'  FROM (VALUES ({cond_sql}))'
                 fr'    AS from_submission(id)'
-                fr'  LEFT JOIN judgment'
+                fr' INNER JOIN judgment'
                 fr'    ON from_submission.id = judgment.submission_id'
                 fr'   AND submission_last_judgment_id(from_submission.id) = judgment.id',
             fetch='all',
