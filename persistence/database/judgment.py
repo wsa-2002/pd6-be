@@ -30,7 +30,8 @@ async def browse_latest_with_submission_ids(submission_ids: list[int]) -> Sequen
                 fr'  FROM (VALUES ({cond_sql}))'
                 fr'    AS from_submission(id)'
                 fr'  LEFT JOIN judgment'
-                fr'    ON submission_last_judgment_id(from_submission.id) = judgment.id',
+                fr'    ON from_submission.id = judgment.submission_id'
+                fr'   AND submission_last_judgment_id(from_submission.id) = judgment.id',
             fetch='all',
             raise_not_found=False,
     ) as records:
@@ -124,7 +125,8 @@ async def read_by_challenge_type(problem_id: int, account_id: int,
                 fr'       judgment.max_memory, judgment.score, judgment.judge_time'
                 fr'  FROM submission'
                 fr' INNER JOIN judgment'
-                fr'         ON submission_last_judgment_id(submission.id) = judgment.id'
+                fr'         ON submission.id = judgment.submission_id'
+                fr'        AND submission_last_judgment_id(submission.id) = judgment.id'
                 fr' WHERE submission.account_id = %(account_id)s'
                 fr'   AND submission.submit_time <= %(challenge_end_time)s'
                 fr'   AND submission.problem_id = %(problem_id)s'
@@ -144,7 +146,8 @@ async def get_best_submission_judgment_all_time(problem_id: int, account_id: int
                 fr'       judgment.max_memory, judgment.score, judgment.judge_time'
                 fr'  FROM submission'
                 fr' INNER JOIN judgment'
-                fr'         ON submission_last_judgment_id(submission.id) = judgment.id'
+                fr'         ON submission.id = judgment.submission_id'
+                fr'        AND submission_last_judgment_id(submission.id) = judgment.id'
                 fr' WHERE submission.account_id = %(account_id)s'
                 fr'   AND submission.problem_id = %(problem_id)s'
                 fr' ORDER BY judgment.score DESC'
