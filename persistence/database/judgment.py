@@ -22,16 +22,15 @@ async def browse(submission_id: int) -> Sequence[do.Judgment]:
                 for id_, verdict, total_time, max_memory, score, judge_time in records]
 
 
-async def browse_with_submission_ids(submission_ids: list[int]) -> Sequence[do.Judgment]:
+async def browse_latest_with_submission_ids(submission_ids: list[int]) -> Sequence[do.Judgment]:
     cond_sql = '), ('.join(str(submission_id) for submission_id in submission_ids)
     async with SafeExecutor(
             event='browse judgments with submission ids',
-            sql=fr'SELECT DISTINCT ON (from_submission.id) judgment.*'
-                fr'  FROM (VALUES ({cond_sql})) '
+            sql=fr'SELECT judgment.*'
+                fr'  FROM (VALUES ({cond_sql}))'
                 fr'    AS from_submission(id)'
-                fr' INNER JOIN judgment'
-                fr'    ON from_submission.id = judgment.submission_id'
-                fr' ORDER BY from_submission.id, judgment.judge_time DESC',
+                fr'  LEFT JOIN judgment'
+                fr'    ON submission_last_judgment_id(from_submission.id) = judgment.id',
             fetch='all',
             raise_not_found=False,
     ) as records:
@@ -114,22 +113,22 @@ async def add_case(judgment_id: int, testcase_id: int, verdict: enum.VerdictType
         pass
 
 
-async def get_submission_judgment_by_challenge_type(problem_id: int, account_id: int,
-                                                    selection_type: enum.TaskSelectionType,
-                                                    challenge_end_time: datetime) -> do.Judgment:
+async def read_by_challenge_type(problem_id: int, account_id: int,
+                                 selection_type: enum.TaskSelectionType,
+                                 challenge_end_time: datetime) -> do.Judgment:
     is_last = selection_type is enum.TaskSelectionType.last
+    order_criteria = 'submission.submit_time DESC, submission.id DESC' if is_last else 'judgment.score DESC'
     async with SafeExecutor(
             event='get submission score by LAST',
             sql=fr'SELECT judgment.id, judgment.submission_id, judgment.verdict, judgment.total_time,'
                 fr'       judgment.max_memory, judgment.score, judgment.judge_time'
-                fr'  FROM judgment'
-                fr' INNER JOIN submission'
-                fr'         ON submission.id = judgment.submission_id'
-                fr'        AND submission.account_id = %(account_id)s'
-                fr'        AND submission.submit_time <= %(challenge_end_time)s'
-                fr'        AND submission.problem_id = %(problem_id)s'
-                fr' ORDER BY submission.submit_time DESC,'
-                fr'          {"submission.id" if is_last else "judgment.score"} DESC'
+                fr'  FROM submission'
+                fr' INNER JOIN judgment'
+                fr'         ON submission_last_judgment_id(submission.id) = judgment.id'
+                fr' WHERE submission.account_id = %(account_id)s'
+                fr'   AND submission.submit_time <= %(challenge_end_time)s'
+                fr'   AND submission.problem_id = %(problem_id)s'
+                fr' ORDER BY {order_criteria}'
                 fr' LIMIT 1',
             account_id=account_id, challenge_end_time=challenge_end_time, problem_id=problem_id,
             fetch=1,
@@ -143,11 +142,12 @@ async def get_best_submission_judgment_all_time(problem_id: int, account_id: int
             event='get best submission judgment by all time',
             sql=fr'SELECT judgment.id, judgment.submission_id, judgment.verdict, judgment.total_time,'
                 fr'       judgment.max_memory, judgment.score, judgment.judge_time'
-                fr'  FROM judgment'
-                fr' INNER JOIN submission'
-                fr'         ON submission.id = judgment.submission_id'
-                fr'        AND submission.account_id = %(account_id)s'
-                fr'        AND submission.problem_id = %(problem_id)s'
+                fr'  FROM submission'
+                fr' INNER JOIN judgment'
+                fr'         ON submission_last_judgment_id(submission.id) = judgment.id'
+                fr' WHERE submission.account_id = %(account_id)s'
+                fr'   AND submission.submit_time <= %(challenge_end_time)s'
+                fr'   AND submission.problem_id = %(problem_id)s'
                 fr' ORDER BY judgment.score DESC'
                 fr' LIMIT 1',
             account_id=account_id, problem_id=problem_id,
