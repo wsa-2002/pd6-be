@@ -146,7 +146,6 @@ async def get_best_submission_judgment_all_time(problem_id: int, account_id: int
                 fr' INNER JOIN judgment'
                 fr'         ON submission_last_judgment_id(submission.id) = judgment.id'
                 fr' WHERE submission.account_id = %(account_id)s'
-                fr'   AND submission.submit_time <= %(challenge_end_time)s'
                 fr'   AND submission.problem_id = %(problem_id)s'
                 fr' ORDER BY judgment.score DESC'
                 fr' LIMIT 1',
