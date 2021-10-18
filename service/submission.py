@@ -23,7 +23,7 @@ async def add(file: typing.IO, filename: str, account_id: int, problem_id: int, 
 
 
 browse = db.submission.browse
-browse_with_submission_ids = db.judgment.browse_with_submission_ids
+browse_with_submission_ids = db.judgment.browse_latest_with_submission_ids
 edit = db.submission.edit
 browse_under_class = db.submission.browse_under_class
 read = db.submission.read
@@ -34,5 +34,5 @@ browse_language = db.submission.browse_language
 read_language = db.submission.read_language
 read_latest_judgment = db.submission.read_latest_judgment
 
-get_problem_score_by_type = db.judgment.get_submission_judgment_by_challenge_type
+get_problem_score_by_type = db.judgment.read_by_challenge_type
 get_problem_all_time_best_score = db.judgment.get_best_submission_judgment_all_time
