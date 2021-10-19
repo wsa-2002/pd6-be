@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional, Sequence
 
+from fastapi import BackgroundTasks
 from pydantic import BaseModel
 
 from base import do, enum, popo
@@ -408,3 +409,20 @@ async def get_member_submission_statistics(challenge_id: int, request: Request) 
             for member_id, problem_scores, essays in results])
 
     return model.BrowseOutputBase(data=member_submission_stat, total_count=results.__len__())
+
+
+@router.post('/challenge/{challenge_id}/all-submission')
+@enveloped
+async def download_all_submissions(challenge_id: int, request: Request, as_attachment: bool,
+                                   background_tasks: BackgroundTasks) -> None:
+    """
+    ### 權限
+    - class manager
+    """
+    challenge = await service.challenge.read(challenge_id, include_scheduled=True, ref_time=request.time)
+    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+        raise exc.NoPermission
+
+    background_tasks.add_task(service.challenge.download_all_submissions,
+                              account_id=request.account.id, challenge_id=challenge.id, as_attachment=as_attachment)
+    return

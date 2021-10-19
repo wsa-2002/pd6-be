@@ -253,3 +253,48 @@ async def browse_under_class(class_id: int,
         class_id=class_id,
     )
     return data, total_count
+
+
+async def browse_by_problem_class_members(problem_id: int, selection_type: enum.TaskSelectionType) \
+        -> Sequence[do.Submission]:
+    """
+    Returns only submitted & judged members
+
+    :return: member_id, submission
+    """
+
+    order_criteria = 'submission.submit_time DESC, submission.id DESC' \
+        if selection_type == enum.TaskSelectionType.last \
+        else 'judgment.score DESC, submission.id DESC'
+
+    async with SafeExecutor(
+            event='browse judgment by problem class members',
+            sql=fr'SELECT DISTINCT ON (class_member.member_id)'
+                fr'       submission.id, submission.account_id, submission.problem_id , submission.language_id,'
+                fr'       submission.filename, submission.content_file_uuid, submission.content_length,'
+                fr'       submission.submit_time'
+                fr'  FROM class_member'
+                fr' INNER JOIN challenge'
+                fr'         ON challenge.class_id = class_member.class_id'
+                fr'        AND NOT challenge.is_deleted'
+                fr' INNER JOIN problem'
+                fr'         ON problem.challenge_id = challenge.id'
+                fr'        AND NOT problem.is_deleted'
+                fr'        AND problem.id = %(problem_id)s'
+                fr' INNER JOIN submission'
+                fr'         ON submission.problem_id = problem.id'
+                fr'        AND submission.account_id = class_member.member_id'
+                fr'        AND submission.submit_time <= challenge.end_time'
+                fr' INNER JOIN judgment'
+                fr'         ON judgment.submission_id = submission.id'
+                fr'        AND judgment.id = submission_last_judgment_id(submission.id)'
+                fr' ORDER BY class_member.member_id, {order_criteria}',
+            problem_id=problem_id,
+            fetch='all',
+            raise_not_found=False,  # Issue #134: return [] for browse
+    ) as records:
+        return [do.Submission(id=id_, account_id=account_id, problem_id=problem_id, language_id=language_id,
+                              filename=filename, content_file_uuid=content_file_uuid, content_length=content_length,
+                              submit_time=submit_time)
+                for (id_, account_id, problem_id, language_id, filename, content_file_uuid, content_length, submit_time)
+                in records]
