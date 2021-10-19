@@ -119,7 +119,7 @@ async def get_member_submission_statistics(challenge_id: int) \
 async def download_all_submissions(account_id: int, challenge_id: int, as_attachment: bool) -> None:
     log.info(f'Downloading all submissions for {account_id=} {challenge_id=}')
 
-    challenge = await db.challenge.read(challenge_id)
+    challenge = await db.challenge.read(challenge_id, include_scheduled=True)
     problems = await db.problem.browse_by_challenge(challenge_id=challenge_id)
 
     _submission_languages: dict[int, do.SubmissionLanguage] = dict()
