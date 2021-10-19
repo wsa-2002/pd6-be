@@ -158,3 +158,47 @@ async def get_best_submission_judgment_all_time(problem_id: int, account_id: int
     ) as (id_, submission_id, verdict, total_time, max_memory, score, judge_time):
         return do.Judgment(id=id_, submission_id=submission_id, verdict=verdict, total_time=total_time,
                            max_memory=max_memory, score=score, judge_time=judge_time)
+
+
+async def browse_by_problem_class_members(problem_id: int, selection_type: enum.TaskSelectionType) \
+        -> dict[int, do.Judgment]:
+    """
+    Returns only submitted & judged members
+
+    :return: member_id, judgment
+    """
+
+    order_criteria = 'submission.submit_time DESC, submission.id DESC' \
+        if selection_type == enum.TaskSelectionType.last \
+        else 'judgment.score DESC, submission.id DESC'
+
+    async with SafeExecutor(
+            event='browse judgment by problem class members',
+            sql=fr'SELECT DISTINCT ON (class_member.member_id)'
+                fr'       class_member.member_id,'
+                fr'       judgment.id, judgment.submission_id, judgment.verdict,'
+                fr'       judgment.total_time, judgment.max_memory, judgment.score, judgment.judge_time'
+                fr'  FROM class_member'
+                fr' INNER JOIN challenge'
+                fr'         ON challenge.class_id = class_member.class_id'
+                fr'        AND NOT challenge.is_deleted'
+                fr' INNER JOIN problem'
+                fr'         ON problem.challenge_id = challenge.id'
+                fr'        AND NOT problem.is_deleted'
+                fr'        AND problem.id = %(problem_id)s'
+                fr' INNER JOIN submission'
+                fr'         ON submission.problem_id = problem.id'
+                fr'        AND submission.account_id = class_member.member_id'
+                fr'        AND submission.submit_time <= challenge.end_time'
+                fr' INNER JOIN judgment'
+                fr'         ON judgment.submission_id = submission.id'
+                fr'        AND judgment.id = submission_last_judgment_id(submission.id)'
+                fr' ORDER BY class_member.member_id, {order_criteria}',
+            problem_id=problem_id,
+            fetch='all',
+            raise_not_found=False,  # Issue #134: return [] for browse
+    ) as records:
+        return {member_id: do.Judgment(id=judgment_id, submission_id=submission_id, verdict=verdict,
+                                       total_time=total_time, max_memory=max_memory, score=score, judge_time=judge_time)
+                for member_id, judgment_id, submission_id, verdict, total_time, max_memory, score, judge_time
+                in records}
