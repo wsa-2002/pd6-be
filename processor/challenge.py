@@ -4,6 +4,7 @@ from typing import Optional, Sequence
 from fastapi import BackgroundTasks
 from pydantic import BaseModel
 
+import log
 from base import do, enum, popo
 from base.enum import RoleType, FilterOperator, ChallengePublicizeType
 import exceptions as exc
@@ -423,6 +424,12 @@ async def download_all_submissions(challenge_id: int, request: Request, as_attac
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
-    background_tasks.add_task(service.challenge.download_all_submissions,
+    async def background_task(*args, **kwargs):
+        try:
+            await service.challenge.download_all_submissions(*args, **kwargs)
+        except Exception as e:
+            log.exception(e)
+
+    background_tasks.add_task(background_task,
                               account_id=request.account.id, challenge_id=challenge.id, as_attachment=as_attachment)
     return
