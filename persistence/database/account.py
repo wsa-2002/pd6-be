@@ -304,11 +304,8 @@ async def account_referral_to_id(account_referral: str) -> int:
 
 async def browse_referral_wth_ids(account_ids: Iterable[int]) -> Sequence[Optional[str]]:
     async with SafeConnection(event='browse account referral with ids') as conn:
-        values = [(account_id,) for account_id in account_ids]
-
-        value_sql, value_params = compile_values(values)
+        value_sql = ','.join(f'({account_id})' for account_id in account_ids)
 
         results = await conn.fetch(fr'SELECT account_id_to_referral(account_id::INTEGER)'
-                                   fr'  FROM (VALUES {value_sql}) account_ids(account_id)',
-                                   *value_params)
+                                   fr'  FROM (VALUES {value_sql}) account_ids(account_id)')
         return [result for result, in results]
