@@ -167,6 +167,7 @@ async def download_all_submissions(account_id: int, challenge_id: int, as_attach
     log.info(f'Send to email...')
 
     account, student_card = await db.account_vo.read_with_default_student_card(account_id=account_id)
-    await email.notification.send_file_download_url(to=student_card.email, file_url=file_url)
+    if student_card.email:
+        await email.notification.send_file_download_url(to=student_card.email, file_url=file_url)
     if account.alternative_email:
         await email.notification.send_file_download_url(to=account.alternative_email, file_url=file_url)
