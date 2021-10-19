@@ -3,6 +3,7 @@ import zipfile
 from typing import Tuple, Sequence
 
 import const
+import log
 from base import do
 from base.enum import RoleType
 import exceptions as exc
@@ -116,6 +117,8 @@ async def get_member_submission_statistics(challenge_id: int) \
 
 
 async def download_all_submissions(account_id: int, challenge_id: int, as_attachment: bool) -> None:
+    log.info(f'Downloading all submissions for {account_id=} {challenge_id=}')
+
     challenge = await db.challenge.read(challenge_id)
     problems = await db.problem.browse_by_challenge(challenge_id=challenge_id)
 
@@ -131,7 +134,7 @@ async def download_all_submissions(account_id: int, challenge_id: int, as_attach
         # return language.file_extension
         return 'py' if language.name.lower().startswith('py') else 'cpp'  # FIXME: put into db
 
-    # Create zip
+    log.info(f'Create zip...')
 
     zip_buffer = io.BytesIO()
     with zipfile.ZipFile(zip_buffer, 'a', zipfile.ZIP_STORED, False) as zipper:
@@ -152,7 +155,7 @@ async def download_all_submissions(account_id: int, challenge_id: int, as_attach
                 zipper.writestr(f'{problem_folder_name}/{filename}',
                                 data=await s3.tools.get_file_content_from_do(s3_file))
 
-    # Make s3 file and get link
+    log.info(f'Make s3 file...')
 
     s3_file = await s3.temp.put_object(body=zip_buffer.getvalue())
 
@@ -161,7 +164,7 @@ async def download_all_submissions(account_id: int, challenge_id: int, as_attach
                                        filename=util.text.get_valid_filename(f'{challenge.title}.zip'),
                                        as_attachment=as_attachment)
 
-    # Send link to emails
+    log.info(f'Send to email...')
 
     account, student_card = await db.account_vo.read_with_default_student_card(account_id=account_id)
     await email.notification.send_file_download_url(to=student_card.email, file_url=file_url)
