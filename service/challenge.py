@@ -141,8 +141,9 @@ async def download_all_submissions(account_id: int, challenge_id: int, as_attach
         for problem in problems:
             problem_folder_name = util.text.get_valid_filename(problem.challenge_label)
 
-            submissions = await db.submission.browse_by_problem_class_members(problem_id=problem.id,
-                                                                              selection_type=challenge.selection_type)
+            submissions = await db.submission.browse_by_problem_selected(problem_id=problem.id,
+                                                                         selection_type=challenge.selection_type,
+                                                                         end_time=challenge.end_time)
             account_referrals = await db.account.browse_referral_wth_ids(submission.account_id
                                                                          for submission in submissions)
             s3_files = await db.s3_file.browse_with_uuids(submission.content_file_uuid for submission in submissions)

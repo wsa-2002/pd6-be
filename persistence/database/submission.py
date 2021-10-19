@@ -255,7 +255,7 @@ async def browse_under_class(class_id: int,
     return data, total_count
 
 
-async def browse_by_problem_class_members(problem_id: int, selection_type: enum.TaskSelectionType) \
+async def browse_by_problem_selected(problem_id: int, selection_type: enum.TaskSelectionType, end_time: datetime) \
         -> Sequence[do.Submission]:
     """
     Returns only submitted & judged members
@@ -263,33 +263,29 @@ async def browse_by_problem_class_members(problem_id: int, selection_type: enum.
     :return: member_id, submission
     """
 
-    order_criteria = 'submission.submit_time DESC, submission.id DESC' \
-        if selection_type == enum.TaskSelectionType.last \
-        else 'judgment.score DESC, submission.id DESC'
+    if selection_type is enum.TaskSelectionType.last:
+        order_criteria = 'submission.submit_time DESC'
+        join_judgment_sql = ''
+    elif selection_type is enum.TaskSelectionType.best:
+        order_criteria = 'judgment.score DESC'
+        join_judgment_sql = (fr' INNER JOIN judgment'
+                             fr'         ON judgment.submission_id = submission.id'
+                             fr'        AND judgment.id = submission_last_judgment_id(submission.id)')
+    else:
+        raise ValueError(f'{selection_type} is not expected')
 
     async with SafeExecutor(
-            event='browse judgment by problem class members',
-            sql=fr'SELECT DISTINCT ON (class_member.member_id)'
+            event='browse submission by problem class members',
+            sql=fr'SELECT DISTINCT ON (submission.account_id)'
                 fr'       submission.id, submission.account_id, submission.problem_id , submission.language_id,'
                 fr'       submission.filename, submission.content_file_uuid, submission.content_length,'
                 fr'       submission.submit_time'
-                fr'  FROM class_member'
-                fr' INNER JOIN challenge'
-                fr'         ON challenge.class_id = class_member.class_id'
-                fr'        AND NOT challenge.is_deleted'
-                fr' INNER JOIN problem'
-                fr'         ON problem.challenge_id = challenge.id'
-                fr'        AND NOT problem.is_deleted'
-                fr'        AND problem.id = %(problem_id)s'
-                fr' INNER JOIN submission'
-                fr'         ON submission.problem_id = problem.id'
-                fr'        AND submission.account_id = class_member.member_id'
-                fr'        AND submission.submit_time <= challenge.end_time'
-                fr' INNER JOIN judgment'
-                fr'         ON judgment.submission_id = submission.id'
-                fr'        AND judgment.id = submission_last_judgment_id(submission.id)'
-                fr' ORDER BY class_member.member_id, {order_criteria}',
-            problem_id=problem_id,
+                fr'  FROM submission'
+                fr'{join_judgment_sql if selection_type is enum.TaskSelectionType.best else ""}'
+                fr' WHERE submission.problem_id = %(problem_id)s'
+                fr'   AND submission.submit_time <= %(end_time)s'
+                fr' ORDER BY submission.account_id, {order_criteria}, submission.id DESC',
+            problem_id=problem_id, end_time=end_time,
             fetch='all',
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
