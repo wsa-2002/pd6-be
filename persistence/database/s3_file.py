@@ -1,9 +1,10 @@
-from typing import Sequence
+from typing import Sequence, Iterable, Optional
 from uuid import UUID
 
 from base import do
 
-from .base import SafeExecutor
+from .base import SafeExecutor, SafeConnection
+from .util import compile_values
 
 
 async def browse() -> Sequence[do.S3File]:
@@ -18,6 +19,19 @@ async def browse() -> Sequence[do.S3File]:
         return [do.S3File(uuid=uuid, bucket=bucket, key=key)
                 for (uuid, bucket, key)
                 in records]
+
+
+async def browse_with_uuids(uuids: Iterable[UUID]) -> Sequence[Optional[do.S3File]]:
+    async with SafeConnection(event='browse account referral with ids') as conn:
+        value_sql = ','.join(f'(\'{uuid}\')' for uuid in uuids)
+
+        return [do.S3File(uuid=uuid, bucket=bucket, key=key)
+                if uuid else None
+                for (uuid, bucket, key)
+                in await conn.fetch(fr'SELECT s3_file.uuid, s3_file.bucket, s3_file.key'
+                                    fr'  FROM (VALUES {value_sql}) given_uuids(given_uuid)'
+                                    fr'  LEFT JOIN s3_file'
+                                    fr'         ON s3_file.uuid = given_uuids.given_uuid::UUID')]
 
 
 async def read(s3_file_uuid: UUID) -> do.S3File:
