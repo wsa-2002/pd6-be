@@ -31,7 +31,7 @@ async def browse_with_uuids(uuids: Iterable[UUID]) -> Sequence[Optional[do.S3Fil
                 in await conn.fetch(fr'SELECT s3_file.uuid, s3_file.bucket, s3_file.key'
                                     fr'  FROM (VALUES {value_sql}) given_uuids(given_uuid)'
                                     fr'  LEFT JOIN s3_file'
-                                    fr'         ON s3_file.uuid = given_uuids.given_uuid',
+                                    fr'         ON s3_file.uuid = given_uuids.given_uuid::UUID',
                                     *value_params)]
 
 
