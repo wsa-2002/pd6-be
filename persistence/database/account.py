@@ -307,6 +307,10 @@ async def browse_referral_wth_ids(account_ids: Iterable[int]) -> Sequence[Option
         values = [(account_id,) for account_id in account_ids]
 
         value_sql, value_params = compile_values(values)
+        import log
+        log.info(value_sql)
+        log.info(value_params)
+        log.info(type(value_params[0]))
 
         results = await conn.fetch(fr'SELECT account_id_to_referral(account_id)'
                                    fr'  FROM (VALUES {value_sql}) account_ids(account_id)',
