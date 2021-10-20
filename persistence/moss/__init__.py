@@ -174,10 +174,10 @@ async def download_report(index_url: str, sub_folder: str) -> tuple[bytes, dict[
 
     match_inner_files = {}
     for match_file_url, file in match_files.items():
-        parsed_file, other_extracted_urls = parse(match_file_url, file, sub_folder)
+        parsed_file, other_extracted_urls = parse(match_file_url, file, sub_folder='')
         match_files[match_file_url] = parsed_file
         match_inner_files |= {
-            rel_url: downloaded
+            os.path.join(sub_folder, rel_url): downloaded
             for rel_url, downloaded
             in zip(extracted_urls, await http_client.batch_download(*extracted_urls.values()))
             if rel_url not in match_files and rel_url not in match_inner_files
