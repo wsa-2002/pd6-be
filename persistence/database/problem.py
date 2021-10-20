@@ -9,18 +9,19 @@ from .base import SafeExecutor, SafeConnection
 
 async def add(challenge_id: int, challenge_label: str,
               title: str, setter_id: int, full_score: Optional[int], description: Optional[str],
-              io_description: Optional[str], source: Optional[str], hint: Optional[str]) -> int:
+              io_description: Optional[str], source: Optional[str], hint: Optional[str],
+              judge_type: Optional[enum.ProblemJudgeType] = enum.ProblemJudgeType.normal) -> int:
     async with SafeExecutor(
             event='Add problem',
             sql="INSERT INTO problem"
-                "            (challenge_id, challenge_label,"
+                "            (challenge_id, challenge_label, judge_type"
                 "             title, setter_id, full_score, description, io_description,"
                 "             source, hint)"
-                "     VALUES (%(challenge_id)s, %(challenge_label)s,"
+                "     VALUES (%(challenge_id)s, %(challenge_label)s, %(judge_type)s"
                 "             %(title)s, %(setter_id)s, %(full_score)s, %(description)s, %(io_description)s,"
                 "             %(source)s, %(hint)s)"
                 "  RETURNING id",
-            challenge_id=challenge_id, challenge_label=challenge_label,
+            challenge_id=challenge_id, challenge_label=challenge_label, judge_type=judge_type,
             title=title, setter_id=setter_id, full_score=full_score,
             description=description, io_description=io_description,
             source=source, hint=hint,
@@ -39,7 +40,7 @@ async def browse(include_scheduled: bool = False, include_deleted=False) -> Sequ
 
     async with SafeExecutor(
             event='browse problems',
-            sql=fr'SELECT id, challenge_id, challenge_label, title, setter_id, full_score, '
+            sql=fr'SELECT id, challenge_id, challenge_label, title, setter_id, full_score, judge_type, setting_id'
                 fr'       description, io_description, source, hint, is_deleted'
                 fr'  FROM problem'
                 fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
@@ -51,8 +52,8 @@ async def browse(include_scheduled: bool = False, include_deleted=False) -> Sequ
                            challenge_id=challenge_id, challenge_label=challenge_label,
                            title=title, setter_id=setter_id, full_score=full_score,
                            description=description, io_description=io_description, source=source, hint=hint,
-                           is_deleted=is_deleted)
-                for (id_, challenge_id, challenge_label, title, setter_id, full_score,
+                           is_deleted=is_deleted, judge_type=enum.ProblemJudgeType(judge_type), setting_id=setting_id)
+                for (id_, challenge_id, challenge_label, title, setter_id, full_score, judge_type, setting_id,
                      description, io_description, source, hint, is_deleted)
                 in records]
 
@@ -62,8 +63,8 @@ async def browse_problem_set(request_time: datetime, include_deleted=False) \
     async with SafeExecutor(
             event='browse problem set',
             sql=fr'SELECT problem.id, problem.challenge_id, problem.challenge_label,'
-                fr'       problem.title, problem.setter_id, problem.full_score, '
-                fr'       problem.description, problem.io_description,'
+                fr'       problem.title, problem.setter_id, problem.full_score,'
+                fr'       problem.description, problem.io_description, problem.judge_type, problem.setting_id'
                 fr'       problem.source, problem.hint, problem.is_deleted'
                 fr'  FROM problem'
                 fr'       INNER JOIN challenge'
@@ -82,16 +83,17 @@ async def browse_problem_set(request_time: datetime, include_deleted=False) \
                            challenge_id=challenge_id, challenge_label=challenge_label,
                            title=title, setter_id=setter_id, full_score=full_score,
                            description=description, io_description=io_description, source=source, hint=hint,
-                           is_deleted=is_deleted)
+                           is_deleted=is_deleted, judge_type=enum.ProblemJudgeType(judge_type), setting_id=setting_id)
                 for (id_, challenge_id, challenge_label, title, setter_id, full_score,
-                     description, io_description, source, hint, is_deleted)
+                     description, io_description, judge_type, setting_id,
+                     source, hint, is_deleted)
                 in records]
 
 
 async def browse_by_challenge(challenge_id: int, include_deleted=False) -> Sequence[do.Problem]:
     async with SafeExecutor(
             event='browse problems with challenge id',
-            sql=fr'SELECT id, challenge_id, challenge_label, title, setter_id, full_score, '
+            sql=fr'SELECT id, challenge_id, challenge_label, title, setter_id, full_score, judge_type, setting_id, '
                 fr'       description, io_description, source, hint, is_deleted'
                 fr'  FROM problem'
                 fr' WHERE challenge_id = %(challenge_id)s'
@@ -104,9 +106,10 @@ async def browse_by_challenge(challenge_id: int, include_deleted=False) -> Seque
         return [do.Problem(id=id_,
                            challenge_id=challenge_id, challenge_label=challenge_label,
                            title=title, setter_id=setter_id, full_score=full_score,
+                           judge_type=enum.ProblemJudgeType(judge_type), setting_id=setting_id,
                            description=description, io_description=io_description, source=source, hint=hint,
                            is_deleted=is_deleted)
-                for (id_, challenge_id, challenge_label, title, setter_id, full_score,
+                for (id_, challenge_id, challenge_label, title, setter_id, full_score, judge_type, setting_id,
                      description, io_description, source, hint, is_deleted)
                 in records]
 
@@ -114,17 +117,18 @@ async def browse_by_challenge(challenge_id: int, include_deleted=False) -> Seque
 async def read(problem_id: int, include_deleted=False) -> do.Problem:
     async with SafeExecutor(
             event='read problem by id',
-            sql=fr'SELECT id, challenge_id, challenge_label, title, setter_id, full_score, '
-                fr'       description, io_description, source, hint, is_deleted'
+            sql=fr'SELECT id, challenge_id, challenge_label, title, setter_id, full_score, judge_type,'
+                fr'       setting_id, description, io_description, source, hint, is_deleted'
                 fr'  FROM problem'
                 fr' WHERE id = %(problem_id)s'
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}',
             problem_id=problem_id,
             fetch=1,
-    ) as (id_, challenge_id, challenge_label, title, setter_id, full_score,
-          description, io_description, source, hint, is_deleted):
+    ) as (id_, challenge_id, challenge_label, title, setter_id, full_score, judge_type,
+          setting_id, description, io_description, source, hint, is_deleted):
         return do.Problem(id=id_,
                           challenge_id=challenge_id, challenge_label=challenge_label,
+                          judge_type=enum.ProblemJudgeType(judge_type), setting_id=setting_id,
                           title=title, setter_id=setter_id, full_score=full_score,
                           description=description, io_description=io_description, source=source, hint=hint,
                           is_deleted=is_deleted)
@@ -140,6 +144,7 @@ async def read_task_status_by_type(problem_id: int, account_id: int,
             event='read problem submission verdict by task selection type',
             sql=fr'SELECT problem.id, problem.challenge_id, problem.challenge_label, problem.title,'
                 fr'       problem.setter_id, problem.full_score, problem.description, problem.io_description,'
+                fr'       problem.judge_type, problem.setting_id,'
                 fr'       problem.source, problem.hint, problem.is_deleted,'
                 fr'       submission.id, submission.account_id, submission.problem_id,'
                 fr'       submission.language_id, submission.filename,'
@@ -161,30 +166,35 @@ async def read_task_status_by_type(problem_id: int, account_id: int,
             account_id=account_id,
             fetch=1,
     ) as (problem_id, challenge_id, challenge_label, title, setter_id, full_score,
-          description, io_description, source, hint, is_deleted,
+          description, io_description, judge_type, setting_id, source, hint, is_deleted,
           submission_id, account_id, problem_id, language_id, filename, content_file_uuid, content_length, submit_time):
         return (do.Problem(id=problem_id, challenge_id=challenge_id, challenge_label=challenge_label, title=title,
                            setter_id=setter_id, full_score=full_score, description=description,
-                           io_description=io_description, source=source, hint=hint, is_deleted=is_deleted),
+                           io_description=io_description, source=source, hint=hint, is_deleted=is_deleted,
+                           judge_type=enum.ProblemJudgeType(judge_type), setting_id=setting_id),
                 do.Submission(id=submission_id, account_id=account_id, problem_id=problem_id, filename=filename,
                               language_id=language_id, content_file_uuid=content_file_uuid,
                               content_length=content_length, submit_time=submit_time))
 
 
 async def edit(problem_id: int,
+               judge_type: enum.ProblemJudgeType,
                challenge_label: str = None,
                title: str = None,
+               setting_id: Optional[int] = None,
                full_score: Optional[int] = ...,
                description: Optional[str] = ...,
                io_description: Optional[str] = ...,
                source: Optional[str] = ...,
                hint: Optional[str] = ...,) -> None:
-    to_updates = {}
+    to_updates = {'judge_type': judge_type}
 
     if challenge_label is not None:
         to_updates['challenge_label'] = challenge_label
     if title is not None:
         to_updates['title'] = title
+    if setting_id is not None:
+        to_updates['setting_id'] = setting_id
     if full_score is not ...:
         to_updates['full_score'] = full_score
     if description is not ...:

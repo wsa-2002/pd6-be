@@ -119,6 +119,8 @@ class Problem:
     id: int
     challenge_id: int
     challenge_label: str
+    judge_type: enum.ProblemJudgeType
+    setting_id: Optional[int]
     title: str
     setter_id: int
     full_score: Optional[int]
@@ -127,6 +129,13 @@ class Problem:
     source: Optional[str]
     hint: Optional[str]
     is_deleted: bool
+
+
+@dataclass
+class ProblemJudgeSettingCustomized:
+    id: int
+    judge_code_uuid: UUID
+    filename: str
 
 
 @dataclass
