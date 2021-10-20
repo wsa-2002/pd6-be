@@ -135,7 +135,7 @@ def parse(base_url, page: bytes, sub_folder: str) -> tuple[bytes, dict[str, str]
             link = link_html_obj.get('src')
 
         # Download only results urls
-        if not link or link.find(base_url) == -1:
+        if not link or 'match' not in link:
             continue
 
         if '#' in link:
@@ -174,12 +174,12 @@ async def download_report(index_url: str, sub_folder: str) -> tuple[bytes, dict[
 
     match_inner_files = {}
     for match_file_url, file in match_files.items():
-        parsed_file, other_extracted_urls = parse(match_file_url, file, sub_folder='')
+        parsed_file, other_extracted_urls = parse(index_url, file, sub_folder='')
         match_files[match_file_url] = parsed_file
         match_inner_files |= {
             os.path.join(sub_folder, rel_url): downloaded
             for rel_url, downloaded
-            in zip(extracted_urls, await http_client.batch_download(*extracted_urls.values()))
+            in zip(other_extracted_urls, await http_client.batch_download(*other_extracted_urls.values()))
             if rel_url not in match_files and rel_url not in match_inner_files
         }
 
