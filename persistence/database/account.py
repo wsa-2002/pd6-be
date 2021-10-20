@@ -1,5 +1,7 @@
 from typing import Tuple, Sequence, Optional, Iterable
 
+import asyncpg
+
 from base import do
 from base.enum import RoleType
 import exceptions as exc
@@ -29,12 +31,14 @@ async def batch_add_normal(accounts: Sequence[tuple[str, str, str, str, str]], r
                       for real_name, username, pass_hash, alternative_email, nickname in accounts]
 
             value_sql, value_params = compile_values(values)
-
+        try:
             await conn.execute(
                 fr'INSERT INTO account'
                 fr'            (real_name, username, pass_hash, alternative_email, nickname, role)'
                 fr'     VALUES {value_sql}',
                 *value_params)
+        except asyncpg.exceptions.UniqueViolationError:
+            raise exc.persistence.UniqueViolationError
 
 
 async def add_normal(username: str, pass_hash: str, real_name: str, nickname: str,

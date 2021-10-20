@@ -1,5 +1,8 @@
 from typing import Sequence, Tuple
 
+import asyncpg
+
+import exceptions as exc
 from base import do
 from base.enum import RoleType, FilterOperator
 from base.popo import Filter, Sorter
@@ -182,52 +185,57 @@ async def add_members(team_id: int, member_roles: Sequence[Tuple[str, RoleType]]
                            role) for account_referral, role in member_roles]
 
                 value_sql, value_params = compile_values(values=values)
-
+            try:
                 await conn.execute(fr'INSERT INTO team_member'
                                    fr'            (team_id, member_id, role)'
                                    fr'     VALUES {value_sql}',
                                    *value_params)
+            except asyncpg.exceptions.UniqueViolationError:
+                raise exc.persistence.UniqueViolationError
 
 
 async def add_team_and_add_member(class_id: int, team_label: str,
                                   datas: Sequence[tuple[str, Sequence[tuple[str, RoleType]]]]):
     async with SafeConnection(event='add member with team name') as conn:
         async with conn.transaction():
-            for team_name, member_roles in datas:
-                (team_id,) = await conn.fetchrow(
-                    fr'WITH get AS ('
-                    fr'     SELECT id'
-                    fr'       FROM team'
-                    fr'      WHERE team.name = $1'
-                    fr'        AND team.class_id = $2'
-                    fr'        AND team.label = $3'
-                    fr'        AND is_deleted = $4'
-                    fr'), new_team AS ('
-                    fr'     INSERT INTO team'
-                    fr'                 (name, class_id, label)'
-                    fr'          VALUES ($1, $2, $3)'
-                    fr'     ON CONFLICT DO NOTHING'
-                    fr'     RETURNING id'
-                    fr')'
-                    fr'SELECT id FROM get'
-                    fr' UNION ALL'
-                    fr' SELECT id FROM new_team',
-                    team_name, class_id, team_label, False,
-                )
+            try:
+                for team_name, member_roles in datas:
+                    (team_id,) = await conn.fetchrow(
+                        fr'WITH get AS ('
+                        fr'     SELECT id'
+                        fr'       FROM team'
+                        fr'      WHERE team.name = $1'
+                        fr'        AND team.class_id = $2'
+                        fr'        AND team.label = $3'
+                        fr'        AND is_deleted = $4'
+                        fr'), new_team AS ('
+                        fr'     INSERT INTO team'
+                        fr'                 (name, class_id, label)'
+                        fr'          VALUES ($1, $2, $3)'
+                        fr'     ON CONFLICT DO NOTHING'
+                        fr'     RETURNING id'
+                        fr')'
+                        fr'SELECT id FROM get'
+                        fr' UNION ALL'
+                        fr' SELECT id FROM new_team',
+                        team_name, class_id, team_label, False,
+                    )
 
-                values = [(team_id,
-                           await account_referral_to_id(account_referral),
-                           role)
-                          for account_referral, role in member_roles]
+                    values = [(team_id,
+                               await account_referral_to_id(account_referral),
+                               role)
+                              for account_referral, role in member_roles]
 
-                value_sql, value_params = compile_values(values=values)
+                    value_sql, value_params = compile_values(values=values)
 
-                await conn.execute(
-                    fr'INSERT INTO team_member'
-                    fr'            (team_id, member_id, role)'
-                    fr'     VALUES {value_sql}',
-                    *value_params
-                )
+                    await conn.execute(
+                        fr'INSERT INTO team_member'
+                        fr'            (team_id, member_id, role)'
+                        fr'     VALUES {value_sql}',
+                        *value_params
+                    )
+            except asyncpg.exceptions.UniqueViolationError:
+                raise exc.persistence.UniqueViolationError
 
 
 async def edit_member(team_id: int, member_id: int, role: RoleType):

@@ -4,6 +4,8 @@ import io
 from typing import Tuple
 import typing
 
+import asyncpg
+
 from base import enum, do
 import exceptions as exc
 import persistence.database as db
@@ -37,8 +39,6 @@ async def import_account(account_file: typing.IO):
         await db.account.batch_add_normal(data)
     except UnicodeDecodeError:
         raise exc.FileDecodeError
-    except:
-        raise exc.IllegalInput
 
 
 async def get_template_file() -> Tuple[do.S3File, str]:
