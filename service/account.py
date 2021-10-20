@@ -53,6 +53,7 @@ async def get_template_file() -> Tuple[do.S3File, str]:
 browse_with_default_student_card = db.account_vo.browse_with_default_student_card
 browse_list_with_default_student_card = db.account_vo.browse_list_with_default_student_card
 browse_with_class_role = db.class_.browse_role_by_account_id
+batch_read_by_account_referrals = db.account_vo.batch_read_by_account_referral
 
 read = db.account.read
 read_with_default_student_card = db.account_vo.read_with_default_student_card
