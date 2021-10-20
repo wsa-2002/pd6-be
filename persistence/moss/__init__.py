@@ -163,6 +163,9 @@ def parse(base_url, page: bytes, sub_folder: str) -> tuple[bytes, dict[str, str]
 
 
 async def download_report(index_url: str, sub_folder: str) -> tuple[bytes, dict[str, bytes]]:
+    if not index_url.endswith('/'):
+        index_url = index_url + '/'
+
     index = await http_client.download(index_url)
 
     parsed_index, extracted_urls = parse(index_url, index, sub_folder)
