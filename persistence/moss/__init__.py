@@ -108,13 +108,17 @@ async def submit_report(opt: MossOptions) -> str:
         writer.write(file)
 
     for i, (filename, file) in enumerate(opt.submission_files.items(), start=1):
+        if i % 50 == 1:
+            log.info(f'processing submission file #{i}...')
         writer.write(f'file {i} {opt.language} {len(file)} {filename}\n'.encode())
         writer.write(file)
 
     injected_title = f'</p><h1>{opt.subtitle}</h1><p>'
     writer.write(f'query 0 {injected_title}\n'.encode())
 
+    log.info(f'waiting response from moss...')
     response = await reader.read(1024)
+    log.info(f'Response from moss: {response.decode()}')
 
     writer.write('end\n'.encode())
 
@@ -168,12 +172,16 @@ async def download_report(index_url: str, sub_folder: str) -> tuple[bytes, dict[
 
     index = await http_client.download(index_url)
 
+    log.info('Parsed index file, parsing match files...')
+
     parsed_index, extracted_urls = parse(index_url, index, sub_folder)
     match_files = {
         rel_url: downloaded
         for rel_url, downloaded
         in zip(extracted_urls, await http_client.batch_download(*extracted_urls.values()))
     }
+
+    log.info('Parsed match files, parsing inner files...')
 
     match_inner_files = {}
     for match_file_url, file in match_files.items():
