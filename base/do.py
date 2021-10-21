@@ -149,6 +149,7 @@ class Testcase:
     output_file_uuid: Optional[UUID]
     input_filename: Optional[str]
     output_filename: Optional[str]
+    note: Optional[str]
     time_limit: int
     memory_limit: int
     is_disabled: bool

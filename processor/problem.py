@@ -83,6 +83,7 @@ async def read_problem(problem_id: int, request: Request) -> ReadProblemOutput:
             or (is_system_normal and is_challenge_publicized)):
         raise exc.NoPermission
 
+    customized_setting = do.ProblemJudgeSettingCustomized
     if problem.judge_type is ProblemJudgeType.customized:
         customized_setting = await service.problem_judge_setting_customized.read(customized_id=problem.setting_id)
 
@@ -172,6 +173,7 @@ class AddTestcaseInput(BaseModel):
     score: int
     time_limit: int
     memory_limit: int
+    note: Optional[str]
     is_disabled: bool
     label: str
 
@@ -193,7 +195,7 @@ async def add_testcase_under_problem(problem_id: int, data: AddTestcaseInput, re
                                              label=data.label, input_file_uuid=None, output_file_uuid=None,
                                              input_filename=None, output_filename=None,
                                              time_limit=data.time_limit, memory_limit=data.memory_limit,
-                                             is_disabled=data.is_disabled)
+                                             is_disabled=data.is_disabled, note=data.note)
     return model.AddOutput(id=testcase_id)
 
 
@@ -208,6 +210,7 @@ class ReadTestcaseOutput:
     output_file_uuid: Optional[UUID]
     input_filename: Optional[str]
     output_filename: Optional[str]
+    note: Optional[str]
     time_limit: int
     memory_limit: int
     is_disabled: bool
@@ -241,6 +244,7 @@ async def browse_all_testcase_under_problem(problem_id: int, request: Request) -
         output_file_uuid=testcase.output_file_uuid if (testcase.is_sample or is_class_manager) else None,
         input_filename=testcase.input_filename,
         output_filename=testcase.output_filename,
+        note=testcase.note,
         time_limit=testcase.time_limit,
         memory_limit=testcase.memory_limit,
         is_disabled=testcase.is_disabled,
