@@ -6,7 +6,13 @@ A `python=3.9`-`asyncio`-based web backend, using web framework `fastapi`.
 
 ## Setup test server
 
-### 0. `python`
+### 0. `git`
+Add `--recursive` in your command in order to clone both `pd6-be` and its submodule `judge_core_common`. 
+```shell
+git clone --recursive https://nas.pdogs.ntu.im:30443/pdogs/pdogs-6/pd6-be.git
+```
+### 1. `python`
+
 > Suggest using PyCharm for development tool; you may also connect your `conda` environment with PyCharm!
 
 Using `conda` as example:
@@ -15,7 +21,7 @@ conda create --name pdogs6-async python=3.9
 conda activate pdogs6-async
 ```
 
-### 1. Environment
+### 2. Environment
 ```shell
 pip install -r requirements.txt
 cp .env.example .env
@@ -28,7 +34,7 @@ Then
 3. Check the `propagate`s in `logging.yaml`, and replace with `True` if you want to show that genre of log on your console.
 4. Manually create your log folder (default `/log` under your cloned `PD6-BE` project folder).
 
-### 2. Start the server
+### 3. Start the server
 
 ```shell
 pip install uvicorn
