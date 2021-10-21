@@ -138,7 +138,11 @@ async def class_submission(class_id: int, limit: int, offset: int,
                        value=class_id)]
 
     cond_sql, cond_params = compile_filters(filters)
-    view_sql = (fr'SELECT *'
+    sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
+
+    async with SafeExecutor(
+            event='browse class submissions',
+            sql=fr'SELECT *'
                 fr'FROM ('
                 fr'    SELECT submission.id           AS submission_id,'
                 fr'           account.id              AS account_id,'
@@ -170,12 +174,7 @@ async def class_submission(class_id: int, limit: int, offset: int,
                 fr'            AND judgment.id = submission_last_judgment_id(submission.id)'
                 fr'    {f" WHERE {cond_sql}" if cond_sql else ""}'
                 fr'     ORDER BY submission.submit_time DESC, submission.id DESC'
-                fr') __TABLE__')
-    sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
-
-    async with SafeExecutor(
-            event='browse class submissions',
-            sql=fr'{view_sql}'
+                fr') __TABLE__'
                 fr'{f" ORDER BY {sort_sql}" if sort_sql else ""}'
                 fr' LIMIT %(limit)s OFFSET %(offset)s',
             **cond_params,
@@ -199,7 +198,27 @@ async def class_submission(class_id: int, limit: int, offset: int,
                      challenge_title, problem_id, challenge_label, verdict, submit_time, class_id)
                 in records]
 
-    total_count = await execute_count(view_sql, **cond_params)
+    total_count = await execute_count(
+        sql=fr'SELECT DISTINCT ON (submission.id)'
+            fr'       submission.id           AS submission_id'
+            fr'  FROM submission'
+            fr'  LEFT JOIN account'
+            fr'         ON account.id = submission.account_id'
+            fr'        AND NOT account.is_deleted'
+            fr'  LEFT JOIN student_card'
+            fr'         ON student_card.account_id = submission.account_id'
+            fr'        AND student_card.is_default'
+            fr' INNER JOIN problem'
+            fr'         ON problem.id = submission.problem_id'
+            fr'        AND NOT problem.is_deleted'
+            fr' INNER JOIN challenge'
+            fr'         ON challenge.id = problem.challenge_id'
+            fr'        AND NOT challenge.is_deleted'
+            fr'  LEFT JOIN judgment'
+            fr'         ON judgment.submission_id = submission.id'
+            fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
+            fr' ORDER BY submission.id DESC, judgment.judge_time DESC',
+        **cond_params)
 
     return data, total_count
 
