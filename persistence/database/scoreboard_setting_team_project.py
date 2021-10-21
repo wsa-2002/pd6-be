@@ -99,7 +99,7 @@ async def edit_with_scoreboard(scoreboard_id: int,
             pass
 
 
-async def get_problem_normal_score(problem_id: int, team_member_ids: Sequence[int]) \
+async def get_problem_raw_score(problem_id: int, team_member_ids: Sequence[int]) \
     -> Tuple[do.Problem, do.Submission, do.Judgment]:
 
     ids_sql = '(' + ', '.join(str(team_member_id) for team_member_id in team_member_ids) + ')'
@@ -140,4 +140,3 @@ async def get_problem_normal_score(problem_id: int, team_member_ids: Sequence[in
                               content_length=content_length, submit_time=submit_time),
                 do.Judgment(id=judgment_id, submission_id=submission_id, verdict=enum.VerdictType(verdict),
                             total_time=total_time, max_memory=max_memory, score=score, judge_time=judge_time))
-
