@@ -217,7 +217,7 @@ async def class_submission(class_id: int, limit: int, offset: int,
             fr'  LEFT JOIN judgment'
             fr'         ON judgment.submission_id = submission.id'
             fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
-            fr' ORDER BY submission.submit_time DESC, judgment.judge_time DESC',
+            fr' ORDER BY submission.id DESC, judgment.judge_time DESC',
         **cond_params)
 
     return data, total_count
