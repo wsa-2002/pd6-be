@@ -1,4 +1,4 @@
-from typing import Sequence, Optional
+from typing import Sequence, Optional, Tuple
 
 from base import do, enum
 
@@ -97,3 +97,47 @@ async def edit_with_scoreboard(scoreboard_id: int,
                 **scoreboard_setting_to_updates,
         ):
             pass
+
+
+async def get_problem_normal_score(problem_id: int, team_member_ids: Sequence[int]) \
+    -> Tuple[do.Problem, do.Submission, do.Judgment]:
+
+    ids_sql = '(' + ', '.join(str(team_member_id) for team_member_id in team_member_ids) + ')'
+    async with SafeExecutor(
+            event='get problem normal score',
+            sql=fr'SELECT problem.id, problem.challenge_id, problem.challenge_label, problem.title, problem.setter_id,' 
+		        fr'       problem.full_score, problem.description, problem.io_description, problem.source, problem.hint, problem.is_deleted,'
+                fr'       submission.id, submission.account_id, submission.problem_id, submission.language_id,'
+		        fr'       submission.filename, submission.content_file_uuid, submission.content_length, submission.submit_time,'
+                fr'       judgment.id, judgment.submission_id, judgment.verdict, judgment.total_time,'
+		        fr'       judgment.max_memory, judgment.score, judgment.judge_time'
+                fr'  FROM submission'
+                fr' INNER JOIN problem'
+                fr'         ON problem.id = submission.problem_id'
+                fr'        AND NOT problem.is_deleted'
+                fr' INNER JOIN challenge'
+                fr'         ON challenge.id = problem.challenge_id'
+                fr' INNER JOIN judgment'
+                fr'         ON judgment.submission_id = submission.id'
+                fr'        AND judgment.id = submission_last_judgment_id(submission.id)'    
+                fr' WHERE account_id IN {ids_sql}'
+                fr'   AND problem.id = %(problem_id)s'
+                fr'   AND submission.submit_time <= challenge.end_time'
+                fr' ORDER BY submission.submit_time DESC, submission.id DESC',
+            problem_id=problem_id,
+            fetch=1,
+    ) as (problem_id, challenge_id, challenge_label, title, setter_id, full_score,
+          description, io_description, source, hint, is_deleted,
+          submission_id, account_id, problem_id, language_id, filename, content_file_uuid, content_length, submit_time,
+          judgment_id, submission_id, verdict, total_time, max_memory, score, judge_time):
+        return (do.Problem(id=problem_id,
+                           challenge_id=challenge_id, challenge_label=challenge_label,
+                           title=title, setter_id=setter_id, full_score=full_score,
+                           description=description, io_description=io_description, source=source, hint=hint,
+                           is_deleted=is_deleted),
+                do.Submission(id=submission_id, account_id=account_id, problem_id=problem_id, language_id=language_id,
+                              filename=filename, content_file_uuid=content_file_uuid,
+                              content_length=content_length, submit_time=submit_time),
+                do.Judgment(id=judgment_id, submission_id=submission_id, verdict=enum.VerdictType(verdict),
+                            total_time=total_time, max_memory=max_memory, score=score, judge_time=judge_time))
+

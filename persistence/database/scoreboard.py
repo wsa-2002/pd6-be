@@ -48,7 +48,8 @@ class ScoreboardSettingTeamProjectDataOutput:
     team_label_filter: Optional[str]
 
 
-async def read_with_scoreboard_setting_data(scoreboard_id: int, include_deleted=False) -> Tuple[do.Scoreboard, Any]:
+# TODO: move to service layer
+async def read_with_scoreboard_setting_data(scoreboard_id: int) -> Tuple[do.Scoreboard, Any]:
     async with SafeConnection(event=f'read scoreboard with scoreboard setting data') as conn:
         async with conn.transaction():
 
