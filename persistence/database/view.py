@@ -140,8 +140,7 @@ async def class_submission(class_id: int, limit: int, offset: int,
     cond_sql, cond_params = compile_filters(filters)
     view_sql = (fr'SELECT *'
                 fr'FROM ('
-                fr'    SELECT DISTINCT ON (submission.id)'
-                fr'           submission.id           AS submission_id,'
+                fr'    SELECT submission.id           AS submission_id,'
                 fr'           account.id              AS account_id,'
                 fr'           account.username        AS username,'
                 fr'           student_card.student_id AS student_id,'
@@ -168,8 +167,9 @@ async def class_submission(class_id: int, limit: int, offset: int,
                 fr'            AND NOT challenge.is_deleted'
                 fr'      LEFT JOIN judgment'
                 fr'             ON judgment.submission_id = submission.id'
+                fr'            AND judgment.id = submission_last_judgment_id(submission.id)'
                 fr'    {f" WHERE {cond_sql}" if cond_sql else ""}'
-                fr'     ORDER BY submission.id DESC, judgment.judge_time DESC'
+                fr'     ORDER BY submission.submit_time DESC, submission.id DESC'
                 fr') __TABLE__')
     sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
 
