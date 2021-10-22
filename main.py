@@ -124,8 +124,7 @@ register_routers(app)
 # Instrument for prometheus
 from prometheus_fastapi_instrumentator import Instrumentator, metrics as pfi_metrics
 
-instrumentator = Instrumentator()
-instrumentator.add(pfi_metrics.default(latency_lowr_buckets=(
+instrumentator = Instrumentator().add(pfi_metrics.default(latency_lowr_buckets=(
     0.010,
     0.025,
     0.050,
@@ -139,5 +138,4 @@ instrumentator.add(pfi_metrics.default(latency_lowr_buckets=(
     3,
     4,
     5,
-)))
-Instrumentator().instrument(app).expose(app)
+))).instrument(app).expose(app)
