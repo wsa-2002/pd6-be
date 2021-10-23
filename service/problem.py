@@ -29,6 +29,7 @@ async def edit(problem_id: int,
                source: Optional[str] = ...,
                hint: Optional[str] = ...,) -> None:
     # write code into file
+    setting_id = None
     if judge_code:
         with io.BytesIO(judge_code.encode(const.JUDGE_CODE_ENCODING)) as file:
             s3_file = await s3.customized_code.upload(file=file)

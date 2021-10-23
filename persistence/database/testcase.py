@@ -81,7 +81,7 @@ async def edit(testcase_id: int,
                output_file_uuid: UUID = None,
                input_filename: str = None,
                output_filename: str = None,
-               note: str = None,
+               note: Optional[str] = ...,
                time_limit: int = None,
                memory_limit: int = None,
                is_disabled: bool = None,) -> None:
@@ -101,7 +101,7 @@ async def edit(testcase_id: int,
         to_updates['input_filename'] = input_filename
     if output_filename is not None:
         to_updates['output_filename'] = output_filename
-    if note is not None:
+    if note is not ...:
         to_updates['note'] = note
     if time_limit is not None:
         to_updates['time_limit'] = time_limit

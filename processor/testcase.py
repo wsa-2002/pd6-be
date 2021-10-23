@@ -1,5 +1,6 @@
 from fastapi import File, UploadFile
 from pydantic import BaseModel
+from typing import Optional
 
 from base.enum import RoleType
 import exceptions as exc
@@ -54,7 +55,7 @@ class EditTestcaseInput(BaseModel):
     is_sample: bool = None
     score: int = None
     time_limit: int = None
-    note: str = None
+    note: Optional[str] = model.can_omit
     memory_limit: int = None
     is_disabled: bool = None
     label: str = None
