@@ -483,7 +483,7 @@ async def access_log(limit: int, offset: int, filters: Sequence[Filter], sorters
                 fr'         ON student_card.account_id = account.id'
                 fr'        AND student_card.is_default'
                 fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
-                fr' ORDER BY {sort_sql} access_log_id ASC'
+                fr' ORDER BY {sort_sql} access_log_id DESC'
                 fr' LIMIT %(limit)s OFFSET %(offset)s',
             **cond_params,
             limit=limit, offset=offset,
@@ -511,6 +511,7 @@ async def access_log(limit: int, offset: int, filters: Sequence[Filter], sorters
             fr'         ON student_card.account_id = account.id'
             fr'        AND student_card.is_default'
             fr'{f" WHERE {cond_sql}" if cond_sql else ""}',
+        use_estimate_if_rows=offset+10000,
         **cond_params,
     )
 

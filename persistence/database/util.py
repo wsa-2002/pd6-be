@@ -10,13 +10,17 @@ from .base import SafeExecutor
 ESTIMATE_COST_THRESHOLD = 5000000  # 65659969?
 
 
-async def execute_count(sql: str, **kwargs) -> int:
+async def execute_count(sql: str, use_estimate_if_cost=0, use_estimate_if_rows=0, **kwargs) -> int:
     try:
         rows, cols, cost = await get_query_estimation(sql, **kwargs)
     except:
         log.info('Execute count error, pass')
     else:
-        if cost > ESTIMATE_COST_THRESHOLD:
+        log.info(f'Query estimation is {rows=} {cols=} {cost=}')
+        if cost > ESTIMATE_COST_THRESHOLD \
+                or use_estimate_if_cost and cost > use_estimate_if_cost \
+                or use_estimate_if_rows and rows > use_estimate_if_rows:
+            log.info('Use estimation as count result')
             return rows
 
     return await get_query_actual_count(sql, **kwargs)
@@ -33,9 +37,9 @@ async def get_query_estimation(sql: str, **kwargs) -> tuple[int, int, int]:
             fetch=1,
     ) as (query_plan,):
         # Note: might raise IndexError or KeyError in this part
-        rows = query_plan[0]['Plan']['Plan Rows']
-        cols = query_plan[0]['Plan']['Plan Width']
-        cost = query_plan[0]['Plan']['Total Cost']
+        rows = query_plan[0]['Plan']['Plans'][0]['Plan Rows']
+        cols = query_plan[0]['Plan']['Plans'][0]['Plan Width']
+        cost = query_plan[0]['Plan']['Plans'][0]['Total Cost']
         return rows, cols, cost
 
 
