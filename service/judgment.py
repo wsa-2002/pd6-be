@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Sequence
+from typing import Sequence, Optional
 from uuid import UUID
 
 import log
@@ -59,19 +59,25 @@ async def _prepare_problem(problem_id: int) -> tuple[
         full_score=problem.full_score,
     )
 
+    input_s3_files = await db.s3_file.browse_with_uuids(testcase.input_file_uuid for testcase in testcases)
+    output_s3_files = await db.s3_file.browse_with_uuids(testcase.output_file_uuid for testcase in testcases)
+
     judge_testcases = [judge_do.Testcase(
         id=testcase.id,
         score=testcase.score,
-        input_file_url=await _sign_file_url(testcase.input_file_uuid, filename=f'{i}.in'),
-        output_file_url=await _sign_file_url(testcase.output_file_uuid, filename=f'{i}.out'),
+        input_file_url=await _sign_file_url(input_s3_file, filename=testcase.input_filename),
+        output_file_url=await _sign_file_url(output_s3_file, filename=testcase.output_filename),
         time_limit=testcase.time_limit,
         memory_limit=testcase.memory_limit,
-    ) for i, testcase in enumerate(testcases)]
+    ) for testcase, input_s3_file, output_s3_file in zip(testcases, input_s3_files, output_s3_files)]
+
+    assisting_data_s3_files = await db.s3_file.browse_with_uuids(assisting_data.s3_file_uuid
+                                                                 for assisting_data in assisting_datas)
 
     judge_assisting_datas = [judge_do.AssistingData(
-        file_url=await _sign_file_url(assisting_data.s3_file_uuid, filename=assisting_data.filename),
+        file_url=await _sign_file_url(s3_file, filename=assisting_data.filename),
         filename=assisting_data.filename,
-    ) for assisting_data in assisting_datas]
+    ) for assisting_data, s3_file in zip(assisting_datas, assisting_data_s3_files)]
 
     return judge_problem, judge_testcases, judge_assisting_datas
 
@@ -88,7 +94,8 @@ async def _judge(submission: do.Submission, judge_problem: judge_do.Problem, pri
         problem=judge_problem,
         submission=judge_do.Submission(
             id=submission.id,
-            file_url=await _sign_file_url(submission.content_file_uuid, filename=submission.filename),
+            file_url=await _sign_file_url(await db.s3_file.read(submission.content_file_uuid),
+                                          filename=submission.filename),
         ),
         testcases=judge_testcases,
         assisting_data=judge_assisting_datas,
@@ -96,9 +103,11 @@ async def _judge(submission: do.Submission, judge_problem: judge_do.Problem, pri
         priority=priority)
 
 
-async def _sign_file_url(uuid: UUID, filename: str):
+async def _sign_file_url(s3_file: Optional[do.S3File], filename: str) -> Optional[str]:
+    if not s3_file:
+        return None
     return await s3.tools.sign_url_from_do(
-        s3_file=await db.s3_file.read(uuid),
+        s3_file=s3_file,
         expire_secs=const.S3_EXPIRE_SECS,
         filename=filename,
         as_attachment=True,
