@@ -51,6 +51,7 @@ async def _prepare_problem(problem_id: int) -> tuple[
     Sequence[judge_do.Testcase],
     Sequence[judge_do.AssistingData],
 ]:
+    log.info(f'Preparing {problem_id=} for judging')
     problem = await db.problem.read(problem_id)
     testcases = await db.testcase.browse(problem.id, include_disabled=False)
     assisting_datas = await db.assisting_data.browse(problem.id)
@@ -58,6 +59,8 @@ async def _prepare_problem(problem_id: int) -> tuple[
     judge_problem = judge_do.Problem(
         full_score=problem.full_score,
     )
+
+    log.info(f'Preparing input/output data for {problem_id=} for judging')
 
     input_s3_files = await db.s3_file.browse_with_uuids(testcase.input_file_uuid for testcase in testcases)
     output_s3_files = await db.s3_file.browse_with_uuids(testcase.output_file_uuid for testcase in testcases)
@@ -70,6 +73,8 @@ async def _prepare_problem(problem_id: int) -> tuple[
         time_limit=testcase.time_limit,
         memory_limit=testcase.memory_limit,
     ) for testcase, input_s3_file, output_s3_file in zip(testcases, input_s3_files, output_s3_files)]
+
+    log.info(f'Preparing assisting data for {problem_id=} for judging')
 
     assisting_data_s3_files = await db.s3_file.browse_with_uuids(assisting_data.s3_file_uuid
                                                                  for assisting_data in assisting_datas)
@@ -84,6 +89,7 @@ async def _prepare_problem(problem_id: int) -> tuple[
 
 async def _judge(submission: do.Submission, judge_problem: judge_do.Problem, priority: int,
                  judge_testcases: Sequence[judge_do.Testcase], judge_assisting_datas: Sequence[judge_do.AssistingData]):
+    log.info(f'Sending judge for {submission.id=}')
     submission_language = await db.submission.read_language(submission.language_id)
     if submission_language.is_disabled:
         log.info(f"Submission id {submission.id} is skipped judge because"
