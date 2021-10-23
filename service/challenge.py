@@ -137,7 +137,7 @@ async def download_all_submissions(account_id: int, challenge_id: int, as_attach
     log.info(f'Create zip...')
 
     zip_buffer = io.BytesIO()
-    with zipfile.ZipFile(zip_buffer, 'a', zipfile.ZIP_STORED, allowZip64=False) as zipper:
+    with zipfile.ZipFile(zip_buffer, 'a', zipfile.ZIP_STORED, False) as zipper:
         for problem in problems:
             problem_folder_name = util.text.get_valid_filename(problem.challenge_label)
 
@@ -257,7 +257,7 @@ async def check_all_submissions_moss(account_id: int, challenge_id: int, as_atta
         log.info(f'generating report zipfile for moss {problem.id=}')
 
         zip_buffer = io.BytesIO()
-        with zipfile.ZipFile(zip_buffer, 'a', zipfile.ZIP_STORED, allowZip64=False) as zipper:
+        with zipfile.ZipFile(zip_buffer, 'a', zipfile.ZIP_STORED, False) as zipper:
             zipper.writestr('index.html', report_index_file)
             for filename, file in other_files.items():
                 zipper.writestr(filename, file)
