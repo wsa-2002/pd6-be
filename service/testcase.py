@@ -47,20 +47,22 @@ delete_output_data = db.testcase.delete_output_data
 
 
 async def download_all_sample(account_id: int, problem_id: int, as_attachment: bool) -> None:
-    testcases = await db.testcase.browse(problem_id=problem_id, is_sample=True, include_disabled=True)
-
-    input_s3_files = await db.s3_file.browse_with_uuids(testcase.input_file_uuid for testcase in testcases)
-    output_s3_files = await db.s3_file.browse_with_uuids(testcase.output_file_uuid for testcase in testcases)
+    result = await db.testcase.browse(problem_id=problem_id, is_sample=True, include_disabled=True)
+    files = []
+    for testcase in result:
+        try:
+            input_s3_file = await db.s3_file.read(s3_file_uuid=testcase.input_file_uuid)
+            files.append((input_s3_file, testcase.input_filename))
+            output_s3_file = await db.s3_file.read(s3_file_uuid=testcase.output_file_uuid)
+            files.append((output_s3_file, testcase.output_filename))
+        except:
+            pass
 
     zip_buffer = io.BytesIO()
-    with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_STORED, allowZip64=False) as zipper:
-        for testcase, input_s3_file, output_s3_file in zip(testcases, input_s3_files, output_s3_files):
-            if input_s3_file:
-                infile_content = await s3.tools.get_file_content(bucket=input_s3_file.bucket, key=input_s3_file.key)
-                zipper.writestr(testcase.input_filename, infile_content)
-            if output_s3_file:
-                infile_content = await s3.tools.get_file_content(bucket=output_s3_file.bucket, key=output_s3_file.key)
-                zipper.writestr(testcase.output_filename, infile_content)
+    with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zipper:
+        for file, filename in files:
+            infile_content = await s3.tools.get_file_content(bucket=file.bucket, key=file.key)
+            zipper.writestr(filename, infile_content)
 
     s3_file = await s3.temp.put_object(body=zip_buffer.getvalue())
 
@@ -72,20 +74,22 @@ async def download_all_sample(account_id: int, problem_id: int, as_attachment: b
 
 
 async def download_all_non_sample(account_id: int, problem_id: int, as_attachment: bool) -> None:
-    testcases = await db.testcase.browse(problem_id=problem_id, is_sample=False, include_disabled=True)
-
-    input_s3_files = await db.s3_file.browse_with_uuids(testcase.input_file_uuid for testcase in testcases)
-    output_s3_files = await db.s3_file.browse_with_uuids(testcase.output_file_uuid for testcase in testcases)
+    result = await db.testcase.browse(problem_id=problem_id, is_sample=False, include_disabled=True)
+    files = []
+    for testcase in result:
+        try:
+            input_s3_file = await db.s3_file.read(s3_file_uuid=testcase.input_file_uuid)
+            files.append((input_s3_file, testcase.input_filename))
+            output_s3_file = await db.s3_file.read(s3_file_uuid=testcase.output_file_uuid)
+            files.append((output_s3_file, testcase.output_filename))
+        except:
+            pass
 
     zip_buffer = io.BytesIO()
-    with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_STORED, allowZip64=False) as zipper:
-        for testcase, input_s3_file, output_s3_file in zip(testcases, input_s3_files, output_s3_files):
-            if input_s3_file:
-                infile_content = await s3.tools.get_file_content(bucket=input_s3_file.bucket, key=input_s3_file.key)
-                zipper.writestr(testcase.input_filename, infile_content)
-            if output_s3_file:
-                infile_content = await s3.tools.get_file_content(bucket=output_s3_file.bucket, key=output_s3_file.key)
-                zipper.writestr(testcase.output_filename, infile_content)
+    with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zipper:
+        for file, filename in files:
+            infile_content = await s3.tools.get_file_content(bucket=file.bucket, key=file.key)
+            zipper.writestr(filename, infile_content)
 
     s3_file = await s3.temp.put_object(body=zip_buffer.getvalue())
 

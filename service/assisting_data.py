@@ -38,16 +38,17 @@ async def edit(file: typing.IO, filename: str, assisting_data_id: int) -> None:
 
 
 async def download_all(account_id: int, problem_id: int, as_attachment: bool) -> None:
-    assisting_datas = await db.assisting_data.browse(problem_id=problem_id)
-    s3_files = await db.s3_file.browse_with_uuids(assisting_data.s3_file_uuid for assisting_data in assisting_datas)
+    result = await db.assisting_data.browse(problem_id=problem_id)
+    files = []
+    for assisting_data in result:
+        s3_file = await db.s3_file.read(s3_file_uuid=assisting_data.s3_file_uuid)
+        files.append((s3_file, assisting_data.filename))
 
     zip_buffer = io.BytesIO()
-    with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_STORED, allowZip64=False) as zipper:
-        for assisting_data, s3_file in zip(assisting_datas, s3_files):
-            if not s3_file:
-                continue
-            infile_content = await s3.tools.get_file_content(bucket=s3_file.bucket, key=s3_file.key)
-            zipper.writestr(assisting_data.filename, infile_content)
+    with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zipper:
+        for file, filename in files:
+            infile_content = await s3.tools.get_file_content(bucket=file.bucket, key=file.key)
+            zipper.writestr(filename, infile_content)
 
     s3_file = await s3.temp.put_object(body=zip_buffer.getvalue())
 
