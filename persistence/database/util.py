@@ -1,3 +1,4 @@
+import json
 from typing import Sequence, Iterable, Any
 
 from base.enum import FilterOperator
@@ -13,8 +14,8 @@ ESTIMATE_COST_THRESHOLD = 5000000  # 65659969?
 async def execute_count(sql: str, use_estimate_if_cost=0, use_estimate_if_rows=0, **kwargs) -> int:
     try:
         rows, cols, cost = await get_query_estimation(sql, **kwargs)
-    except:
-        log.info('Execute count error, pass')
+    except Exception as e:
+        log.exception(e, msg='Execute count error', info_level=True)
     else:
         log.info(f'Query estimation is {rows=} {cols=} {cost=}')
         if cost > ESTIMATE_COST_THRESHOLD \
@@ -36,6 +37,7 @@ async def get_query_estimation(sql: str, **kwargs) -> tuple[int, int, int]:
             **kwargs,
             fetch=1,
     ) as (query_plan,):
+        query_plan = json.loads(query_plan)
         # Note: might raise IndexError or KeyError in this part
         rows = query_plan[0]['Plan']['Plans'][0]['Plan Rows']
         cols = query_plan[0]['Plan']['Plans'][0]['Plan Width']
