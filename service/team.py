@@ -61,7 +61,3 @@ async def add_members(team_id: int, member_roles: Sequence[Tuple[str, enum.RoleT
         await db.team.add_members(team_id=team_id, member_roles=member_roles)
     except:
         raise exc.IllegalInput
-
-
-
-

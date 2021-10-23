@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Sequence, Optional
 
-from base.enum import RoleType, FilterOperator, VerdictType
+from base.enum import RoleType, FilterOperator, VerdictType, ScoreboardType
 from base import popo, vo
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
@@ -474,165 +474,55 @@ async def peer_review_summary_receive(peer_review_id: int, request: Request,
 import persistence.database as db
 
 # ------------WIP---------------
-@dataclass
-class TeamProjectProblemScore:
-    problem_id: int
-    score: int
-    submission_id: int
 
 @dataclass
 class ViewTeamProjectScoreboardOutput:
     team_id: int
     team_name: str
     total_score: Optional[int]
-    target_problem_data: Sequence[TeamProjectProblemScore]
+    target_problem_data: Sequence[vo.ProblemScore]
 
 
 @router.get('/team-project-scoreboard/view/{scoreboard_id}')
 @enveloped
-async def view_team_project_scoreboard(scoreboard_id: int, team_id: int,mrequest: Request) -> Sequence[ViewTeamProjectScoreboardOutput]:
+async def view_team_project_scoreboard(scoreboard_id: int, team_id: int, request: Request) -> Sequence[ViewTeamProjectScoreboardOutput]:
 
     scoreboard, scoreboard_setting_data = await service.scoreboard.read_with_scoreboard_setting_data(scoreboard_id=scoreboard_id)
-    # if scoreboard.type is not enum.team_project: IllegalInput
+    if scoreboard.type is not ScoreboardType.team_project:
+        raise exc.IllegalInput
 
 
-    team_project_scoreboards = dict()
-    team = await service.team.read(team_id=team_id)
-    team_members = await service.team.browse_members(team_id=team.id)  # Sequence[do.TeamMembers]
-    team_member_ids = [team_member.member_id for team_member in team_members]
 
-    # TODO: move to service.scoreboard_setting_team_project.get_problem_normal_score
-    # for each team
-    target_problem_raw_datas = dict()
-    total_score = 0
-    for target_problem_id in scoreboard.target_problem_ids:
-
-        problem = await service.problem.read(problem_id=target_problem_id)
-
-        problem_normal, submission, judgment = await db.scoreboard_setting_team_project.\
-                get_problem_raw_score(problem_id=problem.id, team_member_ids=team_member_ids)
-
-        total_score += judgment.score
-        target_problem_raw_datas[problem_normal.id] = TeamProjectProblemScore(problem_id=problem_normal.id,
-                                                                              score=judgment.score,
-                                                                              submission_id=submission.id)
-    # end each team
-
-    team_project_scoreboards[team.id] = {
-        'team_id': team.id,
-        'team_name': team.name,
-        'total_score': total_score if scoreboard_setting_data.rank_by_total_score else None,
-        'target_problem_raw_datas': target_problem_raw_datas
-    }
-
-    # TODO: service.scoreboard_setting_team_project.calculate_problem_customized_score_by_formula
-    # input: team_project_scoreboards[], vars{baseline, team_score, class_best, class_worst}, baseline_team_id=None
-
-    # find baseline team
-    if scoreboard_setting_data.baseline_team_id is not None:
-        baseline_team = team_project_scoreboards[scoreboard_setting_data.baseline_team_id]
-
-    # to find class best / worst
-    problem_scores = dict()  # key: problem_id, value: scores[]
-    for target_problem_id in scoreboard.target_problem_ids:  # 每題
-        problem_scores[target_problem_id] = []
-        for team_id, team_project_scoreboard in team_project_scoreboards.items():  # 每組
-            problem_scores[target_problem_id].append(team_project_scoreboard['target_problem_raw_datas'][target_problem_id].score)
+    challenge = await service.challenge.read(challenge_id=scoreboard.challenge_id, include_scheduled=True)
+    class_ = await service.class_.read(class_id=challenge.class_id)
 
 
-    new_scoreboards = dict()
+    team_project_scoreboards = await service.scoreboard_setting_team_project.get_problem_raw_score(
+        class_id=class_.id,
+        team_label_filter=scoreboard_setting_data.team_label_filter,
+        target_problem_ids=scoreboard.target_problem_ids,
+        rank_by_total_score=scoreboard_setting_data.rank_by_total_score
+    )
 
-    for team_id, team_project_scoreboard in team_project_scoreboards.items():  # for each team
-        team_score = team_project_scoreboard['target_problem_raw_datas'][target_problem_id].score
 
-        new_datas = dict()
-        for target_problem_id in scoreboard.target_problem_ids:  # for each problem find 4 values
-            class_best = max(problem_scores[target_problem_id])
-            class_worst = min(problem_scores[target_problem_id])
-            baseline = baseline_team['target_problem_raw_datas'][target_problem_id].score
+    new_scoreboards = await service.scoreboard_setting_team_project.get_problem_customized_score(
+        team_project_scoreboards,
+        target_problem_ids=scoreboard.target_problem_ids,
+        scoring_formula=scoreboard_setting_data.scoring_formula,
+        rank_by_total_score=scoreboard_setting_data.rank_by_total_score,
+        baseline_team_id=scoreboard_setting_data.baseline_team_id
+    )
 
-            cal_score = await service.scoreboard_setting_team_project.calculate_score(
-                formula=scoreboard_setting_data.scoring_formula,
-                team_score=team_score,
-                class_best=class_best,
-                class_worst=class_worst,
-                baseline=baseline
-            )
-
-            new_datas[target_problem_id] = TeamProjectProblemScore(problem_id=target_problem_id,
-                                                                   score=cal_score,
-                                                                   submission_id=submission.id)
-
-        new_scoreboards[team_id] = {
-            'team_id': team_project_scoreboard['team_id'],
-            'team_name': team_project_scoreboard['team_name'],
-            'total_score': team_project_scoreboard['total_score'] if scoreboard_setting_data.rank_by_total_score else None,
-            'target_problem_raw_datas': new_datas
-        }
 
     result = []
-    for team_id, scoreboard_ in team_project_scoreboards.items():
+
+    for team_id, new_scoreboard in new_scoreboards.items():  # team_project_scoreboards.items():
         result.append(ViewTeamProjectScoreboardOutput(
-            team_id=scoreboard_['team_id'],
-            team_name=scoreboard_['team_name'],
-            total_score=scoreboard_['total_score'],
-            target_problem_data=[scoreboard_['target_problem_raw_datas'][problem_id]
+            team_id=new_scoreboard.team_id,
+            team_name=new_scoreboard.team_name,
+            total_score=new_scoreboard.total_score,
+            target_problem_data=[new_scoreboard.target_problem_raw_data[problem_id]
                                  for problem_id in scoreboard.target_problem_ids]
         ))
 
     return result
-
-
-
-
-# @router.get('/team-project-scoreboard/view/{scoreboard_id}')
-# @enveloped
-# async def view_team_project_scoreboard(scoreboard_id: int, request: Request) -> ViewGradeOutput:
-#
-#     scoreboard, scoreboard_setting_data = await service.scoreboard.read_with_scoreboard_setting_data(scoreboard_id=scoreboard_id)
-#     # if scoreboard.type is not enum.team_project: IllegalInput
-#
-#
-#     # TODO: move to service layer
-#     teams = await db.scoreboard_setting_team_project.browse_filtered_team_under_class(scoreboard_id=scoreboard_id)
-#     # teams: Sequence[do.Team]
-#
-#
-#     team_project_scoreboards = []
-#     for team in teams:
-#         team_members = await service.team.browse_members(team_id=team.id)  # Sequence[do.TeamMembers]
-#         team_member_ids = [team_member.member_id for team_member in team_members]
-#
-#         target_problem_data = []
-#         total_score = 0
-#         for target_problem_id in scoreboard.target_problem_ids:
-#
-#             problem = await service.problem.read(problem_id=target_problem_id)
-#
-#             if problem.judge_type is enum.ProblemJudgeType.normal:
-#                 problem_normal_score = await db.scoreboard_setting_team_project.\
-#                     get_problem_normal_score(problem_id=problem.id, team_member_ids=team_member_ids)
-#
-#                 total_score += problem_normal_score.score
-#                 target_problem_data.append(problem_normal_score)
-#
-#             elif problem.judge_type is enum.ProblemJudgeType.customized:
-#                 problem_customized_score = await db.scoreboard_setting_team_project.\
-#                     get_problem_customized_score(problem_id=problem.id, team_member_ids=team_member_ids)
-#
-#                 total_score += problem_customized_score.score
-#                 target_problem_data.append(problem_customized_score)
-#
-#         # TODO: change team_project_scoreboards from LIST to SEQUENCE
-#         team_project_scoreboards.append(ViewTeamProjectScoreboardOutput(
-#             team_id=team.id,
-#             team_name=team.name,
-#             total_score=total_score if scoreboard_setting_data.rank_by_total_score else None,
-#             target_problem_data=target_problem_data)
-#         )
-#
-#     return [ViewTeamProjectScoreboardOutput(
-#         team_id=team_project_scoreboard.team_id,
-#         team_name=team_project_scoreboard.team_name,
-#         total_score=team_project_scoreboard.total_score,
-#     ) for team_project_scoreboard in team_project_scoreboards]

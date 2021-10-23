@@ -3,7 +3,7 @@ View Objects
 """
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional, Sequence
+from typing import Optional, Sequence, Dict
 
 from base import enum
 
@@ -116,3 +116,25 @@ class ViewPeerReviewRecord:
     peer_review_record_ids: Sequence[Optional[int]]
     peer_review_record_scores: Sequence[Optional[int]]
     average_score: Optional[float]
+
+
+# team project scoreboard
+
+
+
+
+## for output vo
+@dataclass
+class ProblemScore:
+    problem_id: int
+    score: int
+    submission_id: int
+
+
+## processing vo
+@dataclass
+class TeamProjectRawScoreboard:
+    team_id: int
+    team_name: str
+    total_score: Optional[int]
+    target_problem_raw_data: Dict[int, ProblemScore]

@@ -102,7 +102,11 @@ async def edit_with_scoreboard(scoreboard_id: int,
 async def get_problem_raw_score(problem_id: int, team_member_ids: Sequence[int]) \
     -> Tuple[do.Problem, do.Submission, do.Judgment]:
 
-    ids_sql = '(' + ', '.join(str(team_member_id) for team_member_id in team_member_ids) + ')'
+    """
+    Return: latest problem submission of all team members (latest judgment)
+    """
+
+    member_ids_sql = '(' + ', '.join(str(team_member_id) for team_member_id in team_member_ids) + ')'
     async with SafeExecutor(
             event='get problem normal score',
             sql=fr'SELECT problem.id, problem.challenge_id, problem.challenge_label, problem.title, problem.setter_id,' 
@@ -120,7 +124,7 @@ async def get_problem_raw_score(problem_id: int, team_member_ids: Sequence[int])
                 fr' INNER JOIN judgment'
                 fr'         ON judgment.submission_id = submission.id'
                 fr'        AND judgment.id = submission_last_judgment_id(submission.id)'    
-                fr' WHERE account_id IN {ids_sql}'
+                fr' WHERE account_id IN {member_ids_sql}'
                 fr'   AND problem.id = %(problem_id)s'
                 fr'   AND submission.submit_time <= challenge.end_time'
                 fr' ORDER BY submission.submit_time DESC, submission.id DESC',
