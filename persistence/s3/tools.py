@@ -48,6 +48,13 @@ async def get_file_content(bucket: str, key: str):
     return await s3_handler.get_file_content(bucket=bucket, key=key)
 
 
+async def get_file_content_from_do(s3_file: do.S3File):
+    """
+    :return: infile content
+    """
+    return await s3_handler.get_file_content(bucket=s3_file.bucket, key=s3_file.key)
+
+
 async def upload(bucket_name: str, file: typing.IO, file_uuid: UUID) -> do.S3File:
     """
     :return: do.S3File

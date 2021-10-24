@@ -4,6 +4,8 @@ import io
 import typing
 from typing import Sequence, Tuple
 
+import asyncpg
+
 from base import enum
 import exceptions as exc
 import persistence.database as db
@@ -52,12 +54,7 @@ async def import_team(team_file: typing.IO, class_id: int, label: str):
         await db.team.add_team_and_add_member(class_id=class_id, team_label=label, datas=data)
     except UnicodeDecodeError:
         raise exc.FileDecodeError
-    except:
-        raise exc.IllegalInput
 
 
 async def add_members(team_id: int, member_roles: Sequence[Tuple[str, enum.RoleType]]) -> None:
-    try:
-        await db.team.add_members(team_id=team_id, member_roles=member_roles)
-    except:
-        raise exc.IllegalInput
+    await db.team.add_members(team_id=team_id, member_roles=member_roles)

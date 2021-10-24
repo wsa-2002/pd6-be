@@ -5,6 +5,8 @@ import io
 from typing import Tuple
 import typing
 
+import asyncpg
+
 import persistence.database as db
 import persistence.s3 as s3
 import exceptions as exc
@@ -32,8 +34,6 @@ async def import_class_grade(grade_file: typing.IO, title: str, class_id: int, u
         await db.grade.batch_add(class_id=class_id, title=title, grades=data, update_time=update_time)
     except UnicodeDecodeError:
         raise exc.FileDecodeError
-    except:
-        raise exc.IllegalInput
 
 
 async def get_template_file() -> Tuple[do.S3File, str]:

@@ -109,6 +109,30 @@ async def batch_get_account_with_default_student_id(request: Request, account_id
             for account, student_card in result]
 
 
+@router.get('/account-summary/batch-by-account-referral')
+@enveloped
+async def batch_get_account_by_account_referrals(account_referrals: pydantic.Json, request: Request) \
+        -> Sequence[BatchGetAccountOutput]:
+    """
+    ### 權限
+    - System Normal
+
+    ### Notes:
+    account_referrals: list of string
+    """
+    account_referrals = pydantic.parse_obj_as(list[str], account_referrals)
+    if not account_referrals:
+        return []
+
+    if not await rbac.validate(request.account.id, RoleType.normal):
+        raise exc.NoPermission
+
+    result = await service.account.batch_read_by_account_referrals(account_referrals=account_referrals)
+    return [BatchGetAccountOutput(id=account.id, username=account.username, real_name=account.real_name,
+                                  student_id=student_card.student_id)
+            for account, student_card in result]
+
+
 @dataclass
 class BrowseAccountWithRoleOutput:
     member_id: int

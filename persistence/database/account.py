@@ -1,4 +1,6 @@
-from typing import Tuple, Sequence
+from typing import Tuple, Sequence, Optional, Iterable
+
+import asyncpg
 
 from base import do
 from base.enum import RoleType
@@ -29,12 +31,14 @@ async def batch_add_normal(accounts: Sequence[tuple[str, str, str, str, str]], r
                       for real_name, username, pass_hash, alternative_email, nickname in accounts]
 
             value_sql, value_params = compile_values(values)
-
+        try:
             await conn.execute(
                 fr'INSERT INTO account'
                 fr'            (real_name, username, pass_hash, alternative_email, nickname, role)'
                 fr'     VALUES {value_sql}',
                 *value_params)
+        except asyncpg.exceptions.UniqueViolationError:
+            raise exc.persistence.UniqueViolationError
 
 
 async def add_normal(username: str, pass_hash: str, real_name: str, nickname: str,
@@ -300,3 +304,12 @@ async def account_referral_to_id(account_referral: str) -> int:
             fetch=1,
     ) as (account_id,):
         return account_id
+
+
+async def browse_referral_wth_ids(account_ids: Iterable[int]) -> Sequence[Optional[str]]:
+    async with SafeConnection(event='browse account referral with ids') as conn:
+        value_sql = ','.join(f'({account_id})' for account_id in account_ids)
+
+        results = await conn.fetch(fr'SELECT account_id_to_referral(account_id::INTEGER)'
+                                   fr'  FROM (VALUES {value_sql}) account_ids(account_id)')
+        return [result for result, in results]

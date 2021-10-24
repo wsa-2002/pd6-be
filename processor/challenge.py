@@ -1,8 +1,10 @@
 from dataclasses import dataclass
 from typing import Optional, Sequence
 
+from fastapi import BackgroundTasks
 from pydantic import BaseModel
 
+import log
 from base import do, enum, popo
 from base.enum import RoleType, FilterOperator, ChallengePublicizeType, ScoreboardType
 import exceptions as exc
@@ -437,3 +439,49 @@ async def get_member_submission_statistics(challenge_id: int, request: Request) 
             for member_id, problem_scores, essays in results])
 
     return model.BrowseOutputBase(data=member_submission_stat, total_count=results.__len__())
+
+
+@router.post('/challenge/{challenge_id}/all-submission')
+@enveloped
+async def download_all_submissions(challenge_id: int, request: Request, as_attachment: bool,
+                                   background_tasks: BackgroundTasks) -> None:
+    """
+    ### 權限
+    - class manager
+    """
+    challenge = await service.challenge.read(challenge_id, include_scheduled=True, ref_time=request.time)
+    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+        raise exc.NoPermission
+
+    async def background_task(*args, **kwargs):
+        try:
+            await service.challenge.download_all_submissions(*args, **kwargs)
+        except Exception as e:
+            log.exception(e)
+
+    background_tasks.add_task(background_task,
+                              account_id=request.account.id, challenge_id=challenge.id, as_attachment=as_attachment)
+    return
+
+
+@router.post('/challenge/{challenge_id}/all-plagiarism-report')
+@enveloped
+async def download_all_plagiarism_reports(challenge_id: int, request: Request, as_attachment: bool,
+                                          background_tasks: BackgroundTasks) -> None:
+    """
+    ### 權限
+    - class manager
+    """
+    challenge = await service.challenge.read(challenge_id, include_scheduled=True, ref_time=request.time)
+    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+        raise exc.NoPermission
+
+    async def background_task(*args, **kwargs):
+        try:
+            await service.challenge.check_all_submissions_moss(*args, **kwargs)
+        except Exception as e:
+            log.exception(e)
+
+    background_tasks.add_task(background_task,
+                              account_id=request.account.id, challenge_id=challenge.id, as_attachment=as_attachment)
+    return
