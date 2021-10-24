@@ -221,7 +221,9 @@ async def read_peer_review_record(peer_review_record_id: int, request: Request) 
     is_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)
     is_grader = request.account.id == peer_review_record.grader_id
     is_receiver = request.account.id == peer_review_record.receiver_id
-    if not (is_manager or is_grader or is_receiver):
+    if not (is_manager
+            or is_grader
+            or (is_receiver and challenge.end_time <= request.time)):
         raise exc.NoPermission
 
     submission = await service.submission.read(submission_id=peer_review_record.submission_id)
@@ -287,7 +289,8 @@ async def browse_account_received_peer_review_record(peer_review_id: int, accoun
 
     is_class_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)
 
-    if not (is_class_manager or (request.account.id == account_id)):
+    if not (is_class_manager
+            or (request.account.id == account_id and challenge.end_time <= request.time)):
         raise exc.NoPermission
 
     peer_review_records = await service.peer_review_record.read_by_peer_review_id(peer_review_id,
@@ -311,7 +314,8 @@ async def browse_account_reviewed_peer_review_record(peer_review_id: int, accoun
 
     is_class_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)
 
-    if not (is_class_manager or (request.account.id == account_id)):
+    if not (is_class_manager
+            or (request.account.id == account_id and challenge.end_time <= request.time)):
         raise exc.NoPermission
 
     peer_review_records = await service.peer_review_record.read_by_peer_review_id(peer_review_id,
