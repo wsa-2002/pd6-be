@@ -6,7 +6,7 @@ from . import scoreboard
 from .base import SafeExecutor, SafeConnection
 
 
-async def add_under_scoreboard(challenge_id: int, label: str, title: str, target_problem_ids: Sequence[int],
+async def add_under_scoreboard(challenge_id: int, challenge_label: str, title: str, target_problem_ids: Sequence[int],
                                type: enum.ScoreboardType, scoring_formula: str, baseline_team_id: Optional[int],
                                rank_by_total_score: bool, team_label_filter: Optional[str]) -> int:
     async with SafeConnection(event=f'add scoreboard_setting_team_project under scoreboard') as conn:
@@ -21,10 +21,10 @@ async def add_under_scoreboard(challenge_id: int, label: str, title: str, target
 
             (scoreboard_id,) = await conn.fetchrow(
                 "INSERT INTO scoreboard"
-                "            (challenge_id, label, title, target_problem_ids, type, setting_id)"
+                "            (challenge_id, challenge_label, title, target_problem_ids, type, setting_id)"
                 "     VALUES ($1, $2, $3, $4, $5, $6) "
                 "  RETURNING id",
-                challenge_id, label, title, target_problem_ids, type, team_project_scoreboard_id,
+                challenge_id, challenge_label, title, target_problem_ids, type, team_project_scoreboard_id,
             )
 
             return scoreboard_id
@@ -44,7 +44,7 @@ async def read(scoreboard_setting_team_project_id: int, include_deleted=False) -
 
 
 async def edit_with_scoreboard(scoreboard_id: int,
-                               label: str = None,
+                               challenge_label: str = None,
                                title: str = None,
                                target_problem_ids: Sequence[int] = None,
                                scoring_formula: str = None,
@@ -53,8 +53,8 @@ async def edit_with_scoreboard(scoreboard_id: int,
                                team_label_filter: Optional[str] = ...) -> None:
     scoreboard_to_updates = {}
 
-    if label is not None:
-        scoreboard_to_updates['label'] = label
+    if challenge_label is not None:
+        scoreboard_to_updates['challenge_label'] = challenge_label
     if title is not None:
         scoreboard_to_updates['title'] = title
     if target_problem_ids is not None:

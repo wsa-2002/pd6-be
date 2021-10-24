@@ -2,7 +2,6 @@ from typing import Sequence, Dict
 
 from . import scoreboard, problem
 from base import vo
-from base.enum import ProblemJudgeType
 import persistence.database as db
 
 

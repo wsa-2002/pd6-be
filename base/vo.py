@@ -122,8 +122,6 @@ class ViewPeerReviewRecord:
 # team project scoreboard
 
 
-
-
 ## for output vo
 @dataclass
 class ProblemScore:

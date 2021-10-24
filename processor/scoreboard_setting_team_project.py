@@ -20,7 +20,7 @@ router = APIRouter(
 
 
 class EditScoreboardInput(BaseModel):
-    label: str = None
+    challenge_label: str = None
     title: str = None
     target_problem_ids: Sequence[int] = None
     scoring_formula: str = None
@@ -34,7 +34,7 @@ class EditScoreboardInput(BaseModel):
 async def edit_team_project_scoreboard(scoreboard_id: int, data: EditScoreboardInput, request: Request) -> None:
 
     await service.scoreboard_setting_team_project.edit_with_scoreboard(
-        scoreboard_id=scoreboard_id, label=data.label, title=data.title, target_problem_ids=data.target_problem_ids,
+        scoreboard_id=scoreboard_id, challenge_label=data.challenge_label, title=data.title, target_problem_ids=data.target_problem_ids,
         scoring_formula=data.scoring_formula, baseline_team_id=data.baseline_team_id,
         rank_by_total_score=data.rank_by_total_score, team_label_filter=data.team_label_filter
     )

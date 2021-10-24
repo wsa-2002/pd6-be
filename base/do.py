@@ -255,7 +255,7 @@ class PeerReviewRecord:
 class Scoreboard:
     id: int
     challenge_id: int
-    label: str
+    challenge_label: str
     title: str
     target_problem_ids: Sequence[int]
     is_deleted: bool

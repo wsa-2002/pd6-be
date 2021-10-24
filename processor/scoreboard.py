@@ -23,7 +23,7 @@ router = APIRouter(
 class ReadScoreboardOutput:
     id: int
     challenge_id: int
-    label: str
+    challenge_label: str
     title: str
     target_problem_ids: Sequence[int]
     is_deleted: bool
@@ -38,7 +38,7 @@ async def read_scoreboard(scoreboard_id: int, request: Request) -> ReadScoreboar
     scoreboard, data = await service.scoreboard.read_with_scoreboard_setting_data(scoreboard_id=scoreboard_id)
     return ReadScoreboardOutput(id=scoreboard.id,
                                 challenge_id=scoreboard.challenge_id,
-                                label=scoreboard.label,
+                                challenge_label=scoreboard.challenge_label,
                                 title=scoreboard.title,
                                 target_problem_ids=scoreboard.target_problem_ids,
                                 is_deleted=scoreboard.is_deleted,
