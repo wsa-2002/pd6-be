@@ -66,7 +66,7 @@ async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Se
     return data, total_count
 
 
-async def browse_with_team_label_filter(team_label_filter: str, class_id: int) -> [Sequence[do.Team]]:
+async def browse_with_team_label_filter(team_label_filter: str, class_id: int) -> Sequence[do.Team]:
     async with SafeExecutor(
             event='browse teams with team label filter',
             sql=fr'SELECT team.id, team.name, team.class_id, team.is_deleted, team.label'

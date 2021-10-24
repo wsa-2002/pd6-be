@@ -288,6 +288,14 @@ class AddTeamProjectScoreboardInput(BaseModel):
 @enveloped
 async def add_team_project_scoreboard_under_challenge(challenge_id: int, data: AddTeamProjectScoreboardInput,
                                                       request: Request) -> model.AddOutput:
+    """
+    ### 權限
+    - Class manager
+    """
+    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
+    challenge = await service.challenge.read(challenge_id=challenge_id, include_scheduled=True, ref_time=request.time)
+    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+        raise exc.NoPermission
 
     scoreboard_id = await service.scoreboard_setting_team_project.add_under_scoreboard(
         challenge_id=challenge_id, challenge_label=data.challenge_label, title=data.title, target_problem_ids=data.target_problem_ids,

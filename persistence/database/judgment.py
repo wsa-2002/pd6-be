@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing import Sequence, Tuple
 from datetime import datetime
 
 from base import do, enum
@@ -202,3 +202,16 @@ async def browse_by_problem_class_members(problem_id: int, selection_type: enum.
                                        total_time=total_time, max_memory=max_memory, score=score, judge_time=judge_time)
                 for member_id, judgment_id, submission_id, verdict, total_time, max_memory, score, judge_time
                 in records}
+
+
+# TODO: sql
+async def get_class_last_team_submission_judgment(problem_id: int, class_id: int, team_ids: Sequence[int]) \
+    -> Sequence[Tuple[do.Team, do.submission, do.Judgment]]:
+    async with SafeExecutor(
+            event='get class last team submission judgment',
+            sql=,
+            class_id=class_id, problem_id=problem_id,
+            fetch=1,
+    ) as (id_, submission_id, verdict, total_time, max_memory, score, judge_time):
+        return do.Judgment(id=id_, submission_id=submission_id, verdict=verdict, total_time=total_time,
+                           max_memory=max_memory, score=score, judge_time=judge_time)

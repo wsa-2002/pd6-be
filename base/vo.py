@@ -122,7 +122,6 @@ class ViewPeerReviewRecord:
 # team project scoreboard
 
 
-## for output vo
 @dataclass
 class ProblemScore:
     problem_id: int
@@ -130,10 +129,9 @@ class ProblemScore:
     submission_id: int
 
 
-## processing vo
 @dataclass
-class TeamProjectRawScoreboard:
+class ViewTeamProjectScoreboard:
     team_id: int
     team_name: str
     total_score: Optional[int]
-    target_problem_raw_data: Dict[int, ProblemScore]
+    target_problem_data: Sequence[ProblemScore]

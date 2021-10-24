@@ -62,6 +62,7 @@ from . import (
     testcase,
     submission,
     judgment,
+    judge_case,
     essay,
     essay_submission,
     s3_file,
