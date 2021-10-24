@@ -174,6 +174,10 @@ async def assign_peer_review_record(peer_review_id: int, request: Request) -> As
 
     if class_role is not RoleType.normal:
         raise exc.NoPermission
+
+    if not challenge.start_time <= request.time <= challenge.end_time:
+        raise exc.NoPermission
+
     peer_review_records = await service.peer_review_record.read_by_peer_review_id(peer_review_id=peer_review.id,
                                                                                   account_id=request.account.id,
                                                                                   is_receiver=False)
@@ -258,6 +262,8 @@ async def submit_peer_review_record(peer_review_record_id: int, data: SubmitPeer
     if class_role is not RoleType.normal:  # only class normal
         raise exc.NoPermission
 
+    if not challenge.start_time <= request.time <= challenge.end_time:
+        raise exc.NoPermission
     # 檢查 score 是否在規定範圍內
     if not (peer_review.min_score <= data.score <= peer_review.max_score):
         raise exc.IllegalInput
