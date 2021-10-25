@@ -10,7 +10,7 @@ async def add(judge_code_uuid: UUID, judge_code_filename: str) -> int:
             event='add problem judge setting customized',
             sql=fr'INSERT INTO problem_judge_setting_customized'
                 fr'            (judge_code_uuid, judge_code_filename)'
-                fr'     VALUES (%(judge_code_uuid)s, %(filename)s)'
+                fr'     VALUES (%(judge_code_uuid)s, %(judge_code_filename)s)'
                 fr'  RETURNING id',
             judge_code_uuid=judge_code_uuid, judge_code_filename=judge_code_filename,
             fetch=1,
