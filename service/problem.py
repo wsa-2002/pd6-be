@@ -36,7 +36,8 @@ async def edit(problem_id: int,
 
         s3_file_uuid = await db.s3_file.add_with_do(s3_file=s3_file)
 
-        setting_id = await db.problem_judge_setting_customized.add(judge_code_uuid=s3_file_uuid, filename=str(s3_file_uuid))
+        setting_id = await db.problem_judge_setting_customized.add(judge_code_uuid=s3_file_uuid,
+                                                                   judge_code_filename=str(s3_file_uuid))
 
     await db.problem.edit(problem_id, challenge_label=challenge_label, title=title, full_score=full_score,
                           description=description, io_description=io_description, source=source, hint=hint,

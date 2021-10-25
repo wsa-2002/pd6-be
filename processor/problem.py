@@ -103,7 +103,7 @@ async def read_problem(problem_id: int, request: Request) -> ReadProblemOutput:
         judge_source=JudgeSource(
             judge_language="python 3.8",
             code_uuid=customized_setting.judge_code_uuid,
-            filename=customized_setting.filename
+            filename=customized_setting.judge_code_filename
         ) if problem.judge_type is ProblemJudgeType.customized else None
     )
 
@@ -139,7 +139,8 @@ async def edit_problem(problem_id: int, data: EditProblemInput, request: Request
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
-    if data.judge_type is ProblemJudgeType.customized and not data.judge_source:
+    if ((data.judge_type is ProblemJudgeType.customized and not data.judge_source)
+            or (data.judge_type is ProblemJudgeType.normal and data.judge_source)):
         raise exc.IllegalInput
 
     if data.judge_source and data.judge_source.judge_language != 'python 3.8':
