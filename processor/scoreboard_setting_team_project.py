@@ -19,6 +19,32 @@ router = APIRouter(
 )
 
 
+@router.get('/team-project-scoreboard/view/{scoreboard_id}')
+@enveloped
+async def view_team_project_scoreboard(scoreboard_id: int, request: Request) -> Sequence[vo.ViewTeamProjectScoreboard]:
+    """
+    ### 權限
+    - Class normal
+    """
+    scoreboard = await service.scoreboard.read(scoreboard_id=scoreboard_id)
+    challenge = await service.challenge.read(challenge_id=scoreboard.challenge_id, include_scheduled=True)
+    if not await rbac.validate(request.account.id, RoleType.normal, class_id=challenge.class_id):
+        raise exc.NoPermission
+
+    scoreboard, scoreboard_setting_data = await service.scoreboard.read_with_scoreboard_setting_data(scoreboard_id=scoreboard_id)
+
+    challenge = await service.challenge.read(challenge_id=scoreboard.challenge_id, include_scheduled=True)
+    class_ = await service.class_.read(class_id=challenge.class_id)
+
+    result = await service.scoreboard_setting_team_project.view_team_scoreboard(scoreboard_id=scoreboard_id)
+    return [vo.ViewTeamProjectScoreboard(
+        team_id=team_project_scoreboard.team_id,
+        team_name=team_project_scoreboard.team_name,
+        total_score=team_project_scoreboard.total_score if scoreboard_setting_data.rank_by_total_score else None,
+        target_problem_data=team_project_scoreboard.target_problem_data)
+    for team_project_scoreboard in result]
+
+
 class EditScoreboardInput(BaseModel):
     challenge_label: str = None
     title: str = None
@@ -48,20 +74,7 @@ async def edit_team_project_scoreboard(scoreboard_id: int, data: EditScoreboardI
     )
 
 
-@router.get('/team-project-scoreboard/view/{scoreboard_id}')
-@enveloped
-async def view_team_project_scoreboard(scoreboard_id: int, request: Request) -> Sequence[vo.ViewTeamProjectScoreboard]:
 
-    scoreboard, scoreboard_setting_data = await service.scoreboard.read_with_scoreboard_setting_data(scoreboard_id=scoreboard_id)
-    if scoreboard.type is not ScoreboardType.team_project:
-        raise exc.IllegalInput
-
-    challenge = await service.challenge.read(challenge_id=scoreboard.challenge_id, include_scheduled=True)
-    class_ = await service.class_.read(class_id=challenge.class_id)
-
-    result = await service.scoreboard_setting_team_project.view_team_scoreboard(scoreboard_id=scoreboard_id)
-
-    return result
 
 
 

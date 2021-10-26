@@ -9,7 +9,6 @@ add_under_scoreboard = db.scoreboard_setting_team_project.add_under_scoreboard
 edit_with_scoreboard = db.scoreboard_setting_team_project.edit_with_scoreboard
 
 
-import log
 async def calculate_score(team_raw_score: dict[int, int], formula: str,
                           baseline_team_id: int = None) -> dict[int, int]:
     """
@@ -20,18 +19,18 @@ async def calculate_score(team_raw_score: dict[int, int], formula: str,
     if baseline_team_id is not None:
         baseline = team_raw_score[baseline_team_id]
 
-    team_score = {team_id: 0 for team_id, raw_score in team_raw_score.items()}
-    for team_id, raw_score in team_raw_score.items():
+    team_score_dict = dict()
+    for team_id in team_raw_score:
         team_score = team_raw_score[team_id]
-        team_score[team_id] = eval(formula)
+        team_score_dict[team_id] = eval(formula)
 
-    return team_score
+    return team_score_dict
 
 
 async def view_team_scoreboard(scoreboard_id: int) -> Sequence[vo.ViewTeamProjectScoreboard]:
 
     scoreboard, scoreboard_setting_data = await service.scoreboard.read_with_scoreboard_setting_data(scoreboard_id=scoreboard_id)
-    challenge = await service.challenge.read(challenge_id=scoreboard.challenge_id,include_scheduled=True)
+    challenge = await service.challenge.read(challenge_id=scoreboard.challenge_id, include_scheduled=True)
     teams = await db.team.browse_with_team_label_filter(team_label_filter=scoreboard_setting_data.team_label_filter, class_id=challenge.class_id)
 
     team_data = {team.id: [] for team in teams}
@@ -57,7 +56,7 @@ async def view_team_scoreboard(scoreboard_id: int) -> Sequence[vo.ViewTeamProjec
         for team in teams:
             team_data[team.id].append(vo.ProblemScore(problem_id=target_problem_id,
                                                       score=team_score_problem[team.id],
-                                                      submission_id=team_submission[team.id]))
+                                                      submission_id=team_submission[team.id].id))
 
     return [vo.ViewTeamProjectScoreboard(team_id=team.id,
                                          team_name=team.name,
