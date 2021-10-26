@@ -27,4 +27,4 @@ async def read_with_scoreboard_setting_data(scoreboard_id: int) -> Tuple[do.Scor
                                                                    baseline_team_id=result.baseline_team_id,
                                                                    rank_by_total_score=result.rank_by_total_score,
                                                                    team_label_filter=result.team_label_filter)
-    return (scoreboard, scoreboard_setting_data)
+    return scoreboard, scoreboard_setting_data

@@ -68,9 +68,10 @@ async def edit_team_project_scoreboard(scoreboard_id: int, data: EditScoreboardI
         raise exc.NoPermission
 
     await service.scoreboard_setting_team_project.edit_with_scoreboard(
-        scoreboard_id=scoreboard_id, challenge_label=data.challenge_label, title=data.title, target_problem_ids=data.target_problem_ids,
-        scoring_formula=data.scoring_formula, baseline_team_id=data.baseline_team_id,
-        rank_by_total_score=data.rank_by_total_score, team_label_filter=data.team_label_filter
+        scoreboard_id=scoreboard_id, challenge_label=data.challenge_label, title=data.title,
+        target_problem_ids=data.target_problem_ids, scoring_formula=data.scoring_formula,
+        baseline_team_id=data.baseline_team_id, rank_by_total_score=data.rank_by_total_score,
+        team_label_filter=data.team_label_filter
     )
 
 

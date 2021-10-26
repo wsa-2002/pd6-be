@@ -31,7 +31,8 @@ async def view_team_scoreboard(scoreboard_id: int) -> Sequence[vo.ViewTeamProjec
 
     scoreboard, scoreboard_setting_data = await service.scoreboard.read_with_scoreboard_setting_data(scoreboard_id=scoreboard_id)
     challenge = await service.challenge.read(challenge_id=scoreboard.challenge_id, include_scheduled=True)
-    teams = await db.team.browse_with_team_label_filter(team_label_filter=scoreboard_setting_data.team_label_filter, class_id=challenge.class_id)
+    teams = await db.team.browse_with_team_label_filter(team_label_filter=scoreboard_setting_data.team_label_filter,
+                                                        class_id=challenge.class_id)
 
     team_data = {team.id: [] for team in teams}
 
@@ -62,7 +63,7 @@ async def view_team_scoreboard(scoreboard_id: int) -> Sequence[vo.ViewTeamProjec
                                          team_name=team.name,
                                          total_score=sum([problem_score.score for problem_score in team_data[team.id]]),
                                          target_problem_data=[problem_score for problem_score in team_data[team.id]])
-             for team in teams]
+            for team in teams]
 
 
 
