@@ -3,7 +3,7 @@ View Objects
 """
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional, Sequence, Dict
+from typing import Optional, Sequence
 
 from base import enum
 
