@@ -50,7 +50,7 @@ async def edit_team_project_scoreboard(scoreboard_id: int, data: EditScoreboardI
 
 @router.get('/team-project-scoreboard/view/{scoreboard_id}')
 @enveloped
-async def view_team_project_scoreboard(scoreboard_id: int, team_id: int, request: Request) -> Sequence[ViewTeamProjectScoreboardOutput]:
+async def view_team_project_scoreboard(scoreboard_id: int, request: Request) -> Sequence[vo.ViewTeamProjectScoreboard]:
 
     scoreboard, scoreboard_setting_data = await service.scoreboard.read_with_scoreboard_setting_data(scoreboard_id=scoreboard_id)
     if scoreboard.type is not ScoreboardType.team_project:

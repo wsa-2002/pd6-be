@@ -5,7 +5,7 @@ from base import do, enum
 from .base import SafeExecutor
 
 
-async def batch_get_with_judgment(testcase_id: int, judgment_ids: list[int]) -> Sequence[do.JudgeCase]:
+async def batch_get_with_judgment(testcase_id: int, judgment_ids: list[int]) -> dict[int, do.JudgeCase]:
     cond_sql = ', '.join(str(judgment_id) for judgment_id in judgment_ids)
     async with SafeExecutor(
             event='batch get judge case with judgment ids',
@@ -20,6 +20,7 @@ async def batch_get_with_judgment(testcase_id: int, judgment_ids: list[int]) -> 
             fetch='all',
             raise_not_found=False,
     ) as records:
-        return [do.JudgeCase(id=id_, testcase_id=testcase_id, verdict=verdict,
-                             time_lapse=time_lapse, peak_memory=peak_memory, score=score)
-                for (id_, testcase_id, verdict, time_lapse, peak_memory, score) in records]
+        return {judgment_id: do.JudgeCase(judgment_id=judgment_id, testcase_id=testcase_id, verdict=verdict,
+                                          time_lapse=time_lapse, peak_memory=peak_memory, score=score)
+                for (judgment_id, testcase_id, verdict, time_lapse, peak_memory, score)
+                in records}
