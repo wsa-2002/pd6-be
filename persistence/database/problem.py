@@ -181,7 +181,7 @@ async def edit(problem_id: int,
                judge_type: enum.ProblemJudgeType,
                challenge_label: str = None,
                title: str = None,
-               setting_id: Optional[int] = None,
+               setting_id: Optional[int] = ...,
                full_score: Optional[int] = ...,
                description: Optional[str] = ...,
                io_description: Optional[str] = ...,
@@ -193,7 +193,7 @@ async def edit(problem_id: int,
         to_updates['challenge_label'] = challenge_label
     if title is not None:
         to_updates['title'] = title
-    if setting_id is not None:
+    if setting_id is not ...:
         to_updates['setting_id'] = setting_id
     if full_score is not ...:
         to_updates['full_score'] = full_score

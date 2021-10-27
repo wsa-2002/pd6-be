@@ -150,7 +150,7 @@ async def edit_problem(problem_id: int, data: EditProblemInput, request: Request
                                       full_score=data.full_score, testcase_disabled=data.testcase_disabled,
                                       description=data.description, io_description=data.io_description,
                                       source=data.source, hint=data.hint, judge_type=data.judge_type,
-                                      judge_code=data.judge_source.judge_code)
+                                      judge_code=data.judge_source.judge_code if data.judge_source else None)
 
 
 @router.delete('/problem/{problem_id}')
