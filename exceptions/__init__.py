@@ -48,6 +48,12 @@ class IllegalScoreboardSettingInput(_CauseMixin, PdogsException):
     """
 
 
+class IllegalFormula(PdogsException):
+    """
+    A malformed team project score formula is given
+    """
+
+
 class FileDecodeError(PdogsException):
     """
     File format not in utf-8

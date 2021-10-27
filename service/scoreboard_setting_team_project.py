@@ -47,7 +47,10 @@ async def calculate_score(team_raw_score: dict[int, int], formula: str,
     team_score_dict = dict()
     for team_id in team_raw_score:
         team_score = team_raw_score[team_id]
-        team_score_dict[team_id] = eval(formula)
+        try:
+            team_score_dict[team_id] = eval(formula)
+        except TypeError or NameError or ZeroDivisionError:
+            raise exc.IllegalFormula
 
     return team_score_dict
 
