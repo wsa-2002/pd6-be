@@ -1,12 +1,37 @@
-from typing import Sequence, Tuple
+from typing import Sequence, Tuple, Optional
 
 import service.scoreboard
-from base import do, vo
+from base import do, vo, enum
 import persistence.database as db
+import exceptions as exc
 
 
-add_under_scoreboard = db.scoreboard_setting_team_project.add_under_scoreboard
 edit_with_scoreboard = db.scoreboard_setting_team_project.edit_with_scoreboard
+
+
+async def add_under_scoreboard(challenge_id: int, challenge_label: str, title: str, target_problem_ids: Sequence[int],
+                               type: enum.ScoreboardType, scoring_formula: str, baseline_team_id: Optional[int],
+                               rank_by_total_score: bool, team_label_filter: Optional[str]) -> int:
+
+    # Exception Handling
+    scoreboard_challenge = await db.challenge.read(challenge_id=challenge_id, include_scheduled=True)
+
+    if baseline_team_id is not None:
+        baseline_team = await db.team.read(team_id=baseline_team_id, include_deleted=True)
+        if baseline_team.class_id is not scoreboard_challenge.class_id:
+            raise exc.IllegalScoreboardSettingInput
+
+    for problem_id in target_problem_ids:
+        problem = await db.problem.read(problem_id=problem_id, include_deleted=True)
+        challenge = await db.challenge.read(challenge_id=problem.challenge_id, include_scheduled=True)
+        if challenge.class_id is not scoreboard_challenge.class_id:
+            raise exc.IllegalScoreboardSettingInput
+
+    return await db.scoreboard_setting_team_project.add_under_scoreboard(
+        challenge_id=challenge_id, challenge_label=challenge_label, title=title, target_problem_ids=target_problem_ids,
+        type=type, scoring_formula=scoring_formula, baseline_team_id=baseline_team_id,
+        rank_by_total_score=rank_by_total_score, team_label_filter=team_label_filter,
+    )
 
 
 async def calculate_score(team_raw_score: dict[int, int], formula: str,

@@ -42,6 +42,12 @@ class IllegalInput(_CauseMixin, PdogsException):
     """
 
 
+class IllegalScoreboardSettingInput(_CauseMixin, PdogsException):
+    """
+    Target_problem_ids and baseline_team_id out of class is given
+    """
+
+
 class FileDecodeError(PdogsException):
     """
     File format not in utf-8

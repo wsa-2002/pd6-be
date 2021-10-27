@@ -2,7 +2,7 @@ from typing import Sequence, Optional, Tuple
 
 from base import do, enum
 
-from . import scoreboard
+from . import scoreboard, team, challenge
 from .base import SafeExecutor, SafeConnection
 
 
