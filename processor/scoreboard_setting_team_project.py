@@ -33,16 +33,13 @@ async def view_team_project_scoreboard(scoreboard_id: int, request: Request) -> 
 
     scoreboard, scoreboard_setting_data = await service.scoreboard.read_with_scoreboard_setting_data(scoreboard_id=scoreboard_id)
 
-    challenge = await service.challenge.read(challenge_id=scoreboard.challenge_id, include_scheduled=True)
-    class_ = await service.class_.read(class_id=challenge.class_id)
-
     result = await service.scoreboard_setting_team_project.view_team_scoreboard(scoreboard_id=scoreboard_id)
     return [vo.ViewTeamProjectScoreboard(
         team_id=team_project_scoreboard.team_id,
         team_name=team_project_scoreboard.team_name,
         total_score=team_project_scoreboard.total_score if scoreboard_setting_data.rank_by_total_score else None,
         target_problem_data=team_project_scoreboard.target_problem_data)
-    for team_project_scoreboard in result]
+        for team_project_scoreboard in result]
 
 
 class EditScoreboardInput(BaseModel):

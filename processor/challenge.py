@@ -275,7 +275,6 @@ class AddTeamProjectScoreboardInput(BaseModel):
     challenge_label: str
     title: str
     target_problem_ids: Sequence[int]
-    type: ScoreboardType
 
     # team_project_scoreboard
     scoring_formula: str
@@ -299,7 +298,7 @@ async def add_team_project_scoreboard_under_challenge(challenge_id: int, data: A
 
     scoreboard_id = await service.scoreboard_setting_team_project.add_under_scoreboard(
         challenge_id=challenge_id, challenge_label=data.challenge_label, title=data.title, target_problem_ids=data.target_problem_ids,
-        type=data.type, scoring_formula=data.scoring_formula, baseline_team_id=data.baseline_team_id,
+        type=ScoreboardType.team_project, scoring_formula=data.scoring_formula, baseline_team_id=data.baseline_team_id,
         rank_by_total_score=data.rank_by_total_score, team_label_filter=data.team_label_filter,
     )
 
