@@ -205,7 +205,7 @@ async def browse_by_problem_class_members(problem_id: int, selection_type: enum.
 
 
 async def get_class_last_team_submission_judgment(problem_id: int, class_id: int, team_ids: Sequence[int]) \
-    -> Tuple[dict[int, do.Submission], dict[int, do.Judgment]]:
+        -> Tuple[dict[int, do.Submission], dict[int, do.Judgment]]:
     cond_sql = ', '.join(str(team_id) for team_id in team_ids)
     async with SafeExecutor(
             event='get class last team submission judgment',
@@ -230,7 +230,7 @@ async def get_class_last_team_submission_judgment(problem_id: int, class_id: int
                 fr' INNER JOIN team'
                 fr'         ON team.id = team_member.team_id'
                 fr'        AND team.class_id = %(class_id)s'
-                fr'        AND team.id IN ({cond_sql})'
+                fr'{f"     AND team.id IN ({cond_sql})" if cond_sql else ""}'
                 fr'        AND NOT team.is_deleted'
                 fr' INNER JOIN submission'
                 fr'         ON team_member.member_id = submission.account_id'

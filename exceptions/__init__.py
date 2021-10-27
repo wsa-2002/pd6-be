@@ -42,18 +42,6 @@ class IllegalInput(_CauseMixin, PdogsException):
     """
 
 
-class IllegalScoreboardSettingInput(_CauseMixin, PdogsException):
-    """
-    Target_problem_ids and baseline_team_id out of class is given
-    """
-
-
-class IllegalFormula(PdogsException):
-    """
-    A malformed team project score formula is given
-    """
-
-
 class FileDecodeError(PdogsException):
     """
     File format not in utf-8
@@ -63,6 +51,21 @@ class FileDecodeError(PdogsException):
 class MaxPeerReviewCount(PdogsException):
     """
     User had reached the maximum of peer review count
+    """
+
+
+# Team Project Scoreboard
+
+
+class InvalidFormula(PdogsException):
+    """
+    A malformed scoring formula is given
+    """
+
+
+class InvalidTeamLabelFilter(PdogsException):
+    """
+    A malformed team label filter is given
     """
 
 
