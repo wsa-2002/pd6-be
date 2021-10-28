@@ -14,7 +14,7 @@ async def add(challenge_id: int, challenge_label: str,
     async with SafeExecutor(
             event='Add problem',
             sql="INSERT INTO problem"
-                "            (challenge_id, challenge_label, judge_type"
+                "            (challenge_id, challenge_label, judge_type,"
                 "             title, setter_id, full_score, description, io_description,"
                 "             source, hint)"
                 "     VALUES (%(challenge_id)s, %(challenge_label)s, %(judge_type)s"
