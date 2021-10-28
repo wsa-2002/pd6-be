@@ -102,7 +102,7 @@ async def read_problem(problem_id: int, request: Request) -> ReadProblemOutput:
         is_deleted=problem.is_deleted,
         judge_source=JudgeSource(
             judge_language="python 3.8",
-            code_uuid=customized_setting.judge_code_uuid,
+            code_uuid=customized_setting.judge_code_file_uuid,
             filename=customized_setting.judge_code_filename
         ) if problem.judge_type is ProblemJudgeType.customized else None
     )

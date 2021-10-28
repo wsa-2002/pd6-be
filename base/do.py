@@ -134,7 +134,7 @@ class Problem:
 @dataclass
 class ProblemJudgeSettingCustomized:
     id: int
-    judge_code_uuid: UUID
+    judge_code_file_uuid: UUID
     judge_code_filename: str
 
 
