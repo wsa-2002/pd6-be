@@ -104,7 +104,7 @@ async def read_problem(problem_id: int, request: Request) -> ReadProblemOutput:
             judge_language="python 3.8",
             code_uuid=customized_setting.judge_code_file_uuid,
             filename=customized_setting.judge_code_filename
-        ) if problem.judge_type is ProblemJudgeType.customized else None
+        ) if problem.judge_type is ProblemJudgeType.customized and class_role is RoleType.manager else None
     )
 
 
