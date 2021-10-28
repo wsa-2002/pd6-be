@@ -143,7 +143,7 @@ async def edit_problem(problem_id: int, data: EditProblemInput, request: Request
             or (data.judge_type is ProblemJudgeType.normal and data.judge_source)):
         raise exc.IllegalInput
 
-    if data.judge_source and data.judge_source.judge_language != 'python 3.8':
+    if data.judge_source and (data.judge_source.judge_language != 'python 3.8' or not data.judge_source.judge_code):
         raise exc.IllegalInput
 
     return await service.problem.edit(problem_id, challenge_label=data.challenge_label, title=data.title,
