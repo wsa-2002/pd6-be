@@ -17,7 +17,7 @@ async def add(challenge_id: int, challenge_label: str,
                 "            (challenge_id, challenge_label, judge_type,"
                 "             title, setter_id, full_score, description, io_description,"
                 "             source, hint)"
-                "     VALUES (%(challenge_id)s, %(challenge_label)s, %(judge_type)s"
+                "     VALUES (%(challenge_id)s, %(challenge_label)s, %(judge_type)s,"
                 "             %(title)s, %(setter_id)s, %(full_score)s, %(description)s, %(io_description)s,"
                 "             %(source)s, %(hint)s)"
                 "  RETURNING id",
