@@ -211,7 +211,6 @@ async def add_members(team_id: int, member_roles: Sequence[Tuple[str, RoleType]]
             log.info(f'Fetched account ids: {account_ids}')
 
             # 2. perform insert
-
             value_sql, value_params = compile_values(sorted((
                 (team_id, account_id, role)
                 for(account_id,), (_, role) in zip(account_ids, member_roles)
