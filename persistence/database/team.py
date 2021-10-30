@@ -12,6 +12,10 @@ from .base import SafeExecutor, SafeConnection
 from .util import execute_count, compile_filters, compile_values
 from .account import account_referral_to_id
 
+import log
+from operator import itemgetter
+from itertools import chain
+
 
 async def add(name: str, class_id: int, label: str) -> int:
     async with SafeExecutor(
@@ -176,22 +180,81 @@ async def add_member(team_id: int, account_referral: str, role: RoleType):
         pass
 
 
-async def add_members(team_id: int, member_roles: Sequence[Tuple[str, RoleType]]):
+# async def add_members(team_id: int, member_roles: Sequence[Tuple[str, RoleType]]):
+#     async with SafeConnection(event=f'add members to team {team_id=}') as conn:
+#         async with conn.transaction():
+#             if member_roles:
+#                 values = [(team_id,
+#                            await account_referral_to_id(account_referral),
+#                            role) for account_referral, role in member_roles]
+#
+#                 value_sql, value_params = compile_values(values=values)
+#             try:
+#                 await conn.execute(fr'INSERT INTO team_member'
+#                                    fr'            (team_id, member_id, role)'
+#                                    fr'     VALUES {value_sql}',
+#                                    *value_params)
+#             except asyncpg.exceptions.UniqueViolationError:
+#                 raise exc.persistence.UniqueViolationError
+
+
+async def add_members(team_id: int, member_roles: Sequence[Tuple[str, RoleType]]) -> Sequence[bool]:
+    """
+    :return: a list of bool indicating if the insertion is successful (true) or not (false)
+    """
+    if not member_roles:
+        return []
+
     async with SafeConnection(event=f'add members to team {team_id=}') as conn:
         async with conn.transaction():
-            if member_roles:
-                values = [(team_id,
-                           await account_referral_to_id(account_referral),
-                           role) for account_referral, role in member_roles]
+            # 1. get the referrals
+            value_sql, value_params = compile_values([
+                (account_referral,)
+                for account_referral, _ in member_roles
+            ])
+            log.info(f'Fetching account ids with values {value_params}')
+            account_ids: list[list[int]] = await conn.fetch(
+                fr'  WITH account_referrals (account_referral)'
+                fr'    AS (VALUES {value_sql})'
+                fr'SELECT account_referral_to_id(account_referral)'
+                fr'  FROM account_referrals',
+                *value_params,
+            )
+            log.info(f'Fetched account ids: {account_ids}')
+            account_ids: list[list[int]] = await conn.fetch(
+                fr'  WITH account_referrals (account_referral)'
+                fr'    AS (VALUES {value_sql})'
+                fr'SELECT account_referral_to_id(account_referral)'
+                fr'  FROM account_referrals',
+                *value_params,
+            )
+            log.info(f'Fetched account ids: {account_ids}')
 
-                value_sql, value_params = compile_values(values=values)
-            try:
-                await conn.execute(fr'INSERT INTO team_member'
-                                   fr'            (team_id, member_id, role)'
-                                   fr'     VALUES {value_sql}',
-                                   *value_params)
-            except asyncpg.exceptions.UniqueViolationError:
-                raise exc.persistence.UniqueViolationError
+            # 2. perform insert
+
+            value_sql, value_params = compile_values(sorted((
+                (team_id, account_id, role)
+                for(account_id,), (_, role) in zip(account_ids, member_roles)
+                if account_id is not None
+            ), key=itemgetter(2), reverse=True))
+            log.info(f'Inserting new team members with values {value_params}')
+
+            if not value_sql:
+                raise exc.IllegalInput
+
+            inserted_account_ids: list[list[int]] = await conn.fetch(
+                fr' INSERT INTO team_member'
+                fr'            (team_id, member_id, role)'
+                fr'     VALUES {value_sql}'
+                fr' ON CONFLICT DO NOTHING'
+                fr'   RETURNING member_id',
+                *value_params,
+            )
+            log.info(f'Inserted {len(inserted_account_ids)} out of {len(account_ids)} given new team members')
+
+        # 3. check the failed account ids
+        success_account_ids = set(chain(*inserted_account_ids))
+        return [account_id in success_account_ids for account_id in chain(*account_ids)]
 
 
 async def add_team_and_add_member(class_id: int, team_label: str,

@@ -56,8 +56,8 @@ async def import_team(team_file: typing.IO, class_id: int, label: str):
         raise exc.FileDecodeError
 
 
-async def add_members(team_id: int, member_roles: Sequence[Tuple[str, enum.RoleType]]) -> None:
-    await db.team.add_members(team_id=team_id, member_roles=member_roles)
+async def add_members(team_id: int, member_roles: Sequence[Tuple[str, enum.RoleType]]) -> Sequence[bool]:
+    return await db.team.add_members(team_id=team_id, member_roles=member_roles)
 
 
 
