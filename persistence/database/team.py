@@ -1,20 +1,18 @@
+from itertools import chain
+from operator import itemgetter
 from typing import Sequence, Tuple
 
 import asyncpg
 
 import exceptions as exc
+import log
 from base import do
 from base.enum import RoleType, FilterOperator
 from base.popo import Filter, Sorter
 
-
 from .base import SafeExecutor, SafeConnection
 from .util import execute_count, compile_filters, compile_values
 from .account import account_referral_to_id
-
-import log
-from operator import itemgetter
-from itertools import chain
 
 
 async def add(name: str, class_id: int, label: str) -> int:
@@ -178,24 +176,6 @@ async def add_member(team_id: int, account_referral: str, role: RoleType):
             team_id=team_id, account_referral=account_referral, role=role,
     ):
         pass
-
-
-# async def add_members(team_id: int, member_roles: Sequence[Tuple[str, RoleType]]):
-#     async with SafeConnection(event=f'add members to team {team_id=}') as conn:
-#         async with conn.transaction():
-#             if member_roles:
-#                 values = [(team_id,
-#                            await account_referral_to_id(account_referral),
-#                            role) for account_referral, role in member_roles]
-#
-#                 value_sql, value_params = compile_values(values=values)
-#             try:
-#                 await conn.execute(fr'INSERT INTO team_member'
-#                                    fr'            (team_id, member_id, role)'
-#                                    fr'     VALUES {value_sql}',
-#                                    *value_params)
-#             except asyncpg.exceptions.UniqueViolationError:
-#                 raise exc.persistence.UniqueViolationError
 
 
 async def add_members(team_id: int, member_roles: Sequence[Tuple[str, RoleType]]) -> Sequence[bool]:
