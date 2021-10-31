@@ -1,4 +1,4 @@
-from fastapi import File, UploadFile
+from fastapi import File, UploadFile, Query
 from pydantic import BaseModel
 
 from base.enum import RoleType
@@ -52,8 +52,8 @@ async def read_testcase(testcase_id: int, request: Request) -> ReadTestcaseOutpu
 class EditTestcaseInput(BaseModel):
     is_sample: bool = None
     score: int = None
-    time_limit: int = None
-    memory_limit: int = None
+    time_limit: int = Query(None,gt=0)
+    memory_limit: int = Query(None,gt=0)
     is_disabled: bool = None
     label: str = None
 
