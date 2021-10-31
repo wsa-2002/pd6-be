@@ -52,8 +52,8 @@ async def read_testcase(testcase_id: int, request: Request) -> ReadTestcaseOutpu
 class EditTestcaseInput(BaseModel):
     is_sample: bool = None
     score: int = None
-    time_limit: int = Query(None,gt=0)
-    memory_limit: int = Query(None,gt=0)
+    time_limit: int = Query(None, gt=0)
+    memory_limit: int = Query(None, gt=0)
     is_disabled: bool = None
     label: str = None
 

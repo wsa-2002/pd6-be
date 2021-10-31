@@ -111,8 +111,8 @@ async def delete_problem(problem_id: int, request: Request):
 class AddTestcaseInput(BaseModel):
     is_sample: bool
     score: int
-    time_limit: int = Query(...,gt=0)
-    memory_limit: int = Query(...,gt=0)
+    time_limit: int = Query(..., gt=0)
+    memory_limit: int = Query(..., gt=0)
     is_disabled: bool
     label: str
 
