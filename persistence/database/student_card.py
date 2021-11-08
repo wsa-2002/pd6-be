@@ -9,21 +9,21 @@ from .util import execute_count, compile_filters
 
 async def add(account_id: int, institute_id: int, student_id: str, email: str) \
         -> int:
-    async with SafeConnection(event='insert student card') as conn:
-        async with conn.transaction():
-            await conn.execute(r'UPDATE student_card'
-                               r'   SET is_default = $1'
-                               r' WHERE account_id = $2'
-                               r'   AND is_default = $3',
-                               False, account_id, True)
+    async with SafeConnection(event='insert student card',
+                              auto_transaction=True) as conn:
+        await conn.execute(r'UPDATE student_card'
+                           r'   SET is_default = $1'
+                           r' WHERE account_id = $2'
+                           r'   AND is_default = $3',
+                           False, account_id, True)
 
-            (id_,) = await conn.fetchrow(r'INSERT INTO student_card'
-                                         r'            (account_id, institute_id, student_id, email, is_default)'
-                                         r'     VALUES ($1, $2, $3, $4, $5)'
-                                         r'  RETURNING id',
-                                         account_id, institute_id, student_id, email, True)
+        (id_,) = await conn.fetchrow(r'INSERT INTO student_card'
+                                     r'            (account_id, institute_id, student_id, email, is_default)'
+                                     r'     VALUES ($1, $2, $3, $4, $5)'
+                                     r'  RETURNING id',
+                                     account_id, institute_id, student_id, email, True)
 
-            return id_
+        return id_
 
 
 async def read(student_card_id: int) -> do.StudentCard:

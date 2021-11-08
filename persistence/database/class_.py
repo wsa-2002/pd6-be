@@ -166,15 +166,15 @@ async def delete(class_id: int) -> None:
 
 
 async def delete_cascade(class_id: int) -> None:
-    async with SafeConnection(event=f'cascade delete from class {class_id=}') as conn:
-        async with conn.transaction():
-            await team.delete_cascade_from_class(class_id=class_id, cascading_conn=conn)
-            await challenge.delete_cascade_from_class(class_id=class_id, cascading_conn=conn)
+    async with SafeConnection(event=f'cascade delete from class {class_id=}',
+                              auto_transaction=True) as conn:
+        await team.delete_cascade_from_class(class_id=class_id, cascading_conn=conn)
+        await challenge.delete_cascade_from_class(class_id=class_id, cascading_conn=conn)
 
-            await conn.execute(fr'UPDATE class'
-                               fr'   SET is_deleted = $1'
-                               fr' WHERE id = $2',
-                               True, class_id)
+        await conn.execute(fr'UPDATE class'
+                           fr'   SET is_deleted = $1'
+                           fr' WHERE id = $2',
+                           True, class_id)
 
 
 async def delete_cascade_from_course(course_id: int, cascading_conn=None) -> None:
@@ -182,9 +182,9 @@ async def delete_cascade_from_course(course_id: int, cascading_conn=None) -> Non
         await _delete_cascade_from_course(course_id, conn=cascading_conn)
         return
 
-    async with SafeConnection(event=f'cascade delete class from course {course_id=}') as conn:
-        async with conn.transaction():
-            await _delete_cascade_from_course(course_id, conn=conn)
+    async with SafeConnection(event=f'cascade delete class from course {course_id=}',
+                              auto_transaction=True) as conn:
+        await _delete_cascade_from_course(course_id, conn=conn)
 
 
 async def _delete_cascade_from_course(course_id: int, conn) -> None:
@@ -211,7 +211,8 @@ async def add_member(class_id: int, member_id: int, role: RoleType):
 
 
 async def add_members(class_id: int, member_roles: Collection[Tuple[int, RoleType]]):
-    async with SafeConnection(event='add members to class') as conn:
+    async with SafeConnection(event='add members to class',
+                              auto_transaction=True) as conn:
         await conn.executemany(
             command=r'INSERT INTO class_member'
                     r'            (class_id, member_id, role)'
@@ -316,45 +317,45 @@ async def replace_members(class_id: int, member_roles: Sequence[Tuple[str, RoleT
     if not member_roles:
         return []
 
-    async with SafeConnection(event=f'replace members from class {class_id=}') as conn:
-        async with conn.transaction():
-            # 1. get the referrals
-            value_sql, value_params = compile_values([
-                (account_referral,)
-                for account_referral, _ in member_roles
-            ])
-            log.info(f'Fetching account ids with values {value_params}')
-            account_ids: list[list[int]] = await conn.fetch(
-                fr'  WITH account_referrals (account_referral)'
-                fr'    AS (VALUES {value_sql})'
-                fr'SELECT account_referral_to_id(account_referral)'
-                fr'  FROM account_referrals',
-                *value_params,
-            )
-            log.info(f'Fetched account ids: {account_ids}')
+    async with SafeConnection(event=f'replace members from class {class_id=}',
+                              auto_transaction=True) as conn:
+        # 1. get the referrals
+        value_sql, value_params = compile_values([
+            (account_referral,)
+            for account_referral, _ in member_roles
+        ])
+        log.info(f'Fetching account ids with values {value_params}')
+        account_ids: list[list[int]] = await conn.fetch(
+            fr'  WITH account_referrals (account_referral)'
+            fr'    AS (VALUES {value_sql})'
+            fr'SELECT account_referral_to_id(account_referral)'
+            fr'  FROM account_referrals',
+            *value_params,
+        )
+        log.info(f'Fetched account ids: {account_ids}')
 
-            # 2. remove the old members
-            await conn.execute(fr'DELETE FROM class_member'
-                               fr'      WHERE class_id = $1',
-                               class_id)
-            log.info('Removed old class members')
+        # 2. remove the old members
+        await conn.execute(fr'DELETE FROM class_member'
+                           fr'      WHERE class_id = $1',
+                           class_id)
+        log.info('Removed old class members')
 
-            # 3. perform insert
-            value_sql, value_params = compile_values(sorted((
-                (class_id, account_id, role)
-                for (account_id,), (_, role) in zip(account_ids, member_roles)
-                if account_id is not None
-            ), key=itemgetter(2), reverse=True))
-            log.info(f'Inserting new class members with values {value_params}')
-            inserted_account_ids: list[list[int]] = await conn.fetch(
-                fr' INSERT INTO class_member'
-                fr'             (class_id, member_id, role)'
-                fr'      VALUES {value_sql}'
-                fr' ON CONFLICT DO NOTHING'
-                fr'   RETURNING member_id',
-                *value_params,
-            )
-            log.info(f'Inserted {len(inserted_account_ids)} out of {len(account_ids)} given new class members')
+        # 3. perform insert
+        value_sql, value_params = compile_values(sorted((
+            (class_id, account_id, role)
+            for (account_id,), (_, role) in zip(account_ids, member_roles)
+            if account_id is not None
+        ), key=itemgetter(2), reverse=True))
+        log.info(f'Inserting new class members with values {value_params}')
+        inserted_account_ids: list[list[int]] = await conn.fetch(
+            fr' INSERT INTO class_member'
+            fr'             (class_id, member_id, role)'
+            fr'      VALUES {value_sql}'
+            fr' ON CONFLICT DO NOTHING'
+            fr'   RETURNING member_id',
+            *value_params,
+        )
+        log.info(f'Inserted {len(inserted_account_ids)} out of {len(account_ids)} given new class members')
 
     # 4. check the failed account ids
     success_account_ids = set(chain(*inserted_account_ids))
