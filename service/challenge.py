@@ -21,7 +21,8 @@ delete = db.challenge.delete_cascade
 async def browse_task(challenge_id: int) -> Tuple[
     Sequence[do.Problem],
     Sequence[do.PeerReview],
-    Sequence[do.Essay]
+    Sequence[do.Essay],
+    Sequence[do.Scoreboard]
 ]:
     problems = []
     try:
@@ -41,7 +42,12 @@ async def browse_task(challenge_id: int) -> Tuple[
     except exc.persistence.NotFound:
         pass
 
-    return problems, peer_reviews, essays
+    scoreboards = []
+    try:
+        scoreboards = await db.scoreboard.browse_by_challenge(challenge_id=challenge_id)
+    except exc.persistence.NotFound:
+        pass
+    return problems, peer_reviews, essays, scoreboards
 
 
 async def browse_task_status(challenge_id: int, account_id: int) \

@@ -66,6 +66,25 @@ async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Se
     return data, total_count
 
 
+async def browse_with_team_label_filter(class_id: int, team_label_filter: str = None) -> Sequence[do.Team]:
+    async with SafeExecutor(
+            event='browse teams with team label filter',
+            sql=fr'SELECT team.id, team.name, team.class_id, team.is_deleted, team.label'
+                fr'  FROM team'
+                fr' INNER JOIN class'
+                fr'         ON class.id = team.class_id'
+                fr'{f"   WHERE team.label ~ %(team_label_filter)s" if team_label_filter else ""}'
+                fr'   AND class.id = %(class_id)s'
+                fr'   AND NOT team.is_deleted',
+            team_label_filter=team_label_filter,
+            class_id=class_id,
+            fetch='all',
+            raise_not_found=False,  # Issue #134: return [] for browse
+    ) as records:
+        return [do.Team(id=id_, name=name, class_id=class_id, is_deleted=is_deleted, label=label)
+                for (id_, name, class_id, is_deleted, label) in records]
+
+
 async def read(team_id: int, *, include_deleted=False) -> do.Team:
     async with SafeExecutor(
             event='get team by id',

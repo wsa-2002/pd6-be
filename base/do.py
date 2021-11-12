@@ -3,7 +3,7 @@ Data Objects
 """
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Sequence
 from uuid import UUID
 
 from base import enum
@@ -260,6 +260,27 @@ class PeerReviewRecord:
     score: Optional[int]
     comment: Optional[str]
     submit_time: Optional[datetime]
+
+
+@dataclass
+class Scoreboard:
+    id: int
+    challenge_id: int
+    challenge_label: str
+    title: str
+    target_problem_ids: Sequence[int]
+    is_deleted: bool
+    type: enum.ScoreboardType
+    setting_id: int
+
+
+@dataclass
+class ScoreboardSettingTeamProject:
+    id: int
+    scoring_formula: str
+    baseline_team_id: Optional[int]
+    rank_by_total_score: bool
+    team_label_filter: Optional[str]
 
 
 @dataclass
