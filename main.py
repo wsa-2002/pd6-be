@@ -117,7 +117,7 @@ middleware.envelope.hook_exception_envelope_handler(app)
 
 
 # Register routers
-import processor.api
+import processor.http
 
 processor.api.register_routers(app)
 
