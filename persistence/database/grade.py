@@ -42,22 +42,22 @@ async def batch_add(class_id: int, title: str, grades: Sequence[tuple[str, str, 
 
     value_sql, value_params = compile_values(values)
 
-    async with SafeConnection(event=f'batch import grade into class {class_id}') as conn:
-        async with conn.transaction():
-            try:
-                await conn.execute(fr' INSERT INTO grade'
-                                   fr'             (receiver_id, score, comment, grader_id, class_id, title, update_time)'
-                                   fr'      VALUES {value_sql}'
-                                   fr' ON CONFLICT (class_id, receiver_id, title)'
-                                   fr'             WHERE NOT is_deleted'
-                                   fr'   DO UPDATE'
-                                   fr'         SET score = EXCLUDED.score,'
-                                   fr'             comment = EXCLUDED.comment,'
-                                   fr'             grader_id = EXCLUDED.grader_id,'
-                                   fr'             update_time = EXCLUDED.update_time',
-                                   *value_params)
-            except asyncpg.exceptions.UniqueViolationError:
-                raise exc.persistence.UniqueViolationError
+    async with SafeConnection(event=f'batch import grade into class {class_id}',
+                              auto_transaction=True) as conn:
+        try:
+            await conn.execute(fr' INSERT INTO grade'
+                               fr'             (receiver_id, score, comment, grader_id, class_id, title, update_time)'
+                               fr'      VALUES {value_sql}'
+                               fr' ON CONFLICT (class_id, receiver_id, title)'
+                               fr'             WHERE NOT is_deleted'
+                               fr'   DO UPDATE'
+                               fr'         SET score = EXCLUDED.score,'
+                               fr'             comment = EXCLUDED.comment,'
+                               fr'             grader_id = EXCLUDED.grader_id,'
+                               fr'             update_time = EXCLUDED.update_time',
+                               *value_params)
+        except asyncpg.exceptions.UniqueViolationError:
+            raise exc.persistence.UniqueViolationError
 
 
 async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter]) \

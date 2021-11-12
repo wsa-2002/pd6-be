@@ -178,9 +178,9 @@ async def delete_cascade_from_problem(problem_id: int, cascading_conn=None) -> N
         await _delete_cascade_from_problem(problem_id, conn=cascading_conn)
         return
 
-    async with SafeConnection(event=f'cascade delete testcase from problem {problem_id=}') as conn:
-        async with conn.transaction():
-            await _delete_cascade_from_problem(problem_id, conn=conn)
+    async with SafeConnection(event=f'cascade delete testcase from problem {problem_id=}',
+                              auto_transaction=True) as conn:
+        await _delete_cascade_from_problem(problem_id, conn=conn)
 
 
 async def _delete_cascade_from_problem(problem_id: int, conn) -> None:

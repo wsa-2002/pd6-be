@@ -91,11 +91,11 @@ async def delete(course_id: int) -> None:
 
 
 async def delete_cascade(course_id: int) -> None:
-    async with SafeConnection(event=f'cascade delete from course {course_id=}') as conn:
-        async with conn.transaction():
-            await class_.delete_cascade_from_course(course_id=course_id, cascading_conn=conn)
+    async with SafeConnection(event=f'cascade delete from course {course_id=}',
+                              auto_transaction=True) as conn:
+        await class_.delete_cascade_from_course(course_id=course_id, cascading_conn=conn)
 
-            await conn.execute(fr'UPDATE course'
-                               fr'   SET is_deleted = $1'
-                               fr' WHERE id = $2',
-                               True, course_id)
+        await conn.execute(fr'UPDATE course'
+                           fr'   SET is_deleted = $1'
+                           fr' WHERE id = $2',
+                           True, course_id)
