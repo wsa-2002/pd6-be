@@ -2,8 +2,8 @@ from dataclasses import dataclass
 from typing import Optional, Sequence
 from uuid import UUID
 
-from fastapi import UploadFile, File, BackgroundTasks, Query
-from pydantic import BaseModel
+from fastapi import UploadFile, File, BackgroundTasks
+from pydantic import BaseModel, PositiveInt
 
 from base import do
 from base.enum import RoleType, ChallengePublicizeType, TaskSelectionType, ProblemJudgeType
@@ -172,8 +172,8 @@ async def delete_problem(problem_id: int, request: Request):
 class AddTestcaseInput(BaseModel):
     is_sample: bool
     score: int
-    time_limit: int = Query(..., gt=0)
-    memory_limit: int = Query(..., gt=0)
+    time_limit: PositiveInt
+    memory_limit: PositiveInt
     note: Optional[str]
     is_disabled: bool
     label: str
