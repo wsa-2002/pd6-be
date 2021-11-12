@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Tuple
 import io
 
 from base import do
@@ -46,3 +46,9 @@ async def edit(problem_id: int,
     if testcase_disabled is not None:
         await db.testcase.disable_enable_testcase_by_problem(problem_id=problem_id,
                                                              testcase_disabled=testcase_disabled)
+
+
+async def get_problem_statistics(problem_id: int) -> Tuple[int, int, int]:
+    return (await db.problem.total_ac_member_count(problem_id),
+            await db.problem.total_submission_count(problem_id),
+            await db.problem.total_member_count(problem_id))
