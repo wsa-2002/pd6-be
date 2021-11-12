@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 import log
 from base import do, enum, popo
-from base.enum import RoleType, FilterOperator, ChallengePublicizeType
+from base.enum import RoleType, FilterOperator, ChallengePublicizeType, ScoreboardType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
 import service
@@ -271,11 +271,46 @@ async def add_peer_review_under_challenge(challenge_id: int, data: AddPeerReview
     return model.AddOutput(id=peer_review_id)
 
 
+class AddTeamProjectScoreboardInput(BaseModel):
+    challenge_label: str
+    title: str
+    target_problem_ids: Sequence[int]
+
+    # team_project_scoreboard
+    scoring_formula: str
+    baseline_team_id: Optional[int]
+    rank_by_total_score: bool
+    team_label_filter: Optional[str]
+
+
+@router.post('/challenge/{challenge_id}/team-project-scoreboard', tags=['Team Project Scoreboard'])
+@enveloped
+async def add_team_project_scoreboard_under_challenge(challenge_id: int, data: AddTeamProjectScoreboardInput,
+                                                      request: Request) -> model.AddOutput:
+    """
+    ### 權限
+    - Class manager
+    """
+    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
+    challenge = await service.challenge.read(challenge_id=challenge_id, include_scheduled=True, ref_time=request.time)
+    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+        raise exc.NoPermission
+
+    scoreboard_id = await service.scoreboard_setting_team_project.add_under_scoreboard(
+        challenge_id=challenge_id, challenge_label=data.challenge_label, title=data.title, target_problem_ids=data.target_problem_ids,
+        type=ScoreboardType.team_project, scoring_formula=data.scoring_formula, baseline_team_id=data.baseline_team_id,
+        rank_by_total_score=data.rank_by_total_score, team_label_filter=data.team_label_filter,
+    )
+
+    return model.AddOutput(id=scoreboard_id)
+
+
 @dataclass
 class BrowseTaskOutput:
     problem: Sequence[do.Problem]
     peer_review: Optional[Sequence[do.PeerReview]]
     essay: Optional[Sequence[do.Essay]]
+    scoreboard: Optional[Sequence[do.Scoreboard]]
 
 
 @router.get('/challenge/{challenge_id}/task')
@@ -300,12 +335,13 @@ async def browse_all_task_under_challenge(challenge_id: int, request: Request) -
             or class_role == RoleType.manager):                                                        # Class manager
         raise exc.NoPermission
 
-    problems, peer_reviews, essays = await service.challenge.browse_task(challenge.id)
+    problems, peer_reviews, essays, scoreboard = await service.challenge.browse_task(challenge.id)
 
     return BrowseTaskOutput(
         problem=problems,
         peer_review=peer_reviews if class_role else [],
         essay=essays if class_role else [],
+        scoreboard=scoreboard if class_role else [],
     )
 
 

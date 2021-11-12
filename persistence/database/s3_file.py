@@ -22,9 +22,10 @@ async def browse() -> Sequence[do.S3File]:
 
 
 async def browse_with_uuids(uuids: Iterable[UUID]) -> Sequence[Optional[do.S3File]]:
-    async with SafeConnection(event='browse account referral with ids') as conn:
-        value_sql = ','.join(f'(\'{uuid}\')' for uuid in uuids)
+    value_sql = ','.join(f'(\'{uuid}\')' for uuid in uuids)
 
+    async with SafeConnection(event='browse account referral with ids',
+                              auto_transaction=True) as conn:
         return [do.S3File(uuid=uuid, bucket=bucket, key=key)
                 if uuid else None
                 for (uuid, bucket, key)

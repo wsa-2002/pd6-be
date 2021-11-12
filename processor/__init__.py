@@ -33,6 +33,9 @@ def register_routers(app: fastapi.FastAPI):
 
         peer_review,
 
+        scoreboard,
+        scoreboard_setting_team_project,
+
         announcement,
         system,
 
@@ -67,6 +70,9 @@ def register_routers(app: fastapi.FastAPI):
     app.include_router(assisting_data.router)
 
     app.include_router(peer_review.router)
+
+    app.include_router(scoreboard.router)
+    app.include_router(scoreboard_setting_team_project.router)
 
     app.include_router(announcement.router)
     app.include_router(system.router)

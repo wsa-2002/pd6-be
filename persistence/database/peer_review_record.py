@@ -109,101 +109,102 @@ async def read_by_peer_review_id(peer_review_id: int, account_id: int, is_receiv
 
 
 async def add_auto(peer_review_id: int, grader_id: int) -> int:
-    async with SafeConnection(event='add auto') as conn:
-        async with conn.transaction():
-            (target_problem_id, challenge_end_time, raw_selection_type, class_id) = await conn.fetchrow(
-                fr'SELECT peer_review.target_problem_id,'
-                fr'       challenge.end_time, challenge.selection_type, challenge.class_id'
-                fr'  FROM peer_review'
-                fr'  LEFT JOIN problem'
-                fr'         ON problem.id = peer_review.target_problem_id'
-                fr'        AND NOT problem.is_deleted'
-                fr'  LEFT JOIN challenge'
-                fr'         ON challenge.id = problem.challenge_id'
-                fr'        AND NOT challenge.is_deleted'
-                fr' WHERE peer_review.id = $1',
-                peer_review_id,
+    async with SafeConnection(event='add auto peer review record',
+                              auto_transaction=True) as conn:
+        (target_problem_id, challenge_end_time, raw_selection_type, class_id) = await conn.fetchrow(
+            fr'SELECT peer_review.target_problem_id,'
+            fr'       challenge.end_time, challenge.selection_type, challenge.class_id'
+            fr'  FROM peer_review'
+            fr'  LEFT JOIN problem'
+            fr'         ON problem.id = peer_review.target_problem_id'
+            fr'        AND NOT problem.is_deleted'
+            fr'  LEFT JOIN challenge'
+            fr'         ON challenge.id = problem.challenge_id'
+            fr'        AND NOT challenge.is_deleted'
+            fr' WHERE peer_review.id = $1',
+            peer_review_id,
+        )
+        selection_type = enum.TaskSelectionType(raw_selection_type)
+
+        if selection_type is enum.TaskSelectionType.last:
+            (peer_review_record_id,) = await conn.fetchrow(
+                fr'INSERT INTO peer_review_record'
+                fr'            (peer_review_id, grader_id, receiver_id, submission_id)'
+                fr'SELECT $1, $2, member_submission.member_id, member_submission.submission_id'
+                fr'  FROM ('
+                fr'       SELECT DISTINCT ON (cm.member_id)'
+                fr'           cm.member_id AS member_id, submission.id AS submission_id'
+                fr'         FROM class_member cm'
+                fr'        INNER JOIN submission'
+                fr'                ON cm.member_id = submission.account_id'
+                fr'               AND submission.problem_id = $3'
+                fr'               AND submission.submit_time <= $4'
+                fr'        WHERE cm.class_id = $5'
+                fr'          AND cm."role" = $6'
+                fr'     ORDER BY cm.member_id, submission.id DESC'
+                fr'     ) member_submission'
+                fr'  LEFT JOIN ('
+                fr'       SELECT cm.member_id AS member_id , count(*) AS count'
+                fr'         FROM class_member cm'
+                fr'        INNER JOIN peer_review_record prr'
+                fr'                ON prr.receiver_id = cm.member_id'
+                fr'               AND prr.peer_review_id = $1'
+                fr'        WHERE cm.class_id = $5'
+                fr'          AND cm."role" = $6'
+                fr'     GROUP BY cm.member_id'
+                fr'     ) prr_count'
+                fr'    ON prr_count.member_id = member_submission.member_id'
+                fr' WHERE member_submission.member_id != $2'
+                fr' ORDER BY coalesce(prr_count.count, 0) ASC'
+                fr' LIMIT 1'
+                fr' RETURNING id',
+                peer_review_id, grader_id, target_problem_id, challenge_end_time, class_id, enum.RoleType.normal,
             )
-            selection_type = enum.TaskSelectionType(raw_selection_type)
+            return peer_review_record_id
 
-            if selection_type is enum.TaskSelectionType.last:
-                (peer_review_record_id,) = await conn.fetchrow(
-                    fr'INSERT INTO peer_review_record'
-                    fr'            (peer_review_id, grader_id, receiver_id, submission_id)'
-                    fr'SELECT $1, $2, member_submission.member_id, member_submission.submission_id'
-                    fr'  FROM ('
-                    fr'       SELECT DISTINCT ON (cm.member_id)'
-                    fr'           cm.member_id AS member_id, submission.id AS submission_id'
-                    fr'         FROM class_member cm'
-                    fr'        INNER JOIN submission'
-                    fr'                ON cm.member_id = submission.account_id'
-                    fr'               AND submission.problem_id = $3'
-                    fr'               AND submission.submit_time <= $4'
-                    fr'        WHERE cm.class_id = $5'
-                    fr'          AND cm."role" = $6'
-                    fr'     ORDER BY cm.member_id, submission.id DESC'
-                    fr'     ) member_submission'
-                    fr'  LEFT JOIN ('
-                    fr'       SELECT cm.member_id AS member_id , count(*) AS count'
-                    fr'         FROM class_member cm'
-                    fr'        INNER JOIN peer_review_record prr'
-                    fr'                ON prr.receiver_id = cm.member_id'
-                    fr'               AND prr.peer_review_id = $1'
-                    fr'        WHERE cm.class_id = $5'
-                    fr'          AND cm."role" = $6'
-                    fr'     GROUP BY cm.member_id'
-                    fr'     ) prr_count'
-                    fr'    ON prr_count.member_id = member_submission.member_id'
-                    fr' WHERE member_submission.member_id != $2'
-                    fr' ORDER BY coalesce(prr_count.count, 0) ASC'
-                    fr' LIMIT 1'
-                    fr' RETURNING id',
-                    peer_review_id, grader_id, target_problem_id, challenge_end_time, class_id, enum.RoleType.normal,
-                )
-                return peer_review_record_id
+        elif selection_type is enum.TaskSelectionType.best:
+            (peer_review_record_id,) = await conn.fetchrow(
+                fr'INSERT INTO peer_review_record'
+                fr'            (peer_review_id, grader_id, receiver_id, submission_id)'
+                fr'SELECT $1, $2, member_submission.member_id, member_submission.submission_id'
+                fr'  FROM ('
+                fr'       SELECT DISTINCT ON (cm.member_id)'
+                fr'              cm.member_id AS member_id, submission_with_score.submission_id AS submission_id'
+                fr'         FROM class_member cm'
+                fr'        INNER JOIN ('
+                fr'              SELECT DISTINCT ON (submission.id)'
+                fr'                     submission.id AS submission_id, submission.account_id AS account_id,'
+                fr'                     judgment.score AS score'
+                fr'                FROM submission'
+                fr'                LEFT JOIN judgment'
+                fr'                       ON judgment.submission_id = submission.id'
+                fr'               WHERE submission.problem_id = $3'
+                fr'                 AND submission.submit_time <= $4'
+                fr'            ORDER BY submission.id, judgment.judge_time DESC'
+                fr'             ) submission_with_score'
+                fr'            ON cm.member_id = submission_with_score.account_id'
+                fr'         WHERE cm.class_id = $5'
+                fr'           AND cm."role" = $6'
+                fr'      ORDER BY cm.member_id, submission_with_score.score DESC'
+                fr'     ) member_submission'
+                fr'  LEFT JOIN ('
+                fr'       SELECT cm.member_id AS member_id , count(*) AS count'
+                fr'         FROM class_member cm'
+                fr'        INNER JOIN peer_review_record prr'
+                fr'                ON prr.receiver_id = cm.member_id'
+                fr'               AND prr.peer_review_id = $1'
+                fr'        WHERE cm.class_id = $5'
+                fr'          AND cm."role" = $6'
+                fr'     GROUP BY cm.member_id'
+                fr'     ) prr_count'
+                fr'    ON prr_count.member_id = member_submission.member_id'
+                fr' WHERE member_submission.member_id != $2'
+                fr' ORDER BY coalesce(prr_count.count, 0) ASC'
+                fr' LIMIT 1'
+                fr' RETURNING id',
+                peer_review_id, grader_id, target_problem_id, challenge_end_time, class_id, enum.RoleType.normal,
+            )
+            return peer_review_record_id
 
-            elif selection_type is enum.TaskSelectionType.best:
-                (peer_review_record_id,) = await conn.fetchrow(
-                    fr'INSERT INTO peer_review_record'
-                    fr'            (peer_review_id, grader_id, receiver_id, submission_id)'
-                    fr'SELECT $1, $2, member_submission.member_id, member_submission.submission_id'
-                    fr'  FROM ('
-                    fr'       SELECT DISTINCT ON (cm.member_id)'
-                    fr'              cm.member_id AS member_id, submission_with_score.submission_id AS submission_id'
-                    fr'         FROM class_member cm'
-                    fr'        INNER JOIN ('
-                    fr'              SELECT DISTINCT ON (submission.id)'
-                    fr'                     submission.id AS submission_id, submission.account_id AS account_id,'
-                    fr'                     judgment.score AS score'
-                    fr'                FROM submission'
-                    fr'                LEFT JOIN judgment'
-                    fr'                       ON judgment.submission_id = submission.id'
-                    fr'               WHERE submission.problem_id = $3'
-                    fr'                 AND submission.submit_time <= $4'
-                    fr'            ORDER BY submission.id, judgment.judge_time DESC'
-                    fr'             ) submission_with_score'
-                    fr'            ON cm.member_id = submission_with_score.account_id'
-                    fr'         WHERE cm.class_id = $5'
-                    fr'           AND cm."role" = $6'
-                    fr'      ORDER BY cm.member_id, submission_with_score.score DESC'
-                    fr'     ) member_submission'
-                    fr'  LEFT JOIN ('
-                    fr'       SELECT cm.member_id AS member_id , count(*) AS count'
-                    fr'         FROM class_member cm'
-                    fr'        INNER JOIN peer_review_record prr'
-                    fr'                ON prr.receiver_id = cm.member_id'
-                    fr'               AND prr.peer_review_id = $1'
-                    fr'        WHERE cm.class_id = $5'
-                    fr'          AND cm."role" = $6'
-                    fr'     GROUP BY cm.member_id'
-                    fr'     ) prr_count'
-                    fr'    ON prr_count.member_id = member_submission.member_id'
-                    fr' WHERE member_submission.member_id != $2'
-                    fr' ORDER BY coalesce(prr_count.count, 0) ASC'
-                    fr' LIMIT 1'
-                    fr' RETURNING id',
-                    peer_review_id, grader_id, target_problem_id, challenge_end_time, class_id, enum.RoleType.normal,
-                )
-                return peer_review_record_id
-            else:
-                raise ValueError
+        else:
+            raise ValueError(f'Unknown {selection_type=}')

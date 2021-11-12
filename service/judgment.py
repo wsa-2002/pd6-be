@@ -15,6 +15,8 @@ browse = db.judgment.browse
 browse_cases = db.judgment.browse_cases
 read = db.judgment.read
 
+get_class_last_team_submission_judgment = db.judgment.get_class_last_team_submission_judgment
+
 
 async def judge_submission(submission_id: int, rejudge=False):
     submission = await db.submission.read(submission_id)
@@ -112,6 +114,7 @@ async def save_report(report: judge_do.JudgeReport) -> int:
         total_time=report.judgment.total_time,
         max_memory=report.judgment.max_memory,
         score=report.judgment.score,
+        error_message=None,  # FIXME
         judge_time=datetime.now(),
     )
     for judge_case in report.judge_cases:

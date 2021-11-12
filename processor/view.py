@@ -1,7 +1,7 @@
 from dataclasses import dataclass
-from typing import Sequence
+from typing import Sequence, Optional
 
-from base.enum import RoleType, FilterOperator, VerdictType
+from base.enum import RoleType, FilterOperator, VerdictType, ScoreboardType
 from base import popo, vo
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
@@ -15,6 +15,7 @@ router = APIRouter(
     default_response_class=response.JSONResponse,
     dependencies=auth.doc_dependencies,
 )
+
 
 BROWSE_ACCOUNT_COLUMNS = {
     'account_id': int,

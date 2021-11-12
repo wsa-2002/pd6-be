@@ -117,3 +117,21 @@ class ViewPeerReviewRecord:
     peer_review_record_ids: Sequence[Optional[int]]
     peer_review_record_scores: Sequence[Optional[int]]
     average_score: Optional[float]
+
+
+# team project scoreboard
+
+
+@dataclass
+class ProblemScore:
+    problem_id: int
+    score: int
+    submission_id: int
+
+
+@dataclass
+class ViewTeamProjectScoreboard:
+    team_id: int
+    team_name: str
+    total_score: Optional[int]
+    target_problem_data: Sequence[ProblemScore]

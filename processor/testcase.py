@@ -1,5 +1,5 @@
 from fastapi import File, UploadFile
-from pydantic import BaseModel
+from pydantic import BaseModel, PositiveInt
 from typing import Optional
 
 from base.enum import RoleType
@@ -54,9 +54,9 @@ async def read_testcase(testcase_id: int, request: Request) -> ReadTestcaseOutpu
 class EditTestcaseInput(BaseModel):
     is_sample: bool = None
     score: int = None
-    time_limit: int = None
+    time_limit: PositiveInt = None
+    memory_limit: PositiveInt = None
     note: Optional[str] = model.can_omit
-    memory_limit: int = None
     is_disabled: bool = None
     label: str = None
 

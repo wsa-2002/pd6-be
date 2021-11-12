@@ -54,6 +54,21 @@ class MaxPeerReviewCount(PdogsException):
     """
 
 
+# Team Project Scoreboard
+
+
+class InvalidFormula(PdogsException):
+    """
+    A malformed scoring formula is given
+    """
+
+
+class InvalidTeamLabelFilter(PdogsException):
+    """
+    A malformed team label filter is given
+    """
+
+
 # For import usage
 from . import (
     account,

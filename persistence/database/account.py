@@ -25,7 +25,8 @@ async def add(username: str, pass_hash: str, nickname: str, real_name: str, role
 
 async def batch_add_normal(accounts: Sequence[tuple[str, str, str, str, str]], role=RoleType.normal):
     # account in accounts: Real name, username, pass_hash, alternative email, nickname
-    async with SafeConnection(event='batch add normal account') as conn:
+    async with SafeConnection(event='batch add normal account',
+                              auto_transaction=False) as conn:
         async with conn.transaction():
             values = [(real_name, username, pass_hash, alternative_email, nickname, role)
                       for real_name, username, pass_hash, alternative_email, nickname in accounts]
@@ -95,20 +96,20 @@ async def edit(account_id: int, real_name: str = None, nickname: str = None) -> 
 
 
 async def delete(account_id: int) -> None:
-    async with SafeConnection(event='soft delete account and HARD delete student card') as conn:
-        async with conn.transaction():
-            await conn.execute(
-                r'DELETE FROM student_card'
-                r' WHERE account_id = $1',
-                account_id,
-            )
+    async with SafeConnection(event='soft delete account and HARD delete student card',
+                              auto_transaction=True) as conn:
+        await conn.execute(
+            r'DELETE FROM student_card'
+            r' WHERE account_id = $1',
+            account_id,
+        )
 
-            await conn.execute(
-                r'UPDATE account'
-                r'   SET is_deleted = $1'
-                r' WHERE id = $2',
-                True, account_id,
-            )
+        await conn.execute(
+            r'UPDATE account'
+            r'   SET is_deleted = $1'
+            r' WHERE id = $2',
+            True, account_id,
+        )
 
 
 async def delete_alternative_email_by_id(account_id: int) -> None:
@@ -213,39 +214,39 @@ async def add_email_verification(email: str, account_id: int, institute_id: int 
 
 
 async def verify_email(code: str) -> None:
-    async with SafeConnection(event='Verify email') as conn:
-        async with conn.transaction():
-            try:
-                email, account_id, institute_id, student_id = await conn.fetchrow(
-                    r'UPDATE email_verification'
-                    r'   SET is_consumed = $1'
-                    r' WHERE code = $2'
-                    r'   AND is_consumed = $3'
-                    r' RETURNING email, account_id, institute_id, student_id',
-                    True, code, False)
-            except TypeError:
-                raise exc.persistence.NotFound
+    async with SafeConnection(event='Verify email',
+                              auto_transaction=True) as conn:
+        try:
+            email, account_id, institute_id, student_id = await conn.fetchrow(
+                r'UPDATE email_verification'
+                r'   SET is_consumed = $1'
+                r' WHERE code = $2'
+                r'   AND is_consumed = $3'
+                r' RETURNING email, account_id, institute_id, student_id',
+                True, code, False)
+        except TypeError:
+            raise exc.persistence.NotFound
 
-            if student_id:  # student card email
-                await conn.execute(r'UPDATE student_card'
-                                   r'   SET is_default = $1'
-                                   r' WHERE account_id = $2'
-                                   r'   AND is_default = $3',
-                                   False, account_id, True)
-                await conn.execute(r'INSERT INTO student_card'
-                                   r'            (account_id, institute_id, student_id, email, is_default)'
-                                   r'     VALUES ($1, $2, $3, $4, $5)',
-                                   account_id, institute_id, student_id, email, True)
-                await conn.execute(r'UPDATE account'
-                                   r'   SET role = $1'
-                                   r' WHERE id = $2'
-                                   r'   AND role = $3',
-                                   RoleType.normal, account_id, RoleType.guest)
-            else:  # alternative email
-                await conn.execute(r'UPDATE account'
-                                   r'   SET alternative_email = $1'
-                                   r' WHERE id = $2',
-                                   email, account_id)
+        if student_id:  # student card email
+            await conn.execute(r'UPDATE student_card'
+                               r'   SET is_default = $1'
+                               r' WHERE account_id = $2'
+                               r'   AND is_default = $3',
+                               False, account_id, True)
+            await conn.execute(r'INSERT INTO student_card'
+                               r'            (account_id, institute_id, student_id, email, is_default)'
+                               r'     VALUES ($1, $2, $3, $4, $5)',
+                               account_id, institute_id, student_id, email, True)
+            await conn.execute(r'UPDATE account'
+                               r'   SET role = $1'
+                               r' WHERE id = $2'
+                               r'   AND role = $3',
+                               RoleType.normal, account_id, RoleType.guest)
+        else:  # alternative email
+            await conn.execute(r'UPDATE account'
+                               r'   SET alternative_email = $1'
+                               r' WHERE id = $2',
+                               email, account_id)
 
 
 async def edit_pass_hash(account_id: int, pass_hash: str):
@@ -262,23 +263,23 @@ async def edit_pass_hash(account_id: int, pass_hash: str):
 
 
 async def reset_password(code: str, password_hash: str) -> None:
-    async with SafeConnection(event='reset password') as conn:
-        async with conn.transaction():
-            try:
-                email, account_id, institute_id, student_id = await conn.fetchrow(
-                    r'UPDATE email_verification'
-                    r'   SET is_consumed = $1'
-                    r' WHERE code = $2'
-                    r'   AND is_consumed = $3'
-                    r' RETURNING email, account_id, institute_id, student_id',
-                    True, code, False)
-            except TypeError:
-                raise exc.persistence.NotFound
+    async with SafeConnection(event='reset password',
+                              auto_transaction=True) as conn:
+        try:
+            email, account_id, institute_id, student_id = await conn.fetchrow(
+                r'UPDATE email_verification'
+                r'   SET is_consumed = $1'
+                r' WHERE code = $2'
+                r'   AND is_consumed = $3'
+                r' RETURNING email, account_id, institute_id, student_id',
+                True, code, False)
+        except TypeError:
+            raise exc.persistence.NotFound
 
-            await conn.execute(r'UPDATE account'
-                               r'   SET pass_hash = $1, is_4s_hash = $2'
-                               r' WHERE id = $3',
-                               password_hash, False, account_id)
+        await conn.execute(r'UPDATE account'
+                           r'   SET pass_hash = $1, is_4s_hash = $2'
+                           r' WHERE id = $3',
+                           password_hash, False, account_id)
 
 
 async def edit_default_student_card(account_id: int, student_card_id: int) -> None:
@@ -307,9 +308,10 @@ async def account_referral_to_id(account_referral: str) -> int:
 
 
 async def browse_referral_wth_ids(account_ids: Iterable[int]) -> Sequence[Optional[str]]:
-    async with SafeConnection(event='browse account referral with ids') as conn:
-        value_sql = ','.join(f'({account_id})' for account_id in account_ids)
-
-        results = await conn.fetch(fr'SELECT account_id_to_referral(account_id::INTEGER)'
-                                   fr'  FROM (VALUES {value_sql}) account_ids(account_id)')
+    value_sql = ','.join(f'({account_id})' for account_id in account_ids)
+    async with SafeExecutor(
+            event='browse account referral with ids',
+            sql=fr'SELECT account_id_to_referral(account_id::INTEGER)'
+                fr'  FROM (VALUES {value_sql}) account_ids(account_id)',
+    ) as results:
         return [result for result, in results]
