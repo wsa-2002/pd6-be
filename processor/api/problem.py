@@ -15,7 +15,7 @@ import persistence.database as db
 import service
 from persistence import s3
 
-from .util import model
+from processor.util import model
 
 router = APIRouter(
     tags=['Problem'],

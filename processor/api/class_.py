@@ -13,7 +13,7 @@ import service
 from persistence import email
 from util.api_doc import add_to_docstring
 
-from .util import model
+from processor.util import model
 
 router = APIRouter(
     tags=['Class'],

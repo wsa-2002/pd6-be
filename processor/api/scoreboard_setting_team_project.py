@@ -9,7 +9,7 @@ from middleware import APIRouter, response, enveloped, auth, Request
 import persistence.database as db
 import service
 
-from .util import model
+from processor.util import model
 
 router = APIRouter(
     tags=['Team Project Scoreboard'],

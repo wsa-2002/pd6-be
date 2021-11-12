@@ -10,7 +10,7 @@ import persistence.database as db
 from persistence import s3
 import service
 
-from .util import file
+from processor.util import file
 
 router = APIRouter(
     tags=['Assisting Data'],

@@ -10,7 +10,7 @@ import service
 from persistence import s3
 
 from .problem import ReadTestcaseOutput
-from .util import file, model
+from processor.util import file, model
 
 router = APIRouter(
     tags=['Testcase'],

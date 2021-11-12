@@ -16,7 +16,7 @@ import service
 from persistence import email
 from util import security
 
-from .util import model
+from processor.util import model
 
 router = APIRouter(
     route_class=routing.SecretAPIRoute,  # Does not log the I/O data

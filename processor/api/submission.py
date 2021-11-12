@@ -13,7 +13,7 @@ import persistence.database as db
 import service
 from util.api_doc import add_to_docstring
 
-from .util import model, file
+from processor.util import model, file
 
 router = APIRouter(
     tags=['Submission'],
