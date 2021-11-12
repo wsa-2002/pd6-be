@@ -59,6 +59,8 @@ from . import (
     challenge,
 
     problem,
+    problem_judge_setting_customized,
+
     testcase,
     submission,
     judgment,

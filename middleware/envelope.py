@@ -6,6 +6,7 @@ import fastapi
 
 import exceptions as exc
 import log
+import util.metric
 
 
 def _make_enveloped_annotations(func):
@@ -98,9 +99,11 @@ def _handle_exc(error: Exception) -> Exception:
     # Log the exception
     if isinstance(error, exc.PdogsException):
         log.exception(error, info_level=True)
+        util.metric.error_code(error.__class__.__name__, is_system_error=False)
     else:
         log.exception(error, info_level=False)
         error = exc.SystemException(cause=error)
+        util.metric.error_code(error.__class__.__name__, is_system_error=True)
 
     return error
 

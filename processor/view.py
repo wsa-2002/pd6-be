@@ -203,6 +203,7 @@ async def browse_submission(account_id: int, request: Request, limit: model.Limi
 
 BROWSE_MY_SUBMISSION_UNDER_PROBLEM_COLUMNS = {
     'submission_id': int,
+    'judgment_id': int,
     'verdict': VerdictType,
     'score': int,
     'total_time': int,

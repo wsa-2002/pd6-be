@@ -4,6 +4,7 @@ import typing
 import uuid
 
 import exceptions as exc
+import log
 
 import persistence.database as db
 import persistence.s3 as s3
@@ -58,11 +59,7 @@ async def download_all_sample(account_id: int, problem_id: int, as_attachment: b
         except:
             pass
 
-    zip_buffer = io.BytesIO()
-    with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zipper:
-        for file, filename in files:
-            infile_content = await s3.tools.get_file_content(bucket=file.bucket, key=file.key)
-            zipper.writestr(filename, infile_content)
+    zip_buffer = await s3.tools.zipper(files=files)
 
     s3_file = await s3.temp.put_object(body=zip_buffer.getvalue())
 
@@ -85,11 +82,7 @@ async def download_all_non_sample(account_id: int, problem_id: int, as_attachmen
         except:
             pass
 
-    zip_buffer = io.BytesIO()
-    with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zipper:
-        for file, filename in files:
-            infile_content = await s3.tools.get_file_content(bucket=file.bucket, key=file.key)
-            zipper.writestr(filename, infile_content)
+    zip_buffer = await s3.tools.zipper(files=files)
 
     s3_file = await s3.temp.put_object(body=zip_buffer.getvalue())
 

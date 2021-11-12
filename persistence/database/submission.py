@@ -254,3 +254,44 @@ async def browse_under_class(class_id: int,
         class_id=class_id,
     )
     return data, total_count
+
+
+async def browse_by_problem_selected(problem_id: int, selection_type: enum.TaskSelectionType, end_time: datetime) \
+        -> Sequence[do.Submission]:
+    """
+    Returns only submitted & judged members
+
+    :return: member_id, submission
+    """
+
+    if selection_type is enum.TaskSelectionType.last:
+        order_criteria = 'submission.submit_time DESC'
+        join_judgment_sql = ''
+    elif selection_type is enum.TaskSelectionType.best:
+        order_criteria = 'judgment.score DESC'
+        join_judgment_sql = (fr' INNER JOIN judgment'
+                             fr'         ON judgment.submission_id = submission.id'
+                             fr'        AND judgment.id = submission_last_judgment_id(submission.id)')
+    else:
+        raise ValueError(f'{selection_type} is not expected')
+
+    async with SafeExecutor(
+            event='browse submission by problem class members',
+            sql=fr'SELECT DISTINCT ON (submission.account_id)'
+                fr'       submission.id, submission.account_id, submission.problem_id , submission.language_id,'
+                fr'       submission.filename, submission.content_file_uuid, submission.content_length,'
+                fr'       submission.submit_time'
+                fr'  FROM submission'
+                fr'{join_judgment_sql if selection_type is enum.TaskSelectionType.best else ""}'
+                fr' WHERE submission.problem_id = %(problem_id)s'
+                fr'   AND submission.submit_time <= %(end_time)s'
+                fr' ORDER BY submission.account_id, {order_criteria}, submission.id DESC',
+            problem_id=problem_id, end_time=end_time,
+            fetch='all',
+            raise_not_found=False,  # Issue #134: return [] for browse
+    ) as records:
+        return [do.Submission(id=id_, account_id=account_id, problem_id=problem_id, language_id=language_id,
+                              filename=filename, content_file_uuid=content_file_uuid, content_length=content_length,
+                              submit_time=submit_time)
+                for (id_, account_id, problem_id, language_id, filename, content_file_uuid, content_length, submit_time)
+                in records]

@@ -152,10 +152,15 @@ async def browse_peer_review_record(peer_review_id: int, request: Request,
     return model.BrowseOutputBase(records, total_count=total_count)
 
 
+@dataclass
+class AssignPeerReviewOutput:
+    id: list[int]
+
+
 # 改一下這些 function name
 @router.post('/peer-review/{peer_review_id}/record')
 @enveloped
-async def assign_peer_review_record(peer_review_id: int, request: Request) -> model.AddOutput:
+async def assign_peer_review_record(peer_review_id: int, request: Request) -> AssignPeerReviewOutput:
     """
     發互評 (決定 A 要評誰 )
 
@@ -170,10 +175,20 @@ async def assign_peer_review_record(peer_review_id: int, request: Request) -> mo
     if class_role is not RoleType.normal:
         raise exc.NoPermission
 
-    peer_review_record_id = await service.peer_review_record.add_auto(peer_review_id=peer_review.id,
-                                                                      grader_id=request.account.id)
+    if not challenge.start_time <= request.time <= challenge.end_time:
+        raise exc.NoPermission
 
-    return model.AddOutput(id=peer_review_record_id)
+    peer_review_records = await service.peer_review_record.read_by_peer_review_id(peer_review_id=peer_review.id,
+                                                                                  account_id=request.account.id,
+                                                                                  is_receiver=False)
+
+    if len(peer_review_records) >= peer_review.max_review_count:
+        raise exc.MaxPeerReviewCount
+
+    peer_review_record_ids = await service.peer_review_record.add_auto(peer_review_id=peer_review.id,
+                                                                       grader_id=request.account.id)
+
+    return AssignPeerReviewOutput(peer_review_record_ids)
 
 
 @dataclass
@@ -206,7 +221,9 @@ async def read_peer_review_record(peer_review_record_id: int, request: Request) 
     is_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)
     is_grader = request.account.id == peer_review_record.grader_id
     is_receiver = request.account.id == peer_review_record.receiver_id
-    if not (is_manager or is_grader or is_receiver):
+    if not (is_manager
+            or is_grader
+            or (is_receiver and challenge.end_time <= request.time)):
         raise exc.NoPermission
 
     submission = await service.submission.read(submission_id=peer_review_record.submission_id)
@@ -247,6 +264,8 @@ async def submit_peer_review_record(peer_review_record_id: int, data: SubmitPeer
     if class_role is not RoleType.normal:  # only class normal
         raise exc.NoPermission
 
+    if not challenge.start_time <= request.time <= challenge.end_time:
+        raise exc.NoPermission
     # 檢查 score 是否在規定範圍內
     if not (peer_review.min_score <= data.score <= peer_review.max_score):
         raise exc.IllegalInput
@@ -270,7 +289,8 @@ async def browse_account_received_peer_review_record(peer_review_id: int, accoun
 
     is_class_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)
 
-    if not (is_class_manager or (request.account.id == account_id)):
+    if not (is_class_manager
+            or (request.account.id == account_id and challenge.end_time <= request.time)):
         raise exc.NoPermission
 
     peer_review_records = await service.peer_review_record.read_by_peer_review_id(peer_review_id,
@@ -294,7 +314,8 @@ async def browse_account_reviewed_peer_review_record(peer_review_id: int, accoun
 
     is_class_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)
 
-    if not (is_class_manager or (request.account.id == account_id)):
+    if not (is_class_manager
+            or (request.account.id == account_id and challenge.end_time <= request.time)):
         raise exc.NoPermission
 
     peer_review_records = await service.peer_review_record.read_by_peer_review_id(peer_review_id,

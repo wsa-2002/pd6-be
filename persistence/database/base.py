@@ -34,6 +34,8 @@ import asyncpg.exceptions
 
 import exceptions as exc
 
+import util.metric
+
 from . import pool_handler
 
 
@@ -61,6 +63,7 @@ class SafeConnection:
         await pool_handler.pool.release(self._conn)
         exec_time_ms = (datetime.now() - self._start_time).total_seconds() * 1000
         log.info(f"Ended {self.__class__.__name__}: {self._event} after {exec_time_ms} ms")
+        util.metric.sql_time(self._event, exec_time_ms)
 
 
 class SafeExecutor:
@@ -110,6 +113,7 @@ class SafeExecutor:
 
         exec_time_ms = (datetime.now() - start_time).total_seconds() * 1000
         log.info(f"Ended {self.__class__.__name__}: {self._event} after {exec_time_ms} ms")
+        util.metric.sql_time(self._event, exec_time_ms)
 
         if self._fetch and not results and self._raise_not_found:
             raise exc.persistence.NotFound
