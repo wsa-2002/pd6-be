@@ -1,5 +1,3 @@
-from typing import Sequence
-
 from pydantic import BaseModel
 
 from base import do
@@ -7,9 +5,10 @@ from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
 from persistence import database as db
+import service
 from util.api_doc import add_to_docstring
 
-from .util import rbac, model
+from .util import model
 
 router = APIRouter(
     tags=['Announcement'],
@@ -33,7 +32,7 @@ async def add_announcement(data: AddAnnouncementInput, request: Request) -> mode
     ### 權限
     - System manager
     """
-    if not await rbac.validate(request.account.id, RoleType.manager):
+    if not await service.rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
     announcement_id = await db.announcement.add(title=data.title, content=data.content,
@@ -68,7 +67,7 @@ async def browse_announcement(
 
     ### Available columns
     """
-    system_role = await rbac.get_role(request.account.id)
+    system_role = await service.rbac.get_role(request.account.id)
     if not system_role >= RoleType.guest:
         raise exc.NoPermission
 
@@ -90,7 +89,7 @@ async def read_announcement(announcement_id: int, request: Request) -> do.Announ
     - System manager (all)
     - System guest (limited)
     """
-    system_role = await rbac.get_role(request.account.id)
+    system_role = await service.rbac.get_role(request.account.id)
     if not system_role >= RoleType.guest:
         raise exc.NoPermission
 
@@ -112,7 +111,7 @@ async def edit_announcement(announcement_id: int, data: EditAnnouncementInput, r
     ### 權限
     - System manager
     """
-    if not await rbac.validate(request.account.id, RoleType.manager):
+    if not await service.rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
     return await db.announcement.edit(announcement_id=announcement_id, title=data.title, content=data.content,
@@ -126,7 +125,7 @@ async def delete_announcement(announcement_id: int, request: Request) -> None:
     ### 權限
     - System manager
     """
-    if not await rbac.validate(request.account.id, RoleType.manager):
+    if not await service.rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
     return await db.announcement.delete(announcement_id=announcement_id)

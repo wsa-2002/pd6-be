@@ -2,9 +2,10 @@ from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
 from persistence import database as db
+import service
 from util.api_doc import add_to_docstring
 
-from .util import rbac, model
+from .util import model
 
 router = APIRouter(
     tags=['System'],
@@ -35,7 +36,7 @@ async def browse_access_log(
     
     ### Available columns
     """
-    if not (await rbac.validate(req.account.id, RoleType.manager)  # System manager
+    if not (await service.rbac.validate(req.account.id, RoleType.manager)  # System manager
             # or await rbac.any_class_role(member_id=req.account.id, role=RoleType.manager)):  # Any class manager
     ):
         raise exc.NoPermission

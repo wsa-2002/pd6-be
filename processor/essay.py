@@ -10,7 +10,7 @@ from middleware import APIRouter, response, enveloped, auth, Request
 import persistence.database as db
 import service
 
-from .util import rbac, model
+from .util import model
 
 router = APIRouter(
     tags=['Essay'],
@@ -29,7 +29,7 @@ async def read_essay(essay_id: int, request: Request) -> do.Essay:
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     essay = await db.essay.read(essay_id=essay_id)
     challenge = await db.challenge.read(essay.challenge_id, include_scheduled=True, ref_time=request.time)
-    class_role = await rbac.get_role(request.account.id, class_id=challenge.class_id)
+    class_role = await service.rbac.get_role(request.account.id, class_id=challenge.class_id)
 
     is_scheduled = challenge.start_time > request.time
 
@@ -56,7 +56,7 @@ async def edit_essay(essay_id: int, data: EditEssayInput, request: Request) -> N
     essay = await db.essay.read(essay_id=essay_id)
     challenge = await db.challenge.read(essay.challenge_id, include_scheduled=True, ref_time=request.time)
 
-    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
     await db.essay.edit(essay_id=essay.id, setter_id=request.account.id, title=data.title,
@@ -73,7 +73,7 @@ async def delete_essay(essay_id: int, request: Request) -> None:
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     essay = await db.essay.read(essay_id=essay_id)
     challenge = await db.challenge.read(essay.challenge_id, include_scheduled=True, ref_time=request.time)
-    if not rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if not service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
     await db.essay.delete(essay_id=essay_id)
@@ -90,7 +90,7 @@ async def download_all_essay_submission(essay_id: int, request: Request, as_atta
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     essay = await db.essay.read(essay_id=essay_id)
     challenge = await db.challenge.read(essay.challenge_id, include_scheduled=True, ref_time=request.time)
-    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
     background_tasks.add_task(service.downloader.all_essay,

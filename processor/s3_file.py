@@ -6,8 +6,7 @@ from base.enum import RoleType
 from middleware import APIRouter, response, enveloped, auth, Request
 import persistence.database as db
 from persistence import s3
-
-from .util import rbac
+import service
 
 router = APIRouter(
     tags=['S3 File'],
@@ -31,7 +30,7 @@ async def get_s3_file_url(s3_file_uuid: UUID, filename: str, as_attachment: bool
     ### Note
     - 目前所有 url 都有時間限制 (超時會自動過期)
     """
-    if not await rbac.validate(request.account.id, min_role=RoleType.normal):
+    if not await service.rbac.validate(request.account.id, min_role=RoleType.normal):
         raise exc.NoPermission
     try:  # 先摸 db 看有沒有這個 file
         s3_file = await db.s3_file.read(s3_file_uuid=s3_file_uuid)

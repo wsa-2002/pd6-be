@@ -5,8 +5,7 @@ from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
 import persistence.database as db
-
-from .util import rbac
+import service
 
 router = APIRouter(
     tags=['Judgment'],
@@ -45,7 +44,7 @@ async def read_judgment(judgment_id: int, request: Request) -> do.Judgment:
     challenge = await db.challenge.read(challenge_id=problem.challenge_id, include_scheduled=True)
 
     # 助教可以看他的 class 的
-    if await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         return judgment
 
     raise exc.NoPermission
@@ -65,7 +64,7 @@ async def browse_all_judgment_judge_case(judgment_id: int, request: Request) -> 
     problem = await db.problem.read(problem_id=submission.problem_id)
     challenge = await db.challenge.read(challenge_id=problem.challenge_id, include_scheduled=True)
 
-    if not (await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)
+    if not (await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)
             or request.account.id == submission.account_id):
         raise exc.NoPermission
 

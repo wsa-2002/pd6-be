@@ -13,7 +13,7 @@ import persistence.database as db
 import service
 from util.api_doc import add_to_docstring
 
-from .util import rbac, model
+from .util import model
 
 router = APIRouter(
     tags=['Grade'],
@@ -29,7 +29,7 @@ async def import_class_grade(class_id: int, title: str, request: Request, grade_
     ### 權限
     - Class manager
     """
-    if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id):
+    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
 
     await service.csv.import_class_grade(grade_file=grade_file.file, class_id=class_id,
@@ -51,7 +51,7 @@ async def add_grade(class_id: int, data: AddGradeInput, request: Request) -> mod
     ### 權限
     - Class Manager
     """
-    if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id):
+    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
 
     grade_id = await db.grade.add(receiver=data.receiver_referral, grader=data.grader_referral, class_id=class_id,
@@ -93,7 +93,7 @@ async def browse_class_grade(class_id: int, request: Request,
                                op=FilterOperator.eq,
                                value=class_id))
 
-    if await rbac.validate(request.account.id, RoleType.manager, class_id=class_id):  # Class manager
+    if await service.rbac.validate(request.account.id, RoleType.manager, class_id=class_id):  # Class manager
         grades, total_count = await db.grade.browse(limit=limit, offset=offset, filters=filters, sorters=sorters)
         return model.BrowseOutputBase(grades, total_count=total_count)
     else:  # Self
@@ -152,7 +152,7 @@ async def get_grade_template_file(request: Request) -> GetGradeTemplateOutput:
     ### 權限
     - system normal
     """
-    if not await rbac.validate(request.account.id, RoleType.normal):
+    if not await service.rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
     s3_file, filename = await service.csv.get_grade_template()
@@ -170,7 +170,7 @@ async def get_grade(grade_id: int, request: Request) -> do.Grade:
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     grade = await db.grade.read(grade_id=grade_id)
 
-    is_class_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=grade.class_id)
+    is_class_manager = await service.rbac.validate(request.account.id, RoleType.manager, class_id=grade.class_id)
     is_self = request.account.id == grade.receiver_id
 
     if not (is_class_manager or is_self):
@@ -195,7 +195,7 @@ async def edit_grade(grade_id: int, data: EditGradeInput, request: Request) -> N
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     grade = await db.grade.read(grade_id=grade_id)
 
-    is_class_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=grade.class_id)
+    is_class_manager = await service.rbac.validate(request.account.id, RoleType.manager, class_id=grade.class_id)
     if not is_class_manager:
         raise exc.NoPermission
 
@@ -213,7 +213,7 @@ async def delete_grade(grade_id: int, request: Request):
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     grade = await db.grade.read(grade_id=grade_id)
 
-    is_class_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=grade.class_id)
+    is_class_manager = await service.rbac.validate(request.account.id, RoleType.manager, class_id=grade.class_id)
     if not is_class_manager:
         raise exc.NoPermission
 

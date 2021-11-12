@@ -9,7 +9,7 @@ from middleware import APIRouter, response, enveloped, auth, Request
 import persistence.database as db
 import service
 
-from .util import rbac, model
+from .util import model
 
 router = APIRouter(
     tags=['Team Project Scoreboard'],
@@ -27,7 +27,7 @@ async def view_team_project_scoreboard(scoreboard_id: int, request: Request) -> 
     """
     scoreboard = await db.scoreboard.read(scoreboard_id=scoreboard_id)
     challenge = await db.challenge.read(challenge_id=scoreboard.challenge_id, include_scheduled=True)
-    if not await rbac.validate(request.account.id, RoleType.normal, class_id=challenge.class_id):
+    if not await service.rbac.validate(request.account.id, RoleType.normal, class_id=challenge.class_id):
         raise exc.NoPermission
 
     scoreboard, scoreboard_setting_data = await service.scoreboard.read_with_scoreboard_setting_data(
@@ -61,7 +61,7 @@ async def edit_team_project_scoreboard(scoreboard_id: int, data: EditScoreboardI
     """
     scoreboard = await db.scoreboard.read(scoreboard_id=scoreboard_id)
     challenge = await db.challenge.read(challenge_id=scoreboard.challenge_id, include_scheduled=True)
-    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
     await db.scoreboard_setting_team_project.edit_with_scoreboard(

@@ -13,7 +13,7 @@ import persistence.database as db
 import service
 from util.api_doc import add_to_docstring
 
-from .util import rbac, model, file
+from .util import model, file
 
 router = APIRouter(
     tags=['Submission'],
@@ -29,7 +29,7 @@ async def browse_all_submission_language(request: Request) -> Sequence[do.Submis
     ### 權限
     - System normal
     """
-    if not await rbac.validate(request.account.id, RoleType.normal):
+    if not await service.rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
     return await db.submission.browse_language()
@@ -48,7 +48,7 @@ async def add_submission_language(data: AddSubmissionLanguageInput, request: Req
     ### 權限
     - System manager
     """
-    if not await rbac.validate(request.account.id, RoleType.manager):
+    if not await service.rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
     language_id = await db.submission.add_language(name=data.name, version=data.version,
@@ -69,7 +69,7 @@ async def edit_submission_language(language_id: int, data: EditSubmissionLanguag
     ### 權限
     - System manager
     """
-    if not await rbac.validate(request.account.id, RoleType.manager):
+    if not await service.rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
     return await db.submission.edit_language(language_id,
@@ -89,13 +89,13 @@ async def submit(problem_id: int, language_id: int, request: Request, content_fi
     ### 限制
     - 上傳檔案 < 1mb
     """
-    if not await rbac.validate(request.account.id, RoleType.normal):
+    if not await service.rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
     # Validate problem
     problem = await db.problem.read(problem_id)
     challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
-    class_role = await rbac.get_role(request.account.id, class_id=challenge.class_id)
+    class_role = await service.rbac.get_role(request.account.id, class_id=challenge.class_id)
     publicize_time = (challenge.start_time if challenge.publicize_type == ChallengePublicizeType.start_time
                       else challenge.end_time)
     is_challenge_publicized = request.time >= publicize_time
@@ -171,7 +171,7 @@ async def batch_get_submission_judgment(request: Request, submission_ids: pydant
     if not submission_ids:
         return []
 
-    if not await rbac.validate(request.account.id, RoleType.normal):
+    if not await service.rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
     return await db.judgment.browse_latest_with_submission_ids(submission_ids=submission_ids)
@@ -194,7 +194,7 @@ async def read_submission(submission_id: int, request: Request) -> do.Submission
     # 助教可以看他的 class 的
     problem = await db.problem.read(problem_id=submission.problem_id)
     challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
-    class_role = await rbac.get_role(request.account.id, class_id=challenge.class_id)
+    class_role = await service.rbac.get_role(request.account.id, class_id=challenge.class_id)
     if class_role >= RoleType.manager:
         return submission
 
@@ -213,7 +213,7 @@ async def browse_all_submission_judgment(submission_id: int, request: Request) -
     problem = await db.problem.read(problem_id=submission.problem_id)
     challenge = await db.challenge.read(challenge_id=problem.challenge_id, include_scheduled=True)
 
-    if not rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if not service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
     return await db.judgment.browse(submission_id=submission_id)
 
@@ -236,7 +236,7 @@ async def read_submission_latest_judgment(submission_id: int, request: Request) 
     challenge = await db.challenge.read(challenge_id=problem.challenge_id, include_scheduled=True)
 
     # 助教可以看管理的 class 的
-    if rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         return await db.submission.read_latest_judgment(submission_id=submission_id)
 
     raise exc.NoPermission
@@ -254,7 +254,7 @@ async def rejudge_submission(submission_id: int, request: Request) -> None:
     problem = await db.problem.read(problem_id=submission.problem_id)
     challenge = await db.challenge.read(challenge_id=problem.challenge_id, include_scheduled=True)
 
-    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
     await service.judge.judge_submission(submission.id)

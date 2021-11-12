@@ -7,8 +7,6 @@ from middleware import APIRouter, response, enveloped, auth, Request
 import persistence.database as db
 import service
 
-from .util import rbac
-
 router = APIRouter(
     tags=['Scoreboard'],
     default_response_class=response.JSONResponse,
@@ -37,7 +35,7 @@ async def read_scoreboard(scoreboard_id: int, request: Request) -> ReadScoreboar
     """
     scoreboard = await db.scoreboard.read(scoreboard_id=scoreboard_id)
     challenge = await db.challenge.read(challenge_id=scoreboard.challenge_id, include_scheduled=True)
-    if not await rbac.validate(request.account.id, RoleType.normal, class_id=challenge.class_id):
+    if not await service.rbac.validate(request.account.id, RoleType.normal, class_id=challenge.class_id):
         raise exc.NoPermission
 
     scoreboard, data = await service.scoreboard.read_with_scoreboard_setting_data(scoreboard_id=scoreboard_id)
@@ -60,7 +58,7 @@ async def delete_scoreboard(scoreboard_id: int, request: Request) -> None:
     """
     scoreboard = await db.scoreboard.read(scoreboard_id=scoreboard_id)
     challenge = await db.challenge.read(challenge_id=scoreboard.challenge_id, include_scheduled=True)
-    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
     await db.scoreboard.delete(scoreboard_id=scoreboard_id)

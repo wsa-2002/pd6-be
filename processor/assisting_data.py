@@ -8,8 +8,9 @@ import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
 import persistence.database as db
 from persistence import s3
+import service
 
-from .util import rbac, file
+from .util import file
 
 router = APIRouter(
     tags=['Assisting Data'],
@@ -37,7 +38,7 @@ async def read_assisting_data(assisting_data_id: int, request: Request) -> ReadA
     problem = await db.problem.read(assisting_data.problem_id)
     challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
 
-    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
     return ReadAssistingDataOutput(id=assisting_data.id,
@@ -58,7 +59,7 @@ async def edit_assisting_data(assisting_data_id: int, request: Request, assistin
     problem = await db.problem.read(assisting_data.problem_id)
     challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
 
-    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
     # Issue #26: CRLF
@@ -83,7 +84,7 @@ async def delete_assisting_data(assisting_data_id: int, request: Request) -> Non
     problem = await db.problem.read(assisting_data.problem_id)
     challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
 
-    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
     await db.assisting_data.delete(assisting_data_id=assisting_data.id)

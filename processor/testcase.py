@@ -10,7 +10,7 @@ import service
 from persistence import s3
 
 from .problem import ReadTestcaseOutput
-from .util import rbac, file, model
+from .util import file, model
 
 router = APIRouter(
     tags=['Testcase'],
@@ -26,14 +26,14 @@ async def read_testcase(testcase_id: int, request: Request) -> ReadTestcaseOutpu
     ### 權限
     - System normal
     """
-    if not await rbac.validate(request.account.id, RoleType.normal):
+    if not await service.rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     testcase = await db.testcase.read(testcase_id=testcase_id)
     problem = await db.problem.read(testcase.problem_id)
     challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
-    is_class_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)
+    is_class_manager = await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)
 
     return ReadTestcaseOutput(
         id=testcase.id,
@@ -74,7 +74,7 @@ async def edit_testcase(testcase_id: int, data: EditTestcaseInput, request: Requ
     testcase = await db.testcase.read(testcase_id)
     problem = await db.problem.read(testcase.problem_id)
     challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
-    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
     await db.testcase.edit(testcase_id=testcase_id, is_sample=data.is_sample, score=data.score, label=data.label,
@@ -93,7 +93,7 @@ async def upload_testcase_input_data(testcase_id: int, request: Request, input_f
     testcase = await db.testcase.read(testcase_id)
     problem = await db.problem.read(testcase.problem_id)
     challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
-    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
     # Issue #26: CRLF
@@ -118,7 +118,7 @@ async def upload_testcase_output_data(testcase_id: int, request: Request, output
     testcase = await db.testcase.read(testcase_id)
     problem = await db.problem.read(testcase.problem_id)
     challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
-    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
     # Issue #26: CRLF
@@ -140,7 +140,7 @@ async def delete_testcase(testcase_id: int, request: Request) -> None:
     testcase = await db.testcase.read(testcase_id)
     problem = await db.problem.read(testcase.problem_id)
     challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
-    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
     await db.testcase.delete(testcase_id=testcase_id)
@@ -157,7 +157,7 @@ async def delete_testcase_input_data(testcase_id: int, request: Request):
     testcase = await db.testcase.read(testcase_id)
     problem = await db.problem.read(testcase.problem_id)
     challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
-    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
     await db.testcase.delete_input_data(testcase_id=testcase_id)
@@ -174,7 +174,7 @@ async def delete_testcase_output_data(testcase_id: int, request: Request):
     testcase = await db.testcase.read(testcase_id)
     problem = await db.problem.read(testcase.problem_id)
     challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
-    if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
     await db.testcase.delete_output_data(testcase_id=testcase_id)

@@ -3,6 +3,7 @@ from . import (
     downloader,
     judge,
     moss,
+    rbac,
     scoreboard,
     statistics,
     submission,

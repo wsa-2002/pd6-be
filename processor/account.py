@@ -14,7 +14,7 @@ import service
 from persistence import email
 from util.api_doc import add_to_docstring
 
-from .util import rbac, model
+from .util import model
 
 router = APIRouter(
     tags=['Account'],
@@ -57,7 +57,7 @@ async def browse_account_with_default_student_id(
     ### 權限
     - System Manager
     """
-    is_manager = await rbac.validate(request.account.id, RoleType.manager)
+    is_manager = await service.rbac.validate(request.account.id, RoleType.manager)
     if not is_manager:
         raise exc.NoPermission
 
@@ -98,7 +98,7 @@ async def batch_get_account_with_default_student_id(request: Request, account_id
     if not account_ids:
         return []
 
-    is_normal = await rbac.validate(request.account.id, RoleType.normal)
+    is_normal = await service.rbac.validate(request.account.id, RoleType.normal)
     if not is_normal:
         raise exc.NoPermission
 
@@ -123,7 +123,7 @@ async def batch_get_account_by_account_referrals(account_referrals: pydantic.Jso
     if not account_referrals:
         return []
 
-    if not await rbac.validate(request.account.id, RoleType.normal):
+    if not await service.rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
     result = await db.account_vo.batch_read_by_account_referral(account_referrals=account_referrals)
@@ -178,7 +178,7 @@ async def get_account_template_file(request: Request) -> GetAccountTemplateOutpu
     ### 權限
     - System Manager
     """
-    if not await rbac.validate(request.account.id, RoleType.manager):
+    if not await service.rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
     s3_file, filename = await service.csv.get_account_template()
@@ -206,8 +206,8 @@ async def read_account_with_default_student_id(account_id: int, request: Request
     - Self
     - System Normal (個資除外)
     """
-    is_manager = await rbac.validate(request.account.id, RoleType.manager)
-    is_normal = await rbac.validate(request.account.id, RoleType.normal)
+    is_manager = await service.rbac.validate(request.account.id, RoleType.manager)
+    is_normal = await service.rbac.validate(request.account.id, RoleType.normal)
     is_self = request.account.id == account_id
 
     if not (is_manager or is_normal or is_self):
@@ -243,7 +243,7 @@ async def edit_account(account_id: int, data: EditAccountInput, request: Request
     - System Manager
     - Self
     """
-    is_manager = await rbac.validate(request.account.id, RoleType.manager)
+    is_manager = await service.rbac.validate(request.account.id, RoleType.manager)
     is_self = request.account.id == account_id
 
     if not ((is_self and not data.real_name) or is_manager):
@@ -270,7 +270,7 @@ async def delete_account(account_id: int, request: Request) -> None:
     - System manager
     - Self
     """
-    is_manager = await rbac.validate(request.account.id, RoleType.manager)
+    is_manager = await service.rbac.validate(request.account.id, RoleType.manager)
     is_self = request.account.id == account_id
 
     if not (is_manager or is_self):
@@ -295,7 +295,7 @@ async def make_student_card_default(account_id: int, data: DefaultStudentCardInp
     if account_id != owner_id:
         raise exc.account.StudentCardDoesNotBelong
 
-    is_manager = await rbac.validate(request.account.id, RoleType.manager)
+    is_manager = await service.rbac.validate(request.account.id, RoleType.manager)
     is_self = request.account.id == owner_id
 
     if not (is_manager or is_self):
@@ -313,7 +313,7 @@ async def browse_all_account_pending_email_verification(account_id: int, request
     - System manager
     - Self
     """
-    if not (await rbac.validate(request.account.id, RoleType.manager) or request.account.id == account_id):
+    if not (await service.rbac.validate(request.account.id, RoleType.manager) or request.account.id == account_id):
         raise exc.NoPermission
 
     return await db.email_verification.browse(account_id=account_id)

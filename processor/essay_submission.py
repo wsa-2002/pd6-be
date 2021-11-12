@@ -11,7 +11,7 @@ import persistence.database as db
 import service
 from util.api_doc import add_to_docstring
 
-from .util import rbac, model, file
+from .util import model, file
 
 router = APIRouter(
     tags=['Essay Submission'],
@@ -35,7 +35,7 @@ async def upload_essay(essay_id: int, request: Request, essay_file: UploadFile =
     essay = await db.essay.read(essay_id=essay_id)
     challenge = await db.challenge.read(essay.challenge_id, include_scheduled=True, ref_time=request.time)
 
-    if not (await rbac.validate(request.account.id, RoleType.normal, class_id=challenge.class_id)
+    if not (await service.rbac.validate(request.account.id, RoleType.normal, class_id=challenge.class_id)
             and request.time <= challenge.end_time):
         raise exc.NoPermission
 
@@ -74,7 +74,7 @@ async def browse_essay_submission_by_essay_id(
     essay = await db.essay.read(essay_id=essay_id)
     challenge = await db.challenge.read(essay.challenge_id, include_scheduled=True, ref_time=request.time)
 
-    class_role = await rbac.get_role(request.account.id, class_id=challenge.class_id)
+    class_role = await service.rbac.get_role(request.account.id, class_id=challenge.class_id)
 
     if not (class_role is RoleType.manager or class_role is RoleType.normal):
         raise exc.NoPermission
@@ -112,7 +112,7 @@ async def read_essay_submission(essay_submission_id: int, request: Request) -> d
     essay = await db.essay.read(essay_id=essay_submission.essay_id)
     challenge = await db.challenge.read(essay.challenge_id, include_scheduled=True, ref_time=request.time)
 
-    if await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         return essay_submission
 
     raise exc.NoPermission
