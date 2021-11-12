@@ -1,5 +1,6 @@
 from fastapi import File, UploadFile
 from pydantic import BaseModel
+from typing import Optional
 
 from base.enum import RoleType
 import exceptions as exc
@@ -7,7 +8,7 @@ from middleware import APIRouter, response, enveloped, auth, Request
 import service
 
 from .problem import ReadTestcaseOutput
-from .util import rbac, file
+from .util import rbac, file, model
 
 router = APIRouter(
     tags=['Testcase'],
@@ -37,10 +38,12 @@ async def read_testcase(testcase_id: int, request: Request) -> ReadTestcaseOutpu
         problem_id=testcase.problem_id,
         is_sample=testcase.is_sample,
         score=testcase.score,
+        label=testcase.label,
         input_file_uuid=testcase.input_file_uuid if (testcase.is_sample or is_class_manager) else None,
         output_file_uuid=testcase.output_file_uuid if (testcase.is_sample or is_class_manager) else None,
         input_filename=testcase.input_filename,
         output_filename=testcase.output_filename,
+        note=testcase.note,
         time_limit=testcase.time_limit,
         memory_limit=testcase.memory_limit,
         is_disabled=testcase.is_disabled,
@@ -52,8 +55,10 @@ class EditTestcaseInput(BaseModel):
     is_sample: bool = None
     score: int = None
     time_limit: int = None
+    note: Optional[str] = model.can_omit
     memory_limit: int = None
     is_disabled: bool = None
+    label: str = None
 
 
 @router.patch('/testcase/{testcase_id}')
@@ -70,9 +75,9 @@ async def edit_testcase(testcase_id: int, data: EditTestcaseInput, request: Requ
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
-    await service.testcase.edit(testcase_id=testcase_id, is_sample=data.is_sample, score=data.score,
+    await service.testcase.edit(testcase_id=testcase_id, is_sample=data.is_sample, score=data.score, label=data.label,
                                 time_limit=data.time_limit, memory_limit=data.memory_limit,
-                                is_disabled=data.is_disabled)
+                                is_disabled=data.is_disabled, note=data.note)
 
 
 @router.put('/testcase/{testcase_id}/input-data')

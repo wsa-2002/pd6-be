@@ -108,7 +108,7 @@ async def read_by_peer_review_id(peer_review_id: int, account_id: int, is_receiv
                 in records]
 
 
-async def add_auto(peer_review_id: int, grader_id: int):
+async def add_auto(peer_review_id: int, grader_id: int) -> int:
     async with SafeConnection(event='add auto') as conn:
         async with conn.transaction():
             (target_problem_id, challenge_end_time, raw_selection_type, class_id) = await conn.fetchrow(

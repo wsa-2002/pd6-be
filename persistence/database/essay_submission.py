@@ -103,19 +103,39 @@ async def edit(essay_submission_id: int, content_file_uuid: UUID, filename: str,
         pass
 
 
-async def get_latest_essay_submission(account_id: int, essay_id: int) -> do.EssaySubmission:
+async def browse_by_essay_class_members(essay_id: int) -> dict[int, do.EssaySubmission]:
+    """
+    Only supports last
+    Returns only submitted members
+
+    :return: member_id, essay_submission
+    """
+
     async with SafeExecutor(
-            event='get latest essay submission by account id and essay id',
-            sql=fr'SELECT id, account_id, essay_id, content_file_uuid, filename, submit_time'
-                fr'  FROM essay_submission'
-                fr' WHERE account_id = %(account_id)s'
-                fr'   AND essay_id = %(essay_id)s'
-                fr' ORDER by id DESC'
-                fr' LIMIT 1',
-            account_id=account_id,
+            event='browse essay submission by essay class members',
+            sql=fr'SELECT DISTINCT ON (class_member.member_id)'
+                fr'       class_member.member_id,'
+                fr'       essay_submission.id, essay_submission.account_id, essay_submission.essay_id,'
+                fr'       essay_submission.content_file_uuid, essay_submission.filename, essay_submission.submit_time'
+                fr'  FROM class_member'
+                fr' INNER JOIN challenge'
+                fr'         ON challenge.class_id = class_member.class_id'
+                fr'        AND NOT challenge.is_deleted'
+                fr' INNER JOIN essay'
+                fr'         ON essay.challenge_id = challenge.id'
+                fr'        AND NOT essay.is_deleted'
+                fr'        AND essay.id = %(essay_id)s'
+                fr' INNER JOIN essay_submission'
+                fr'         ON essay_submission.essay_id = essay.id'
+                fr'        AND essay_submission.account_id = class_member.member_id'
+                fr'        AND essay_submission.submit_time <= challenge.end_time'
+                fr' ORDER BY class_member.member_id, essay_submission.submit_time DESC, essay_submission.id DESC',
             essay_id=essay_id,
-            fetch=1,
-    ) as (id_, account_id, essay_id, content_file_uuid, filename, submit_time):
-        return do.EssaySubmission(id=id_, account_id=account_id, essay_id=essay_id,
-                                  content_file_uuid=content_file_uuid,
-                                  filename=filename, submit_time=submit_time)
+            fetch='all',
+            raise_not_found=False,  # Issue #134: return [] for browse
+    ) as records:
+        return {member_id: do.EssaySubmission(id=essay_submission_id, account_id=account_id, essay_id=essay_id,
+                                              content_file_uuid=content_file_uuid, filename=filename,
+                                              submit_time=submit_time)
+                for member_id, essay_submission_id, account_id, essay_id, content_file_uuid, filename, submit_time
+                in records}

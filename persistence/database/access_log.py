@@ -37,9 +37,14 @@ async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Se
             event='browse access_logs',
             sql=fr'SELECT id, access_time, request_method, resource_path, ip, account_id'
                 fr'  FROM access_log'
-                fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
-                fr' ORDER BY {sort_sql} id ASC'
-                fr' LIMIT %(limit)s OFFSET %(offset)s',
+                fr' INNER JOIN (SELECT id'
+                fr'             FROM access_log'
+                fr'{f"          WHERE {cond_sql}" if cond_sql else ""}'
+                fr'             ORDER BY {sort_sql} id ASC'
+                fr'             LIMIT %(limit)s OFFSET %(offset)s'
+                fr'            ) filtered_access_log(access_log_id)'
+                fr'         ON filtered_access_log.access_log_id = access_log.id'
+                fr' ORDER BY {sort_sql} id ASC',
             **cond_params,
             limit=limit, offset=offset,
             fetch='all',
@@ -51,7 +56,7 @@ async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Se
                 in records]
 
     total_count = await execute_count(
-        sql=fr'SELECT id, access_time, request_method, resource_path, ip, account_id'
+        sql=fr'SELECT id'
             fr'  FROM access_log'
             fr'{f" WHERE {cond_sql}" if cond_sql else ""}',
         **cond_params,

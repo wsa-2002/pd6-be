@@ -1,3 +1,4 @@
+import json
 from typing import Sequence, Iterable, Any
 
 from base.enum import FilterOperator
@@ -10,13 +11,17 @@ from .base import SafeExecutor
 ESTIMATE_COST_THRESHOLD = 5000000  # 65659969?
 
 
-async def execute_count(sql: str, **kwargs) -> int:
+async def execute_count(sql: str, use_estimate_if_cost=0, use_estimate_if_rows=0, **kwargs) -> int:
     try:
         rows, cols, cost = await get_query_estimation(sql, **kwargs)
-    except:
-        log.info('Execute count error, pass')
+    except Exception as e:
+        log.exception(e, msg='Execute count error', info_level=True)
     else:
-        if cost > ESTIMATE_COST_THRESHOLD:
+        log.info(f'Query estimation is {rows=} {cols=} {cost=}')
+        if cost > ESTIMATE_COST_THRESHOLD \
+                or use_estimate_if_cost and cost > use_estimate_if_cost \
+                or use_estimate_if_rows and rows > use_estimate_if_rows:
+            log.info('Use estimation as count result')
             return rows
 
     return await get_query_actual_count(sql, **kwargs)
@@ -32,10 +37,11 @@ async def get_query_estimation(sql: str, **kwargs) -> tuple[int, int, int]:
             **kwargs,
             fetch=1,
     ) as (query_plan,):
+        query_plan = json.loads(query_plan)
         # Note: might raise IndexError or KeyError in this part
-        rows = query_plan[0]['Plan']['Plan Rows']
-        cols = query_plan[0]['Plan']['Plan Width']
-        cost = query_plan[0]['Plan']['Total Cost']
+        rows = query_plan[0]['Plan']['Plans'][0]['Plan Rows']
+        cols = query_plan[0]['Plan']['Plans'][0]['Plan Width']
+        cost = query_plan[0]['Plan']['Plans'][0]['Total Cost']
         return rows, cols, cost
 
 
@@ -94,7 +100,7 @@ def compile_filters(filters: Sequence[Filter]) -> tuple[str, dict]:
     return ' AND '.join(conditions), params
 
 
-def compile_values(values: Sequence[Sequence]) -> tuple[str, list]:  # sql, param_list
+def compile_values(values: Iterable[Iterable]) -> tuple[str, list]:  # sql, param_list
     value_sql, params = [], []
     for items in values:
         value_sql.append(
@@ -102,7 +108,7 @@ def compile_values(values: Sequence[Sequence]) -> tuple[str, list]:  # sql, para
             + ', '.join(f'${i}' for i, _ in enumerate(items, start=len(params) + 1))
             + ')'
         )
-        params += items
+        params += list(items)
 
     sql = ', '.join(value_sql)
     return sql, params

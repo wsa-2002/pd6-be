@@ -1,8 +1,11 @@
 from datetime import datetime
 from typing import Sequence, Optional
 
+import asyncpg
+
 from base import do, enum
 from base.popo import Filter, Sorter
+import exceptions as exc
 
 from .base import SafeExecutor, SafeConnection
 from .util import execute_count, compile_filters, compile_values
@@ -41,10 +44,13 @@ async def batch_add(class_id: int, title: str, grades: Sequence[tuple[str, str, 
 
     async with SafeConnection(event=f'batch import grade into class {class_id}') as conn:
         async with conn.transaction():
-            await conn.execute(fr'INSERT INTO grade'
-                               fr'            (receiver_id, score, comment, grader_id, class_id, title, update_time)'
-                               fr'     VALUES {value_sql}',
-                               *value_params)
+            try:
+                await conn.execute(fr'INSERT INTO grade'
+                                   fr'            (receiver_id, score, comment, grader_id, class_id, title, update_time)'
+                                   fr'     VALUES {value_sql}',
+                                   *value_params)
+            except asyncpg.exceptions.UniqueViolationError:
+                raise exc.persistence.UniqueViolationError
 
 
 async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter]) \

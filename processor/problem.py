@@ -6,7 +6,7 @@ from fastapi import UploadFile, File, BackgroundTasks
 from pydantic import BaseModel
 
 from base import do
-from base.enum import RoleType, ChallengePublicizeType, TaskSelectionType
+from base.enum import RoleType, ChallengePublicizeType, TaskSelectionType, ProblemJudgeType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
 import service
@@ -35,9 +35,33 @@ async def browse_problem_set(request: Request) -> Sequence[do.Problem]:
     return await service.problem.browse_problem_set(request_time=request.time)
 
 
+@dataclass
+class JudgeSource:
+    judge_language: str
+    code_uuid: UUID
+    filename: str
+
+
+@dataclass
+class ReadProblemOutput:
+    id: int
+    challenge_id: int
+    challenge_label: str
+    judge_type: ProblemJudgeType
+    title: str
+    setter_id: int
+    full_score: Optional[int]
+    description: Optional[str]
+    io_description: Optional[str]
+    source: Optional[str]
+    hint: Optional[str]
+    is_deleted: bool
+    judge_source: Optional[JudgeSource]
+
+
 @router.get('/problem/{problem_id}')
 @enveloped
-async def read_problem(problem_id: int, request: Request) -> do.Problem:
+async def read_problem(problem_id: int, request: Request) -> ReadProblemOutput:
     """
     ### 權限
     - Class manager (hidden)
@@ -59,18 +83,47 @@ async def read_problem(problem_id: int, request: Request) -> do.Problem:
             or (is_system_normal and is_challenge_publicized)):
         raise exc.NoPermission
 
-    return problem
+    customized_setting = do.ProblemJudgeSettingCustomized
+    if problem.judge_type is ProblemJudgeType.customized:
+        customized_setting = await service.problem_judge_setting_customized.read(customized_id=problem.setting_id)
+
+    return ReadProblemOutput(
+        id=problem.id,
+        challenge_id=problem.challenge_id,
+        challenge_label=problem.challenge_label,
+        title=problem.title,
+        judge_type=problem.judge_type,
+        setter_id=problem.setter_id,
+        full_score=problem.full_score,
+        description=problem.description,
+        io_description=problem.io_description,
+        source=problem.source,
+        hint=problem.hint,
+        is_deleted=problem.is_deleted,
+        judge_source=JudgeSource(
+            judge_language="python 3.8",
+            code_uuid=customized_setting.judge_code_file_uuid,
+            filename=customized_setting.judge_code_filename
+        ) if problem.judge_type is ProblemJudgeType.customized and class_role is RoleType.manager else None
+    )
+
+
+class JudgeSourceInput(BaseModel):
+    judge_language: str
+    judge_code: str
 
 
 class EditProblemInput(BaseModel):
     challenge_label: str = None
     title: str = None
-    full_score: Optional[int] =  model.can_omit
+    full_score: Optional[int] = model.can_omit
     testcase_disabled: bool = None
     description: Optional[str] = model.can_omit
     io_description: Optional[str] = model.can_omit
     source: Optional[str] = model.can_omit
     hint: Optional[str] = model.can_omit
+    judge_type: ProblemJudgeType
+    judge_source: Optional[JudgeSourceInput]
 
 
 @router.patch('/problem/{problem_id}')
@@ -86,10 +139,18 @@ async def edit_problem(problem_id: int, data: EditProblemInput, request: Request
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
-    return await service.problem.edit(problem_id, challenge_label=data.challenge_label, title=data.title, full_score=data.full_score,
-                                      testcase_disabled=data.testcase_disabled,
+    if ((data.judge_type is ProblemJudgeType.customized and not data.judge_source)
+            or (data.judge_type is ProblemJudgeType.normal and data.judge_source)):
+        raise exc.IllegalInput
+
+    if data.judge_source and (data.judge_source.judge_language != 'python 3.8' or not data.judge_source.judge_code):
+        raise exc.IllegalInput
+
+    return await service.problem.edit(problem_id, challenge_label=data.challenge_label, title=data.title,
+                                      full_score=data.full_score, testcase_disabled=data.testcase_disabled,
                                       description=data.description, io_description=data.io_description,
-                                      source=data.source, hint=data.hint)
+                                      source=data.source, hint=data.hint, judge_type=data.judge_type,
+                                      judge_code=data.judge_source.judge_code if data.judge_source else None)
 
 
 @router.delete('/problem/{problem_id}')
@@ -113,7 +174,9 @@ class AddTestcaseInput(BaseModel):
     score: int
     time_limit: int
     memory_limit: int
+    note: Optional[str]
     is_disabled: bool
+    label: str
 
 
 @router.post('/problem/{problem_id}/testcase', tags=['Testcase'])
@@ -130,10 +193,10 @@ async def add_testcase_under_problem(problem_id: int, data: AddTestcaseInput, re
         raise exc.NoPermission
 
     testcase_id = await service.testcase.add(problem_id=problem_id, is_sample=data.is_sample, score=data.score,
-                                             input_file_uuid=None, output_file_uuid=None,
+                                             label=data.label, input_file_uuid=None, output_file_uuid=None,
                                              input_filename=None, output_filename=None,
                                              time_limit=data.time_limit, memory_limit=data.memory_limit,
-                                             is_disabled=data.is_disabled)
+                                             is_disabled=data.is_disabled, note=data.note)
     return model.AddOutput(id=testcase_id)
 
 
@@ -143,10 +206,12 @@ class ReadTestcaseOutput:
     problem_id: int
     is_sample: bool
     score: int
+    label: Optional[str]
     input_file_uuid: Optional[UUID]
     output_file_uuid: Optional[UUID]
     input_filename: Optional[str]
     output_filename: Optional[str]
+    note: Optional[str]
     time_limit: int
     memory_limit: int
     is_disabled: bool
@@ -175,10 +240,12 @@ async def browse_all_testcase_under_problem(problem_id: int, request: Request) -
         problem_id=testcase.problem_id,
         is_sample=testcase.is_sample,
         score=testcase.score,
+        label=testcase.label,
         input_file_uuid=testcase.input_file_uuid if (testcase.is_sample or is_class_manager) else None,
         output_file_uuid=testcase.output_file_uuid if (testcase.is_sample or is_class_manager) else None,
         input_filename=testcase.input_filename,
         output_filename=testcase.output_filename,
+        note=testcase.note,
         time_limit=testcase.time_limit,
         memory_limit=testcase.memory_limit,
         is_disabled=testcase.is_disabled,
