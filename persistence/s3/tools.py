@@ -1,18 +1,18 @@
 import io
 import zipfile
 import typing
-from typing import Optional, List, Tuple
-import uuid
 from uuid import UUID
 from datetime import datetime
 
+import const
 import log
 from base import do
 
 from . import s3_handler
 
 
-async def sign_url(bucket: str, key: str, expire_secs: int, filename: str, as_attachment: bool) -> str:
+async def sign_url(bucket: str, key: str, filename: str, as_attachment: bool, expire_secs: int = const.S3_EXPIRE_SECS) \
+        -> str:
     start_time = datetime.now()
     log.info(f'Start getting S3 file sign url ...')
 
@@ -72,7 +72,7 @@ async def upload(bucket_name: str, file: typing.IO, file_uuid: UUID) -> do.S3Fil
     return do.S3File(uuid=file_uuid, bucket=bucket_name, key=key)
 
 
-async def zipper(files: list[(do.S3File, str)]) -> io.BytesIO():
+async def zipper(files: list[(do.S3File, str)]) -> io.BytesIO:
     start_time = datetime.now()
     log.info('Start zipping S3 files ...')
 
