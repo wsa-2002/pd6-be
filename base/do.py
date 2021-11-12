@@ -191,6 +191,7 @@ class Judgment:
     total_time: int
     max_memory: int
     score: int
+    error_message: Optional[str]
     judge_time: datetime
 
 
