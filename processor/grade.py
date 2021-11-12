@@ -9,6 +9,7 @@ from base import do, popo
 import exceptions as exc
 from base.enum import RoleType, FilterOperator
 from middleware import APIRouter, response, enveloped, auth, Request
+import persistence.database as db
 import service
 from util.api_doc import add_to_docstring
 
@@ -31,8 +32,8 @@ async def import_class_grade(class_id: int, title: str, request: Request, grade_
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
 
-    await service.grade.import_class_grade(grade_file=grade_file.file, class_id=class_id,
-                                           title=title, update_time=request.time)
+    await service.csv.import_class_grade(grade_file=grade_file.file, class_id=class_id,
+                                         title=title, update_time=request.time)
 
 
 class AddGradeInput(BaseModel):
@@ -53,9 +54,9 @@ async def add_grade(class_id: int, data: AddGradeInput, request: Request) -> mod
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
 
-    grade_id = await service.grade.add(receiver=data.receiver_referral, grader=data.grader_referral, class_id=class_id,
-                                       title=data.title, score=data.score, comment=data.comment,
-                                       update_time=request.time)
+    grade_id = await db.grade.add(receiver=data.receiver_referral, grader=data.grader_referral, class_id=class_id,
+                                  title=data.title, score=data.score, comment=data.comment,
+                                  update_time=request.time)
 
     return model.AddOutput(id=grade_id)
 
@@ -93,13 +94,13 @@ async def browse_class_grade(class_id: int, request: Request,
                                value=class_id))
 
     if await rbac.validate(request.account.id, RoleType.manager, class_id=class_id):  # Class manager
-        grades, total_count = await service.grade.browse(limit=limit, offset=offset, filters=filters, sorters=sorters)
+        grades, total_count = await db.grade.browse(limit=limit, offset=offset, filters=filters, sorters=sorters)
         return model.BrowseOutputBase(grades, total_count=total_count)
     else:  # Self
         filters.append(popo.Filter(col_name='receiver_id',
                                    op=FilterOperator.eq,
                                    value=request.account.id))
-        grades, total_count = await service.grade.browse(limit=limit, offset=offset, filters=filters, sorters=sorters)
+        grades, total_count = await db.grade.browse(limit=limit, offset=offset, filters=filters, sorters=sorters)
         return model.BrowseOutputBase(grades, total_count=total_count)
 
 
@@ -133,7 +134,7 @@ async def browse_account_grade(account_id: int, request: Request,
     filters.append(popo.Filter(col_name='receiver_id',
                                op=FilterOperator.eq,
                                value=request.account.id))
-    grades, total_count = await service.grade.browse(limit=limit, offset=offset, filters=filters, sorters=sorters)
+    grades, total_count = await db.grade.browse(limit=limit, offset=offset, filters=filters, sorters=sorters)
 
     return model.BrowseOutputBase(grades, total_count=total_count)
 
@@ -154,7 +155,7 @@ async def get_grade_template_file(request: Request) -> GetGradeTemplateOutput:
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
-    s3_file, filename = await service.grade.get_template_file()
+    s3_file, filename = await service.csv.get_grade_template()
     return GetGradeTemplateOutput(s3_file_uuid=s3_file.uuid, filename=filename)
 
 
@@ -167,7 +168,7 @@ async def get_grade(grade_id: int, request: Request) -> do.Grade:
     - Class normal (self)
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    grade = await service.grade.read(grade_id=grade_id)
+    grade = await db.grade.read(grade_id=grade_id)
 
     is_class_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=grade.class_id)
     is_self = request.account.id == grade.receiver_id
@@ -192,14 +193,14 @@ async def edit_grade(grade_id: int, data: EditGradeInput, request: Request) -> N
     - Class manager
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    grade = await service.grade.read(grade_id=grade_id)
+    grade = await db.grade.read(grade_id=grade_id)
 
     is_class_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=grade.class_id)
     if not is_class_manager:
         raise exc.NoPermission
 
-    await service.grade.edit(grade_id=grade_id, grader_id=request.account.id, title=data.title, score=data.score,
-                             comment=data.comment, update_time=request.time)
+    await db.grade.edit(grade_id=grade_id, grader_id=request.account.id, title=data.title, score=data.score,
+                        comment=data.comment, update_time=request.time)
 
 
 @router.delete('/grade/{grade_id}')
@@ -210,10 +211,10 @@ async def delete_grade(grade_id: int, request: Request):
     - Class manager
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    grade = await service.grade.read(grade_id=grade_id)
+    grade = await db.grade.read(grade_id=grade_id)
 
     is_class_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=grade.class_id)
     if not is_class_manager:
         raise exc.NoPermission
 
-    await service.grade.delete(grade_id)
+    await db.grade.delete(grade_id)

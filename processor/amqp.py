@@ -7,4 +7,4 @@ import log
 async def save_report(body: bytes) -> None:
     log.info('Received save report task')
     report = marshal.unmarshal_report(body)
-    await service.judgment.save_report(report)
+    await service.judge.save_report(report)

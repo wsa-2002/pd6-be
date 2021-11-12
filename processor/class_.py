@@ -8,18 +8,18 @@ from base import do, enum, popo
 from base.enum import RoleType, FilterOperator
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
+import persistence.database as db
 import service
+from persistence import email
 from util.api_doc import add_to_docstring
 
 from .util import rbac, model
-
 
 router = APIRouter(
     tags=['Class'],
     default_response_class=response.JSONResponse,
     dependencies=auth.doc_dependencies,
 )
-
 
 BROWSE_CLASS_COLUMNS = {
     'id': int,
@@ -49,8 +49,8 @@ async def browse_class(
     filters = model.parse_filter(filter, BROWSE_CLASS_COLUMNS)
     sorters = model.parse_sorter(sort, BROWSE_CLASS_COLUMNS)
 
-    classes, total_count = await service.class_.browse_with_filter(limit=limit, offset=offset,
-                                                                   filters=filters, sorters=sorters)
+    classes, total_count = await db.class_.browse_with_filter(limit=limit, offset=offset,
+                                                              filters=filters, sorters=sorters)
     return model.BrowseOutputBase(classes, total_count=total_count)
 
 
@@ -64,7 +64,7 @@ async def read_class(class_id: int, request: Request) -> do.Class:
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
-    return await service.class_.read(class_id=class_id)
+    return await db.class_.read(class_id=class_id)
 
 
 class EditClassInput(BaseModel):
@@ -82,7 +82,7 @@ async def edit_class(class_id: int, data: EditClassInput, request: Request) -> N
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id, inherit=True):
         raise exc.NoPermission
 
-    await service.class_.edit(
+    await db.class_.edit(
         class_id=class_id,
         name=data.name,
         course_id=data.course_id,
@@ -99,7 +99,7 @@ async def delete_class(class_id: int, request: Request) -> None:
     if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
-    await service.class_.delete(class_id)
+    await db.class_.delete(class_id)
 
 
 @dataclass
@@ -146,8 +146,8 @@ async def browse_class_member(
                                op=FilterOperator.eq,
                                value=class_id))
 
-    result, total_count = await service.class_.browse_member_account_with_student_card_and_institute(
-                                               limit=limit, offset=offset, filters=filters, sorters=sorters)
+    result, total_count = await db.class_vo.browse_member_account_with_student_card_and_institute(
+        limit=limit, offset=offset, filters=filters, sorters=sorters)
     data = [BrowseClassMemberOutput(member_id=member.member_id, role=member.role,
                                     username=account.username, real_name=account.real_name,
                                     student_id=student_card.student_id,
@@ -176,7 +176,7 @@ async def browse_all_class_member_with_account_referral(class_id: int, request: 
             and not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id, inherit=True)):
         raise exc.NoPermission
 
-    results = await service.class_.browse_class_member_with_account_referral(class_id=class_id)
+    results = await db.class_vo.browse_class_member_with_account_referral(class_id=class_id)
     return [ReadClassMemberOutput(member_id=member.member_id,
                                   member_referral=member_referral,
                                   member_role=member.role)
@@ -198,10 +198,30 @@ async def replace_class_members(class_id: int, data: Sequence[SetClassMemberInpu
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id, inherit=True):
         raise exc.NoPermission
 
-    return await service.class_.replace_members(class_id=class_id,
-                                                member_roles=[(member.account_referral, member.role)
-                                                              for member in data],
-                                                operator_id=request.account.id)
+    member_roles = [(member.account_referral, member.role) for member in data]
+
+    cm_before = set(await db.class_.browse_member_referrals(class_id=class_id, role=RoleType.manager))
+    emails_before = set(await db.class_.browse_member_emails(class_id=class_id, role=RoleType.manager))
+
+    result = await db.class_.replace_members(class_id=class_id, member_roles=member_roles)
+
+    cm_after = set(await db.class_.browse_member_referrals(class_id=class_id, role=RoleType.manager))
+    emails_after = set(await db.class_.browse_member_emails(class_id=class_id, role=RoleType.manager))
+
+    if cm_before != cm_after:
+        class_ = await db.class_.read(class_id=class_id)
+        course = await db.course.read(course_id=class_.course_id)
+        operator = await db.account.read(account_id=request.account.id)
+        await email.notification.notify_cm_change(
+            tos=(emails_after | emails_before),
+            added_account_referrals=cm_after.difference(cm_before),
+            removed_account_referrals=cm_before.difference(cm_after),
+            class_name=class_.name,
+            course_name=course.name,
+            operator_name=operator.username,
+        )
+
+    return result
 
 
 @router.delete('/class/{class_id}/member/{member_id}')
@@ -214,7 +234,7 @@ async def delete_class_member(class_id: int, member_id: int, request: Request) -
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id, inherit=True):
         raise exc.NoPermission
 
-    await service.class_.delete_member(class_id=class_id, member_id=member_id)
+    await db.class_.delete_member(class_id=class_id, member_id=member_id)
 
 
 class AddTeamInput(BaseModel):
@@ -232,7 +252,7 @@ async def add_team_under_class(class_id: int, data: AddTeamInput, request: Reque
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
 
-    team_id = await service.team.add(
+    team_id = await db.team.add(
         name=data.name,
         class_id=class_id,
         label=data.label,
@@ -275,7 +295,7 @@ async def browse_team_under_class(
     filters.append(popo.Filter(col_name='class_id',
                                op=FilterOperator.eq,
                                value=class_id))
-    teams, total_count = await service.team.browse(limit=limit, offset=offset, filters=filters, sorters=sorters)
+    teams, total_count = await db.team.browse(limit=limit, offset=offset, filters=filters, sorters=sorters)
     return model.BrowseOutputBase(teams, total_count=total_count)
 
 
@@ -312,7 +332,7 @@ async def browse_submission_under_class(
     filters = model.parse_filter(filter, BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS)
     sorters = model.parse_sorter(sort, BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS)
 
-    submissions, total_count = await service.submission.browse_under_class(class_id=class_id,
-                                                                           limit=limit, offset=offset,
-                                                                           filters=filters, sorters=sorters)
+    submissions, total_count = await db.submission.browse_under_class(class_id=class_id,
+                                                                      limit=limit, offset=offset,
+                                                                      filters=filters, sorters=sorters)
     return model.BrowseOutputBase(submissions, total_count=total_count)

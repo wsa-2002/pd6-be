@@ -6,10 +6,9 @@ from base import do
 from base.enum import CourseType, RoleType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
-import service
+import persistence.database as db
 
 from .util import rbac, model
-
 
 router = APIRouter(
     tags=['Course'],
@@ -33,7 +32,7 @@ async def add_course(data: AddCourseInput, request: Request) -> model.AddOutput:
     if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
-    course_id = await service.course.add(
+    course_id = await db.course.add(
         name=data.name,
         course_type=data.type,
     )
@@ -52,7 +51,7 @@ async def browse_all_course(request: Request) -> Sequence[do.Course]:
     if system_role < RoleType.normal:
         raise exc.NoPermission
 
-    courses = await service.course.browse()
+    courses = await db.course.browse()
     return courses
 
 
@@ -68,7 +67,7 @@ async def read_course(course_id: int, request: Request) -> do.Course:
     if system_role < RoleType.normal:
         raise exc.NoPermission
 
-    course = await service.course.read(course_id)
+    course = await db.course.read(course_id)
     return course
 
 
@@ -87,7 +86,7 @@ async def edit_course(course_id: int, data: EditCourseInput, request: Request) -
     if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
-    await service.course.edit(
+    await db.course.edit(
         course_id=course_id,
         name=data.name,
         course_type=data.type,
@@ -104,7 +103,7 @@ async def delete_course(course_id: int, request: Request) -> None:
     if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
-    await service.course.delete(course_id)
+    await db.course.delete(course_id)
 
 
 class AddClassInput(BaseModel):
@@ -121,7 +120,7 @@ async def add_class_under_course(course_id: int, data: AddClassInput, request: R
     if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
-    class_id = await service.class_.add(
+    class_id = await db.class_.add(
         name=data.name,
         course_id=course_id,
     )
@@ -140,4 +139,4 @@ async def browse_all_class_under_course(course_id: int, request: Request) -> Seq
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
-    return await service.class_.browse(course_id=course_id)
+    return await db.class_.browse(course_id=course_id)

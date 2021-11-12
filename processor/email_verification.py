@@ -1,11 +1,9 @@
 from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
-from persistence import database as db
-import service
+from persistence import database as db, email
 
 from .util import rbac
-
 
 router = APIRouter(
     tags=['Email Verification'],
@@ -23,14 +21,17 @@ async def resend_email_verification(email_verification_id: int, request: Request
     - Self
     """
     # 因為需要 account_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    email_verification = await service.email_verification.read(email_verification_id=email_verification_id)
+    email_verification = await db.email_verification.read(email_verification_id=email_verification_id)
 
     if not (await rbac.validate(request.account.id, RoleType.manager)
             or request.account.id == email_verification.account_id):
         raise exc.NoPermission
 
     account = await db.account.read(email_verification.account_id)
-    await service.email_verification.resend(email_verification_id=email_verification_id, username=account.username)
+
+    email_verification = await db.email_verification.read(email_verification_id)
+    code = await db.email_verification.read_verification_code(email_verification_id)
+    await email.verification.send(to=email_verification.email, code=code, username=account.username)
 
 
 @router.delete('/email-verification/{email_verification_id}')
@@ -42,10 +43,10 @@ async def delete_pending_email_verification(email_verification_id: int, request:
     - Self
     """
     # 因為需要 account_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    email_verification = await service.email_verification.read(email_verification_id)
+    email_verification = await db.email_verification.read(email_verification_id)
 
     if not (await rbac.validate(request.account.id, RoleType.manager)
             or request.account.id == email_verification.account_id):
         raise exc.NoPermission
 
-    await service.email_verification.delete(email_verification_id)
+    await db.email_verification.delete(email_verification_id)

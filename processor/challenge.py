@@ -9,6 +9,7 @@ from base import do, enum, popo
 from base.enum import RoleType, FilterOperator, ChallengePublicizeType, ScoreboardType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
+import persistence.database as db
 import service
 from util.api_doc import add_to_docstring
 
@@ -43,7 +44,7 @@ async def add_challenge_under_class(class_id: int, data: AddChallengeInput, requ
     if data.start_time > data.end_time:
         raise exc.IllegalInput
 
-    challenge_id = await service.challenge.add(
+    challenge_id = await db.challenge.add(
         class_id=class_id, publicize_type=data.publicize_type, selection_type=data.selection_type,
         title=data.title, setter_id=request.account.id, description=data.description,
         start_time=data.start_time, end_time=data.end_time
@@ -94,11 +95,11 @@ async def browse_challenge_under_class(
                                op=FilterOperator.eq,
                                value=class_id))
 
-    challenges, total_count = await service.challenge.browse(limit=limit, offset=offset, filters=filters,
-                                                             sorters=sorters,
-                                                             include_scheduled=(class_role == RoleType.manager),
-                                                             ref_time=request.time,
-                                                             by_publicize_type=True if not class_role else False)
+    challenges, total_count = await db.challenge.browse(limit=limit, offset=offset, filters=filters,
+                                                        sorters=sorters,
+                                                        include_scheduled=(class_role == RoleType.manager),
+                                                        ref_time=request.time,
+                                                        by_publicize_type=True if not class_role else False)
 
     return model.BrowseOutputBase(challenges, total_count=total_count)
 
@@ -116,7 +117,7 @@ async def read_challenge(challenge_id: int, request: Request) -> do.Challenge:
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
-    challenge = await service.challenge.read(challenge_id=challenge_id, include_scheduled=True, ref_time=request.time)
+    challenge = await db.challenge.read(challenge_id=challenge_id, include_scheduled=True, ref_time=request.time)
     class_role = await rbac.get_role(request.account.id, class_id=challenge.class_id)
 
     publicize_time = (challenge.start_time if challenge.publicize_type == ChallengePublicizeType.start_time
@@ -149,14 +150,14 @@ async def edit_challenge(challenge_id: int, data: EditChallengeInput, request: R
     - Class manager
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    challenge = await service.challenge.read(challenge_id=challenge_id, include_scheduled=True, ref_time=request.time)
+    challenge = await db.challenge.read(challenge_id=challenge_id, include_scheduled=True, ref_time=request.time)
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
-    await service.challenge.edit(challenge_id=challenge_id, publicize_type=data.publicize_type,
-                                 selection_type=data.selection_type,
-                                 title=data.title, description=data.description, start_time=data.start_time,
-                                 end_time=data.end_time)
+    await db.challenge.edit(challenge_id=challenge_id, publicize_type=data.publicize_type,
+                            selection_type=data.selection_type,
+                            title=data.title, description=data.description, start_time=data.start_time,
+                            end_time=data.end_time)
 
 
 @router.delete('/challenge/{challenge_id}')
@@ -167,11 +168,11 @@ async def delete_challenge(challenge_id: int, request: Request) -> None:
     - Class manager
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    challenge = await service.challenge.read(challenge_id=challenge_id, include_scheduled=True, ref_time=request.time)
+    challenge = await db.challenge.read(challenge_id=challenge_id, include_scheduled=True, ref_time=request.time)
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
-    await service.challenge.delete(challenge_id)
+    await db.challenge.delete(challenge_id)
 
 
 class AddProblemInput(BaseModel):
@@ -192,11 +193,11 @@ async def add_problem_under_challenge(challenge_id: int, data: AddProblemInput, 
     - Class manager
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    challenge = await service.challenge.read(challenge_id=challenge_id, include_scheduled=True, ref_time=request.time)
+    challenge = await db.challenge.read(challenge_id=challenge_id, include_scheduled=True, ref_time=request.time)
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
-    problem_id = await service.problem.add(
+    problem_id = await db.problem.add(
         challenge_id=challenge_id, challenge_label=data.challenge_label,
         title=data.title, setter_id=request.account.id, full_score=data.full_score,
         description=data.description, io_description=data.io_description, source=data.source, hint=data.hint,
@@ -219,12 +220,12 @@ async def add_essay_under_challenge(challenge_id: int, data: AddEssayInput, requ
     - Class manager
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    challenge = await service.challenge.read(challenge_id=challenge_id, include_scheduled=True, ref_time=request.time)
+    challenge = await db.challenge.read(challenge_id=challenge_id, include_scheduled=True, ref_time=request.time)
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
-    essay_id = await service.essay.add(challenge_id=challenge_id, challenge_label=data.challenge_label,
-                                       title=data.title, setter_id=request.account.id, description=data.description)
+    essay_id = await db.essay.add(challenge_id=challenge_id, challenge_label=data.challenge_label,
+                                  title=data.title, setter_id=request.account.id, description=data.description)
     return model.AddOutput(id=essay_id)
 
 
@@ -247,27 +248,27 @@ async def add_peer_review_under_challenge(challenge_id: int, data: AddPeerReview
     - Class manager
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    challenge = await service.challenge.read(challenge_id=challenge_id, include_scheduled=True, ref_time=request.time)
+    challenge = await db.challenge.read(challenge_id=challenge_id, include_scheduled=True, ref_time=request.time)
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
     # validate problem belongs to same class
-    target_problem = await service.problem.read(problem_id=data.target_problem_id)
-    target_problem_challenge = await service.challenge.read(challenge_id=target_problem.challenge_id,
-                                                            include_scheduled=True)
+    target_problem = await db.problem.read(problem_id=data.target_problem_id)
+    target_problem_challenge = await db.challenge.read(challenge_id=target_problem.challenge_id,
+                                                       include_scheduled=True)
 
     # Only allow peer review to target to same class
     if challenge.class_id is not target_problem_challenge.class_id:
         raise exc.IllegalInput
 
-    peer_review_id = await service.peer_review.add(challenge_id=challenge_id,
-                                                   challenge_label=data.challenge_label,
-                                                   title=data.title,
-                                                   target_problem_id=data.target_problem_id,
-                                                   setter_id=request.account.id,
-                                                   description=data.description,
-                                                   min_score=data.min_score, max_score=data.max_score,
-                                                   max_review_count=data.max_review_count)
+    peer_review_id = await db.peer_review.add(challenge_id=challenge_id,
+                                              challenge_label=data.challenge_label,
+                                              title=data.title,
+                                              target_problem_id=data.target_problem_id,
+                                              setter_id=request.account.id,
+                                              description=data.description,
+                                              min_score=data.min_score, max_score=data.max_score,
+                                              max_review_count=data.max_review_count)
     return model.AddOutput(id=peer_review_id)
 
 
@@ -292,12 +293,13 @@ async def add_team_project_scoreboard_under_challenge(challenge_id: int, data: A
     - Class manager
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    challenge = await service.challenge.read(challenge_id=challenge_id, include_scheduled=True, ref_time=request.time)
+    challenge = await db.challenge.read(challenge_id=challenge_id, include_scheduled=True, ref_time=request.time)
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
-    scoreboard_id = await service.scoreboard_setting_team_project.add_under_scoreboard(
-        challenge_id=challenge_id, challenge_label=data.challenge_label, title=data.title, target_problem_ids=data.target_problem_ids,
+    scoreboard_id = await db.scoreboard_setting_team_project.add_under_scoreboard(
+        challenge_id=challenge_id, challenge_label=data.challenge_label, title=data.title,
+        target_problem_ids=data.target_problem_ids,
         type=ScoreboardType.team_project, scoring_formula=data.scoring_formula, baseline_team_id=data.baseline_team_id,
         rank_by_total_score=data.rank_by_total_score, team_label_filter=data.team_label_filter,
     )
@@ -323,19 +325,19 @@ async def browse_all_task_under_challenge(challenge_id: int, request: Request) -
     - System Normal (by challenge publicize type)
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    challenge = await service.challenge.read(challenge_id=challenge_id, include_scheduled=True, ref_time=request.time)
+    challenge = await db.challenge.read(challenge_id=challenge_id, include_scheduled=True, ref_time=request.time)
     class_role = await rbac.get_role(request.account.id, class_id=challenge.class_id)
 
     publicize_time = (challenge.start_time if challenge.publicize_type == ChallengePublicizeType.start_time
                       else challenge.end_time)
     is_challenge_publicized = request.time >= publicize_time
 
-    if not ((class_role >= RoleType.guest and request.time >= challenge.start_time)                    # Class guest
+    if not ((class_role >= RoleType.guest and request.time >= challenge.start_time)  # Class guest
             or (await rbac.validate(request.account.id, RoleType.normal) and is_challenge_publicized)  # System normal
-            or class_role == RoleType.manager):                                                        # Class manager
+            or class_role == RoleType.manager):  # Class manager
         raise exc.NoPermission
 
-    problems, peer_reviews, essays, scoreboard = await service.challenge.browse_task(challenge.id)
+    problems, peer_reviews, essays, scoreboard = await service.task.browse(challenge.id)
 
     return BrowseTaskOutput(
         problem=problems,
@@ -364,12 +366,12 @@ async def browse_all_task_status_under_challenge(challenge_id: int, request: Req
     - Self: see self
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    challenge = await service.challenge.read(challenge_id=challenge_id, include_scheduled=True, ref_time=request.time)
+    challenge = await db.challenge.read(challenge_id=challenge_id, include_scheduled=True, ref_time=request.time)
     class_role = await rbac.get_role(request.account.id, class_id=challenge.class_id)
     if class_role < RoleType.guest:
         raise exc.NoPermission
 
-    results = await service.challenge.browse_task_status(challenge.id, request.account.id)
+    results = await service.task.browse_status(challenge.id, request.account.id)
     return [ReadStatusOutput(problem=[ReadProblemStatusOutput(problem_id=problem.id, submission_id=submission.id)
                                       for (problem, submission) in results])]
 
@@ -395,11 +397,11 @@ async def get_challenge_statistics(challenge_id: int, request: Request) -> GetCh
     - class manager
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    challenge = await service.challenge.read(challenge_id, include_scheduled=True)
+    challenge = await db.challenge.read(challenge_id, include_scheduled=True)
     if not rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
-    result = await service.challenge.get_challenge_statistics(challenge_id=challenge_id)
+    result = await service.statistics.get_challenge_statistics(challenge_id=challenge_id)
     return GetChallengeStatOutput(tasks=[ProblemStatOutput(task_label=task_label,
                                                            solved_member_count=solved_member_count,
                                                            submission_count=submission_count,
@@ -433,15 +435,16 @@ async def get_member_submission_statistics(challenge_id: int, request: Request) 
     - class manager
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    challenge = await service.challenge.read(challenge_id, include_scheduled=True)
+    challenge = await db.challenge.read(challenge_id, include_scheduled=True)
     if not rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
-    results = await service.challenge.get_member_submission_statistics(challenge_id=challenge.id)
+    results = await service.statistics.get_member_submission_statistics(challenge_id=challenge.id)
     member_submission_stat = GetMemberSubmissionStatOutput(
         member=[MemberSubmissionStatOutput(
             id=member_id,
-            problem_scores=[ProblemScores(problem_id=problem_id, judgment=judgment) for problem_id, judgment in problem_scores],
+            problem_scores=[ProblemScores(problem_id=problem_id, judgment=judgment) for problem_id, judgment in
+                            problem_scores],
             essay_submissions=essays if essays else None)
             for member_id, problem_scores, essays in results])
 
@@ -456,13 +459,13 @@ async def download_all_submissions(challenge_id: int, request: Request, as_attac
     ### 權限
     - class manager
     """
-    challenge = await service.challenge.read(challenge_id, include_scheduled=True, ref_time=request.time)
+    challenge = await db.challenge.read(challenge_id, include_scheduled=True, ref_time=request.time)
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
     async def background_task(*args, **kwargs):
         try:
-            await service.challenge.download_all_submissions(*args, **kwargs)
+            await service.downloader.all_submissions(*args, **kwargs)
         except Exception as e:
             log.exception(e)
 
@@ -479,13 +482,13 @@ async def download_all_plagiarism_reports(challenge_id: int, request: Request, a
     ### 權限
     - class manager
     """
-    challenge = await service.challenge.read(challenge_id, include_scheduled=True, ref_time=request.time)
+    challenge = await db.challenge.read(challenge_id, include_scheduled=True, ref_time=request.time)
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
     async def background_task(*args, **kwargs):
         try:
-            await service.challenge.check_all_submissions_moss(*args, **kwargs)
+            await service.moss.check_all_submissions_moss(*args, **kwargs)
         except Exception as e:
             log.exception(e)
 

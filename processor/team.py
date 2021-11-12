@@ -5,15 +5,14 @@ from uuid import UUID
 from fastapi import UploadFile, File
 from pydantic import BaseModel
 
-from base import do, popo
-from base.enum import RoleType, FilterOperator
+from base import do
+from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
+import persistence.database as db
 import service
-from util.api_doc import add_to_docstring
 
-from .util import rbac, model
-
+from .util import rbac
 
 router = APIRouter(
     tags=['Team'],
@@ -38,7 +37,7 @@ async def import_team(class_id: int, label: str, request: Request, team_file: Up
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
 
-    await service.team.import_team(team_file.file, class_id=class_id, label=label)
+    await service.csv.import_team(team_file.file, class_id=class_id, label=label)
 
 
 @router.get('/team/template')
@@ -51,7 +50,7 @@ async def get_team_template_file(request: Request) -> GetTeamTemplateOutput:
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
-    s3_file, filename = await service.team.get_template_file()
+    s3_file, filename = await service.csv.get_team_template()
     return GetTeamTemplateOutput(s3_file_uuid=s3_file.uuid, filename=filename)
 
 
@@ -64,7 +63,7 @@ async def read_team(team_id: int, request: Request) -> do.Team:
     - Class manager (hidden)
     """
     # 因為需要 class_id 才能判斷權限，所以先 read team 再判斷要不要噴 NoPermission
-    team = await service.team.read(team_id)
+    team = await db.team.read(team_id)
 
     class_role = await rbac.get_role(request.account.id, class_id=team.class_id)
     if class_role < RoleType.normal:
@@ -88,7 +87,7 @@ async def edit_team(team_id: int, data: EditTeamInput, request: Request) -> None
     - Team manager (limited)
     """
     # 因為需要 class_id 才能判斷權限，所以先 read team 再判斷要不要噴 NoPermission
-    team = await service.team.read(team_id)
+    team = await db.team.read(team_id)
 
     is_class_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=team.class_id)
     is_team_manager = await rbac.validate(request.account.id, RoleType.manager, team_id=team_id)
@@ -96,7 +95,7 @@ async def edit_team(team_id: int, data: EditTeamInput, request: Request) -> None
     if not is_class_manager and not is_team_manager:
         raise exc.NoPermission
 
-    await service.team.edit(
+    await db.team.edit(
         team_id=team_id,
         name=data.name,
         class_id=data.class_id,
@@ -112,28 +111,28 @@ async def delete_team(team_id: int, request: Request) -> None:
     - Class manager
     """
     # 因為需要 class_id 才能判斷權限，所以先 read team 再判斷要不要噴 NoPermission
-    team = await service.team.read(team_id)
+    team = await db.team.read(team_id)
 
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=team.class_id):
         raise exc.NoPermission
 
-    await service.team.delete(team_id)
+    await db.team.delete(team_id)
 
 
 @router.get('/team/{team_id}/member')
 @enveloped
-async def browse_team_all_member(team_id: int, request: Request,) -> Sequence[do.TeamMember]:
+async def browse_team_all_member(team_id: int, request: Request, ) -> Sequence[do.TeamMember]:
     """
     ### 權限
     - Class normal
     """
     # 因為需要 class_id 才能判斷權限，所以先 read team 再判斷要不要噴 NoPermission
-    team = await service.team.read(team_id)
+    team = await db.team.read(team_id)
 
     if not await rbac.validate(request.account.id, RoleType.normal, class_id=team.class_id):
         raise exc.NoPermission
 
-    return await service.team.browse_members(team_id=team_id)
+    return await db.team.browse_members(team_id=team_id)
 
 
 class AddMemberInput(BaseModel):
@@ -148,13 +147,13 @@ async def add_team_member(team_id: int, data: Sequence[AddMemberInput], request:
     ### 權限
     - class manager
     """
-    team = await service.team.read(team_id=team_id)
+    team = await db.team.read(team_id=team_id)
     if not rbac.validate(request.account.id, RoleType.manager, class_id=team.class_id):
         raise exc.NoPermission
 
-    return await service.team.add_members(team_id=team.id,
-                                          member_roles=[(member.account_referral, member.role)
-                                                        for member in data])
+    return await db.team.add_members(team_id=team.id,
+                                     member_roles=[(member.account_referral, member.role)
+                                                   for member in data])
 
 
 class EditMemberInput(BaseModel):
@@ -170,13 +169,13 @@ async def edit_team_member(team_id: int, data: Sequence[EditMemberInput], reques
     - Class manager
     """
     # 因為需要 class_id 才能判斷權限，所以先 read team 再判斷要不要噴 NoPermission
-    team = await service.team.read(team_id)
+    team = await db.team.read(team_id)
 
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=team.class_id):
         raise exc.NoPermission
 
     for member in data:
-        await service.team.edit_member(team_id=team_id, member_id=member.member_id, role=member.role)
+        await db.team.edit_member(team_id=team_id, member_id=member.member_id, role=member.role)
 
 
 @router.delete('/team/{team_id}/member/{member_id}')
@@ -187,9 +186,9 @@ async def delete_team_member(team_id: int, member_id: int, request: Request) -> 
     - Class manager
     """
     # 因為需要 class_id 才能判斷權限，所以先 read team 再判斷要不要噴 NoPermission
-    team = await service.team.read(team_id)
+    team = await db.team.read(team_id)
 
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=team.class_id):
         raise exc.NoPermission
 
-    await service.team.delete_member(team_id=team_id, member_id=member_id)
+    await db.team.delete_member(team_id=team_id, member_id=member_id)

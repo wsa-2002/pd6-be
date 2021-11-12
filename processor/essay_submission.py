@@ -7,11 +7,11 @@ from base import do, popo
 import const
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
+import persistence.database as db
 import service
 from util.api_doc import add_to_docstring
 
 from .util import rbac, model, file
-
 
 router = APIRouter(
     tags=['Essay Submission'],
@@ -32,16 +32,16 @@ async def upload_essay(essay_id: int, request: Request, essay_file: UploadFile =
     - 上傳檔案 < 10mb
     """
 
-    essay = await service.essay.read(essay_id=essay_id)
-    challenge = await service.challenge.read(essay.challenge_id, include_scheduled=True, ref_time=request.time)
+    essay = await db.essay.read(essay_id=essay_id)
+    challenge = await db.challenge.read(essay.challenge_id, include_scheduled=True, ref_time=request.time)
 
     if not (await rbac.validate(request.account.id, RoleType.normal, class_id=challenge.class_id)
             and request.time <= challenge.end_time):
         raise exc.NoPermission
 
-    return await service.essay_submission.add(file=essay_file.file, filename=essay_file.filename,
-                                              account_id=request.account.id, essay_id=essay_id,
-                                              submit_time=request.time)
+    return await service.submission.submit_essay(file=essay_file.file, filename=essay_file.filename,
+                                                 account_id=request.account.id, essay_id=essay_id,
+                                                 submit_time=request.time)
 
 
 BROWSE_ESSAY_SUBMISSION_COLUMNS = {
@@ -71,8 +71,8 @@ async def browse_essay_submission_by_essay_id(
     ### Available columns
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    essay = await service.essay.read(essay_id=essay_id)
-    challenge = await service.challenge.read(essay.challenge_id, include_scheduled=True, ref_time=request.time)
+    essay = await db.essay.read(essay_id=essay_id)
+    challenge = await db.challenge.read(essay.challenge_id, include_scheduled=True, ref_time=request.time)
 
     class_role = await rbac.get_role(request.account.id, class_id=challenge.class_id)
 
@@ -91,8 +91,8 @@ async def browse_essay_submission_by_essay_id(
                                    op=FilterOperator.eq,
                                    value=request.account.id))
 
-    essay_submissions, total_count = await service.essay_submission.browse(limit=limit, offset=offset,
-                                                                           filters=filters, sorters=sorters)
+    essay_submissions, total_count = await db.essay_submission.browse(limit=limit, offset=offset,
+                                                                      filters=filters, sorters=sorters)
     return model.BrowseOutputBase(essay_submissions, total_count=total_count)
 
 
@@ -104,13 +104,13 @@ async def read_essay_submission(essay_submission_id: int, request: Request) -> d
     - class manager (always)
     - class normal (self)
     """
-    essay_submission = await service.essay_submission.read(essay_submission_id=essay_submission_id)
+    essay_submission = await db.essay_submission.read(essay_submission_id=essay_submission_id)
 
     if request.account.id == essay_submission.account_id:
         return essay_submission
 
-    essay = await service.essay.read(essay_id=essay_submission.essay_id)
-    challenge = await service.challenge.read(essay.challenge_id, include_scheduled=True, ref_time=request.time)
+    essay = await db.essay.read(essay_id=essay_submission.essay_id)
+    challenge = await db.challenge.read(essay.challenge_id, include_scheduled=True, ref_time=request.time)
 
     if await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         return essay_submission
@@ -129,13 +129,13 @@ async def reupload_essay(essay_submission_id: int, request: Request, essay_file:
     ### 限制
     - 上傳檔案 < 10mb
     """
-    essay_submission = await service.essay_submission.read(essay_submission_id=essay_submission_id)
-    essay = await service.essay.read(essay_id=essay_submission.essay_id)
-    challenge = await service.challenge.read(challenge_id=essay.challenge_id, include_scheduled=True)
+    essay_submission = await db.essay_submission.read(essay_submission_id=essay_submission_id)
+    essay = await db.essay.read(essay_id=essay_submission.essay_id)
+    challenge = await db.challenge.read(challenge_id=essay.challenge_id, include_scheduled=True)
 
     if not (request.account.id == essay_submission.account_id and request.time <= challenge.end_time):
         raise exc.NoPermission
 
-    return await service.essay_submission.edit(file=essay_file.file, filename=essay_file.filename,
-                                               essay_submission_id=essay_submission_id,
-                                               submit_time=request.time)
+    return await service.submission.resubmit_essay(file=essay_file.file, filename=essay_file.filename,
+                                                   essay_submission_id=essay_submission_id,
+                                                   submit_time=request.time)

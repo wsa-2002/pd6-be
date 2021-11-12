@@ -2,15 +2,15 @@ from typing import Sequence
 
 from pydantic import BaseModel
 
-from base import do, popo
+from base import do
 import exceptions as exc
-from base.enum import RoleType, FilterOperator
+from base.enum import RoleType
 from middleware import APIRouter, response, enveloped, auth, Request
+import persistence.database as db
 import service
-from util.api_doc import add_to_docstring
+from persistence import email
 
-from .util import rbac, model
-
+from .util import rbac
 
 router = APIRouter(
     tags=['Student Card'],
@@ -40,24 +40,26 @@ async def add_student_card_to_account(account_id: int, data: AddStudentCardInput
         raise exc.NoPermission
 
     try:
-        institute = await service.institute.read(data.institute_id, include_disabled=False)
+        institute = await db.institute.read(data.institute_id, include_disabled=False)
     except exc.persistence.NotFound:
         raise exc.account.InvalidInstitute
 
     if data.student_id.lower() != data.institute_email_prefix.lower():
         raise exc.account.StudentIdNotMatchEmail
 
-    if await service.student_card.is_duplicate(institute.id, data.student_id):
+    if await db.student_card.is_duplicate(institute.id, data.student_id):
         raise exc.account.StudentCardExists
 
     institute_email = f"{data.institute_email_prefix}@{institute.email_domain}"
-    await service.student_card.add(account_id=account_id, institute_email=institute_email,
-                                   institute_id=institute.id, student_id=data.student_id)
+    code = await db.account.add_email_verification(email=institute_email, account_id=account_id,
+                                                   institute_id=data.institute_id, student_id=data.student_id)
+    account = await db.account.read(account_id)
+    await email.verification.send(to=institute_email, code=code, username=account.username)
 
 
 @router.get('/account/{account_id}/student-card', tags=['Account'])
 @enveloped
-async def browse_all_account_student_card(account_id: int, request: Request,) -> Sequence[do.StudentCard]:
+async def browse_all_account_student_card(account_id: int, request: Request, ) -> Sequence[do.StudentCard]:
     """
     ### 權限
     - System manager
@@ -69,7 +71,7 @@ async def browse_all_account_student_card(account_id: int, request: Request,) ->
     if not (is_manager or is_self):
         raise exc.NoPermission
 
-    student_cards = await service.student_card.browse(account_id=account_id)
+    student_cards = await db.student_card.browse(account_id=account_id)
 
     return student_cards
 
@@ -83,10 +85,10 @@ async def read_student_card(student_card_id: int, request: Request) -> do.Studen
     - Self
     """
     is_manager = await rbac.validate(request.account.id, RoleType.manager)
-    owner_id = await service.student_card.read_owner_id(student_card_id=student_card_id)
+    owner_id = await db.student_card.read_owner_id(student_card_id=student_card_id)
     is_self = request.account.id == owner_id
 
     if not (is_manager or is_self):
         raise exc.NoPermission
 
-    return await service.student_card.read(student_card_id=student_card_id)
+    return await db.student_card.read(student_card_id=student_card_id)

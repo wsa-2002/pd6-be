@@ -11,12 +11,6 @@ import persistence.amqp_publisher as publisher
 import persistence.database as db
 import persistence.s3 as s3
 
-browse = db.judgment.browse
-browse_cases = db.judgment.browse_cases
-read = db.judgment.read
-
-get_class_last_team_submission_judgment = db.judgment.get_class_last_team_submission_judgment
-
 
 async def judge_submission(submission_id: int, rejudge=False):
     submission = await db.submission.read(submission_id)

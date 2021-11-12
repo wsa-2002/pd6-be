@@ -1,3 +1,5 @@
+import io
+import uuid
 from dataclasses import dataclass
 from typing import Optional, Sequence
 from uuid import UUID
@@ -5,11 +7,14 @@ from uuid import UUID
 from fastapi import UploadFile, File, BackgroundTasks
 from pydantic import BaseModel, PositiveInt
 
+import const
 from base import do
 from base.enum import RoleType, ChallengePublicizeType, TaskSelectionType, ProblemJudgeType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
+import persistence.database as db
 import service
+from persistence import s3
 
 from .util import rbac, model
 
@@ -32,7 +37,7 @@ async def browse_problem_set(request: Request) -> Sequence[do.Problem]:
     if not system_role >= RoleType.normal:
         raise exc.NoPermission
 
-    return await service.problem.browse_problem_set(request_time=request.time)
+    return await db.problem.browse_problem_set(request_time=request.time)
 
 
 @dataclass
@@ -68,8 +73,8 @@ async def read_problem(problem_id: int, request: Request) -> ReadProblemOutput:
     - System normal (not hidden)
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    problem = await service.problem.read(problem_id)
-    challenge = await service.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
+    problem = await db.problem.read(problem_id)
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
 
     is_system_normal = await rbac.validate(request.account.id, RoleType.normal)
     class_role = await rbac.get_role(request.account.id, class_id=challenge.class_id)
@@ -85,7 +90,7 @@ async def read_problem(problem_id: int, request: Request) -> ReadProblemOutput:
 
     customized_setting = do.ProblemJudgeSettingCustomized
     if problem.judge_type is ProblemJudgeType.customized:
-        customized_setting = await service.problem_judge_setting_customized.read(customized_id=problem.setting_id)
+        customized_setting = await db.problem_judge_setting_customized.read(customized_id=problem.setting_id)
 
     return ReadProblemOutput(
         id=problem.id,
@@ -134,8 +139,8 @@ async def edit_problem(problem_id: int, data: EditProblemInput, request: Request
     - Class manager
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    problem = await service.problem.read(problem_id)
-    challenge = await service.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
+    problem = await db.problem.read(problem_id)
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
@@ -146,11 +151,24 @@ async def edit_problem(problem_id: int, data: EditProblemInput, request: Request
     if data.judge_source and (data.judge_source.judge_language != 'python 3.8' or not data.judge_source.judge_code):
         raise exc.IllegalInput
 
-    return await service.problem.edit(problem_id, challenge_label=data.challenge_label, title=data.title,
-                                      full_score=data.full_score, testcase_disabled=data.testcase_disabled,
-                                      description=data.description, io_description=data.io_description,
-                                      source=data.source, hint=data.hint, judge_type=data.judge_type,
-                                      judge_code=data.judge_source.judge_code if data.judge_source else None)
+    setting_id = None
+    if data.judge_source:
+        with io.BytesIO(data.judge_source.judge_code.encode(const.JUDGE_CODE_ENCODING)) as file:
+            s3_file = await s3.customized_code.upload(file=file)
+
+        s3_file_uuid = await db.s3_file.add_with_do(s3_file=s3_file)
+
+        setting_id = await db.problem_judge_setting_customized.add(judge_code_file_uuid=s3_file_uuid,
+                                                                   judge_code_filename=str(s3_file_uuid))
+
+    await db.problem.edit(problem_id, challenge_label=data.challenge_label, title=data.title,
+                          full_score=data.full_score,
+                          description=data.description, io_description=data.io_description, source=data.source,
+                          hint=data.hint, setting_id=setting_id, judge_type=data.judge_type)
+
+    if data.testcase_disabled is not None:
+        await db.testcase.disable_enable_testcase_by_problem(problem_id=problem_id,
+                                                             testcase_disabled=data.testcase_disabled)
 
 
 @router.delete('/problem/{problem_id}')
@@ -161,12 +179,12 @@ async def delete_problem(problem_id: int, request: Request):
     - Class manager
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    problem = await service.problem.read(problem_id)
-    challenge = await service.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
+    problem = await db.problem.read(problem_id)
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
-    return await service.problem.delete(problem_id=problem_id)
+    return await db.problem.delete(problem_id=problem_id)
 
 
 class AddTestcaseInput(BaseModel):
@@ -187,16 +205,16 @@ async def add_testcase_under_problem(problem_id: int, data: AddTestcaseInput, re
     - Class manager
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    problem = await service.problem.read(problem_id)
-    challenge = await service.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
+    problem = await db.problem.read(problem_id)
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
-    testcase_id = await service.testcase.add(problem_id=problem_id, is_sample=data.is_sample, score=data.score,
-                                             label=data.label, input_file_uuid=None, output_file_uuid=None,
-                                             input_filename=None, output_filename=None,
-                                             time_limit=data.time_limit, memory_limit=data.memory_limit,
-                                             is_disabled=data.is_disabled, note=data.note)
+    testcase_id = await db.testcase.add(problem_id=problem_id, is_sample=data.is_sample, score=data.score,
+                                        label=data.label, input_file_uuid=None, output_file_uuid=None,
+                                        input_filename=None, output_filename=None,
+                                        time_limit=data.time_limit, memory_limit=data.memory_limit,
+                                        is_disabled=data.is_disabled, note=data.note)
     return model.AddOutput(id=testcase_id)
 
 
@@ -230,11 +248,11 @@ async def browse_all_testcase_under_problem(problem_id: int, request: Request) -
         raise exc.NoPermission
 
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    problem = await service.problem.read(problem_id)
-    challenge = await service.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
+    problem = await db.problem.read(problem_id)
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
     is_class_manager = await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)
 
-    testcases = await service.testcase.browse(problem_id=problem_id, include_disabled=True)
+    testcases = await db.testcase.browse(problem_id=problem_id, include_disabled=True)
     return [ReadTestcaseOutput(
         id=testcase.id,
         problem_id=testcase.problem_id,
@@ -269,13 +287,13 @@ async def browse_all_assisting_data_under_problem(problem_id: int, request: Requ
     ### 權限
     - class manager
     """
-    problem = await service.problem.read(problem_id=problem_id)
-    challenge = await service.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
+    problem = await db.problem.read(problem_id=problem_id)
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
 
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
-    result = await service.assisting_data.browse_with_problem_id(problem_id=problem_id)
+    result = await db.assisting_data.browse(problem_id=problem_id)
     return [ReadAssistingDataOutput(id=assisting_data.id, problem_id=assisting_data.problem_id,
                                     s3_file_uuid=assisting_data.s3_file_uuid, filename=assisting_data.filename)
             for assisting_data in result]
@@ -289,14 +307,18 @@ async def add_assisting_data_under_problem(problem_id: int, request: Request, as
     ### 權限
     - class manager
     """
-    problem = await service.problem.read(problem_id=problem_id)
-    challenge = await service.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
+    problem = await db.problem.read(problem_id=problem_id)
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
 
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
-    assisting_data_id = await service.assisting_data.add(file=assisting_data.file, filename=assisting_data.filename,
-                                                         problem_id=problem_id)
+    s3_file = await s3.assisting_data.upload(file=assisting_data.file)
+    s3_file_uuid = await db.s3_file.add_with_do(s3_file=s3_file)
+
+    assisting_data_id = await db.assisting_data.add(problem_id=problem_id, s3_file_uuid=s3_file_uuid,
+                                                    filename=assisting_data.filename)
+
     return model.AddOutput(id=assisting_data_id)
 
 
@@ -308,12 +330,12 @@ async def download_all_assisting_data(problem_id: int, request: Request, as_atta
     ### 權限
     - class manager
     """
-    problem = await service.problem.read(problem_id=problem_id)
-    challenge = await service.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
+    problem = await db.problem.read(problem_id=problem_id)
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
 
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
-    background_tasks.add_task(service.assisting_data.download_all,
+    background_tasks.add_task(service.downloader.all_assisting_data,
                               account_id=request.account.id, problem_id=problem_id, as_attachment=as_attachment)
     return
 
@@ -326,13 +348,13 @@ async def download_all_sample_testcase(problem_id: int, request: Request, as_att
     ### 權限
     - class manager
     """
-    problem = await service.problem.read(problem_id=problem_id)
-    challenge = await service.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
+    problem = await db.problem.read(problem_id=problem_id)
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
 
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
-    background_tasks.add_task(service.testcase.download_all_sample,
+    background_tasks.add_task(service.downloader.all_sample_testcase,
                               account_id=request.account.id, problem_id=problem_id, as_attachment=as_attachment)
     return
 
@@ -345,13 +367,13 @@ async def download_all_non_sample_testcase(problem_id: int, request: Request, as
     ### 權限
     - class manager
     """
-    problem = await service.problem.read(problem_id=problem_id)
-    challenge = await service.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
+    problem = await db.problem.read(problem_id=problem_id)
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
 
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
-    background_tasks.add_task(service.testcase.download_all_non_sample,
+    background_tasks.add_task(service.downloader.all_non_sample_testcase,
                               account_id=request.account.id, problem_id=problem_id, as_attachment=as_attachment)
     return
 
@@ -369,12 +391,12 @@ async def get_score_by_challenge_type_under_problem(problem_id: int, request: Re
     ### 權限
     - Self
     """
-    problem = await service.problem.read(problem_id)
-    challenge = await service.challenge.read(challenge_id=problem.challenge_id, include_scheduled=True)
-    submission_judgment = await service.submission.get_problem_score_by_type(problem_id=problem_id,
-                                                                             account_id=request.account.id,  # 只能看自己的
-                                                                             selection_type=challenge.selection_type,
-                                                                             challenge_end_time=challenge.end_time)
+    problem = await db.problem.read(problem_id)
+    challenge = await db.challenge.read(challenge_id=problem.challenge_id, include_scheduled=True)
+    submission_judgment = await db.judgment.read_by_challenge_type(problem_id=problem_id,
+                                                                   account_id=request.account.id,  # 只能看自己的
+                                                                   selection_type=challenge.selection_type,
+                                                                   challenge_end_time=challenge.end_time)
     return GetScoreByTypeOutput(challenge_type=challenge.selection_type, score=submission_judgment.score)
 
 
@@ -385,10 +407,10 @@ async def get_score_by_best_under_problem(problem_id: int, request: Request) -> 
     ### 權限
     - Self
     """
-    problem = await service.problem.read(problem_id)
+    problem = await db.problem.read(problem_id)
     # 只能看自己的
-    submission_judgment = await service.submission.get_problem_all_time_best_score(problem_id=problem.id,
-                                                                                   account_id=request.account.id)
+    submission_judgment = await db.judgment.get_best_submission_judgment_all_time(problem_id=problem.id,
+                                                                                  account_id=request.account.id)
     return GetScoreByTypeOutput(challenge_type=TaskSelectionType.best, score=submission_judgment.score)
 
 
@@ -405,12 +427,12 @@ async def rejudge_problem(problem_id: int, request: Request) -> RejudgeProblemOu
     - Class manager
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    problem = await service.problem.read(problem_id)
-    challenge = await service.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
+    problem = await db.problem.read(problem_id)
+    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
-    rejudged_submissions = await service.judgment.judge_problem_submissions(problem.id)
+    rejudged_submissions = await service.judge.judge_problem_submissions(problem.id)
     return RejudgeProblemOutput(submission_count=len(rejudged_submissions))
 
 
@@ -431,7 +453,8 @@ async def get_problem_statistics(problem_id: int, request: Request) -> GetProble
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
-    solved_member_count, submission_count, member_count = await service.problem.get_problem_statistics(problem_id=problem_id)
+    solved_member_count, submission_count, member_count = await service.statistics.get_problem_statistics(
+        problem_id=problem_id)
     return GetProblemStatOutput(solved_member_count=solved_member_count,
                                 submission_count=submission_count,
                                 member_count=member_count)

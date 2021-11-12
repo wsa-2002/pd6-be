@@ -1,16 +1,15 @@
-from dataclasses import dataclass
 from typing import Optional, Sequence
 
 from pydantic import BaseModel
 
-from base import do, vo
-from base.enum import RoleType, ChallengePublicizeType, TaskSelectionType, ScoreboardType
+from base import vo
+from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
+import persistence.database as db
 import service
 
 from .util import rbac, model
-
 
 router = APIRouter(
     tags=['Team Project Scoreboard'],
@@ -26,14 +25,15 @@ async def view_team_project_scoreboard(scoreboard_id: int, request: Request) -> 
     ### 權限
     - Class normal
     """
-    scoreboard = await service.scoreboard.read(scoreboard_id=scoreboard_id)
-    challenge = await service.challenge.read(challenge_id=scoreboard.challenge_id, include_scheduled=True)
+    scoreboard = await db.scoreboard.read(scoreboard_id=scoreboard_id)
+    challenge = await db.challenge.read(challenge_id=scoreboard.challenge_id, include_scheduled=True)
     if not await rbac.validate(request.account.id, RoleType.normal, class_id=challenge.class_id):
         raise exc.NoPermission
 
-    scoreboard, scoreboard_setting_data = await service.scoreboard.read_with_scoreboard_setting_data(scoreboard_id=scoreboard_id)
+    scoreboard, scoreboard_setting_data = await service.scoreboard.read_with_scoreboard_setting_data(
+        scoreboard_id=scoreboard_id)
 
-    result = await service.scoreboard_setting_team_project.view_team_scoreboard(scoreboard_id=scoreboard_id)
+    result = await service.scoreboard.view_team_project_scoreboard(scoreboard_id=scoreboard_id)
     return [vo.ViewTeamProjectScoreboard(
         team_id=team_project_scoreboard.team_id,
         team_name=team_project_scoreboard.team_name,
@@ -59,22 +59,14 @@ async def edit_team_project_scoreboard(scoreboard_id: int, data: EditScoreboardI
     ### 權限
     - Class manager
     """
-    scoreboard = await service.scoreboard.read(scoreboard_id=scoreboard_id)
-    challenge = await service.challenge.read(challenge_id=scoreboard.challenge_id, include_scheduled=True)
+    scoreboard = await db.scoreboard.read(scoreboard_id=scoreboard_id)
+    challenge = await db.challenge.read(challenge_id=scoreboard.challenge_id, include_scheduled=True)
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
-    await service.scoreboard_setting_team_project.edit_with_scoreboard(
+    await db.scoreboard_setting_team_project.edit_with_scoreboard(
         scoreboard_id=scoreboard_id, challenge_label=data.challenge_label, title=data.title,
         target_problem_ids=data.target_problem_ids, scoring_formula=data.scoring_formula,
         baseline_team_id=data.baseline_team_id, rank_by_total_score=data.rank_by_total_score,
         team_label_filter=data.team_label_filter
     )
-
-
-
-
-
-
-
-

@@ -3,19 +3,18 @@ from dataclasses import dataclass
 from typing import Sequence, Optional
 from uuid import UUID
 
-from fastapi import UploadFile, File
 from pydantic import BaseModel
 
 from base.enum import RoleType
 from base import do
-import const
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
+import persistence.database as db
 import service
+from persistence import email
 from util.api_doc import add_to_docstring
 
 from .util import rbac, model
-
 
 router = APIRouter(
     tags=['Account'],
@@ -65,8 +64,8 @@ async def browse_account_with_default_student_id(
     filters = model.parse_filter(filter, BROWSE_ACCOUNT_COLUMNS)
     sorters = model.parse_sorter(sort, BROWSE_ACCOUNT_COLUMNS)
 
-    result, total_count = await service.account.browse_with_default_student_card(limit=limit, offset=offset,
-                                                                                 filters=filters, sorters=sorters)
+    result, total_count = await db.account_vo.browse_with_default_student_card(limit=limit, offset=offset,
+                                                                               filters=filters, sorters=sorters)
     data = [BrowseAccountOutput(id=account.id, username=account.username, nickname=account.nickname,
                                 role=account.role, real_name=account.real_name,
                                 alternative_email=account.alternative_email, student_id=student_card.student_id)
@@ -103,7 +102,7 @@ async def batch_get_account_with_default_student_id(request: Request, account_id
     if not is_normal:
         raise exc.NoPermission
 
-    result = await service.account.browse_list_with_default_student_card(account_ids=account_ids)
+    result = await db.account_vo.browse_list_with_default_student_card(account_ids=account_ids)
     return [BatchGetAccountOutput(id=account.id, username=account.username, real_name=account.real_name,
                                   student_id=student_card.student_id)
             for account, student_card in result]
@@ -127,7 +126,7 @@ async def batch_get_account_by_account_referrals(account_referrals: pydantic.Jso
     if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
-    result = await service.account.batch_read_by_account_referrals(account_referrals=account_referrals)
+    result = await db.account_vo.batch_read_by_account_referral(account_referrals=account_referrals)
     return [BatchGetAccountOutput(id=account.id, username=account.username, real_name=account.real_name,
                                   student_id=student_card.student_id)
             for account, student_card in result]
@@ -155,7 +154,7 @@ async def browse_all_account_with_class_role(account_id: int, request: Request) 
     """
     if account_id != request.account.id:
         raise exc.NoPermission
-    results = await service.account.browse_with_class_role(account_id=account_id)
+    results = await db.class_.browse_role_by_account_id(account_id=account_id)
 
     return [BrowseAccountWithRoleOutput(member_id=class_member.member_id,
                                         role=class_member.role,
@@ -182,7 +181,7 @@ async def get_account_template_file(request: Request) -> GetAccountTemplateOutpu
     if not await rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
-    s3_file, filename = await service.account.get_template_file()
+    s3_file, filename = await service.csv.get_account_template()
     return GetAccountTemplateOutput(s3_file_uuid=s3_file.uuid, filename=filename)
 
 
@@ -216,7 +215,7 @@ async def read_account_with_default_student_id(account_id: int, request: Request
 
     view_personal = is_self or is_manager
 
-    account, student_card = await service.account.read_with_default_student_card(account_id=account_id)
+    account, student_card = await db.account_vo.read_with_default_student_card(account_id=account_id)
     result = ReadAccountOutput(
         id=account.id,
         username=account.username,
@@ -250,9 +249,17 @@ async def edit_account(account_id: int, data: EditAccountInput, request: Request
     if not ((is_self and not data.real_name) or is_manager):
         raise exc.NoPermission
 
-    await service.account.edit_alternative_email(account_id=account_id, alternative_email=data.alternative_email)
+    # 先 update email 因為如果失敗就整個失敗
+    if data.alternative_email is ...:
+        pass
+    elif data.alternative_email:  # 加或改 alternative email
+        code = await db.account.add_email_verification(email=data.alternative_email, account_id=account_id)
+        account = await db.account.read(account_id)
+        await email.verification.send(to=data.alternative_email, code=code, username=account.username)
+    else:  # 刪掉 alternative email
+        await db.account.delete_alternative_email_by_id(account_id=account_id)
 
-    await service.account.edit_general(account_id=account_id, nickname=data.nickname, real_name=data.real_name)
+    await db.account.edit(account_id=account_id, nickname=data.nickname, real_name=data.real_name)
 
 
 @router.delete('/account/{account_id}')
@@ -269,7 +276,7 @@ async def delete_account(account_id: int, request: Request) -> None:
     if not (is_manager or is_self):
         raise exc.NoPermission
 
-    await service.account.delete(account_id=account_id)
+    await db.account.delete(account_id=account_id)
 
 
 class DefaultStudentCardInput(BaseModel):
@@ -284,7 +291,7 @@ async def make_student_card_default(account_id: int, data: DefaultStudentCardInp
     - System manager
     - Self
     """
-    owner_id = await service.student_card.read_owner_id(student_card_id=data.student_card_id)
+    owner_id = await db.student_card.read_owner_id(student_card_id=data.student_card_id)
     if account_id != owner_id:
         raise exc.account.StudentCardDoesNotBelong
 
@@ -294,7 +301,7 @@ async def make_student_card_default(account_id: int, data: DefaultStudentCardInp
     if not (is_manager or is_self):
         raise exc.NoPermission
 
-    await service.account.edit_default_student_card(account_id=account_id, student_card_id=data.student_card_id)
+    await db.account.edit_default_student_card(account_id=account_id, student_card_id=data.student_card_id)
 
 
 @router.get('/account/{account_id}/email-verification')
@@ -309,4 +316,4 @@ async def browse_all_account_pending_email_verification(account_id: int, request
     if not (await rbac.validate(request.account.id, RoleType.manager) or request.account.id == account_id):
         raise exc.NoPermission
 
-    return await service.email_verification.browse(account_id=account_id)
+    return await db.email_verification.browse(account_id=account_id)

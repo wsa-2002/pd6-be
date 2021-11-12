@@ -1,11 +1,11 @@
 from dataclasses import dataclass
-from typing import Sequence, Optional
+from typing import Sequence
 
-from base.enum import RoleType, FilterOperator, VerdictType, ScoreboardType
+from base.enum import RoleType, FilterOperator, VerdictType
 from base import popo, vo
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
-import service
+from persistence import database as db
 from util.api_doc import add_to_docstring
 
 from .util import rbac, model
@@ -15,7 +15,6 @@ router = APIRouter(
     default_response_class=response.JSONResponse,
     dependencies=auth.doc_dependencies,
 )
-
 
 BROWSE_ACCOUNT_COLUMNS = {
     'account_id': int,
@@ -51,7 +50,7 @@ async def browse_account_with_default_student_id(
     filters = model.parse_filter(filter, BROWSE_ACCOUNT_COLUMNS)
     sorters = model.parse_sorter(sort, BROWSE_ACCOUNT_COLUMNS)
 
-    result, total_count = await service.view.account(limit=limit, offset=offset, filters=filters, sorters=sorters)
+    result, total_count = await db.view.account(limit=limit, offset=offset, filters=filters, sorters=sorters)
 
     return ViewAccountOutput(result, total_count=total_count)
 
@@ -99,7 +98,7 @@ async def browse_class_member(
                                op=FilterOperator.eq,
                                value=class_id))
 
-    result, total_count = await service.view.class_member(limit=limit, offset=offset, filters=filters, sorters=sorters)
+    result, total_count = await db.view.class_member(limit=limit, offset=offset, filters=filters, sorters=sorters)
 
     return ViewClassMemberOutput(result, total_count=total_count)
 
@@ -146,9 +145,9 @@ async def browse_submission_under_class(
     filters = model.parse_filter(filter, BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS)
     sorters = model.parse_sorter(sort, BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS)
 
-    submissions, total_count = await service.view.class_submission(class_id=class_id,
-                                                                   limit=limit, offset=offset,
-                                                                   filters=filters, sorters=sorters)
+    submissions, total_count = await db.view.class_submission(class_id=class_id,
+                                                              limit=limit, offset=offset,
+                                                              filters=filters, sorters=sorters)
     return ViewSubmissionUnderClassOutput(submissions, total_count=total_count)
 
 
@@ -196,8 +195,8 @@ async def browse_submission(account_id: int, request: Request, limit: model.Limi
                                op=FilterOperator.eq,
                                value=request.account.id))
 
-    submissions, total_count = await service.view.my_submission(limit=limit, offset=offset,
-                                                                filters=filters, sorters=sorters)
+    submissions, total_count = await db.view.my_submission(limit=limit, offset=offset,
+                                                           filters=filters, sorters=sorters)
 
     return ViewMySubmissionOutput(submissions, total_count=total_count)
 
@@ -250,8 +249,8 @@ async def browse_my_submission_under_problem(account_id: int,
                                op=FilterOperator.eq,
                                value=problem_id))
 
-    submissions, total_count = await service.view.my_submission_under_problem(limit=limit, offset=offset,
-                                                                              filters=filters, sorters=sorters)
+    submissions, total_count = await db.view.my_submission_under_problem(limit=limit, offset=offset,
+                                                                         filters=filters, sorters=sorters)
 
     return ViewMySubmissionUnderProblemOutput(submissions, total_count=total_count)
 
@@ -297,8 +296,8 @@ async def browse_problem_set_under_class(
                                op=FilterOperator.eq,
                                value=class_id))
 
-    result, total_count = await service.view.problem_set(limit=limit, offset=offset,
-                                                         filters=filters, sorters=sorters, ref_time=request.time)
+    result, total_count = await db.view.problem_set(limit=limit, offset=offset,
+                                                    filters=filters, sorters=sorters, ref_time=request.time)
     return ViewProblemSetOutput(result, total_count=total_count)
 
 
@@ -342,14 +341,14 @@ async def browse_class_grade(class_id: int, request: Request,
                                value=class_id))
 
     if await rbac.validate(request.account.id, RoleType.manager, class_id=class_id):  # Class manager
-        grades, total_count = await service.view.grade(limit=limit, offset=offset, filters=filters, sorters=sorters)
+        grades, total_count = await db.view.grade(limit=limit, offset=offset, filters=filters, sorters=sorters)
         return ViewGradeOutput(grades, total_count=total_count)
     else:  # Self
         filters.append(popo.Filter(col_name='account_id',
                                    op=FilterOperator.eq,
                                    value=request.account.id))
 
-        grades, total_count = await service.view.grade(limit=limit, offset=offset, filters=filters, sorters=sorters)
+        grades, total_count = await db.view.grade(limit=limit, offset=offset, filters=filters, sorters=sorters)
         return ViewGradeOutput(grades, total_count=total_count)
 
 
@@ -393,8 +392,8 @@ async def browse_access_log(
     filters = model.parse_filter(filter, BROWSE_ACCESS_LOG_COLUMNS)
     sorters = model.parse_sorter(sort, BROWSE_ACCESS_LOG_COLUMNS)
 
-    access_logs, total_count = await service.view.access_log(limit=limit, offset=offset,
-                                                             filters=filters, sorters=sorters)
+    access_logs, total_count = await db.view.access_log(limit=limit, offset=offset,
+                                                        filters=filters, sorters=sorters)
     return ViewAccessLogOutput(access_logs, total_count=total_count)
 
 
@@ -425,8 +424,8 @@ async def peer_review_summary_review(peer_review_id: int, request: Request,
     ### Available columns
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    peer_review = await service.peer_review.read(peer_review_id)
-    challenge = await service.challenge.read(peer_review.challenge_id, include_scheduled=True)
+    peer_review = await db.peer_review.read(peer_review_id)
+    challenge = await db.challenge.read(peer_review.challenge_id, include_scheduled=True)
 
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
@@ -434,10 +433,10 @@ async def peer_review_summary_review(peer_review_id: int, request: Request,
     filters = model.parse_filter(filter, BROWSE_PEER_REVIEW_RECORD_COLUMNS)
     sorters = model.parse_sorter(sort, BROWSE_PEER_REVIEW_RECORD_COLUMNS)
 
-    peer_review_records, total_count = await service.view.view_peer_review_record(peer_review_id=peer_review.id,
-                                                                                  limit=limit, offset=offset,
-                                                                                  filters=filters, sorters=sorters,
-                                                                                  is_receiver=False)
+    peer_review_records, total_count = await db.view.view_peer_review_record(peer_review_id=peer_review.id,
+                                                                             limit=limit, offset=offset,
+                                                                             filters=filters, sorters=sorters,
+                                                                             is_receiver=False)
     return ViewPeerReviewRecordOutput(peer_review_records, total_count=total_count)
 
 
@@ -455,8 +454,8 @@ async def peer_review_summary_receive(peer_review_id: int, request: Request,
     ### Available columns
     """
     # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    peer_review = await service.peer_review.read(peer_review_id)
-    challenge = await service.challenge.read(peer_review.challenge_id, include_scheduled=True)
+    peer_review = await db.peer_review.read(peer_review_id)
+    challenge = await db.challenge.read(peer_review.challenge_id, include_scheduled=True)
 
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
@@ -464,9 +463,9 @@ async def peer_review_summary_receive(peer_review_id: int, request: Request,
     filters = model.parse_filter(filter, BROWSE_PEER_REVIEW_RECORD_COLUMNS)
     sorters = model.parse_sorter(sort, BROWSE_PEER_REVIEW_RECORD_COLUMNS)
 
-    peer_review_records, total_count = await service.view.view_peer_review_record(peer_review_id=peer_review.id,
-                                                                                  limit=limit, offset=offset,
-                                                                                  filters=filters, sorters=sorters,
-                                                                                  is_receiver=True)
+    peer_review_records, total_count = await db.view.view_peer_review_record(peer_review_id=peer_review.id,
+                                                                             limit=limit, offset=offset,
+                                                                             filters=filters, sorters=sorters,
+                                                                             is_receiver=True)
 
     return ViewPeerReviewRecordOutput(data=peer_review_records, total_count=total_count)

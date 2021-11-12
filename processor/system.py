@@ -1,18 +1,16 @@
 from base.enum import RoleType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
-import service
+from persistence import database as db
 from util.api_doc import add_to_docstring
 
 from .util import rbac, model
-
 
 router = APIRouter(
     tags=['System'],
     default_response_class=response.JSONResponse,
     dependencies=auth.doc_dependencies,
 )
-
 
 BROWSE_ACCESS_LOG_COLUMNS = {
     'access_time': model.ServerTZDatetime,
@@ -39,12 +37,11 @@ async def browse_access_log(
     """
     if not (await rbac.validate(req.account.id, RoleType.manager)  # System manager
             # or await rbac.any_class_role(member_id=req.account.id, role=RoleType.manager)):  # Any class manager
-            ):
+    ):
         raise exc.NoPermission
 
     filters = model.parse_filter(filter, BROWSE_ACCESS_LOG_COLUMNS)
     sorters = model.parse_sorter(sort, BROWSE_ACCESS_LOG_COLUMNS)
 
-    access_logs, total_count = await service.access_log.browse(limit=limit, offset=offset,
-                                                               filters=filters, sorters=sorters)
+    access_logs, total_count = await db.access_log.browse(limit=limit, offset=offset, filters=filters, sorters=sorters)
     return model.BrowseOutputBase(access_logs, total_count=total_count)

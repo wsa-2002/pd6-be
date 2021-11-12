@@ -1,16 +1,13 @@
 from dataclasses import dataclass
-from typing import Optional, Sequence, Any
+from typing import Sequence, Any
 
-from pydantic import BaseModel
-
-from base import do
-from base.enum import RoleType, ChallengePublicizeType, TaskSelectionType, ScoreboardType
+from base.enum import RoleType, ScoreboardType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
+import persistence.database as db
 import service
 
-from .util import rbac, model
-
+from .util import rbac
 
 router = APIRouter(
     tags=['Scoreboard'],
@@ -34,13 +31,12 @@ class ReadScoreboardOutput:
 @router.get('/scoreboard/{scoreboard_id}')
 @enveloped
 async def read_scoreboard(scoreboard_id: int, request: Request) -> ReadScoreboardOutput:
-
     """
     ### 權限
     - Class normal
     """
-    scoreboard = await service.scoreboard.read(scoreboard_id=scoreboard_id)
-    challenge = await service.challenge.read(challenge_id=scoreboard.challenge_id, include_scheduled=True)
+    scoreboard = await db.scoreboard.read(scoreboard_id=scoreboard_id)
+    challenge = await db.challenge.read(challenge_id=scoreboard.challenge_id, include_scheduled=True)
     if not await rbac.validate(request.account.id, RoleType.normal, class_id=challenge.class_id):
         raise exc.NoPermission
 
@@ -62,11 +58,9 @@ async def delete_scoreboard(scoreboard_id: int, request: Request) -> None:
     ### 權限
     - Class manager
     """
-    scoreboard = await service.scoreboard.read(scoreboard_id=scoreboard_id)
-    challenge = await service.challenge.read(challenge_id=scoreboard.challenge_id, include_scheduled=True)
+    scoreboard = await db.scoreboard.read(scoreboard_id=scoreboard_id)
+    challenge = await db.challenge.read(challenge_id=scoreboard.challenge_id, include_scheduled=True)
     if not await rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
-    await service.scoreboard.delete(scoreboard_id=scoreboard_id)
-
-
+    await db.scoreboard.delete(scoreboard_id=scoreboard_id)
