@@ -151,7 +151,7 @@ async def get_grade_template_file(request: Request) -> GetGradeTemplateOutput:
     ### 權限
     - system normal
     """
-    if not rbac.validate(request.account.id, RoleType.normal):
+    if not await rbac.validate(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
     s3_file, filename = await service.grade.get_template_file()

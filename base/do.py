@@ -119,6 +119,8 @@ class Problem:
     id: int
     challenge_id: int
     challenge_label: str
+    judge_type: enum.ProblemJudgeType
+    setting_id: Optional[int]
     title: str
     setter_id: int
     full_score: Optional[int]
@@ -127,6 +129,13 @@ class Problem:
     source: Optional[str]
     hint: Optional[str]
     is_deleted: bool
+
+
+@dataclass
+class ProblemJudgeSettingCustomized:
+    id: int
+    judge_code_file_uuid: UUID
+    judge_code_filename: str
 
 
 @dataclass
@@ -140,6 +149,7 @@ class Testcase:
     output_file_uuid: Optional[UUID]
     input_filename: Optional[str]
     output_filename: Optional[str]
+    note: Optional[str]
     time_limit: int
     memory_limit: int
     is_disabled: bool
@@ -181,6 +191,7 @@ class Judgment:
     total_time: int
     max_memory: int
     score: int
+    error_message: Optional[str]
     judge_time: datetime
 
 

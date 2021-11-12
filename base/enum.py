@@ -42,6 +42,11 @@ class TaskSelectionType(StrEnum):
 VerdictType = judge_core_common.enum.VerdictType
 
 
+class ProblemJudgeType(StrEnum):
+    normal = 'NORMAL'
+    customized = 'CUSTOMIZED'
+
+
 class FilterOperator(StrEnum):
     gt = greater_than = '>'
     ge = greater_equal = '>='

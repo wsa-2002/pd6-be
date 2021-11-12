@@ -145,9 +145,9 @@ async def delete_cascade_from_challenge(challenge_id: int, cascading_conn=None) 
         await _delete_cascade_from_challenge(challenge_id, conn=cascading_conn)
         return
 
-    async with SafeConnection(event=f'cascade delete peer_review from challenge {challenge_id=}') as conn:
-        async with conn.transaction():
-            await _delete_cascade_from_challenge(challenge_id, conn=conn)
+    async with SafeConnection(event=f'cascade delete peer_review from challenge {challenge_id=}',
+                              auto_transaction=True) as conn:
+        await _delete_cascade_from_challenge(challenge_id, conn=conn)
 
 
 async def _delete_cascade_from_challenge(challenge_id: int, conn) -> None:
