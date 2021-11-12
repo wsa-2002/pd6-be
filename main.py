@@ -117,8 +117,9 @@ middleware.envelope.hook_exception_envelope_handler(app)
 
 
 # Register routers
-from processor import register_routers
-register_routers(app)
+import processor.http
+
+processor.api.register_routers(app)
 
 
 # Instrument for prometheus
