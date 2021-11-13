@@ -4,7 +4,7 @@ from base import do
 from base.enum import RoleType, SortOrder, FilterOperator
 from base.popo import Filter, Sorter
 
-from .base import SafeExecutor
+from .base import FetchAll
 from .util import execute_count, compile_filters
 
 
@@ -22,7 +22,7 @@ async def browse_member_account_with_student_card_and_institute(
     cond_sql, cond_params = compile_filters(filters)
     sort_sql = ' ,'.join(f"class_member.{sorter.col_name} {sorter.order}" for sorter in sorters)
 
-    async with SafeExecutor(
+    async with FetchAll(
             event='browse class members with student card',
             sql=fr'SELECT class_member.member_id, class_member.class_id, class_member.role,'
                 fr'       account.id, account.username, account.nickname, account.real_name, account.role,'
@@ -86,7 +86,7 @@ async def browse_member_account_with_student_card_and_institute(
 
 async def browse_class_member_with_account_id(class_id: int, include_deleted: bool = False) \
         -> Sequence[Tuple[do.ClassMember, int]]:
-    async with SafeExecutor(
+    async with FetchAll(
             event='browse class members with account id',
             sql=fr'SELECT class_member.member_id, class_member.class_id, class_member.role, '
                 fr'       account.id'
@@ -96,7 +96,6 @@ async def browse_class_member_with_account_id(class_id: int, include_deleted: bo
                 fr'{f"     AND NOT account.is_deleted" if not include_deleted else ""}'
                 fr' WHERE class_member.class_id = %(class_id)s',
             class_id=class_id,
-            fetch='all',
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return [(do.ClassMember(member_id=member_id, class_id=class_id, role=RoleType(role_str)), account_id)
@@ -105,7 +104,7 @@ async def browse_class_member_with_account_id(class_id: int, include_deleted: bo
 
 async def browse_class_member_with_account_referral(class_id: int, include_deleted: bool = False) \
         -> Sequence[Tuple[do.ClassMember, str]]:
-    async with SafeExecutor(
+    async with FetchAll(
             event='browse class members with account referral',
             sql=fr'SELECT class_member.member_id, class_member.class_id, class_member.role, '
                 fr'       account_id_to_referral(class_member.member_id)'
@@ -115,7 +114,6 @@ async def browse_class_member_with_account_referral(class_id: int, include_delet
                 fr' WHERE class_member.class_id = %(class_id)s'
                 fr'{f" AND NOT account.is_deleted" if not include_deleted else ""}',
             class_id=class_id,
-            fetch='all',
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return [(do.ClassMember(member_id=member_id, class_id=class_id, role=RoleType(role_str)), account_referral)

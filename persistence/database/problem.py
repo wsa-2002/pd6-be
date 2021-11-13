@@ -1,17 +1,17 @@
-from typing import Optional, Sequence, Tuple
+from typing import Optional, Sequence, Tuple, Any
 from datetime import datetime
 
 from base import do, enum
 
 from . import testcase
-from .base import SafeExecutor, SafeConnection
+from .base import SafeConnection, FetchOne, OnlyExecute, FetchAll, ParamDict
 
 
 async def add(challenge_id: int, challenge_label: str,
               title: str, setter_id: int, full_score: Optional[int], description: Optional[str],
               io_description: Optional[str], source: Optional[str], hint: Optional[str],
               judge_type: Optional[enum.ProblemJudgeType] = enum.ProblemJudgeType.normal) -> int:
-    async with SafeExecutor(
+    async with FetchOne(
             event='Add problem',
             sql="INSERT INTO problem"
                 "            (challenge_id, challenge_label, judge_type,"
@@ -25,7 +25,6 @@ async def add(challenge_id: int, challenge_label: str,
             title=title, setter_id=setter_id, full_score=full_score,
             description=description, io_description=io_description,
             source=source, hint=hint,
-            fetch=1,
     ) as (id_,):
         return id_
 
@@ -38,14 +37,13 @@ async def browse(include_scheduled: bool = False, include_deleted=False) -> Sequ
 
     cond_sql = ' AND '.join(filters)
 
-    async with SafeExecutor(
+    async with FetchAll(
             event='browse problems',
             sql=fr'SELECT id, challenge_id, challenge_label, title, setter_id, full_score, judge_type, setting_id'
                 fr'       description, io_description, source, hint, is_deleted'
                 fr'  FROM problem'
                 fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
                 fr' ORDER BY id ASC',
-            fetch='all',
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return [do.Problem(id=id_,
@@ -60,7 +58,7 @@ async def browse(include_scheduled: bool = False, include_deleted=False) -> Sequ
 
 async def browse_problem_set(request_time: datetime, include_deleted=False) \
         -> Sequence[do.Problem]:
-    async with SafeExecutor(
+    async with FetchAll(
             event='browse problem set',
             sql=fr'SELECT problem.id, problem.challenge_id, problem.challenge_label,'
                 fr'       problem.title, problem.setter_id, problem.full_score,'
@@ -76,7 +74,6 @@ async def browse_problem_set(request_time: datetime, include_deleted=False) \
             request_time=request_time,
             start_time=enum.ChallengePublicizeType.start_time,
             end_time=enum.ChallengePublicizeType.end_time,
-            fetch='all',
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return [do.Problem(id=id_,
@@ -91,7 +88,7 @@ async def browse_problem_set(request_time: datetime, include_deleted=False) \
 
 
 async def browse_by_challenge(challenge_id: int, include_deleted=False) -> Sequence[do.Problem]:
-    async with SafeExecutor(
+    async with FetchAll(
             event='browse problems with challenge id',
             sql=fr'SELECT id, challenge_id, challenge_label, title, setter_id, full_score, judge_type, setting_id, '
                 fr'       description, io_description, source, hint, is_deleted'
@@ -100,7 +97,6 @@ async def browse_by_challenge(challenge_id: int, include_deleted=False) -> Seque
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}'
                 fr' ORDER BY id ASC',
             challenge_id=challenge_id,
-            fetch='all',
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return [do.Problem(id=id_,
@@ -115,7 +111,7 @@ async def browse_by_challenge(challenge_id: int, include_deleted=False) -> Seque
 
 
 async def read(problem_id: int, include_deleted=False) -> do.Problem:
-    async with SafeExecutor(
+    async with FetchOne(
             event='read problem by id',
             sql=fr'SELECT id, challenge_id, challenge_label, title, setter_id, full_score, judge_type,'
                 fr'       setting_id, description, io_description, source, hint, is_deleted'
@@ -123,7 +119,6 @@ async def read(problem_id: int, include_deleted=False) -> do.Problem:
                 fr' WHERE id = %(problem_id)s'
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}',
             problem_id=problem_id,
-            fetch=1,
     ) as (id_, challenge_id, challenge_label, title, setter_id, full_score, judge_type,
           setting_id, description, io_description, source, hint, is_deleted):
         return do.Problem(id=id_,
@@ -140,7 +135,7 @@ async def read_task_status_by_type(problem_id: int, account_id: int,
         -> Tuple[do.Problem, do.Submission]:
 
     is_last = selection_type is enum.TaskSelectionType.last
-    async with SafeExecutor(
+    async with FetchOne(
             event='read problem submission verdict by task selection type',
             sql=fr'SELECT problem.id, problem.challenge_id, problem.challenge_label, problem.title,'
                 fr'       problem.setter_id, problem.full_score, problem.description, problem.io_description,'
@@ -164,7 +159,6 @@ async def read_task_status_by_type(problem_id: int, account_id: int,
             problem_id=problem_id,
             challenge_end_time=challenge_end_time,
             account_id=account_id,
-            fetch=1,
     ) as (problem_id, challenge_id, challenge_label, title, setter_id, full_score,
           description, io_description, judge_type, setting_id, source, hint, is_deleted,
           submission_id, account_id, problem_id, language_id, filename, content_file_uuid, content_length, submit_time):
@@ -187,7 +181,7 @@ async def edit(problem_id: int,
                io_description: Optional[str] = ...,
                source: Optional[str] = ...,
                hint: Optional[str] = ...,) -> None:
-    to_updates = {'judge_type': judge_type}
+    to_updates: ParamDict = {'judge_type': judge_type}
 
     if challenge_label is not None:
         to_updates['challenge_label'] = challenge_label
@@ -211,7 +205,7 @@ async def edit(problem_id: int,
 
     set_sql = ', '.join(fr"{field_name} = %({field_name})s" for field_name in to_updates)
 
-    async with SafeExecutor(
+    async with OnlyExecute(
             event='edit problem',
             sql=fr'UPDATE problem'
                 fr'   SET {set_sql}'
@@ -223,7 +217,7 @@ async def edit(problem_id: int,
 
 
 async def delete(problem_id: int) -> None:
-    async with SafeExecutor(
+    async with OnlyExecute(
             event='soft delete problem',
             sql=fr'UPDATE problem'
                 fr'   SET is_deleted = %(is_deleted)s'
@@ -266,7 +260,7 @@ async def _delete_cascade_from_challenge(challenge_id: int, conn) -> None:
 
 
 async def class_total_ac_member_count(problem_id: int) -> int:
-    async with SafeExecutor(
+    async with FetchOne(
             event='get total ACCEPTED member count by problem',
             sql=fr'SELECT count(DISTINCT class_member.member_id)'
                 fr'  FROM class_member'
@@ -286,13 +280,12 @@ async def class_total_ac_member_count(problem_id: int) -> int:
                 fr'   AND submission.problem_id = %(problem_id)s',
             judgment_verdict=enum.VerdictType.accepted, role=enum.RoleType.normal,
             problem_id=problem_id,
-            fetch=1,
     ) as (count,):
          return count
 
 
 async def total_ac_member_count(problem_id: int) -> int:
-    async with SafeExecutor(
+    async with FetchOne(
             event='get total ACCEPTED member count by problem',
             sql=fr'SELECT COUNT(DISTINCT submission.account_id)'
                 fr'  FROM submission'
@@ -310,13 +303,12 @@ async def total_ac_member_count(problem_id: int) -> int:
                 fr' WHERE submission.problem_id = %(problem_id)s',
             judgment_verdict=enum.VerdictType.accepted,
             problem_id=problem_id,
-            fetch=1,
     ) as (count,):
         return count
 
 
 async def class_total_submission_count(problem_id: int, challenge_id: int) -> int:
-    async with SafeExecutor(
+    async with FetchOne(
             event='get total submission count by problem',
             sql=fr'SELECT count(*)'
                 fr'  FROM submission'
@@ -330,13 +322,12 @@ async def class_total_submission_count(problem_id: int, challenge_id: int) -> in
                 fr'        AND NOT challenge.is_deleted'
                 fr' WHERE submission.problem_id = %(problem_id)s',
             role=enum.RoleType.normal, problem_id=problem_id, challenge_id=challenge_id,
-            fetch=1,
     ) as (count,):
         return count
 
 
 async def total_submission_count(problem_id: int) -> int:
-    async with SafeExecutor(
+    async with FetchOne(
             event='get total submission count by problem',
             sql=fr'SELECT count(*)'
                 fr'  FROM submission'
@@ -349,13 +340,12 @@ async def total_submission_count(problem_id: int) -> int:
                 fr'        AND NOT challenge.is_deleted'
                 fr' WHERE submission.problem_id = %(problem_id)s',
             problem_id=problem_id,
-            fetch=1,
     ) as (count,):
         return count
 
 
 async def class_total_member_count(problem_id: int) -> int:
-    async with SafeExecutor(
+    async with FetchOne(
             event='get total member count by problem',
             sql=fr'SELECT count(distinct class_member.member_id)'
                 fr'  FROM class_member'
@@ -372,13 +362,12 @@ async def class_total_member_count(problem_id: int) -> int:
                 fr' WHERE class_member.role = %(role)s'
                 fr'   AND submission.problem_id = %(problem_id)s',
             role=enum.RoleType.normal, problem_id=problem_id,
-            fetch=1,
     ) as (count,):
         return count
 
 
 async def total_member_count(problem_id: int) -> int:
-    async with SafeExecutor(
+    async with FetchOne(
             event='get total member count by problem',
             sql=fr'SELECT count(distinct submission.account_id)'
                 fr'  FROM submission'
@@ -391,6 +380,5 @@ async def total_member_count(problem_id: int) -> int:
                 fr'        AND NOT challenge.is_deleted'
                 fr' WHERE submission.problem_id = %(problem_id)s',
             problem_id=problem_id,
-            fetch=1,
     ) as (count,):
         return count

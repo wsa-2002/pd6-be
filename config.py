@@ -30,7 +30,7 @@ class ServiceConfig:
 
 
 class AppConfig:
-    title = env_values.get('APP_TITLE')
+    title = env_values.get('APP_TITLE') or "PDOGS 6.0"
     docs_url = env_values.get('APP_DOCS_URL', None)
     redoc_url = env_values.get('APP_REDOC_URL', None)
 

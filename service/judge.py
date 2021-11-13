@@ -24,7 +24,7 @@ async def judge_submission(submission_id: int, rejudge=False):
 async def judge_problem_submissions(problem_id: int) -> Sequence[do.Submission]:
     judge_problem, judge_testcases, judge_assisting_datas = await _prepare_problem(problem_id)
 
-    submissions = []
+    submissions: list[do.Submission] = []
     offset, batch_size = 0, 100
     while True:
         batch_submissions, _ = await db.submission.browse(offset=offset, limit=batch_size, filters=[

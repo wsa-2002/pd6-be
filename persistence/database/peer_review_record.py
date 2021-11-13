@@ -4,7 +4,7 @@ from typing import Sequence
 from base import do, enum
 from base.popo import Filter, Sorter
 
-from .base import SafeExecutor, SafeConnection
+from .base import SafeConnection, FetchAll, FetchOne, OnlyExecute
 from .util import execute_count, compile_filters
 
 
@@ -12,7 +12,7 @@ async def add(peer_review_id: int, grader_id: int, receiver_id: int) -> int:
     """
     Assign a new peer review record
     """
-    async with SafeExecutor(
+    async with FetchOne(
             event='Add (assign) peer review record',
             sql="INSERT INTO peer_review_record"
                 "            (peer_review_id, grader_id, receiver_id)"
@@ -26,7 +26,7 @@ async def add(peer_review_id: int, grader_id: int, receiver_id: int) -> int:
 
 async def edit_score(peer_review_record_id: int, score: int, comment: str, submit_time: datetime) -> None:
     """Allows only full edit!"""
-    async with SafeExecutor(
+    async with OnlyExecute(
             event='Add (submit) peer review record (score)',
             sql="UPDATE peer_review_record"
                 "   SET score = %(score)s, comment = %(comment)s, submit_time = %(submit_time)s"
@@ -45,7 +45,7 @@ async def browse(peer_review_id: int, limit: int, offset: int, filters: Sequence
     if sort_sql:
         sort_sql += ','
 
-    async with SafeExecutor(
+    async with FetchAll(
             event='browse peer review records',
             sql=fr'SELECT id, peer_review_id, grader_id, receiver_id, score, comment, submit_time, submission_id'
                 fr'  FROM peer_review_record'
@@ -55,7 +55,6 @@ async def browse(peer_review_id: int, limit: int, offset: int, filters: Sequence
                 fr' LIMIT %(limit)s OFFSET %(offset)s',
             **cond_params, peer_review_id=peer_review_id,
             limit=limit, offset=offset,
-            fetch='all',
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         data = [do.PeerReviewRecord(id=id_, peer_review_id=peer_review_id,
@@ -75,13 +74,12 @@ async def browse(peer_review_id: int, limit: int, offset: int, filters: Sequence
 
 
 async def read(peer_review_record_id: int) -> do.PeerReviewRecord:
-    async with SafeExecutor(
+    async with FetchOne(
             event='read peer review record',
             sql=fr'SELECT id, peer_review_id, grader_id, receiver_id, score, comment, submit_time, submission_id'
                 fr'  FROM peer_review_record'
                 fr' WHERE id = %(peer_review_record_id)s',
             peer_review_record_id=peer_review_record_id,
-            fetch=1,
     ) as (id_, peer_review_id, grader_id, receiver_id, score, comment, submit_time, submission_id):
         return do.PeerReviewRecord(id=id_, peer_review_id=peer_review_id,
                                    grader_id=grader_id, receiver_id=receiver_id,
@@ -90,7 +88,7 @@ async def read(peer_review_record_id: int) -> do.PeerReviewRecord:
 
 async def read_by_peer_review_id(peer_review_id: int, account_id: int, is_receiver=True) \
         -> Sequence[do.PeerReviewRecord]:
-    async with SafeExecutor(
+    async with FetchAll(
             event='read peer review record by peer review id',
             sql=fr'SELECT id, peer_review_id, grader_id, receiver_id, score, comment, submit_time, submission_id'
                 fr'  FROM peer_review_record'
@@ -98,7 +96,6 @@ async def read_by_peer_review_id(peer_review_id: int, account_id: int, is_receiv
                 fr'   AND {"receiver_id" if is_receiver else "grader_id"} = %(account_id)s'
                 fr' ORDER BY id asc',
             peer_review_id=peer_review_id, account_id=account_id,
-            fetch='all',
             raise_not_found=False,
     ) as records:
         return [do.PeerReviewRecord(id=id_, peer_review_id=peer_review_id,

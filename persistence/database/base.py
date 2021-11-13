@@ -7,6 +7,8 @@ If you don't want auto-commit, use `async with Connection.transaction(): ...`.
 
 
 import collections
+import typing
+from abc import abstractmethod
 from datetime import datetime
 import itertools
 from typing import Any, Dict, Tuple, List, Optional, Union
@@ -75,10 +77,13 @@ class SafeConnection:
         util.metric.sql_time(self._event, exec_time_ms)
 
 
-class SafeExecutor:
-    def __init__(self, event: str, sql: str, parameters: Dict = None,
+ParamDict = dict[str, Any]
+
+
+class _SafeExecutor:
+    def __init__(self, event: str, sql: str, parameters: ParamDict = None,
                  fetch: Union[int, str, None] = None, raise_not_found: bool = True,
-                 **kwparams):
+                 **kwparams: typing.Any):
         """
         A safe execution context manager to open, execute, fetch, and close connections automatically.
         It also binds named parameters with `sql=r'%(key)s', key=value` since asyncpg does not support that.
@@ -124,29 +129,54 @@ class SafeExecutor:
         log.info(f"Ended {self.__class__.__name__}: {self._event} after {exec_time_ms} ms")
         util.metric.sql_time(self._event, exec_time_ms)
 
-        if self._fetch and not results and self._raise_not_found:
+        if self._raise_not_found and not results:
             raise exc.persistence.NotFound
 
         return results
 
+    @abstractmethod
     async def _exec(self, conn: asyncpg.connection.Connection):
-        if not self._fetch:
-            await conn.execute(self._sql, *self._parameters)
-            return None
-
-        if isinstance(self._fetch, int):
-            if self._fetch == 1:
-                return await conn.fetchrow(self._sql, *self._parameters)
-            if self._fetch > 1:
-                cur = await conn.cursor(self._sql, *self._parameters)
-                return await cur.fetch(self._fetch)
-
-        if isinstance(self._fetch, str):
-            if self._fetch == 'all':
-                return await conn.fetch(self._sql, *self._parameters)
-
-        raise ValueError
+        raise NotImplementedError
 
     async def __aexit__(self, exc_type, exc_value, traceback):
         if self._fetch == 'one' or self._fetch == 1 and exc_type is TypeError:  # Handles TypeError: value unpack
             raise exc.persistence.NotFound
+
+
+class OnlyExecute(_SafeExecutor):
+    def __init__(self, event: str, sql: str, parameters: Dict = None,
+                 **kwparams):
+        super().__init__(event=event, sql=sql, parameters=parameters, fetch=None, raise_not_found=False,
+                         **kwparams)
+
+    async def _exec(self, conn: asyncpg.connection.Connection):
+        await conn.execute(self._sql, *self._parameters)
+
+    async def __aenter__(self) -> None:
+        return await super().__aenter__()
+
+
+class FetchOne(_SafeExecutor):
+    def __init__(self, event: str, sql: str, parameters: Dict = None,
+                 **kwparams):
+        super().__init__(event=event, sql=sql, parameters=parameters, fetch=1, raise_not_found=True,
+                         **kwparams)
+
+    async def _exec(self, conn: asyncpg.connection.Connection):
+        return await conn.fetchrow(self._sql, *self._parameters)
+
+    async def __aenter__(self) -> asyncpg.Record:
+        return await super().__aenter__()
+
+
+class FetchAll(_SafeExecutor):
+    def __init__(self, event: str, sql: str, parameters: Dict = None, raise_not_found: bool = True,
+                 **kwparams):
+        super().__init__(event=event, sql=sql, parameters=parameters, fetch='all', raise_not_found=raise_not_found,
+                         **kwparams)
+
+    async def _exec(self, conn: asyncpg.connection.Connection):
+        return await conn.fetch(self._sql, *self._parameters)
+
+    async def __aenter__(self) -> list[asyncpg.Record]:
+        return await super().__aenter__()

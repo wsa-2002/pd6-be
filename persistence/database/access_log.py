@@ -6,13 +6,13 @@ from base.popo import Filter, Sorter
 import exceptions as exc
 import log
 
-from .base import SafeExecutor
+from .base import FetchOne, FetchAll
 from .util import execute_count, compile_filters
 
 
 async def add(access_time: datetime, request_method: str, resource_path: str, ip: str, account_id: Optional[int]) \
         -> int:
-    async with SafeExecutor(
+    async with FetchOne(
             event='Add access_log',
             sql="INSERT INTO access_log"
                 "            (access_time, request_method, resource_path, ip, account_id)"
@@ -20,7 +20,6 @@ async def add(access_time: datetime, request_method: str, resource_path: str, ip
                 "  RETURNING id",
             access_time=access_time, request_method=request_method, resource_path=resource_path,
             ip=ip, account_id=account_id,
-            fetch=1,
     ) as (id_,):
         return id_
 
@@ -33,7 +32,7 @@ async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Se
     if sort_sql:
         sort_sql += ','
 
-    async with SafeExecutor(
+    async with FetchAll(
             event='browse access_logs',
             sql=fr'SELECT id, access_time, request_method, resource_path, ip, account_id'
                 fr'  FROM access_log'
@@ -47,7 +46,6 @@ async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Se
                 fr' ORDER BY {sort_sql} id ASC',
             **cond_params,
             limit=limit, offset=offset,
-            fetch='all',
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         data = [do.AccessLog(id=id_, access_time=access_time, request_method=request_method,

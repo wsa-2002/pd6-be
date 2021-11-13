@@ -1,15 +1,15 @@
-from typing import Sequence, Optional
+from typing import Sequence, Optional, Any
 from uuid import UUID
 
 from base import do
 
-from .base import SafeExecutor, SafeConnection
+from .base import SafeConnection, OnlyExecute, FetchAll, FetchOne, ParamDict
 
 
 async def add(problem_id: int, is_sample: bool, score: int, label: Optional[str], input_file_uuid: Optional[UUID],
               input_filename: Optional[str], output_file_uuid: Optional[UUID], output_filename: Optional[str],
               note: Optional[str], time_limit: int, memory_limit: int, is_disabled: bool) -> int:
-    async with SafeExecutor(
+    async with FetchOne(
             event='Add testcase',
             sql="INSERT INTO testcase"
                 "            (problem_id, is_sample, score, label, input_file_uuid, output_file_uuid, input_filename,"
@@ -21,13 +21,12 @@ async def add(problem_id: int, is_sample: bool, score: int, label: Optional[str]
             problem_id=problem_id, is_sample=is_sample, score=score, label=label, input_file_uuid=input_file_uuid,
             output_file_uuid=output_file_uuid, input_filename=input_filename, output_filename=output_filename,
             note=note, time_limit=time_limit, memory_limit=memory_limit, is_disabled=is_disabled,
-            fetch=1,
     ) as (id_,):
         return id_
 
 
 async def read(testcase_id: int, include_disabled=True, include_deleted=False) -> do.Testcase:
-    async with SafeExecutor(
+    async with FetchOne(
             event='read testcases with problem id',
             sql=fr'SELECT id, problem_id, is_sample, score, label, input_file_uuid, output_file_uuid, input_filename,'
                 fr'       output_filename, note, time_limit, memory_limit, is_disabled, is_deleted'
@@ -36,7 +35,6 @@ async def read(testcase_id: int, include_disabled=True, include_deleted=False) -
                 fr'{" AND NOT is_disabled" if not include_disabled else ""}'
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}',
             testcase_id=testcase_id,
-            fetch=1,
     ) as (id_, problem_id, is_sample, score, label, input_file_uuid, output_file_uuid, input_filename, output_filename,
           note, time_limit, memory_limit, is_disabled, is_deleted):
         return do.Testcase(id=id_, problem_id=problem_id, is_sample=is_sample, score=score, label=label,
@@ -48,7 +46,7 @@ async def read(testcase_id: int, include_disabled=True, include_deleted=False) -
 
 async def browse(problem_id: int, is_sample=None, include_disabled=False, include_deleted=False) \
         -> Sequence[do.Testcase]:
-    async with SafeExecutor(
+    async with FetchAll(
             event='browse testcases with problem id',
             sql=fr'SELECT id, problem_id, is_sample, score, label, input_file_uuid, output_file_uuid, input_filename,'
                 fr'       output_filename, note, time_limit, memory_limit, is_disabled, is_deleted'
@@ -60,7 +58,6 @@ async def browse(problem_id: int, is_sample=None, include_disabled=False, includ
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}'
                 fr' ORDER BY is_sample DESC, id ASC',
             problem_id=problem_id,
-            fetch='all',
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return [do.Testcase(id=id_, problem_id=problem_id, is_sample=is_sample, score=score, label=label,
@@ -85,7 +82,7 @@ async def edit(testcase_id: int,
                time_limit: int = None,
                memory_limit: int = None,
                is_disabled: bool = None,) -> None:
-    to_updates = {}
+    to_updates: ParamDict = {}
 
     if is_sample is not None:
         to_updates['is_sample'] = is_sample
@@ -115,7 +112,7 @@ async def edit(testcase_id: int,
 
     set_sql = ', '.join(fr"{field_name} = %({field_name})s" for field_name in to_updates)
 
-    async with SafeExecutor(
+    async with OnlyExecute(
             event='edit testcase',
             sql=fr'UPDATE testcase'
                 fr'   SET {set_sql}'
@@ -127,7 +124,7 @@ async def edit(testcase_id: int,
 
 
 async def disable_enable_testcase_by_problem(problem_id: int, testcase_disabled: bool, is_sample=False) -> None:
-    async with SafeExecutor(
+    async with OnlyExecute(
             event='disable or enable testcase by problem',
             sql=fr'UPDATE testcase'
                 fr'   SET is_disabled = %(is_disabled)s'
@@ -140,7 +137,7 @@ async def disable_enable_testcase_by_problem(problem_id: int, testcase_disabled:
 
 
 async def delete(testcase_id: int) -> None:
-    async with SafeExecutor(
+    async with OnlyExecute(
             event='soft delete testcase',
             sql=fr'UPDATE testcase'
                 fr'   SET is_deleted = %(is_deleted)s'
@@ -152,7 +149,7 @@ async def delete(testcase_id: int) -> None:
 
 
 async def delete_input_data(testcase_id: int) -> None:
-    async with SafeExecutor(
+    async with OnlyExecute(
             event='delete testcase input data',
             sql=fr'UPDATE testcase'
                 fr'   SET input_file_uuid = NULL'
@@ -163,7 +160,7 @@ async def delete_input_data(testcase_id: int) -> None:
 
 
 async def delete_output_data(testcase_id: int) -> None:
-    async with SafeExecutor(
+    async with OnlyExecute(
             event='delete testcase output data',
             sql=fr'UPDATE testcase'
                 fr'   SET output_file_uuid = NULL'

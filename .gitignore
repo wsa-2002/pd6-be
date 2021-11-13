@@ -4,6 +4,7 @@
 logging.yaml
 log/*
 .version
+.mypy_cache
 
 # === End of project-specific
 

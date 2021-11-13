@@ -9,6 +9,8 @@ import base.popo
 from base.enum import FilterOperator
 import exceptions as exc
 
+T = typing.TypeVar('T')
+
 
 def _ellipsis():
     return Ellipsis

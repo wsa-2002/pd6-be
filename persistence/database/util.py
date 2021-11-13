@@ -1,12 +1,11 @@
 import json
-from typing import Sequence, Iterable, Any
+from typing import Sequence, Iterable
 
 from base.enum import FilterOperator
 from base.popo import Filter
 import log
 
-from .base import SafeExecutor
-
+from .base import FetchOne
 
 ESTIMATE_COST_THRESHOLD = 5000000  # 65659969?
 
@@ -31,11 +30,10 @@ async def get_query_estimation(sql: str, **kwargs) -> tuple[int, int, int]:
     """
     Note: might raise IndexError or KeyError
     """
-    async with SafeExecutor(
+    async with FetchOne(
             event='get query estimation',
             sql=f"EXPLAIN (format json) {sql}",
             **kwargs,
-            fetch=1,
     ) as (query_plan,):
         query_plan = json.loads(query_plan)
         # Note: might raise IndexError or KeyError in this part
@@ -46,12 +44,11 @@ async def get_query_estimation(sql: str, **kwargs) -> tuple[int, int, int]:
 
 
 async def get_query_actual_count(sql: str, **kwargs) -> int:
-    async with SafeExecutor(
+    async with FetchOne(
             event='get query count',
             sql=f"SELECT COUNT(*)"
                 f"  FROM ({sql}) AS __COUNT_TABLE__",
             **kwargs,
-            fetch=1,
     ) as (count,):
         return count
 
