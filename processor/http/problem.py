@@ -87,9 +87,8 @@ async def read_problem(problem_id: int, request: Request) -> ReadProblemOutput:
             or (is_system_normal and is_challenge_publicized)):
         raise exc.NoPermission
 
-    customized_setting = do.ProblemJudgeSettingCustomized
-    if problem.judge_type is ProblemJudgeType.customized:
-        customized_setting = await db.problem_judge_setting_customized.read(customized_id=problem.setting_id)
+    customized_setting = await db.problem_judge_setting_customized.read(customized_id=problem.setting_id) \
+        if problem.judge_type is ProblemJudgeType.customized else None
 
     return ReadProblemOutput(
         id=problem.id,
