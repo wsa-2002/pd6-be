@@ -14,10 +14,10 @@ ESSAY_FILENAME = 'essay_submission.zip'
 
 async def all_essay(account_id: int, essay_id: int, as_attachment: bool) -> None:
     result = await db.essay_submission.browse_with_essay_id(essay_id=essay_id)
-    files = []
-    for essay_submission in result:
-        s3_file = await db.s3_file.read(s3_file_uuid=essay_submission.content_file_uuid)
-        files.append((s3_file, essay_submission.filename))
+    files = {
+        essay_submission.filename: await db.s3_file.read(s3_file_uuid=essay_submission.content_file_uuid)
+        for essay_submission in result
+    }
 
     zip_buffer = await s3.tools.zipper(files=files)
 
@@ -95,10 +95,10 @@ ASSISTING_DATA_FILENAME = 'assisting_data.zip'
 
 async def all_assisting_data(account_id: int, problem_id: int, as_attachment: bool) -> None:
     result = await db.assisting_data.browse(problem_id=problem_id)
-    files = []
-    for assisting_data in result:
-        s3_file = await db.s3_file.read(s3_file_uuid=assisting_data.s3_file_uuid)
-        files.append((s3_file, assisting_data.filename))
+    files = {
+        assisting_data.filename: await db.s3_file.read(s3_file_uuid=assisting_data.s3_file_uuid)
+        for assisting_data in result
+    }
 
     zip_buffer = await s3.tools.zipper(files=files)
 
@@ -117,17 +117,18 @@ NON_SAMPLE_FILENAME = 'non_sample_testcase.zip'
 
 async def all_sample_testcase(account_id: int, problem_id: int, as_attachment: bool) -> None:
     result = await db.testcase.browse(problem_id=problem_id, is_sample=True, include_disabled=True)
-    files = []
-    for testcase in result:
-        try:
-            input_s3_file = await db.s3_file.read(s3_file_uuid=testcase.input_file_uuid)
-            files.append((input_s3_file, testcase.input_filename))
-            output_s3_file = await db.s3_file.read(s3_file_uuid=testcase.output_file_uuid)
-            files.append((output_s3_file, testcase.output_filename))
-        except:
-            pass
+    input_files = {
+        testcase.input_filename: await db.s3_file.read(s3_file_uuid=testcase.input_file_uuid)
+        for testcase in result
+        if testcase.input_file_uuid
+    }
+    output_files = {
+        testcase.output_filename: await db.s3_file.read(s3_file_uuid=testcase.output_file_uuid)
+        for testcase in result
+        if testcase.output_file_uuid
+    }
 
-    zip_buffer = await s3.tools.zipper(files=files)
+    zip_buffer = await s3.tools.zipper(files=input_files | output_files)
 
     s3_file = await s3.temp.put_object(body=zip_buffer.getvalue())
 
@@ -140,17 +141,18 @@ async def all_sample_testcase(account_id: int, problem_id: int, as_attachment: b
 
 async def all_non_sample_testcase(account_id: int, problem_id: int, as_attachment: bool) -> None:
     result = await db.testcase.browse(problem_id=problem_id, is_sample=False, include_disabled=True)
-    files = []
-    for testcase in result:
-        try:
-            input_s3_file = await db.s3_file.read(s3_file_uuid=testcase.input_file_uuid)
-            files.append((input_s3_file, testcase.input_filename))
-            output_s3_file = await db.s3_file.read(s3_file_uuid=testcase.output_file_uuid)
-            files.append((output_s3_file, testcase.output_filename))
-        except:
-            pass
+    input_files = {
+        testcase.input_filename: await db.s3_file.read(s3_file_uuid=testcase.input_file_uuid)
+        for testcase in result
+        if testcase.input_file_uuid
+    }
+    output_files = {
+        testcase.output_filename: await db.s3_file.read(s3_file_uuid=testcase.output_file_uuid)
+        for testcase in result
+        if testcase.output_file_uuid
+    }
 
-    zip_buffer = await s3.tools.zipper(files=files)
+    zip_buffer = await s3.tools.zipper(files=input_files | output_files)
 
     s3_file = await s3.temp.put_object(body=zip_buffer.getvalue())
 
