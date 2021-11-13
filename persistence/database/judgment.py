@@ -27,8 +27,8 @@ async def browse_latest_with_submission_ids(submission_ids: list[int]) -> Sequen
     cond_sql = '), ('.join(str(submission_id) for submission_id in submission_ids)
     async with SafeExecutor(
             event='browse judgments with submission ids',
-            sql=fr'SELECT judgment.id, judgment.submission_id, judgment.verdict,'
-                fr'       judgment.total_time, judgment.max_memory, judgment.score, judgment.judge_time'
+            sql=fr'SELECT judgment.id, judgment.submission_id, judgment.verdict, judgment.total_time,'
+                fr'       judgment.max_memory, judgment.score, judgment.judge_time, judgment.error_message'
                 fr'  FROM (VALUES ({cond_sql}))'
                 fr'    AS from_submission(id)'
                 fr' INNER JOIN judgment'
