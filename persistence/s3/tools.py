@@ -72,15 +72,15 @@ async def upload(bucket_name: str, file: typing.IO, file_uuid: UUID) -> do.S3Fil
     return do.S3File(uuid=file_uuid, bucket=bucket_name, key=key)
 
 
-async def zipper(files: list[(do.S3File, str)]) -> io.BytesIO:
+async def zipper(files: dict[str, do.S3File]) -> io.BytesIO:
     start_time = datetime.now()
     log.info('Start zipping S3 files ...')
 
     zip_buffer = io.BytesIO()
-    with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zipper:
-        for file, filename in files:
+    with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
+        for filename, file in files.items():
             infile_content = await get_file_content(bucket=file.bucket, key=file.key)
-            zipper.writestr(filename, infile_content)
+            zip_file.writestr(filename, infile_content)
 
     exec_time_ms = (datetime.now() - start_time).total_seconds() * 1000
     log.info(f'Ended zip S3 file after {exec_time_ms} ms')
