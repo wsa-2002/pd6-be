@@ -5,7 +5,7 @@ from base import vo
 from base.enum import SortOrder, FilterOperator, ChallengePublicizeType
 from base.popo import Filter, Sorter
 
-from .base import SafeExecutor
+from .base import FetchAll
 from .util import execute_count, compile_filters
 
 
@@ -32,14 +32,13 @@ async def account(limit: int, offset: int, filters: list[Filter], sorters: list[
                 fr'{f" AND {cond_sql}" if cond_sql else ""}')
     sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
 
-    async with SafeExecutor(
+    async with FetchAll(
             event='browse account with default student card',
             sql=fr'{view_sql}'
                 fr' ORDER BY {sort_sql + "," if sort_sql else ""} account_id ASC'
                 fr' LIMIT %(limit)s OFFSET %(offset)s',
             **cond_params,
             limit=limit, offset=offset,
-            fetch='all',
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         data = [vo.ViewAccount(account_id=account_id,
@@ -89,14 +88,13 @@ async def class_member(limit: int, offset: int, filters: Sequence[Filter], sorte
                 fr'{f" WHERE {cond_sql}" if cond_sql else ""}')
     sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
 
-    async with SafeExecutor(
+    async with FetchAll(
             event='browse class members with student card',
             sql=fr'{view_sql}'
                 fr' ORDER BY {sort_sql + "," if sort_sql else ""} account_id ASC'
                 fr' LIMIT %(limit)s OFFSET %(offset)s',
             **cond_params,
             limit=limit, offset=offset,
-            fetch='all',
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         data = [vo.ViewClassMember(account_id=account_id,
@@ -173,14 +171,13 @@ async def class_submission(class_id: int, limit: int, offset: int,
                 fr'    {f" WHERE {cond_sql}" if cond_sql else ""}'
                 fr'     ORDER BY submission.submit_time DESC, submission.id DESC'
                 fr') __TABLE__')
-    async with SafeExecutor(
+    async with FetchAll(
             event='browse class submissions',
             sql=fr'{view_sql}'
                 fr'{f" ORDER BY {sort_sql}" if sort_sql else ""}'
                 fr' LIMIT %(limit)s OFFSET %(offset)s',
             **cond_params,
             limit=limit, offset=offset,
-            fetch='all',
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         data = [vo.ViewSubmissionUnderClass(submission_id=submission_id,
@@ -260,14 +257,13 @@ async def my_submission(limit: int, offset: int, filters: Sequence[Filter], sort
                 fr') __TABLE__')
     sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
 
-    async with SafeExecutor(
+    async with FetchAll(
             event='browse my submissions',
             sql=fr'{view_sql}'
                 fr'{f" ORDER BY {sort_sql}" if sort_sql else ""}'
                 fr' LIMIT %(limit)s OFFSET %(offset)s',
             **cond_params,
             limit=limit, offset=offset,
-            fetch='all',
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         data = [vo.ViewMySubmission(submission_id=submission_id,
@@ -327,14 +323,13 @@ async def my_submission_under_problem(limit: int, offset: int, filters: Sequence
                 fr') __TABLE__')
     sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
 
-    async with SafeExecutor(
+    async with FetchAll(
             event='browse my submission under problem',
             sql=fr'{view_sql}'
                 fr'{f" ORDER BY {sort_sql}" if sort_sql else ""}'
                 fr' LIMIT %(limit)s OFFSET %(offset)s',
             **cond_params,
             limit=limit, offset=offset,
-            fetch='all',
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         data = [vo.ViewMySubmissionUnderProblem(submission_id=submission_id,
@@ -362,7 +357,7 @@ async def problem_set(limit: int, offset: int, filters: Sequence[Filter], sorter
     if sort_sql:
         sort_sql += ','
 
-    async with SafeExecutor(
+    async with FetchAll(
             event='browse problem set',
             sql=fr'SELECT challenge_id, challenge_title, problem_id, '
                 fr'       challenge_label, problem_title, class_id'
@@ -379,7 +374,6 @@ async def problem_set(limit: int, offset: int, filters: Sequence[Filter], sorter
             start_time=ChallengePublicizeType.start_time, end_time=ChallengePublicizeType.end_time,
             ref_time=ref_time,
             limit=limit, offset=offset,
-            fetch='all',
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         data = [vo.ViewProblemSet(challenge_id=challenge_id,
@@ -415,7 +409,7 @@ async def grade(limit: int, offset: int, filters: Sequence[Filter], sorters: Seq
     if sort_sql:
         sort_sql += ','
 
-    async with SafeExecutor(
+    async with FetchAll(
             event='browse grades under class',
             sql=fr'SELECT account_id, username, student_id, real_name,'
                 fr'       title, score, update_time, grade_id, class_id'
@@ -425,7 +419,6 @@ async def grade(limit: int, offset: int, filters: Sequence[Filter], sorters: Seq
                 fr' LIMIT %(limit)s OFFSET %(offset)s',
             **cond_params,
             limit=limit, offset=offset,
-            fetch='all',
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         data = [vo.ViewGrade(account_id=account_id,
@@ -470,7 +463,7 @@ async def access_log(limit: int, offset: int, filters: Sequence[Filter], sorters
     if sort_sql:
         sort_sql += ','
 
-    async with SafeExecutor(
+    async with FetchAll(
             event='browse access_logs',
             sql=fr'SELECT account.id                AS account_id,'
                 fr'       account.username          AS username,'
@@ -492,7 +485,6 @@ async def access_log(limit: int, offset: int, filters: Sequence[Filter], sorters
                 fr' LIMIT %(limit)s OFFSET %(offset)s',
             **cond_params,
             limit=limit, offset=offset,
-            fetch='all',
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         data = [vo.ViewAccessLog(account_id=account_id,
@@ -539,7 +531,7 @@ async def view_peer_review_record(peer_review_id: int, limit: int, offset: int, 
     if sort_sql:
         sort_sql += ','
 
-    async with SafeExecutor(
+    async with FetchAll(
             event=f'view peer review record by {"receiver" if is_receiver else "grader"}',
             sql=fr'SELECT account.id                          AS account_id,'
                 fr'       account.username                    AS username,'
@@ -570,7 +562,6 @@ async def view_peer_review_record(peer_review_id: int, limit: int, offset: int, 
                 fr' LIMIT %(limit)s OFFSET %(offset)s',
                 **cond_params, peer_review_id=peer_review_id,
                 limit=limit, offset=offset,
-                fetch='all',
                 raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         data = [vo.ViewPeerReviewRecord(account_id=account_id,

@@ -88,3 +88,15 @@ For Browse in this project, it is batch reading with pagination.
 Because -- the creator of this project likes BREAD.
 
 If you feel uncomfortable about this, you should go back to the main principles and read [Color of Bikeshed](https://bikeshed.com/).
+
+### Type Checking
+
+Please make sure you use type hints. This is to enhance the readability and safety of our codebase.
+
+You may also use `mypy` to help perform a global type check:
+```shell
+pip install mypy
+mypy .
+```
+
+However, currently there are some non-standard type hint usage, so there are a lot of errors. 🥲

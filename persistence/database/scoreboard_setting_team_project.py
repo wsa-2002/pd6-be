@@ -3,7 +3,7 @@ from typing import Sequence, Optional, Tuple
 from base import do, enum
 
 from . import scoreboard, team, challenge
-from .base import SafeExecutor, SafeConnection
+from .base import SafeConnection, OnlyExecute, FetchOne, ParamDict
 
 
 async def add_under_scoreboard(challenge_id: int, challenge_label: str, title: str, target_problem_ids: Sequence[int],
@@ -31,7 +31,7 @@ async def add_under_scoreboard(challenge_id: int, challenge_label: str, title: s
 
 
 async def read(scoreboard_setting_team_project_id: int, include_deleted=False) -> do.ScoreboardSettingTeamProject:
-    async with SafeExecutor(
+    async with FetchOne(
             event='read scoreboard_setting_team_project',
             sql=fr'SELECT id, scoring_formula, baseline_team_id, rank_by_total_score, team_label_filter'
                 fr'  FROM scoreboard_setting_team_project'
@@ -51,7 +51,7 @@ async def edit_with_scoreboard(scoreboard_id: int,
                                baseline_team_id: Optional[int] = ...,
                                rank_by_total_score: bool = None,
                                team_label_filter: Optional[str] = ...) -> None:
-    scoreboard_to_updates = {}
+    scoreboard_to_updates: ParamDict = {}
 
     if challenge_label is not None:
         scoreboard_to_updates['challenge_label'] = challenge_label
@@ -60,7 +60,7 @@ async def edit_with_scoreboard(scoreboard_id: int,
     if target_problem_ids is not None:
         scoreboard_to_updates['target_problem_ids'] = target_problem_ids
 
-    scoreboard_setting_to_updates = {}
+    scoreboard_setting_to_updates: ParamDict = {}
 
     if scoring_formula is not None:
         scoreboard_setting_to_updates['scoring_formula'] = scoring_formula
@@ -74,7 +74,7 @@ async def edit_with_scoreboard(scoreboard_id: int,
     if scoreboard_to_updates:
         set_sql = ', '.join(fr"{field_name} = %({field_name})s" for field_name in scoreboard_to_updates)
 
-        async with SafeExecutor(
+        async with OnlyExecute(
                 event='edit scoreboard',
                 sql=fr'UPDATE scoreboard'
                     fr'   SET {set_sql}'
@@ -88,7 +88,7 @@ async def edit_with_scoreboard(scoreboard_id: int,
         scoreboard_ = await scoreboard.read(scoreboard_id=scoreboard_id)
         set_sql = ', '.join(fr"{field_name} = %({field_name})s" for field_name in scoreboard_setting_to_updates)
 
-        async with SafeExecutor(
+        async with OnlyExecute(
                 event='edit scoreboard_setting_team_project',
                 sql=fr'UPDATE scoreboard_setting_team_project'
                     fr'   SET {set_sql}'

@@ -2,11 +2,11 @@ from typing import Sequence
 
 from base import do
 
-from .base import SafeExecutor
+from .base import FetchOne, FetchAll, OnlyExecute, ParamDict
 
 
 async def add(abbreviated_name: str, full_name: str, email_domain: str, is_disabled: bool) -> int:
-    async with SafeExecutor(
+    async with FetchOne(
             event='Add institute',
             sql=r'INSERT INTO institute'
                 r'            (abbreviated_name, full_name, email_domain, is_disabled)'
@@ -16,19 +16,17 @@ async def add(abbreviated_name: str, full_name: str, email_domain: str, is_disab
             full_name=full_name,
             email_domain=email_domain,
             is_disabled=is_disabled,
-            fetch=1,
     ) as (institute_id,):
         return institute_id
 
 
 async def browse(*, include_disabled=True) -> Sequence[do.Institute]:
-    async with SafeExecutor(
+    async with FetchAll(
             event='get all institutes',
             sql=fr'SELECT id, abbreviated_name, full_name, email_domain, is_disabled'
                 fr'  FROM institute'
                 fr'{" WHERE NOT is_disabled" if not include_disabled else ""}'
                 fr' ORDER BY id ASC',
-            fetch='all',
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return [do.Institute(id=id_, abbreviated_name=abbreviated_name, full_name=full_name, email_domain=email_domain,
@@ -37,7 +35,7 @@ async def browse(*, include_disabled=True) -> Sequence[do.Institute]:
 
 
 async def read(institute_id: int, *, include_disabled=True) -> do.Institute:
-    async with SafeExecutor(
+    async with FetchOne(
             event='get all institutes',
             sql=fr'SELECT id, abbreviated_name, full_name, email_domain, is_disabled'
                 fr'  FROM institute'
@@ -45,7 +43,6 @@ async def read(institute_id: int, *, include_disabled=True) -> do.Institute:
                 fr'{" AND NOT is_disabled" if not include_disabled else ""}'
                 fr' ORDER BY id',
             institute_id=institute_id,
-            fetch=1,
     ) as (id_, abbreviated_name, full_name, email_domain, is_disabled):
         return do.Institute(id=id_, abbreviated_name=abbreviated_name, full_name=full_name, email_domain=email_domain,
                             is_disabled=is_disabled)
@@ -53,7 +50,7 @@ async def read(institute_id: int, *, include_disabled=True) -> do.Institute:
 
 async def edit(institute_id: int, abbreviated_name: str = None, full_name: str = None, email_domain: str = None,
                is_disabled: bool = None) -> None:
-    to_updates = {}
+    to_updates: ParamDict = {}
 
     if abbreviated_name:
         to_updates['abbreviated_name'] = abbreviated_name
@@ -69,7 +66,7 @@ async def edit(institute_id: int, abbreviated_name: str = None, full_name: str =
     if not to_updates:
         return
 
-    async with SafeExecutor(
+    async with OnlyExecute(
             event='update institute by id',
             sql=fr'UPDATE institute'
                 fr'   SET {set_sql}'

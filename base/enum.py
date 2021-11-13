@@ -13,12 +13,12 @@ class RoleType(OrderedMixin, StrEnum):
     normal = 'NORMAL'
     manager = 'MANAGER'
 
-    def __gt__(self: T, other: Optional[T]):
+    def __gt__(self, other: Optional[T]):
         if other is None:
             return True
         return super().__gt__(other)
 
-    def __lt__(self: T, other: Optional[T]):
+    def __lt__(self, other: Optional[T]):
         if other is None:
             return False
         return super().__lt__(other)
