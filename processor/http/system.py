@@ -35,7 +35,7 @@ async def browse_access_log(
     
     ### Available columns
     """
-    if not (await service.rbac.validate(req.account.id, RoleType.manager)  # System manager
+    if not (await service.rbac.validate_system(req.account.id, RoleType.manager)  # System manager
             # or await rbac.any_class_role(member_id=req.account.id, role=RoleType.manager)):  # Any class manager
     ):
         raise exc.NoPermission

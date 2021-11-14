@@ -42,7 +42,7 @@ async def browse_class(
 
     ### Available columns
     """
-    if not await service.rbac.validate(request.account.id, RoleType.normal):
+    if not await service.rbac.validate_system(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
     filters = model.parse_filter(filter, BROWSE_CLASS_COLUMNS)
@@ -60,7 +60,7 @@ async def read_class(class_id: int, request: Request) -> do.Class:
     ### 權限
     - System normal: all
     """
-    if not await service.rbac.validate(request.account.id, RoleType.normal):
+    if not await service.rbac.validate_system(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
     return await db.class_.read(class_id=class_id)
@@ -78,7 +78,7 @@ async def edit_class(class_id: int, data: EditClassInput, request: Request) -> N
     ### 權限
     - Class+ manager
     """
-    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=class_id, inherit=True):
+    if not await service.rbac.validate_inherit(request.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
 
     await db.class_.edit(
@@ -95,7 +95,7 @@ async def delete_class(class_id: int, request: Request) -> None:
     ### 權限
     - System manager
     """
-    if not await service.rbac.validate(request.account.id, RoleType.manager):
+    if not await service.rbac.validate_system(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
     await db.class_.delete(class_id)
@@ -134,8 +134,8 @@ async def browse_class_member(
 
     ### Available columns
     """
-    if (not await service.rbac.validate(request.account.id, RoleType.normal, class_id=class_id)
-            and not await service.rbac.validate(request.account.id, RoleType.manager, class_id=class_id, inherit=True)):
+    if (not await service.rbac.validate_class(request.account.id, RoleType.normal, class_id=class_id)
+            and not await service.rbac.validate_inherit(request.account.id, RoleType.manager, class_id=class_id)):
         raise exc.NoPermission
 
     filters = model.parse_filter(filter, BROWSE_CLASS_MEMBER_COLUMNS)
@@ -171,8 +171,8 @@ async def browse_all_class_member_with_account_referral(class_id: int, request: 
     - Class normal
     - Class+ manager
     """
-    if (not await service.rbac.validate(request.account.id, RoleType.normal, class_id=class_id)
-            and not await service.rbac.validate(request.account.id, RoleType.manager, class_id=class_id, inherit=True)):
+    if (not await service.rbac.validate_class(request.account.id, RoleType.normal, class_id=class_id)
+            and not await service.rbac.validate_inherit(request.account.id, RoleType.manager, class_id=class_id)):
         raise exc.NoPermission
 
     results = await db.class_vo.browse_class_member_with_account_referral(class_id=class_id)
@@ -194,7 +194,7 @@ async def replace_class_members(class_id: int, data: Sequence[SetClassMemberInpu
     ### 權限
     - Class+ manager
     """
-    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=class_id, inherit=True):
+    if not await service.rbac.validate_inherit(request.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
 
     member_roles = [(member.account_referral, member.role) for member in data]
@@ -230,7 +230,7 @@ async def delete_class_member(class_id: int, member_id: int, request: Request) -
     ### 權限
     - Class+ manager
     """
-    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=class_id, inherit=True):
+    if not await service.rbac.validate_class(request.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
 
     await db.class_.delete_member(class_id=class_id, member_id=member_id)
@@ -248,7 +248,7 @@ async def add_team_under_class(class_id: int, data: AddTeamInput, request: Reque
     ### 權限
     - Class manager
     """
-    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=class_id):
+    if not await service.rbac.validate_class(request.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
 
     team_id = await db.team.add(
@@ -284,8 +284,7 @@ async def browse_team_under_class(
 
     ### Available columns
     """
-    class_role = await service.rbac.get_role(request.account.id, class_id=class_id)
-    if class_role < RoleType.normal:
+    if not await service.rbac.validate_class(request.account.id, RoleType.normal, class_id=class_id):
         raise exc.NoPermission
 
     filters = model.parse_filter(filter, BROWSE_TEAM_UNDER_CLASS_COLUMNS)
@@ -325,7 +324,7 @@ async def browse_submission_under_class(
 
     ### Available columns
     """
-    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=class_id):
+    if not await service.rbac.validate_class(request.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
 
     filters = model.parse_filter(filter, BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS)

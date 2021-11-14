@@ -24,9 +24,7 @@ async def view_team_project_scoreboard(scoreboard_id: int, request: Request) -> 
     ### 權限
     - Class normal
     """
-    scoreboard = await db.scoreboard.read(scoreboard_id=scoreboard_id)
-    challenge = await db.challenge.read(challenge_id=scoreboard.challenge_id, include_scheduled=True)
-    if not await service.rbac.validate(request.account.id, RoleType.normal, class_id=challenge.class_id):
+    if not await service.rbac.validate_class(request.account.id, RoleType.normal, scoreboard_id=scoreboard_id):
         raise exc.NoPermission
 
     scoreboard, scoreboard_setting_data = await service.scoreboard.read_with_scoreboard_setting_data(
@@ -37,8 +35,8 @@ async def view_team_project_scoreboard(scoreboard_id: int, request: Request) -> 
         team_id=team_project_scoreboard.team_id,
         team_name=team_project_scoreboard.team_name,
         total_score=team_project_scoreboard.total_score if scoreboard_setting_data.rank_by_total_score else None,
-        target_problem_data=team_project_scoreboard.target_problem_data)
-        for team_project_scoreboard in result]
+        target_problem_data=team_project_scoreboard.target_problem_data,
+    ) for team_project_scoreboard in result]
 
 
 class EditScoreboardInput(BaseModel):
@@ -58,9 +56,7 @@ async def edit_team_project_scoreboard(scoreboard_id: int, data: EditScoreboardI
     ### 權限
     - Class manager
     """
-    scoreboard = await db.scoreboard.read(scoreboard_id=scoreboard_id)
-    challenge = await db.challenge.read(challenge_id=scoreboard.challenge_id, include_scheduled=True)
-    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if not await service.rbac.validate_class(request.account.id, RoleType.manager, scoreboard_id=scoreboard_id):
         raise exc.NoPermission
 
     await db.scoreboard_setting_team_project.edit_with_scoreboard(

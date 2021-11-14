@@ -29,7 +29,7 @@ async def add_course(data: AddCourseInput, request: Request) -> model.AddOutput:
     ### 權限
     - System manager
     """
-    if not await service.rbac.validate(request.account.id, RoleType.manager):
+    if not await service.rbac.validate_system(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
     course_id = await db.course.add(
@@ -47,7 +47,7 @@ async def browse_all_course(request: Request) -> Sequence[do.Course]:
     - System manager (hidden)
     - System normal (not hidden)
     """
-    system_role = await service.rbac.get_role(request.account.id)
+    system_role = await service.rbac.get_system_role(request.account.id)
     if system_role < RoleType.normal:
         raise exc.NoPermission
 
@@ -63,7 +63,7 @@ async def read_course(course_id: int, request: Request) -> do.Course:
     - System manager (hidden)
     - System normal (not hidden)
     """
-    system_role = await service.rbac.get_role(request.account.id)
+    system_role = await service.rbac.get_system_role(request.account.id)
     if system_role < RoleType.normal:
         raise exc.NoPermission
 
@@ -83,7 +83,7 @@ async def edit_course(course_id: int, data: EditCourseInput, request: Request) -
     ### 權限
     - System manager
     """
-    if not await service.rbac.validate(request.account.id, RoleType.manager):
+    if not await service.rbac.validate_system(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
     await db.course.edit(
@@ -100,7 +100,7 @@ async def delete_course(course_id: int, request: Request) -> None:
     ### 權限
     - System manager
     """
-    if not await service.rbac.validate(request.account.id, RoleType.manager):
+    if not await service.rbac.validate_system(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
     await db.course.delete(course_id)
@@ -117,7 +117,7 @@ async def add_class_under_course(course_id: int, data: AddClassInput, request: R
     ### 權限
     - System manager
     """
-    if not await service.rbac.validate(request.account.id, RoleType.manager):
+    if not await service.rbac.validate_system(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
     class_id = await db.class_.add(
@@ -136,7 +136,7 @@ async def browse_all_class_under_course(course_id: int, request: Request) -> Seq
     - Class+ manager (hidden)
     - System normal (not hidden)
     """
-    if not await service.rbac.validate(request.account.id, RoleType.normal):
+    if not await service.rbac.validate_system(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
     return await db.class_.browse(course_id=course_id)

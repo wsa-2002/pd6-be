@@ -33,9 +33,7 @@ async def read_scoreboard(scoreboard_id: int, request: Request) -> ReadScoreboar
     ### 權限
     - Class normal
     """
-    scoreboard = await db.scoreboard.read(scoreboard_id=scoreboard_id)
-    challenge = await db.challenge.read(challenge_id=scoreboard.challenge_id, include_scheduled=True)
-    if not await service.rbac.validate(request.account.id, RoleType.normal, class_id=challenge.class_id):
+    if not await service.rbac.validate_class(request.account.id, RoleType.normal, scoreboard_id=scoreboard_id):
         raise exc.NoPermission
 
     scoreboard, data = await service.scoreboard.read_with_scoreboard_setting_data(scoreboard_id=scoreboard_id)
@@ -56,9 +54,7 @@ async def delete_scoreboard(scoreboard_id: int, request: Request) -> None:
     ### 權限
     - Class manager
     """
-    scoreboard = await db.scoreboard.read(scoreboard_id=scoreboard_id)
-    challenge = await db.challenge.read(challenge_id=scoreboard.challenge_id, include_scheduled=True)
-    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if not await service.rbac.validate_class(request.account.id, RoleType.manager, scoreboard_id=scoreboard_id):
         raise exc.NoPermission
 
     await db.scoreboard.delete(scoreboard_id=scoreboard_id)

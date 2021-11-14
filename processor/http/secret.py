@@ -126,7 +126,7 @@ async def add_normal_account(data: AddNormalAccountInput, request: Request) -> m
     ### 權限
     - System Manager
     """
-    if not await service.rbac.validate(request.account.id, RoleType.manager):
+    if not await service.rbac.validate_system(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
     # 要先檢查以免創立了帳號後才出事
@@ -152,7 +152,7 @@ async def import_account(request: Request, account_file: UploadFile = File(...))
     ### 權限
     - System Manager
     """
-    if not await service.rbac.validate(request.account.id, RoleType.manager):
+    if not await service.rbac.validate_system(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
     await service.csv.import_account(account_file=account_file.file)
@@ -181,7 +181,7 @@ async def edit_password(account_id: int, data: EditPasswordInput, request: Reque
         return await db.account.edit_pass_hash(account_id=account_id,
                                                pass_hash=security.hash_password(data.new_password))
 
-    is_manager = await service.rbac.validate(request.account.id, RoleType.manager)
+    is_manager = await service.rbac.validate_system(request.account.id, RoleType.manager)
     if is_manager:
         return await db.account.edit_pass_hash(account_id=account_id,
                                                pass_hash=security.hash_password(data.new_password))

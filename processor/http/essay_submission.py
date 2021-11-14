@@ -30,12 +30,12 @@ async def upload_essay(essay_id: int, request: Request, essay_file: UploadFile =
     ### 限制
     - 上傳檔案 < 10mb
     """
+    if not await service.rbac.validate_class(request.account.id, RoleType.normal, essay_id=essay_id):
+        raise exc.NoPermission
 
     essay = await db.essay.read(essay_id=essay_id)
     challenge = await db.challenge.read(essay.challenge_id, include_scheduled=True, ref_time=request.time)
-
-    if not (await service.rbac.validate(request.account.id, RoleType.normal, class_id=challenge.class_id)
-            and request.time <= challenge.end_time):
+    if request.time <= challenge.end_time:
         raise exc.NoPermission
 
     return await service.submission.submit_essay(file=essay_file.file, filename=essay_file.filename,
@@ -69,13 +69,8 @@ async def browse_essay_submission_by_essay_id(
 
     ### Available columns
     """
-    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    essay = await db.essay.read(essay_id=essay_id)
-    challenge = await db.challenge.read(essay.challenge_id, include_scheduled=True, ref_time=request.time)
-
-    class_role = await service.rbac.get_role(request.account.id, class_id=challenge.class_id)
-
-    if not (class_role is RoleType.manager or class_role is RoleType.normal):
+    class_role = await service.rbac.get_class_role(request.account.id, essay_id=essay_id)
+    if not (class_role >= RoleType.normal):
         raise exc.NoPermission
 
     filters = model.parse_filter(filter, BROWSE_ESSAY_SUBMISSION_COLUMNS)
@@ -103,15 +98,14 @@ async def read_essay_submission(essay_submission_id: int, request: Request) -> d
     - class manager (always)
     - class normal (self)
     """
+    class_role = await service.rbac.get_class_role(request.account.id, essay_submission_id=essay_submission_id)
+    if class_role < RoleType.normal:
+        raise exc.NoPermission
+
     essay_submission = await db.essay_submission.read(essay_submission_id=essay_submission_id)
 
-    if request.account.id == essay_submission.account_id:
-        return essay_submission
-
-    essay = await db.essay.read(essay_id=essay_submission.essay_id)
-    challenge = await db.challenge.read(essay.challenge_id, include_scheduled=True, ref_time=request.time)
-
-    if await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if (class_role >= RoleType.manager
+            or request.account.id == essay_submission.account_id):
         return essay_submission
 
     raise exc.NoPermission
@@ -123,11 +117,15 @@ async def read_essay_submission(essay_submission_id: int, request: Request) -> d
 async def reupload_essay(essay_submission_id: int, request: Request, essay_file: UploadFile = File(...)):
     """
     ### 權限
-    - self
+    - Class normal = self
 
     ### 限制
     - 上傳檔案 < 10mb
     """
+    if not await service.rbac.validate_class(request.account.id, RoleType.normal,
+                                             essay_submission_id=essay_submission_id):
+        raise exc.NoPermission
+
     essay_submission = await db.essay_submission.read(essay_submission_id=essay_submission_id)
     essay = await db.essay.read(essay_id=essay_submission.essay_id)
     challenge = await db.challenge.read(challenge_id=essay.challenge_id, include_scheduled=True)

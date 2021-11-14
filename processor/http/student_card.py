@@ -31,7 +31,7 @@ async def add_student_card_to_account(account_id: int, data: AddStudentCardInput
     - System manager
     - Self
     """
-    is_manager = await service.rbac.validate(request.account.id, RoleType.manager)
+    is_manager = await service.rbac.validate_system(request.account.id, RoleType.manager)
     is_self = request.account.id == account_id
 
     if not (is_manager or is_self):
@@ -63,7 +63,7 @@ async def browse_all_account_student_card(account_id: int, request: Request, ) -
     - System manager
     - Self
     """
-    is_manager = await service.rbac.validate(request.account.id, RoleType.manager)
+    is_manager = await service.rbac.validate_system(request.account.id, RoleType.manager)
     is_self = request.account.id == account_id
 
     if not (is_manager or is_self):
@@ -82,7 +82,7 @@ async def read_student_card(student_card_id: int, request: Request) -> do.Studen
     - System manager
     - Self
     """
-    is_manager = await service.rbac.validate(request.account.id, RoleType.manager)
+    is_manager = await service.rbac.validate_system(request.account.id, RoleType.manager)
     owner_id = await db.student_card.read_owner_id(student_card_id=student_card_id)
     is_self = request.account.id == owner_id
 
