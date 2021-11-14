@@ -1,6 +1,5 @@
-import exceptions
-import log
 from base.enum import RoleType
+import exceptions
 
 from .base import FetchOne
 
@@ -36,7 +35,7 @@ async def any_class_role(member_id: int, role: RoleType) -> bool:
                 sql=r'SELECT *'
                     r'  FROM class_member'
                     r' WHERE member_id = %(member_id)s'
-                    r'   AND role_type = %(role)s',
+                    r'   AND role = %(role)s',
                 member_id=member_id,
                 role=role,
         ):
