@@ -7,15 +7,16 @@ from fastapi import UploadFile, File, BackgroundTasks
 from pydantic import BaseModel, PositiveInt
 
 import const
+import log
 from base import do
 from base.enum import RoleType, ChallengePublicizeType, TaskSelectionType, ProblemJudgeType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
 import persistence.database as db
 import service
-from persistence import s3
-
-from processor.util import model
+from persistence import s3, email
+import util
+from util import model
 
 router = APIRouter(
     tags=['Problem'],
@@ -333,9 +334,22 @@ async def download_all_assisting_data(problem_id: int, request: Request, as_atta
 
     if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
-    background_tasks.add_task(service.downloader.all_assisting_data,
-                              account_id=request.account.id, problem_id=problem_id, as_attachment=as_attachment)
-    return
+
+    async def _task() -> None:
+        log.info("Start download all essay submission")
+
+        s3_file = await service.downloader.all_assisting_data(problem_id=problem_id)
+        file_url = await s3.tools.sign_url(bucket=s3_file.bucket, key=s3_file.key,
+                                           filename='assisting_data.zip', as_attachment=as_attachment)
+
+        log.info("URL signed, sending email")
+
+        account, student_card = await db.account_vo.read_with_default_student_card(account_id=request.account.id)
+        await email.notification.send_file_download_url(to=student_card.email, file_url=file_url)
+
+        log.info('Done')
+
+    util.background_task.launch(background_tasks, _task)
 
 
 @router.post('/problem/{problem_id}/all-sample-testcase')
@@ -352,9 +366,21 @@ async def download_all_sample_testcase(problem_id: int, request: Request, as_att
     if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
-    background_tasks.add_task(service.downloader.all_sample_testcase,
-                              account_id=request.account.id, problem_id=problem_id, as_attachment=as_attachment)
-    return
+    async def _task() -> None:
+        log.info("Start download all essay submission")
+
+        s3_file = await service.downloader.all_testcase(problem_id=problem_id, is_sample=True)
+        file_url = await s3.tools.sign_url(bucket=s3_file.bucket, key=s3_file.key,
+                                           filename='sample_testcase.zip', as_attachment=as_attachment)
+
+        log.info("URL signed, sending email")
+
+        account, student_card = await db.account_vo.read_with_default_student_card(account_id=request.account.id)
+        await email.notification.send_file_download_url(to=student_card.email, file_url=file_url)
+
+        log.info('Done')
+
+    util.background_task.launch(background_tasks, _task)
 
 
 @router.post('/problem/{problem_id}/all-non-sample-testcase')
@@ -371,9 +397,21 @@ async def download_all_non_sample_testcase(problem_id: int, request: Request, as
     if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
-    background_tasks.add_task(service.downloader.all_non_sample_testcase,
-                              account_id=request.account.id, problem_id=problem_id, as_attachment=as_attachment)
-    return
+    async def _task() -> None:
+        log.info("Start download all essay submission")
+
+        s3_file = await service.downloader.all_testcase(problem_id=problem_id, is_sample=False)
+        file_url = await s3.tools.sign_url(bucket=s3_file.bucket, key=s3_file.key,
+                                           filename='non_sample_testcase.zip', as_attachment=as_attachment)
+
+        log.info("URL signed, sending email")
+
+        account, student_card = await db.account_vo.read_with_default_student_card(account_id=request.account.id)
+        await email.notification.send_file_download_url(to=student_card.email, file_url=file_url)
+
+        log.info('Done')
+
+    util.background_task.launch(background_tasks, _task)
 
 
 @dataclass

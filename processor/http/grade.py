@@ -11,9 +11,8 @@ from base.enum import RoleType, FilterOperator
 from middleware import APIRouter, response, enveloped, auth, Request
 import persistence.database as db
 import service
-from util.api_doc import add_to_docstring
-
-from processor.util import model
+import util
+from util import model
 
 router = APIRouter(
     tags=['Grade'],
@@ -74,7 +73,7 @@ BROWSE_CLASS_GRADE_COLUMNS = {
 
 @router.get('/class/{class_id}/grade', tags=['Class'])
 @enveloped
-@add_to_docstring({k: v.__name__ for k, v in BROWSE_CLASS_GRADE_COLUMNS.items()})
+@util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_CLASS_GRADE_COLUMNS.items()})
 async def browse_class_grade(class_id: int, request: Request,
                              limit: int = 50, offset: int = 0,
                              filter: model.FilterStr = None, sort: model.SorterStr = None) \
@@ -115,7 +114,7 @@ BROWSE_ACCOUNT_GRADE_COLUMNS = {
 
 @router.get('/account/{account_id}/grade', tags=['Account'])
 @enveloped
-@add_to_docstring({k: v.__name__ for k, v in BROWSE_ACCOUNT_GRADE_COLUMNS.items()})
+@util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_ACCOUNT_GRADE_COLUMNS.items()})
 async def browse_account_grade(account_id: int, request: Request,
                                limit: model.Limit = 50, offset: model.Offset = 0,
                                filter: model.FilterStr = None, sort: model.SorterStr = None) \

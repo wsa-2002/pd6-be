@@ -11,9 +11,8 @@ from middleware import APIRouter, response, enveloped, auth, Request
 import persistence.database as db
 import service
 from persistence import email
-from util.api_doc import add_to_docstring
-
-from processor.util import model
+import util
+from util import model
 
 router = APIRouter(
     tags=['Class'],
@@ -31,7 +30,7 @@ BROWSE_CLASS_COLUMNS = {
 
 @router.get('/class')
 @enveloped
-@add_to_docstring({k: v.__name__ for k, v in BROWSE_CLASS_COLUMNS.items()})
+@util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_CLASS_COLUMNS.items()})
 async def browse_class(
         request: Request,
         limit: model.Limit = 50, offset: model.Offset = 0,
@@ -121,7 +120,7 @@ BROWSE_CLASS_MEMBER_COLUMNS = {
 
 @router.get('/class/{class_id}/member')
 @enveloped
-@add_to_docstring({k: v.__name__ for k, v in BROWSE_CLASS_MEMBER_COLUMNS.items()})
+@util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_CLASS_MEMBER_COLUMNS.items()})
 async def browse_class_member(
         class_id: int,
         request: Request,
@@ -272,7 +271,7 @@ BROWSE_TEAM_UNDER_CLASS_COLUMNS = {
 
 @router.get('/class/{class_id}/team', tags=['Team'])
 @enveloped
-@add_to_docstring({k: v.__name__ for k, v in BROWSE_TEAM_UNDER_CLASS_COLUMNS.items()})
+@util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_TEAM_UNDER_CLASS_COLUMNS.items()})
 async def browse_team_under_class(
         class_id: int,
         request: Request,
@@ -313,7 +312,7 @@ BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS = {
 
 @router.get('/class/{class_id}/submission', tags=['Submission'])
 @enveloped
-@add_to_docstring({k: v.__name__ for k, v in BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS.items()})
+@util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS.items()})
 async def browse_submission_under_class(
         class_id: int,
         request: Request,

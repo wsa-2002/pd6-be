@@ -12,9 +12,8 @@ from middleware import APIRouter, response, enveloped, auth, Request
 import persistence.database as db
 import service
 from persistence import email
-from util.api_doc import add_to_docstring
-
-from processor.util import model
+import util
+from util import model
 
 router = APIRouter(
     tags=['Account'],
@@ -47,7 +46,7 @@ BROWSE_ACCOUNT_COLUMNS = {
 
 @router.get('/account')
 @enveloped
-@add_to_docstring({k: v.__name__ for k, v in BROWSE_ACCOUNT_COLUMNS.items()})
+@util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_ACCOUNT_COLUMNS.items()})
 async def browse_account_with_default_student_id(
         request: Request,
         limit: model.Limit = 50, offset: model.Offset = 0,

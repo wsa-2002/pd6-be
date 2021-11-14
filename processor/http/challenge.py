@@ -4,6 +4,7 @@ from typing import Optional, Sequence
 from fastapi import BackgroundTasks
 from pydantic import BaseModel
 
+import const
 import log
 from base import do, enum, popo
 from base.enum import RoleType, FilterOperator, ChallengePublicizeType, ScoreboardType
@@ -11,9 +12,9 @@ import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
 import persistence.database as db
 import service
-from util.api_doc import add_to_docstring
-
-from processor.util import model
+from persistence import email, s3
+import util
+from util import model
 
 router = APIRouter(
     tags=['Challenge'],
@@ -68,7 +69,7 @@ BROWSE_CHALLENGE_COLUMNS = {
 
 @router.get('/class/{class_id}/challenge', tags=['Course'])
 @enveloped
-@add_to_docstring({k: v.__name__ for k, v in BROWSE_CHALLENGE_COLUMNS.items()})
+@util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_CHALLENGE_COLUMNS.items()})
 async def browse_challenge_under_class(
         class_id: int,
         request: Request,
@@ -464,15 +465,27 @@ async def download_all_submissions(challenge_id: int, request: Request, as_attac
     if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
-    async def background_task(*args, **kwargs):
-        try:
-            await service.downloader.all_submissions(*args, **kwargs)
-        except Exception as e:
-            log.exception(e)
+    async def _task() -> None:
+        log.info("Start download all essay submission")
 
-    background_tasks.add_task(background_task,
-                              account_id=request.account.id, challenge_id=challenge.id, as_attachment=as_attachment)
-    return
+        s3_file = await service.downloader.all_submissions(challenge_id=challenge_id)
+        file_url = await s3.tools.sign_url(bucket=s3_file.bucket, key=s3_file.key,
+                                           expire_secs=const.SUBMISSION_PACKAGE_S3_EXPIRE_SECS,
+                                           filename=util.text.get_valid_filename(f'{challenge.title}.zip'),
+                                           as_attachment=as_attachment)
+
+        log.info("URL signed, sending email")
+
+        account, student_card = await db.account_vo.read_with_default_student_card(account_id=request.account.id)
+        if student_card.email:
+            await email.notification.send_file_download_url(to=student_card.email, file_url=file_url,
+                                                            subject=f'[PDOGS] All submissions for {challenge.title}')
+        if account.alternative_email:
+            await email.notification.send_file_download_url(to=account.alternative_email, file_url=file_url,
+                                                            subject=f'[PDOGS] All submissions for {challenge.title}')
+        log.info('Done')
+
+    util.background_task.launch(background_tasks, _task)
 
 
 @router.post('/challenge/{challenge_id}/all-plagiarism-report')
@@ -487,12 +500,57 @@ async def download_all_plagiarism_reports(challenge_id: int, request: Request, a
     if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
-    async def background_task(*args, **kwargs):
-        try:
-            await service.moss.check_all_submissions_moss(*args, **kwargs)
-        except Exception as e:
-            log.exception(e)
+    async def _task() -> None:
+        log.info("Start download all essay submission")
 
-    background_tasks.add_task(background_task,
-                              account_id=request.account.id, challenge_id=challenge.id, as_attachment=as_attachment)
-    return
+        account, student_card = await db.account_vo.read_with_default_student_card(account_id=request.account.id)
+
+        problems = await db.problem.browse_by_challenge(challenge_id=challenge_id)
+        for problem in problems:
+            problem_title = challenge.title + ' ' + problem.challenge_label
+            log.info(f"Start moss plagiarism report task for {problem_title} {problem.id=}")
+
+            report_url = await service.moss.check_all_submissions_moss(title=problem_title,
+                                                                       challenge=challenge, problem=problem)
+
+            log.info(f'send to email for moss {problem_title} {problem.id=}')
+
+            if student_card.email:
+                await email.notification.send(to=student_card.email,
+                                              subject=f'[PDOGS] Plagiarism report for {problem_title}',
+                                              msg=f'Plagiarism report for {problem_title}: {report_url}')
+            if account.alternative_email:
+                await email.notification.send(to=account.alternative_email,
+                                              subject=f'[PDOGS] Plagiarism report for {problem_title}',
+                                              msg=f'Plagiarism report for {problem_title}: {report_url}')
+
+            log.info(f'download moss report for {problem_title} {problem.id=} {report_url=}')
+
+            s3_file = await service.downloader.moss_report(report_url=report_url)
+            file_url = await s3.tools.sign_url(
+                bucket=s3_file.bucket, key=s3_file.key,
+                expire_secs=const.SUBMISSION_PACKAGE_S3_EXPIRE_SECS,
+                filename=util.text.get_valid_filename(f'{challenge.title}_plagiarism_report.zip'),
+                as_attachment=as_attachment,
+            )
+
+            log.info("URL signed, sending email")
+
+            if student_card.email:
+                await email.notification.send_file_download_url(
+                    to=student_card.email,
+                    file_url=file_url,
+                    subject=f'[PDOGS] Plagiarism report file for {problem_title}',
+                )
+            if account.alternative_email:
+                await email.notification.send_file_download_url(
+                    to=account.alternative_email,
+                    file_url=file_url,
+                    subject=f'[PDOGS] Plagiarism report file for {problem_title}',
+                )
+
+            log.info(f"Done for {problem_title} {problem.id=}")
+
+        log.info('Done')
+
+    util.background_task.launch(background_tasks, _task)

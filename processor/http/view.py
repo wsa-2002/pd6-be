@@ -7,9 +7,8 @@ import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
 from persistence import database as db
 import service
-from util.api_doc import add_to_docstring
-
-from processor.util import model
+import util
+from util import model
 
 router = APIRouter(
     tags=['View'],
@@ -32,7 +31,7 @@ class ViewAccountOutput(model.BrowseOutputBase):
 
 @router.get('/view/account')
 @enveloped
-@add_to_docstring({k: v.__name__ for k, v in BROWSE_ACCOUNT_COLUMNS.items()})
+@util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_ACCOUNT_COLUMNS.items()})
 async def browse_account_with_default_student_id(
         request: Request,
         limit: model.Limit = 50, offset: model.Offset = 0,
@@ -74,7 +73,7 @@ class ViewClassMemberOutput(model.BrowseOutputBase):
 
 @router.get('/class/{class_id}/view/member')
 @enveloped
-@add_to_docstring({k: v.__name__ for k, v in BROWSE_CLASS_MEMBER_COLUMNS.items()})
+@util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_CLASS_MEMBER_COLUMNS.items()})
 async def browse_class_member(
         class_id: int,
         request: Request,
@@ -127,7 +126,7 @@ class ViewSubmissionUnderClassOutput(model.BrowseOutputBase):
 
 @router.get('/class/{class_id}/view/submission')
 @enveloped
-@add_to_docstring({k: v.__name__ for k, v in BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS.items()})
+@util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS.items()})
 async def browse_submission_under_class(
         class_id: int,
         request: Request,
@@ -175,7 +174,7 @@ class ViewMySubmissionOutput(model.BrowseOutputBase):
 
 @router.get('/view/my-submission')
 @enveloped
-@add_to_docstring({k: v.__name__ for k, v in BROWSE_SUBMISSION_COLUMNS.items()})
+@util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_SUBMISSION_COLUMNS.items()})
 async def browse_submission(account_id: int, request: Request, limit: model.Limit = 50, offset: model.Offset = 0,
                             filter: model.FilterStr = None, sort: model.SorterStr = None) \
         -> ViewMySubmissionOutput:
@@ -222,7 +221,7 @@ class ViewMySubmissionUnderProblemOutput(model.BrowseOutputBase):
 
 @router.get('/problem/{problem_id}/view/my-submission')
 @enveloped
-@add_to_docstring({k: v.__name__ for k, v in BROWSE_MY_SUBMISSION_UNDER_PROBLEM_COLUMNS.items()})
+@util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_MY_SUBMISSION_UNDER_PROBLEM_COLUMNS.items()})
 async def browse_my_submission_under_problem(account_id: int,
                                              problem_id: int,
                                              request: Request,
@@ -273,7 +272,7 @@ class ViewProblemSetOutput(model.BrowseOutputBase):
 
 @router.get('/class/{class_id}/view/problem-set')
 @enveloped
-@add_to_docstring({k: v.__name__ for k, v in BROWSE_PROBLEM_SET_COLUMNS.items()})
+@util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_PROBLEM_SET_COLUMNS.items()})
 async def browse_problem_set_under_class(
         class_id: int,
         request: Request,
@@ -322,7 +321,7 @@ class ViewGradeOutput(model.BrowseOutputBase):
 
 @router.get('/class/{class_id}/view/grade')
 @enveloped
-@add_to_docstring({k: v.__name__ for k, v in BROWSE_CLASS_GRADE_COLUMNS.items()})
+@util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_CLASS_GRADE_COLUMNS.items()})
 async def browse_class_grade(class_id: int, request: Request,
                              limit: int = 50, offset: int = 0,
                              filter: model.FilterStr = None, sort: model.SorterStr = None) \
@@ -373,7 +372,7 @@ class ViewAccessLogOutput(model.BrowseOutputBase):
 
 @router.get('/view/access-log')
 @enveloped
-@add_to_docstring({k: v.__name__ for k, v in BROWSE_ACCESS_LOG_COLUMNS.items()})
+@util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_ACCESS_LOG_COLUMNS.items()})
 async def browse_access_log(
         req: Request,
         limit: model.Limit, offset: model.Offset,
@@ -413,7 +412,7 @@ class ViewPeerReviewRecordOutput(model.BrowseOutputBase):
 
 @router.get('/peer-review/{peer_review_id}/view/reviewer-summary')
 @enveloped
-@add_to_docstring({k: v.__name__ for k, v in BROWSE_PEER_REVIEW_RECORD_COLUMNS.items()})
+@util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_PEER_REVIEW_RECORD_COLUMNS.items()})
 async def peer_review_summary_review(peer_review_id: int, request: Request,
                                      limit: model.Limit = 50, offset: model.Offset = 0,
                                      filter: model.FilterStr = None, sort: model.SorterStr = None) \
@@ -443,7 +442,7 @@ async def peer_review_summary_review(peer_review_id: int, request: Request,
 
 @router.get('/peer-review/{peer_review_id}/view/receiver-summary')
 @enveloped
-@add_to_docstring({k: v.__name__ for k, v in BROWSE_PEER_REVIEW_RECORD_COLUMNS.items()})
+@util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_PEER_REVIEW_RECORD_COLUMNS.items()})
 async def peer_review_summary_receive(peer_review_id: int, request: Request,
                                       limit: model.Limit = 50, offset: model.Offset = 0,
                                       filter: model.FilterStr = None, sort: model.SorterStr = None) \

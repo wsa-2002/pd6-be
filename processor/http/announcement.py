@@ -6,9 +6,8 @@ import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
 from persistence import database as db
 import service
-from util.api_doc import add_to_docstring
-
-from processor.util import model
+import util
+from util import model
 
 router = APIRouter(
     tags=['Announcement'],
@@ -54,7 +53,7 @@ BROWSE_ANNOUNCEMENT_COLUMNS = {
 
 @router.get('/announcement')
 @enveloped
-@add_to_docstring({k: v.__name__ for k, v in BROWSE_ANNOUNCEMENT_COLUMNS.items()})
+@util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_ANNOUNCEMENT_COLUMNS.items()})
 async def browse_announcement(
         request: Request,
         limit: model.Limit = 50, offset: model.Offset = 0,

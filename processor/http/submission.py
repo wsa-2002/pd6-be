@@ -11,9 +11,8 @@ import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
 import persistence.database as db
 import service
-from util.api_doc import add_to_docstring
-
-from processor.util import model, file
+import util
+from util import model
 
 router = APIRouter(
     tags=['Submission'],
@@ -78,7 +77,7 @@ async def edit_submission_language(language_id: int, data: EditSubmissionLanguag
 
 
 @router.post('/problem/{problem_id}/submission', tags=['Problem'],
-             dependencies=[Depends(file.valid_file_length(file_length=const.CODE_UPLOAD_LIMIT))])
+             dependencies=[Depends(util.file.valid_file_length(file_length=const.CODE_UPLOAD_LIMIT))])
 @enveloped
 async def submit(problem_id: int, language_id: int, request: Request, content_file: UploadFile = File(...)) \
         -> model.AddOutput:
@@ -131,7 +130,7 @@ BROWSE_SUBMISSION_COLUMNS = {
 
 @router.get('/submission')
 @enveloped
-@add_to_docstring({k: v.__name__ for k, v in BROWSE_SUBMISSION_COLUMNS.items()})
+@util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_SUBMISSION_COLUMNS.items()})
 async def browse_submission(account_id: int, request: Request, limit: model.Limit = 50, offset: model.Offset = 0,
                             filter: model.FilterStr = None, sort: model.SorterStr = None) \
         -> model.BrowseOutputBase:

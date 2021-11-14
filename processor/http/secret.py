@@ -14,9 +14,7 @@ from middleware import APIRouter, JSONResponse, enveloped, Request, auth, routin
 import persistence.database as db
 import service
 from persistence import email
-from util import security
-
-from processor.util import model
+from util import security, model
 
 router = APIRouter(
     route_class=routing.SecretAPIRoute,  # Does not log the I/O data

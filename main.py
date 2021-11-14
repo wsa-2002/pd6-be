@@ -85,6 +85,9 @@ async def app_shutdown():
     from persistence.s3 import s3_handler
     await s3_handler.close()
 
+    from persistence.amqp_publisher import amqp_publish_handler
+    await amqp_publish_handler.close()
+
 
 # Add middlewares
 # Order matters! First added middlewares are executed last.

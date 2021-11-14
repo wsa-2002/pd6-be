@@ -3,14 +3,16 @@ from typing import Optional
 from fastapi import BackgroundTasks
 from pydantic import BaseModel
 
+import log
 from base.enum import RoleType
 from base import do
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
 import persistence.database as db
 import service
-
-from processor.util import model
+from persistence import s3, email
+import util
+from util import model
 
 router = APIRouter(
     tags=['Essay'],
@@ -93,6 +95,18 @@ async def download_all_essay_submission(essay_id: int, request: Request, as_atta
     if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
         raise exc.NoPermission
 
-    background_tasks.add_task(service.downloader.all_essay,
-                              account_id=request.account.id, essay_id=essay_id, as_attachment=as_attachment)
-    return
+    async def _task() -> None:
+        log.info("Start download all essay submission")
+
+        s3_file = await service.downloader.all_essay_submissions(essay_id=essay_id)
+        file_url = await s3.tools.sign_url(bucket=s3_file.bucket, key=s3_file.key,
+                                           filename='essay_submission.zip', as_attachment=as_attachment)
+
+        log.info("URL signed, sending email")
+
+        account, student_card = await db.account_vo.read_with_default_student_card(account_id=request.account.id)
+        await email.notification.send_file_download_url(to=student_card.email, file_url=file_url)
+
+        log.info('Done')
+
+    util.background_task.launch(background_tasks, _task)

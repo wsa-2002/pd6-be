@@ -3,9 +3,8 @@ import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
 from persistence import database as db
 import service
-from util.api_doc import add_to_docstring
-
-from processor.util import model
+import util
+from util import model
 
 router = APIRouter(
     tags=['System'],
@@ -24,7 +23,7 @@ BROWSE_ACCESS_LOG_COLUMNS = {
 
 @router.get('/access-log')
 @enveloped
-@add_to_docstring({k: v.__name__ for k, v in BROWSE_ACCESS_LOG_COLUMNS.items()})
+@util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_ACCESS_LOG_COLUMNS.items()})
 async def browse_access_log(
         req: Request,
         limit: model.Limit, offset: model.Offset,

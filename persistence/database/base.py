@@ -153,7 +153,7 @@ class OnlyExecute(_SafeExecutor):
         await conn.execute(self._sql, *self._parameters)
 
     async def __aenter__(self) -> None:
-        return await super().__aenter__()
+        await super().__aenter__()
 
 
 class FetchOne(_SafeExecutor):

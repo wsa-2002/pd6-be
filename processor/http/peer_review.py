@@ -11,9 +11,8 @@ import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
 import persistence.database as db
 import service
-from util.api_doc import add_to_docstring
-
-from processor.util import model
+import util
+from util import model
 
 router = APIRouter(
     tags=['Peer Review'],
@@ -113,7 +112,7 @@ class BrowsePeerReviewRecordOutput:
 
 @router.get('/peer-review/{peer_review_id}/record')
 @enveloped
-@add_to_docstring({k: v.__name__ for k, v in BROWSE_PEER_REVIEW_RECORD_COLUMNS.items()})
+@util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_PEER_REVIEW_RECORD_COLUMNS.items()})
 async def browse_peer_review_record(peer_review_id: int, request: Request,
                                     limit: model.Limit, offset: model.Offset,
                                     filter: model.FilterStr = None, sort: model.SorterStr = None, ) \
