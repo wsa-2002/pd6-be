@@ -90,15 +90,3 @@ async def validate(account_id: int, min_role: RoleType, *,
     else:
         log.info("Global role verified")
         return True
-
-#
-# async def get_class_role_from(account_id: int, *, class_id: int, team_id: int,) -> Optional[RoleType]:
-#     if class_id:
-#         try:
-#             return await db.rbac.read_class_role_by_account_id(class_id=class_id, account_id=account_id)
-#         except exc.persistence.NotFound:
-#             return None
-#
-#     if team_id:
-#         try:
-#             return await db.rbac.read_
