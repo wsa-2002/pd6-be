@@ -6,7 +6,8 @@ import persistence.database as db
 import persistence.s3 as s3
 import util.text
 from base import do
-from persistence import moss
+
+from . import moss
 
 
 async def all_essay_submissions(essay_id: int) -> do.S3File:
