@@ -106,7 +106,7 @@ async def login(data: LoginInput) -> LoginOutput:
             raise exc.account.LoginFailed  # Not to let user know why login failed
 
     # Get jwt
-    login_token = security.encode_jwt(account_id=account_id, expire=config.login_expire)
+    login_token = security.encode_jwt(account_id=account_id, expire=config.login_expire, cached_username=data.username)
 
     return LoginOutput(token=login_token, account_id=account_id)
 
