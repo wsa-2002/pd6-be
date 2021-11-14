@@ -4,7 +4,6 @@ from uuid import UUID
 from base import do
 
 from .base import SafeConnection, FetchOne, FetchAll
-from .util import compile_values
 
 
 async def browse() -> Sequence[do.S3File]:

@@ -1,4 +1,4 @@
-from typing import Sequence, Any
+from typing import Sequence
 
 from base import do
 from base.enum import CourseType

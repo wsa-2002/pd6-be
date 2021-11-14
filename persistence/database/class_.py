@@ -1,6 +1,6 @@
 from itertools import chain
 from operator import itemgetter
-from typing import Sequence, Collection, Tuple, Any
+from typing import Sequence, Collection, Tuple
 
 import log
 from base import do
@@ -10,7 +10,6 @@ from base.popo import Filter, Sorter
 from . import team, challenge
 from .base import SafeConnection, FetchAll, FetchOne, OnlyExecute, ParamDict
 from .util import execute_count, compile_filters, compile_values
-from .account import account_referral_to_id
 
 
 async def add(name: str, course_id: int) -> int:
@@ -237,10 +236,10 @@ async def browse_role_by_account_id(account_id: int) \
     ) as records:
         return [(do.ClassMember(class_id=class_id, member_id=member_id, role=RoleType(role)),
                  do.Class(id=class_id, name=class_name, course_id=course_id, is_deleted=is_deleted),
-                 do.Course(id=course_id, name=course_name, type=type, is_deleted=is_deleted))
+                 do.Course(id=course_id, name=course_name, type=type_, is_deleted=is_deleted))
                 for (class_id, member_id, role,
                      class_id, class_name, course_id, is_deleted,
-                     course_id, course_name, type, is_deleted) in records]
+                     course_id, course_name, type_, is_deleted) in records]
 
 
 async def browse_members(class_id: int) -> Sequence[do.ClassMember]:

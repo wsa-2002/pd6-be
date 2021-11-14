@@ -38,6 +38,7 @@ async def browse_all_submission_language(request: Request) -> Sequence[do.Submis
 class AddSubmissionLanguageInput(BaseModel):
     name: str
     version: str
+    queue_name: str
     is_disabled: bool
 
 
@@ -51,7 +52,7 @@ async def add_submission_language(data: AddSubmissionLanguageInput, request: Req
     if not await service.rbac.validate(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
-    language_id = await db.submission.add_language(name=data.name, version=data.version,
+    language_id = await db.submission.add_language(name=data.name, version=data.version, queue_name=data.queue_name,
                                                    is_disabled=data.is_disabled)
     return model.AddOutput(id=language_id)
 

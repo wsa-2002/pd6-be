@@ -1,4 +1,4 @@
-from typing import Sequence, Tuple
+from typing import Sequence
 from uuid import UUID
 
 from base import do

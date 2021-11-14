@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Sequence, Any
+from typing import Sequence
 
 import log
 from base import do

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Sequence, Optional, Any
+from typing import Sequence, Optional
 
 import asyncpg
 
