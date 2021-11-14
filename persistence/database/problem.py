@@ -1,4 +1,4 @@
-from typing import Optional, Sequence, Tuple, Any
+from typing import Optional, Sequence, Tuple
 from datetime import datetime
 
 from base import do, enum
@@ -39,7 +39,7 @@ async def browse(include_scheduled: bool = False, include_deleted=False) -> Sequ
 
     async with FetchAll(
             event='browse problems',
-            sql=fr'SELECT id, challenge_id, challenge_label, title, setter_id, full_score, judge_type, setting_id'
+            sql=fr'SELECT id, challenge_id, challenge_label, title, setter_id, full_score, judge_type, setting_id,'
                 fr'       description, io_description, source, hint, is_deleted'
                 fr'  FROM problem'
                 fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
@@ -133,7 +133,6 @@ async def read_task_status_by_type(problem_id: int, account_id: int,
                                    selection_type: enum.TaskSelectionType,
                                    challenge_end_time: datetime, include_deleted=False) \
         -> Tuple[do.Problem, do.Submission]:
-
     is_last = selection_type is enum.TaskSelectionType.last
     async with FetchOne(
             event='read problem submission verdict by task selection type',
@@ -180,7 +179,7 @@ async def edit(problem_id: int,
                description: Optional[str] = ...,
                io_description: Optional[str] = ...,
                source: Optional[str] = ...,
-               hint: Optional[str] = ...,) -> None:
+               hint: Optional[str] = ..., ) -> None:
     to_updates: ParamDict = {'judge_type': judge_type}
 
     if challenge_label is not None:
@@ -281,7 +280,7 @@ async def class_total_ac_member_count(problem_id: int) -> int:
             judgment_verdict=enum.VerdictType.accepted, role=enum.RoleType.normal,
             problem_id=problem_id,
     ) as (count,):
-         return count
+        return count
 
 
 async def total_ac_member_count(problem_id: int) -> int:

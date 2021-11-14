@@ -100,3 +100,31 @@ mypy .
 ```
 
 However, currently there are some non-standard type hint usage, so there are a lot of errors. 🥲
+
+### IDE (PyCharm) Settings
+
+The recommended (actually *forced*) IDE for this project is PyCharm. This is to ensure the code style for everyone;
+please try not use VSCode or other IDEs to code in this project.
+
+PyCharm Professional is free for educational users. You may register a pro account for yourself with your `@ntu.edu.tw`
+email. Since the Professional version provides additional useful functionalities such as in-line SQL check, please
+apply your pro account and use the Professional version.
+
+Here are some recommended settings to apply to your PyCharm Professional, so your IDE will not raise too many 
+false alarms:
+
+#### `.dic`
+
+Config location: Editor > Natural Languages > Spelling
+
+You can add `.dic` file to the "Custom dictionaries" list, so PyCharm will not raise unwanted typos. You may also update
+the `.dic` list as you want.
+
+#### Inspections
+
+Here are some inspection (Editor > Inspections) configurations that are recommended. You can avoid having to manually 
+scan through the long list by entering the inspection item to the search bar.
+
+| Type |       Inspection Item        | Severity |
+|:----:| ---------------------------- |:--------:|
+| SQL  | Redundant ordering direction |   Typo   |

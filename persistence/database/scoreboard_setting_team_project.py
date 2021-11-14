@@ -1,13 +1,13 @@
-from typing import Sequence, Optional, Tuple
+from typing import Sequence, Optional
 
 from base import do, enum
 
-from . import scoreboard, team, challenge
+from . import scoreboard
 from .base import SafeConnection, OnlyExecute, FetchOne, ParamDict
 
 
 async def add_under_scoreboard(challenge_id: int, challenge_label: str, title: str, target_problem_ids: Sequence[int],
-                               type: enum.ScoreboardType, scoring_formula: str, baseline_team_id: Optional[int],
+                               type_: enum.ScoreboardType, scoring_formula: str, baseline_team_id: Optional[int],
                                rank_by_total_score: bool, team_label_filter: Optional[str]) -> int:
     async with SafeConnection(event=f'add scoreboard_setting_team_project under scoreboard',
                               auto_transaction=True) as conn:
@@ -24,7 +24,7 @@ async def add_under_scoreboard(challenge_id: int, challenge_label: str, title: s
             "            (challenge_id, challenge_label, title, target_problem_ids, type, setting_id)"
             "     VALUES ($1, $2, $3, $4, $5, $6) "
             "  RETURNING id",
-            challenge_id, challenge_label, title, target_problem_ids, type, team_project_scoreboard_id,
+            challenge_id, challenge_label, title, target_problem_ids, type_, team_project_scoreboard_id,
         )
 
         return scoreboard_id

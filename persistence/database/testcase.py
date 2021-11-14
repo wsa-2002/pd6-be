@@ -1,4 +1,4 @@
-from typing import Sequence, Optional, Any
+from typing import Sequence, Optional
 from uuid import UUID
 
 from base import do
@@ -65,7 +65,7 @@ async def browse(problem_id: int, is_sample=None, include_disabled=False, includ
                             input_filename=input_filename, output_filename=output_filename, note=note,
                             time_limit=time_limit, memory_limit=memory_limit,
                             is_disabled=is_disabled, is_deleted=is_deleted)
-                for (id_, problem_id, is_sample, score, label, input_file_uuid, output_file_uuid,input_filename,
+                for (id_, problem_id, is_sample, score, label, input_file_uuid, output_file_uuid, input_filename,
                      output_filename, note, time_limit, memory_limit, is_disabled, is_deleted)
                 in records]
 
@@ -81,7 +81,7 @@ async def edit(testcase_id: int,
                note: Optional[str] = ...,
                time_limit: int = None,
                memory_limit: int = None,
-               is_disabled: bool = None,) -> None:
+               is_disabled: bool = None, ) -> None:
     to_updates: ParamDict = {}
 
     if is_sample is not None:

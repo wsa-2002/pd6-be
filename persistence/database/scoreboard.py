@@ -1,11 +1,9 @@
-from dataclasses import dataclass
-from typing import Sequence, Tuple, Any, Optional
+from typing import Sequence
 
 from base import do
 from base.enum import ScoreboardType
 
-from . import scoreboard_setting_team_project
-from .base import SafeConnection, OnlyExecute, FetchOne, FetchAll
+from .base import OnlyExecute, FetchOne, FetchAll
 
 
 async def browse_by_challenge(challenge_id: int, include_deleted=False) -> Sequence[do.Scoreboard]:
@@ -20,8 +18,8 @@ async def browse_by_challenge(challenge_id: int, include_deleted=False) -> Seque
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return [do.Scoreboard(id=id_, challenge_id=challenge_id, challenge_label=challenge_label, title=title,
-                              target_problem_ids=target_problem_ids, is_deleted=is_deleted, type=type, setting_id=setting_id)
-                for (id_, challenge_id, challenge_label, title, target_problem_ids, is_deleted, type, setting_id) in records]
+                              target_problem_ids=target_problem_ids, is_deleted=is_deleted, type=type_, setting_id=setting_id)
+                for (id_, challenge_id, challenge_label, title, target_problem_ids, is_deleted, type_, setting_id) in records]
 
 
 async def read(scoreboard_id: int, include_deleted=False) -> do.Scoreboard:
@@ -32,10 +30,10 @@ async def read(scoreboard_id: int, include_deleted=False) -> do.Scoreboard:
                 fr' WHERE id = %(scoreboard_id)s'
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}',
             scoreboard_id=scoreboard_id,
-    ) as (id_, challenge_id, challenge_label, title, target_problem_ids, is_deleted, type, setting_id):
+    ) as (id_, challenge_id, challenge_label, title, target_problem_ids, is_deleted, type_, setting_id):
         return do.Scoreboard(id=id_, challenge_id=challenge_id, challenge_label=challenge_label, title=title,
                              target_problem_ids=target_problem_ids, is_deleted=is_deleted,
-                             type=ScoreboardType(type), setting_id=setting_id)
+                             type=ScoreboardType(type_), setting_id=setting_id)
 
 
 async def delete(scoreboard_id: int) -> None:

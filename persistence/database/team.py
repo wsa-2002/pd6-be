@@ -1,6 +1,6 @@
 from itertools import chain
 from operator import itemgetter
-from typing import Sequence, Tuple, Any
+from typing import Sequence, Tuple
 
 import asyncpg
 

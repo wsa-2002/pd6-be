@@ -8,22 +8,6 @@ from .base import SafeConnection, FetchAll, FetchOne, OnlyExecute
 from .util import execute_count, compile_filters
 
 
-async def add(peer_review_id: int, grader_id: int, receiver_id: int) -> int:
-    """
-    Assign a new peer review record
-    """
-    async with FetchOne(
-            event='Add (assign) peer review record',
-            sql="INSERT INTO peer_review_record"
-                "            (peer_review_id, grader_id, receiver_id)"
-                "     VALUES (%(peer_review_id)s, %(grader_id)s, %(receiver_id)s)"
-                "  RETURNING id",
-            peer_review_id=peer_review_id, grader_id=grader_id, receiver_id=receiver_id,
-            fetch=1,
-    ) as (id_,):
-        return id_
-
-
 async def edit_score(peer_review_record_id: int, score: int, comment: str, submit_time: datetime) -> None:
     """Allows only full edit!"""
     async with OnlyExecute(

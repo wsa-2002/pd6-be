@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Sequence, Any
+from typing import Sequence
 from uuid import UUID
 
 from base import do, enum
@@ -12,14 +12,14 @@ from .util import execute_count, compile_filters
 # Submission Language
 
 
-async def add_language(name: str, version: str, is_disabled: bool) -> int:
+async def add_language(name: str, version: str, queue_name: str, is_disabled: bool) -> int:
     async with FetchOne(
             event='Add submission language',
             sql="INSERT INTO submission_language"
-                "            (name, version, is_disabled)"
-                "     VALUES (%(name)s, %(version)s, %(is_disabled)s)"
+                "            (name, version, queue_name, is_disabled)"
+                "     VALUES (%(name)s, %(version)s, %(queue_name)s, %(is_disabled)s)"
                 "  RETURNING id",
-            name=name, version=version, is_disabled=is_disabled,
+            name=name, version=version, queue_name=queue_name, is_disabled=is_disabled,
     ) as (id_,):
         return id_
 

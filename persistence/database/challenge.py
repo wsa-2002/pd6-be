@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, Sequence, Any
+from typing import Optional, Sequence
 
 from base import do, enum
 from base.popo import Filter, Sorter
