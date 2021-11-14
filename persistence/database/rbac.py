@@ -57,3 +57,16 @@ async def read_team_role_by_account_id(team_id: int, account_id: int) -> RoleTyp
             account_id=account_id,
     ) as (role,):
         return RoleType(role)
+
+
+async def read_class_role_by_team_account_id(team_id: int, account_id: int) -> RoleType:
+    async with FetchOne(
+            event='get class role by team account id',
+            sql=r'SELECT role'
+                r'  FROM team_member'
+                r' WHERE team_id = %(team_id)s'
+                r'   AND member_id = %(account_id)s',
+            team_id=team_id,
+            account_id=account_id,
+    ) as (role,):
+        return RoleType(role)

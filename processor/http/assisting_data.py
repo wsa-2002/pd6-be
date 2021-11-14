@@ -9,8 +9,7 @@ from middleware import APIRouter, response, enveloped, auth, Request
 import persistence.database as db
 from persistence import s3
 import service
-
-from processor.util import file
+import util
 
 router = APIRouter(
     tags=['Assisting Data'],
@@ -63,7 +62,7 @@ async def edit_assisting_data(assisting_data_id: int, request: Request, assistin
         raise exc.NoPermission
 
     # Issue #26: CRLF
-    no_cr_file = file.replace_cr(assisting_data_file.file)
+    no_cr_file = util.file.replace_cr(assisting_data_file.file)
 
     s3_file = await s3.assisting_data.upload(no_cr_file)
 

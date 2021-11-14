@@ -9,9 +9,8 @@ import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
 import persistence.database as db
 import service
-from util.api_doc import add_to_docstring
-
-from processor.util import model, file
+import util
+from util import model
 
 router = APIRouter(
     tags=['Essay Submission'],
@@ -21,7 +20,7 @@ router = APIRouter(
 
 
 @router.post('/essay/{essay_id}/essay-submission',
-             dependencies=[Depends(file.valid_file_length(file_length=const.ESSAY_UPLOAD_LIMIT))])
+             dependencies=[Depends(util.file.valid_file_length(file_length=const.ESSAY_UPLOAD_LIMIT))])
 @enveloped
 async def upload_essay(essay_id: int, request: Request, essay_file: UploadFile = File(...)) -> int:
     """
@@ -56,7 +55,7 @@ BROWSE_ESSAY_SUBMISSION_COLUMNS = {
 
 @router.get('/essay/{essay_id}/essay-submission')
 @enveloped
-@add_to_docstring({k: v.__name__ for k, v in BROWSE_ESSAY_SUBMISSION_COLUMNS.items()})
+@util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_ESSAY_SUBMISSION_COLUMNS.items()})
 async def browse_essay_submission_by_essay_id(
         essay_id: int,
         request: Request,
@@ -119,7 +118,7 @@ async def read_essay_submission(essay_submission_id: int, request: Request) -> d
 
 
 @router.put('/essay-submission/{essay_submission_id}',
-            dependencies=[Depends(file.valid_file_length(file_length=const.ESSAY_UPLOAD_LIMIT))])
+            dependencies=[Depends(util.file.valid_file_length(file_length=const.ESSAY_UPLOAD_LIMIT))])
 @enveloped
 async def reupload_essay(essay_submission_id: int, request: Request, essay_file: UploadFile = File(...)):
     """

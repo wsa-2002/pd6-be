@@ -8,8 +8,7 @@ import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
 import persistence.database as db
 import service
-
-from processor.util import model
+from util import model
 
 router = APIRouter(
     tags=['Team Project Scoreboard'],

@@ -1,37 +1,32 @@
 import io
 import zipfile
 
-import const
 import log
 import persistence.database as db
-import persistence.email as email
 import persistence.s3 as s3
 import util.text
 from base import do
+from persistence import moss
 
-ESSAY_FILENAME = 'essay_submission.zip'
 
+async def all_essay_submissions(essay_id: int) -> do.S3File:
+    log.info(f'Downloading all essay submissions for {essay_id=}')
 
-async def all_essay(account_id: int, essay_id: int, as_attachment: bool) -> None:
-    result = await db.essay_submission.browse_with_essay_id(essay_id=essay_id)
+    essay_submissions = await db.essay_submission.browse_with_essay_id(essay_id=essay_id)
     files = {
         essay_submission.filename: await db.s3_file.read(s3_file_uuid=essay_submission.content_file_uuid)
-        for essay_submission in result
+        for essay_submission in essay_submissions
     }
 
     zip_buffer = await s3.tools.zipper(files=files)
 
     s3_file = await s3.temp.put_object(body=zip_buffer.getvalue())
 
-    file_url = await s3.tools.sign_url(bucket=s3_file.bucket, key=s3_file.key,
-                                       filename=ESSAY_FILENAME, as_attachment=as_attachment)
-
-    account, student_card = await db.account_vo.read_with_default_student_card(account_id=account_id)
-    await email.notification.send_file_download_url(to=student_card.email, file_url=file_url)
+    return s3_file
 
 
-async def all_submissions(account_id: int, challenge_id: int, as_attachment: bool) -> None:
-    log.info(f'Downloading all submissions for {account_id=} {challenge_id=}')
+async def all_submissions(challenge_id: int) -> do.S3File:
+    log.info(f'Downloading all submissions for {challenge_id=}')
 
     challenge = await db.challenge.read(challenge_id, include_scheduled=True)
     problems = await db.problem.browse_by_challenge(challenge_id=challenge_id)
@@ -73,91 +68,55 @@ async def all_submissions(account_id: int, challenge_id: int, as_attachment: boo
     log.info(f'Make s3 file...')
 
     s3_file = await s3.temp.put_object(body=zip_buffer.getvalue())
-
-    file_url = await s3.tools.sign_url(bucket=s3_file.bucket, key=s3_file.key,
-                                       expire_secs=const.SUBMISSION_PACKAGE_S3_EXPIRE_SECS,
-                                       filename=util.text.get_valid_filename(f'{challenge.title}.zip'),
-                                       as_attachment=as_attachment)
-
-    log.info(f'Send to email...')
-
-    account, student_card = await db.account_vo.read_with_default_student_card(account_id=account_id)
-    if student_card.email:
-        await email.notification.send_file_download_url(to=student_card.email, file_url=file_url,
-                                                        subject=f'[PDOGS] All submissions for {challenge.title}')
-    if account.alternative_email:
-        await email.notification.send_file_download_url(to=account.alternative_email, file_url=file_url,
-                                                        subject=f'[PDOGS] All submissions for {challenge.title}')
+    return s3_file
 
 
-ASSISTING_DATA_FILENAME = 'assisting_data.zip'
-
-
-async def all_assisting_data(account_id: int, problem_id: int, as_attachment: bool) -> None:
-    result = await db.assisting_data.browse(problem_id=problem_id)
+async def all_assisting_data(problem_id: int) -> do.S3File:
+    assisting_datas = await db.assisting_data.browse(problem_id=problem_id)
     files = {
         assisting_data.filename: await db.s3_file.read(s3_file_uuid=assisting_data.s3_file_uuid)
-        for assisting_data in result
+        for assisting_data in assisting_datas
     }
 
     zip_buffer = await s3.tools.zipper(files=files)
 
     s3_file = await s3.temp.put_object(body=zip_buffer.getvalue())
-
-    file_url = await s3.tools.sign_url(bucket=s3_file.bucket, key=s3_file.key,
-                                       filename=ASSISTING_DATA_FILENAME, as_attachment=as_attachment)
-
-    account, student_card = await db.account_vo.read_with_default_student_card(account_id=account_id)
-    await email.notification.send_file_download_url(to=student_card.email, file_url=file_url)
+    return s3_file
 
 
-SAMPLE_FILENAME = 'sample_testcase.zip'
-NON_SAMPLE_FILENAME = 'non_sample_testcase.zip'
-
-
-async def all_sample_testcase(account_id: int, problem_id: int, as_attachment: bool) -> None:
-    result = await db.testcase.browse(problem_id=problem_id, is_sample=True, include_disabled=True)
+async def all_testcase(problem_id: int, is_sample: bool) -> do.S3File:
+    testcases = await db.testcase.browse(problem_id=problem_id, is_sample=is_sample, include_disabled=True)
     input_files = {
         testcase.input_filename: await db.s3_file.read(s3_file_uuid=testcase.input_file_uuid)
-        for testcase in result
+        for testcase in testcases
         if testcase.input_file_uuid
     }
     output_files = {
         testcase.output_filename: await db.s3_file.read(s3_file_uuid=testcase.output_file_uuid)
-        for testcase in result
+        for testcase in testcases
         if testcase.output_file_uuid
     }
 
     zip_buffer = await s3.tools.zipper(files=input_files | output_files)
 
     s3_file = await s3.temp.put_object(body=zip_buffer.getvalue())
-
-    file_url = await s3.tools.sign_url(bucket=s3_file.bucket, key=s3_file.key,
-                                       filename=SAMPLE_FILENAME, as_attachment=as_attachment)
-
-    account, student_card = await db.account_vo.read_with_default_student_card(account_id=account_id)
-    await email.notification.send_file_download_url(to=student_card.email, file_url=file_url)
+    return s3_file
 
 
-async def all_non_sample_testcase(account_id: int, problem_id: int, as_attachment: bool) -> None:
-    result = await db.testcase.browse(problem_id=problem_id, is_sample=False, include_disabled=True)
-    input_files = {
-        testcase.input_filename: await db.s3_file.read(s3_file_uuid=testcase.input_file_uuid)
-        for testcase in result
-        if testcase.input_file_uuid
-    }
-    output_files = {
-        testcase.output_filename: await db.s3_file.read(s3_file_uuid=testcase.output_file_uuid)
-        for testcase in result
-        if testcase.output_file_uuid
-    }
+async def moss_report(report_url: str) -> do.S3File:
+    log.info(f'downloading report for moss {report_url=}')
 
-    zip_buffer = await s3.tools.zipper(files=input_files | output_files)
+    report_index_file, other_files = await moss.download_report(report_url, sub_folder='files')
+
+    log.info(f'generating report zipfile for moss {report_url=}')
+
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, 'a', zipfile.ZIP_STORED, False) as zipper:
+        zipper.writestr('index.html', report_index_file)
+        for filename, file in other_files.items():
+            zipper.writestr(filename, file)
+
+    log.info(f'Make report s3 file for moss {report_url=}')
 
     s3_file = await s3.temp.put_object(body=zip_buffer.getvalue())
-
-    file_url = await s3.tools.sign_url(bucket=s3_file.bucket, key=s3_file.key,
-                                       filename=NON_SAMPLE_FILENAME, as_attachment=as_attachment)
-
-    account, student_card = await db.account_vo.read_with_default_student_card(account_id=account_id)
-    await email.notification.send_file_download_url(to=student_card.email, file_url=file_url)
+    return s3_file
