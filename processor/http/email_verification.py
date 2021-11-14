@@ -22,7 +22,7 @@ async def resend_email_verification(email_verification_id: int, request: Request
     # 因為需要 account_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     email_verification = await db.email_verification.read(email_verification_id=email_verification_id)
 
-    if not (await service.rbac.validate(request.account.id, RoleType.manager)
+    if not (await service.rbac.validate_system(request.account.id, RoleType.manager)
             or request.account.id == email_verification.account_id):
         raise exc.NoPermission
 
@@ -44,7 +44,7 @@ async def delete_pending_email_verification(email_verification_id: int, request:
     # 因為需要 account_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     email_verification = await db.email_verification.read(email_verification_id)
 
-    if not (await service.rbac.validate(request.account.id, RoleType.manager)
+    if not (await service.rbac.validate_system(request.account.id, RoleType.manager)
             or request.account.id == email_verification.account_id):
         raise exc.NoPermission
 

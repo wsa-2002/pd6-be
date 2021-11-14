@@ -31,7 +31,7 @@ async def add_institute(data: AddInstituteInput, request: Request) -> model.AddO
     ### 權限
     - System Manager
     """
-    if not await service.rbac.validate(request.account.id, RoleType.manager):
+    if not await service.rbac.validate_system(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
     institute_id = await db.institute.add(abbreviated_name=data.abbreviated_name, full_name=data.full_name,
@@ -73,7 +73,7 @@ async def edit_institute(institute_id: int, data: EditInstituteInput, request: R
     ### 權限
     - System Manager
     """
-    if not await service.rbac.validate(request.account.id, RoleType.manager):
+    if not await service.rbac.validate_system(request.account.id, RoleType.manager):
         raise exc.NoPermission
 
     await db.institute.edit(

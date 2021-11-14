@@ -28,15 +28,15 @@ async def read_essay(essay_id: int, request: Request) -> do.Essay:
     ### 權限
     - class normal
     """
-    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
+    class_role = await service.rbac.get_class_role(request.account.id, essay_id=essay_id)
+    if class_role < RoleType.normal:
+        raise exc.NoPermission
+
     essay = await db.essay.read(essay_id=essay_id)
     challenge = await db.challenge.read(essay.challenge_id, include_scheduled=True, ref_time=request.time)
-    class_role = await service.rbac.get_role(request.account.id, class_id=challenge.class_id)
-
     is_scheduled = challenge.start_time > request.time
 
-    if not (is_scheduled and class_role >= RoleType.manager
-            or not is_scheduled and class_role >= RoleType.normal):
+    if is_scheduled and class_role < RoleType.manager:
         raise exc.NoPermission
 
     return essay
@@ -55,13 +55,10 @@ async def edit_essay(essay_id: int, data: EditEssayInput, request: Request) -> N
     ### 權限
     - class manager
     """
-    essay = await db.essay.read(essay_id=essay_id)
-    challenge = await db.challenge.read(essay.challenge_id, include_scheduled=True, ref_time=request.time)
-
-    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if not await service.rbac.validate_class(request.account.id, RoleType.manager, essay_id=essay_id):
         raise exc.NoPermission
 
-    await db.essay.edit(essay_id=essay.id, setter_id=request.account.id, title=data.title,
+    await db.essay.edit(essay_id=essay_id, setter_id=request.account.id, title=data.title,
                         challenge_label=data.challenge_label, description=data.description)
 
 
@@ -72,10 +69,7 @@ async def delete_essay(essay_id: int, request: Request) -> None:
     ### 權限
     - class manager
     """
-    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    essay = await db.essay.read(essay_id=essay_id)
-    challenge = await db.challenge.read(essay.challenge_id, include_scheduled=True, ref_time=request.time)
-    if not service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if not await service.rbac.validate_class(request.account.id, RoleType.manager, essay_id=essay_id):
         raise exc.NoPermission
 
     await db.essay.delete(essay_id=essay_id)
@@ -89,10 +83,7 @@ async def download_all_essay_submission(essay_id: int, request: Request, as_atta
     ### 權限
     - class manager
     """
-    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    essay = await db.essay.read(essay_id=essay_id)
-    challenge = await db.challenge.read(essay.challenge_id, include_scheduled=True, ref_time=request.time)
-    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if not await service.rbac.validate_class(request.account.id, RoleType.manager, essay_id=essay_id):
         raise exc.NoPermission
 
     async def _task() -> None:

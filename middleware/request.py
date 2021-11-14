@@ -4,11 +4,10 @@ import uuid
 import fastapi
 import starlette_context
 
+import const
 import util.tracker
-from base import do
+import util.security
 import exceptions
-
-from . import common
 
 
 class Request(fastapi.Request):
@@ -16,9 +15,9 @@ class Request(fastapi.Request):
     This class is just for easy retrieval & type hinting, actual implementation relies on middleware
     """
     @property
-    def account(self) -> do.Account:
+    def account(self) -> util.security.AuthedAccount:
         try:
-            account = starlette_context.context[common.AUTHED_ACCOUNT]
+            account = starlette_context.context[const.CONTEXT_AUTHED_ACCOUNT_KEY]
         except KeyError:
             raise exceptions.SystemException("middleware.auth not used")
         else:

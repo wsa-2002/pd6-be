@@ -33,13 +33,10 @@ async def read_assisting_data(assisting_data_id: int, request: Request) -> ReadA
     ### 權限
     - class manager
     """
-    assisting_data = await db.assisting_data.read(assisting_data_id=assisting_data_id)
-    problem = await db.problem.read(assisting_data.problem_id)
-    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
-
-    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if not await service.rbac.validate_class(request.account.id, RoleType.manager, assisting_data_id=assisting_data_id):
         raise exc.NoPermission
 
+    assisting_data = await db.assisting_data.read(assisting_data_id=assisting_data_id)
     return ReadAssistingDataOutput(id=assisting_data.id,
                                    problem_id=assisting_data.problem_id,
                                    s3_file_uuid=assisting_data.s3_file_uuid,
@@ -54,11 +51,7 @@ async def edit_assisting_data(assisting_data_id: int, request: Request, assistin
     ### 權限
     - class manager
     """
-    assisting_data = await db.assisting_data.read(assisting_data_id=assisting_data_id)
-    problem = await db.problem.read(assisting_data.problem_id)
-    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
-
-    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if not await service.rbac.validate_class(request.account.id, RoleType.manager, assisting_data_id=assisting_data_id):
         raise exc.NoPermission
 
     # Issue #26: CRLF
@@ -79,11 +72,7 @@ async def delete_assisting_data(assisting_data_id: int, request: Request) -> Non
     ### 權限
     - class manager
     """
-    assisting_data = await db.assisting_data.read(assisting_data_id=assisting_data_id)
-    problem = await db.problem.read(assisting_data.problem_id)
-    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
-
-    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if not await service.rbac.validate_class(request.account.id, RoleType.manager, assisting_data_id=assisting_data_id):
         raise exc.NoPermission
 
-    await db.assisting_data.delete(assisting_data_id=assisting_data.id)
+    await db.assisting_data.delete(assisting_data_id=assisting_data_id)

@@ -5,7 +5,6 @@ from config import app_config
 import exceptions as exc
 from middleware import APIRouter, JSONResponse, enveloped
 import persistence.database as db
-import service
 from persistence import email
 
 router = APIRouter(tags=['Public'])

@@ -27,15 +27,13 @@ async def read_testcase(testcase_id: int, request: Request) -> ReadTestcaseOutpu
     ### 權限
     - System normal
     """
-    if not await service.rbac.validate(request.account.id, RoleType.normal):
+    if not await service.rbac.validate_system(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
-    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    testcase = await db.testcase.read(testcase_id=testcase_id)
-    problem = await db.problem.read(testcase.problem_id)
-    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
-    is_class_manager = await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id)
+    class_role = await service.rbac.get_class_role(request.account.id, testcase_id=testcase_id)
+    is_class_manager = class_role >= RoleType.manager
 
+    testcase = await db.testcase.read(testcase_id=testcase_id)
     return ReadTestcaseOutput(
         id=testcase.id,
         problem_id=testcase.problem_id,
@@ -71,11 +69,7 @@ async def edit_testcase(testcase_id: int, data: EditTestcaseInput, request: Requ
     ### 權限
     - Class manager
     """
-    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    testcase = await db.testcase.read(testcase_id)
-    problem = await db.problem.read(testcase.problem_id)
-    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
-    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if not await service.rbac.validate_class(request.account.id, RoleType.manager, testcase_id=testcase_id):
         raise exc.NoPermission
 
     await db.testcase.edit(testcase_id=testcase_id, is_sample=data.is_sample, score=data.score, label=data.label,
@@ -90,11 +84,7 @@ async def upload_testcase_input_data(testcase_id: int, request: Request, input_f
     ### 權限
     - Class manager
     """
-    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    testcase = await db.testcase.read(testcase_id)
-    problem = await db.problem.read(testcase.problem_id)
-    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
-    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if not await service.rbac.validate_class(request.account.id, RoleType.manager, testcase_id=testcase_id):
         raise exc.NoPermission
 
     # Issue #26: CRLF
@@ -115,19 +105,18 @@ async def upload_testcase_output_data(testcase_id: int, request: Request, output
     ### 權限
     - Class manager
     """
-    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    testcase = await db.testcase.read(testcase_id)
-    problem = await db.problem.read(testcase.problem_id)
-    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
-    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if not await service.rbac.validate_class(request.account.id, RoleType.manager, testcase_id=testcase_id):
         raise exc.NoPermission
 
     # Issue #26: CRLF
     no_cr_file = util.file.replace_cr(output_file.file)
 
+    # 流程: 先 upload 到 s3 取得 bucket, key
+    #       bucket, key 進 s3_file db 得到 file id
+    #       file_id 進 testcase db
     s3_file = await s3.testdata.upload(no_cr_file)
     file_id = await db.s3_file.add_with_do(s3_file=s3_file)
-    await db.testcase.edit(testcase_id=testcase_id, input_file_uuid=file_id, input_filename=output_file.filename)
+    await db.testcase.edit(testcase_id=testcase_id, output_file_uuid=file_id, output_filename=output_file.filename)
 
 
 @router.delete('/testcase/{testcase_id}')
@@ -137,11 +126,7 @@ async def delete_testcase(testcase_id: int, request: Request) -> None:
     ### 權限
     - Class manager
     """
-    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    testcase = await db.testcase.read(testcase_id)
-    problem = await db.problem.read(testcase.problem_id)
-    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
-    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if not await service.rbac.validate_class(request.account.id, RoleType.manager, testcase_id=testcase_id):
         raise exc.NoPermission
 
     await db.testcase.delete(testcase_id=testcase_id)
@@ -154,11 +139,7 @@ async def delete_testcase_input_data(testcase_id: int, request: Request):
     ### 權限
     - Class manager
     """
-    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    testcase = await db.testcase.read(testcase_id)
-    problem = await db.problem.read(testcase.problem_id)
-    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
-    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if not await service.rbac.validate_class(request.account.id, RoleType.manager, testcase_id=testcase_id):
         raise exc.NoPermission
 
     await db.testcase.delete_input_data(testcase_id=testcase_id)
@@ -171,11 +152,7 @@ async def delete_testcase_output_data(testcase_id: int, request: Request):
     ### 權限
     - Class manager
     """
-    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    testcase = await db.testcase.read(testcase_id)
-    problem = await db.problem.read(testcase.problem_id)
-    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
-    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if not await service.rbac.validate_class(request.account.id, RoleType.manager, testcase_id=testcase_id):
         raise exc.NoPermission
 
     await db.testcase.delete_output_data(testcase_id=testcase_id)

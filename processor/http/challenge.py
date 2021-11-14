@@ -39,7 +39,7 @@ async def add_challenge_under_class(class_id: int, data: AddChallengeInput, requ
     ### 權限
     - Class manager
     """
-    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=class_id):
+    if not await service.rbac.validate_class(request.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
 
     if data.start_time > data.end_time:
@@ -83,8 +83,8 @@ async def browse_challenge_under_class(
 
     ### Available columns
     """
-    system_role = await service.rbac.get_role(request.account.id)
-    class_role = await service.rbac.get_role(request.account.id, class_id=class_id)
+    system_role = await service.rbac.get_system_role(request.account.id)
+    class_role = await service.rbac.get_class_role(request.account.id, class_id=class_id)
 
     if system_role < RoleType.normal:
         raise exc.NoPermission
@@ -114,12 +114,11 @@ async def read_challenge(challenge_id: int, request: Request) -> do.Challenge:
     - Class normal & guest (after start time)
     - System normal (after scheduled time)
     """
-    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    if not await service.rbac.validate(request.account.id, RoleType.normal):
+    if not await service.rbac.validate_system(request.account.id, RoleType.normal):
         raise exc.NoPermission
 
     challenge = await db.challenge.read(challenge_id=challenge_id, include_scheduled=True, ref_time=request.time)
-    class_role = await service.rbac.get_role(request.account.id, class_id=challenge.class_id)
+    class_role = await service.rbac.get_class_role(request.account.id, challenge_id=challenge_id)
 
     publicize_time = (challenge.start_time if challenge.publicize_type == ChallengePublicizeType.start_time
                       else challenge.end_time)
@@ -150,9 +149,7 @@ async def edit_challenge(challenge_id: int, data: EditChallengeInput, request: R
     ### 權限
     - Class manager
     """
-    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    challenge = await db.challenge.read(challenge_id=challenge_id, include_scheduled=True, ref_time=request.time)
-    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if not await service.rbac.validate_class(request.account.id, RoleType.manager, challenge_id=challenge_id):
         raise exc.NoPermission
 
     await db.challenge.edit(challenge_id=challenge_id, publicize_type=data.publicize_type,
@@ -168,9 +165,7 @@ async def delete_challenge(challenge_id: int, request: Request) -> None:
     ### 權限
     - Class manager
     """
-    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    challenge = await db.challenge.read(challenge_id=challenge_id, include_scheduled=True, ref_time=request.time)
-    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if not await service.rbac.validate_class(request.account.id, RoleType.manager, challenge_id=challenge_id):
         raise exc.NoPermission
 
     await db.challenge.delete(challenge_id)
@@ -193,9 +188,7 @@ async def add_problem_under_challenge(challenge_id: int, data: AddProblemInput, 
     ### 權限
     - Class manager
     """
-    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    challenge = await db.challenge.read(challenge_id=challenge_id, include_scheduled=True, ref_time=request.time)
-    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if not await service.rbac.validate_class(request.account.id, RoleType.manager, challenge_id=challenge_id):
         raise exc.NoPermission
 
     problem_id = await db.problem.add(
@@ -220,9 +213,7 @@ async def add_essay_under_challenge(challenge_id: int, data: AddEssayInput, requ
     ### 權限
     - Class manager
     """
-    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    challenge = await db.challenge.read(challenge_id=challenge_id, include_scheduled=True, ref_time=request.time)
-    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if not await service.rbac.validate_class(request.account.id, RoleType.manager, challenge_id=challenge_id):
         raise exc.NoPermission
 
     essay_id = await db.essay.add(challenge_id=challenge_id, challenge_label=data.challenge_label,
@@ -248,9 +239,7 @@ async def add_peer_review_under_challenge(challenge_id: int, data: AddPeerReview
     ### 權限
     - Class manager
     """
-    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    challenge = await db.challenge.read(challenge_id=challenge_id, include_scheduled=True, ref_time=request.time)
-    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if not await service.rbac.validate_class(request.account.id, RoleType.manager, challenge_id=challenge_id):
         raise exc.NoPermission
 
     # validate problem belongs to same class
@@ -259,6 +248,7 @@ async def add_peer_review_under_challenge(challenge_id: int, data: AddPeerReview
                                                        include_scheduled=True)
 
     # Only allow peer review to target to same class
+    challenge = await db.challenge.read(challenge_id)
     if challenge.class_id is not target_problem_challenge.class_id:
         raise exc.IllegalInput
 
@@ -293,9 +283,7 @@ async def add_team_project_scoreboard_under_challenge(challenge_id: int, data: A
     ### 權限
     - Class manager
     """
-    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    challenge = await db.challenge.read(challenge_id=challenge_id, include_scheduled=True, ref_time=request.time)
-    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if not await service.rbac.validate_class(request.account.id, RoleType.manager, challenge_id=challenge_id):
         raise exc.NoPermission
 
     scoreboard_id = await db.scoreboard_setting_team_project.add_under_scoreboard(
@@ -325,17 +313,16 @@ async def browse_all_task_under_challenge(challenge_id: int, request: Request) -
     - Class guest (active/archived challenges)
     - System Normal (by challenge publicize type)
     """
-    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
     challenge = await db.challenge.read(challenge_id=challenge_id, include_scheduled=True, ref_time=request.time)
-    class_role = await service.rbac.get_role(request.account.id, class_id=challenge.class_id)
+    class_role = await service.rbac.get_class_role(request.account.id, challenge_id=challenge_id)
 
     publicize_time = (challenge.start_time if challenge.publicize_type == ChallengePublicizeType.start_time
                       else challenge.end_time)
     is_challenge_publicized = request.time >= publicize_time
 
     if not ((class_role >= RoleType.guest and request.time >= challenge.start_time)  # Class guest
-            or (await service.rbac.validate(request.account.id,
-                                            RoleType.normal) and is_challenge_publicized)  # System normal
+            or (await service.rbac.validate_system(request.account.id,
+                                                   RoleType.normal) and is_challenge_publicized)  # System normal
             or class_role == RoleType.manager):  # Class manager
         raise exc.NoPermission
 
@@ -367,13 +354,10 @@ async def browse_all_task_status_under_challenge(challenge_id: int, request: Req
     ### 權限
     - Self: see self
     """
-    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    challenge = await db.challenge.read(challenge_id=challenge_id, include_scheduled=True, ref_time=request.time)
-    class_role = await service.rbac.get_role(request.account.id, class_id=challenge.class_id)
-    if class_role < RoleType.guest:
+    if not await service.rbac.validate_class(request.account.id, RoleType.guest, challenge_id=challenge_id):
         raise exc.NoPermission
 
-    results = await service.task.browse_status(challenge.id, request.account.id)
+    results = await service.task.browse_status(challenge_id, account_id=request.account.id)
     return [ReadStatusOutput(problem=[ReadProblemStatusOutput(problem_id=problem.id, submission_id=submission.id)
                                       for (problem, submission) in results])]
 
@@ -398,9 +382,7 @@ async def get_challenge_statistics(challenge_id: int, request: Request) -> GetCh
     ### 權限
     - class manager
     """
-    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    challenge = await db.challenge.read(challenge_id, include_scheduled=True)
-    if not service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if not await service.rbac.validate_class(request.account.id, RoleType.manager, challenge_id=challenge_id):
         raise exc.NoPermission
 
     result = await service.statistics.get_challenge_statistics(challenge_id=challenge_id)
@@ -436,12 +418,10 @@ async def get_member_submission_statistics(challenge_id: int, request: Request) 
     ### 權限
     - class manager
     """
-    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    challenge = await db.challenge.read(challenge_id, include_scheduled=True)
-    if not service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if not await service.rbac.validate_class(request.account.id, RoleType.manager, challenge_id=challenge_id):
         raise exc.NoPermission
 
-    results = await service.statistics.get_member_submission_statistics(challenge_id=challenge.id)
+    results = await service.statistics.get_member_submission_statistics(challenge_id=challenge_id)
     member_submission_stat = GetMemberSubmissionStatOutput(
         member=[MemberSubmissionStatOutput(
             id=member_id,
@@ -461,13 +441,13 @@ async def download_all_submissions(challenge_id: int, request: Request, as_attac
     ### 權限
     - class manager
     """
-    challenge = await db.challenge.read(challenge_id, include_scheduled=True, ref_time=request.time)
-    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if not await service.rbac.validate_class(request.account.id, RoleType.manager, challenge_id=challenge_id):
         raise exc.NoPermission
 
     async def _task() -> None:
         log.info("Start download all essay submission")
 
+        challenge = await db.challenge.read(challenge_id)
         s3_file = await service.downloader.all_submissions(challenge_id=challenge_id)
         file_url = await s3.tools.sign_url(bucket=s3_file.bucket, key=s3_file.key,
                                            expire_secs=const.SUBMISSION_PACKAGE_S3_EXPIRE_SECS,
@@ -496,8 +476,7 @@ async def download_all_plagiarism_reports(challenge_id: int, request: Request, a
     ### 權限
     - class manager
     """
-    challenge = await db.challenge.read(challenge_id, include_scheduled=True, ref_time=request.time)
-    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if not await service.rbac.validate_class(request.account.id, RoleType.manager, challenge_id=challenge_id):
         raise exc.NoPermission
 
     async def _task() -> None:
@@ -505,6 +484,7 @@ async def download_all_plagiarism_reports(challenge_id: int, request: Request, a
 
         account, student_card = await db.account_vo.read_with_default_student_card(account_id=request.account.id)
 
+        challenge = await db.challenge.read(challenge_id)
         problems = await db.problem.browse_by_challenge(challenge_id=challenge_id)
         for problem in problems:
             problem_title = challenge.title + ' ' + problem.challenge_label

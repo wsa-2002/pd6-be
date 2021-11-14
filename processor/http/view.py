@@ -43,8 +43,8 @@ async def browse_account_with_default_student_id(
 
     ### Available columns
     """
-    is_manager = await service.rbac.validate(request.account.id, RoleType.manager)
-    if not is_manager:
+    is_system_manager = await service.rbac.validate_system(request.account.id, RoleType.manager)
+    if not is_system_manager:
         raise exc.NoPermission
 
     filters = model.parse_filter(filter, BROWSE_ACCOUNT_COLUMNS)
@@ -87,8 +87,8 @@ async def browse_class_member(
 
     ### Available columns
     """
-    if (not await service.rbac.validate(request.account.id, RoleType.normal, class_id=class_id)
-            and not await service.rbac.validate(request.account.id, RoleType.manager, class_id=class_id, inherit=True)):
+    if (not await service.rbac.validate_class(request.account.id, RoleType.normal, class_id=class_id)
+            and not await service.rbac.validate_inherit(request.account.id, RoleType.manager, class_id=class_id)):
         raise exc.NoPermission
 
     filters = model.parse_filter(filter, BROWSE_CLASS_MEMBER_COLUMNS)
@@ -139,7 +139,7 @@ async def browse_submission_under_class(
 
     ### Available columns
     """
-    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=class_id):
+    if not await service.rbac.validate_class(request.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
 
     filters = model.parse_filter(filter, BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS)
@@ -285,7 +285,7 @@ async def browse_problem_set_under_class(
 
     ### Available columns
     """
-    system_role = await service.rbac.get_role(request.account.id)
+    system_role = await service.rbac.get_system_role(request.account.id)
     if not system_role >= RoleType.normal:
         raise exc.NoPermission
 
@@ -340,7 +340,7 @@ async def browse_class_grade(class_id: int, request: Request,
                                op=FilterOperator.eq,
                                value=class_id))
 
-    if await service.rbac.validate(request.account.id, RoleType.manager, class_id=class_id):  # Class manager
+    if await service.rbac.validate_class(request.account.id, RoleType.manager, class_id=class_id):  # Class manager
         grades, total_count = await db.view.grade(limit=limit, offset=offset, filters=filters, sorters=sorters)
         return ViewGradeOutput(grades, total_count=total_count)
     else:  # Self
@@ -384,7 +384,7 @@ async def browse_access_log(
 
     ### Available columns
     """
-    if not (await service.rbac.validate(req.account.id, RoleType.manager)  # System manager
+    if not (await service.rbac.validate_system(req.account.id, RoleType.manager)  # System manager
             # or await rbac.any_class_role(member_id=req.account.id, role=RoleType.manager)):  # Any class manager
     ):
         raise exc.NoPermission
@@ -423,17 +423,13 @@ async def peer_review_summary_review(peer_review_id: int, request: Request,
 
     ### Available columns
     """
-    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    peer_review = await db.peer_review.read(peer_review_id)
-    challenge = await db.challenge.read(peer_review.challenge_id, include_scheduled=True)
-
-    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if not await service.rbac.validate_class(request.account.id, RoleType.manager, peer_review_id=peer_review_id):
         raise exc.NoPermission
 
     filters = model.parse_filter(filter, BROWSE_PEER_REVIEW_RECORD_COLUMNS)
     sorters = model.parse_sorter(sort, BROWSE_PEER_REVIEW_RECORD_COLUMNS)
 
-    peer_review_records, total_count = await db.view.view_peer_review_record(peer_review_id=peer_review.id,
+    peer_review_records, total_count = await db.view.view_peer_review_record(peer_review_id=peer_review_id,
                                                                              limit=limit, offset=offset,
                                                                              filters=filters, sorters=sorters,
                                                                              is_receiver=False)
@@ -453,17 +449,13 @@ async def peer_review_summary_receive(peer_review_id: int, request: Request,
 
     ### Available columns
     """
-    # 因為需要 class_id 才能判斷權限，所以先 read 再判斷要不要噴 NoPermission
-    peer_review = await db.peer_review.read(peer_review_id)
-    challenge = await db.challenge.read(peer_review.challenge_id, include_scheduled=True)
-
-    if not await service.rbac.validate(request.account.id, RoleType.manager, class_id=challenge.class_id):
+    if not await service.rbac.validate_class(request.account.id, RoleType.manager, peer_review_id=peer_review_id):
         raise exc.NoPermission
 
     filters = model.parse_filter(filter, BROWSE_PEER_REVIEW_RECORD_COLUMNS)
     sorters = model.parse_sorter(sort, BROWSE_PEER_REVIEW_RECORD_COLUMNS)
 
-    peer_review_records, total_count = await db.view.view_peer_review_record(peer_review_id=peer_review.id,
+    peer_review_records, total_count = await db.view.view_peer_review_record(peer_review_id=peer_review_id,
                                                                              limit=limit, offset=offset,
                                                                              filters=filters, sorters=sorters,
                                                                              is_receiver=True)
