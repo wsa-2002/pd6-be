@@ -43,9 +43,15 @@ def decode_jwt(encoded: str, time: datetime) -> AuthedAccount:
     if time >= expire:
         raise exc.LoginExpired
 
+    # legacy support
+    account_id = decoded.get('account_id', None)
+    if not account_id:
+        account_id = decoded.get('account-id', None)
+    cached_username = decoded.get('cached_username', None)
+
     return AuthedAccount(
-        id=decoded['account_id'],
-        cached_username=decoded['cached_username']
+        id=account_id,
+        cached_username=cached_username,
     )
 
 
