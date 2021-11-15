@@ -11,3 +11,9 @@ class UniqueViolationError(_CauseMixin, PdogsException):
     """
     Operation violates the unique constraint
     """
+
+
+class ForeignKeyViolationError(_CauseMixin, PdogsException):
+    """
+    Operation violates the unique constraint
+    """
