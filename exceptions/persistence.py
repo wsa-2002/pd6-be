@@ -15,5 +15,5 @@ class UniqueViolationError(_CauseMixin, PdogsException):
 
 class ForeignKeyViolationError(_CauseMixin, PdogsException):
     """
-    Operation violates the unique constraint
+    Operation violates the foreign key constraint
     """
