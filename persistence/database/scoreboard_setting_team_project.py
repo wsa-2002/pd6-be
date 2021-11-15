@@ -1,6 +1,9 @@
 from typing import Sequence, Optional
 
+import asyncpg
+
 from base import do, enum
+import exceptions as exc
 
 from . import scoreboard
 from .base import SafeConnection, OnlyExecute, FetchOne, ParamDict
@@ -11,24 +14,26 @@ async def add_under_scoreboard(challenge_id: int, challenge_label: str, title: s
                                rank_by_total_score: bool, team_label_filter: Optional[str]) -> int:
     async with SafeConnection(event=f'add scoreboard_setting_team_project under scoreboard',
                               auto_transaction=True) as conn:
-        (team_project_scoreboard_id,) = await conn.fetchrow(
-            "INSERT INTO scoreboard_setting_team_project"
-            "            (scoring_formula, baseline_team_id, rank_by_total_score, team_label_filter)"
-            "     VALUES ($1, $2, $3, $4)"
-            "  RETURNING id",
-            scoring_formula, baseline_team_id, rank_by_total_score, team_label_filter,
-        )
+        try:
+            (team_project_scoreboard_id,) = await conn.fetchrow(
+                "INSERT INTO scoreboard_setting_team_project"
+                "            (scoring_formula, baseline_team_id, rank_by_total_score, team_label_filter)"
+                "     VALUES ($1, $2, $3, $4)"
+                "  RETURNING id",
+                scoring_formula, baseline_team_id, rank_by_total_score, team_label_filter,
+            )
 
-        (scoreboard_id,) = await conn.fetchrow(
-            "INSERT INTO scoreboard"
-            "            (challenge_id, challenge_label, title, target_problem_ids, type, setting_id)"
-            "     VALUES ($1, $2, $3, $4, $5, $6) "
-            "  RETURNING id",
-            challenge_id, challenge_label, title, target_problem_ids, type_, team_project_scoreboard_id,
-        )
+            (scoreboard_id,) = await conn.fetchrow(
+                "INSERT INTO scoreboard"
+                "            (challenge_id, challenge_label, title, target_problem_ids, type, setting_id)"
+                "     VALUES ($1, $2, $3, $4, $5, $6) "
+                "  RETURNING id",
+                challenge_id, challenge_label, title, target_problem_ids, type_, team_project_scoreboard_id,
+            )
 
-        return scoreboard_id
-
+            return scoreboard_id
+        except asyncpg.exceptions.ForeignKeyViolationError:
+            raise exc.IllegalInput
 
 async def read(scoreboard_setting_team_project_id: int, include_deleted=False) -> do.ScoreboardSettingTeamProject:
     async with FetchOne(
