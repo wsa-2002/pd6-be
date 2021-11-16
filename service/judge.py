@@ -88,6 +88,7 @@ async def _judge(submission: do.Submission, judge_problem: judge_do.Problem, pri
         ),
         testcases=judge_testcases,
         assisting_data=judge_assisting_datas,
+        customized_judge_setting=None,
     ), language_queue_name=await db.submission.read_language_queue_name(submission_language.id),
         priority=priority)
 
