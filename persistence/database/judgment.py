@@ -252,6 +252,7 @@ async def get_class_last_team_submission_judgment(problem_id: int, class_id: int
                 fr'             (t1.submit_time = t2.submit_time AND t1.submission_id < t2.submission_id))'
                 fr' WHERE t2.submit_time IS NULL',
             class_id=class_id, problem_id=problem_id,
+            raise_not_found=False,
     ) as records:
         return (
             {team_id: do.Submission(id=submission_id, account_id=account_id, problem_id=problem_id,

@@ -66,8 +66,10 @@ async def view_team_project_scoreboard(scoreboard_id: int) -> Sequence[vo.ViewTe
     for target_problem_id in scoreboard.target_problem_ids:
         team_submission, team_judgment = await db.judgment.get_class_last_team_submission_judgment(
             problem_id=target_problem_id, class_id=challenge.class_id, team_ids=[team.id for team in teams])
-        testcases = await db.testcase.browse(problem_id=target_problem_id)
+        if not team_submission:  # No team submission for problem
+            continue
 
+        testcases = await db.testcase.browse(problem_id=target_problem_id)
         team_score_problem = {team.id: 0 for team in teams}
         for testcase in testcases:
             judge_cases = await db.judge_case.batch_get_with_judgment(
