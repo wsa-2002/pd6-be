@@ -204,7 +204,12 @@ async def browse_by_problem_class_members(problem_id: int, selection_type: enum.
 
 
 async def get_class_last_team_submission_judgment(problem_id: int, class_id: int, team_ids: Sequence[int]) \
-        -> Tuple[dict[int, do.Submission], dict[int, do.Judgment]]:
+        -> Tuple[dict[int, int], dict[int, int]]:
+    """
+    Returns only submitted & judged teams
+
+    :return: dict(team_id, submission_id) and dict(team_id, judgment_id)
+    """
     cond_sql = ', '.join(str(team_id) for team_id in team_ids)
     async with FetchAll(
             event='get class last team submission judgment',
@@ -244,7 +249,7 @@ async def get_class_last_team_submission_judgment(problem_id: int, class_id: int
                 fr'         ON submission.id = judgment.submission_id'
                 fr'        AND submission_last_judgment_id(submission.id) = judgment.id'
                 fr') '
-                fr' SELECT t1.*'
+                fr' SELECT t1.team_id, t1.submission_id, t1.judgment_id'
                 fr'   FROM data_table t1'
                 fr'   LEFT JOIN data_table t2'
                 fr'          ON t1.team_id = t2.team_id'
@@ -255,18 +260,6 @@ async def get_class_last_team_submission_judgment(problem_id: int, class_id: int
             raise_not_found=False,
     ) as records:
         return (
-            {team_id: do.Submission(id=submission_id, account_id=account_id, problem_id=problem_id,
-                                    language_id=language_id, content_length=content_length, submit_time=submit_time,
-                                    content_file_uuid=content_file_uuid, filename=filename)
-             for team_id, submission_id, account_id, problem_id, language_id, content_length, submit_time,
-                 content_file_uuid, filename, judgment_id, judgment_submission_id, verdict, total_time, max_memory,
-                 score, judge_time, error_message
-             in records},
-            {team_id: do.Judgment(id=judgment_id, submission_id=judgment_submission_id, verdict=verdict,
-                                  total_time=total_time, max_memory=max_memory, score=score,
-                                  judge_time=judge_time, error_message=error_message)
-             for team_id, submission_id, account_id, problem_id, language_id, content_length, submit_time,
-                 content_file_uuid, filename, judgment_id, judgment_submission_id, verdict, total_time, max_memory,
-                 score, judge_time, error_message
-             in records},
+            {team_id: submission_id for team_id, submission_id, judgment_id in records},
+            {team_id: judgment_id for team_id, submission_id, judgment_id in records},
         )

@@ -66,21 +66,24 @@ async def view_team_project_scoreboard(scoreboard_id: int) -> Sequence[vo.ViewTe
     for target_problem_id in scoreboard.target_problem_ids:
         team_submission, team_judgment = await db.judgment.get_class_last_team_submission_judgment(
             problem_id=target_problem_id, class_id=challenge.class_id, team_ids=[team.id for team in teams])
-        if not team_submission:  # No team submission for problem
+        if not team_submission:  # No problem submission for all teams
             continue
 
         testcases = await db.testcase.browse(problem_id=target_problem_id)
         team_score_problem = {team.id: 0 for team in teams}
         for testcase in testcases:
             judge_cases = await db.judge_case.batch_get_with_judgment(
-                testcase_id=testcase.id, judgment_ids=[judgment.id for team_id, judgment in team_judgment.items()])
+                testcase_id=testcase.id, judgment_ids=[judgment_id for team_id, judgment_id in team_judgment.items()])
 
-            team_raw_score = {team_id: judge_cases[judgment.id].score
-                              for team_id, judgment in team_judgment.items()}
+            team_raw_score = {team_id: judge_cases[judgment_id].score
+                              for team_id, judgment_id in team_judgment.items()}
 
-            team_calculated_score = await _team_project_calculate_score(team_raw_score=team_raw_score,
-                                                                        formula=scoreboard_setting_data.scoring_formula,
-                                                                        baseline_team_id=scoreboard_setting_data.baseline_team_id)
+            team_calculated_score = await _team_project_calculate_score(
+                team_raw_score=team_raw_score,
+                formula=scoreboard_setting_data.scoring_formula,
+                baseline_team_id=scoreboard_setting_data.baseline_team_id
+            )
+
             for team_id in team_calculated_score:
                 team_score_problem[team_id] += team_calculated_score[team_id]
 
@@ -88,8 +91,8 @@ async def view_team_project_scoreboard(scoreboard_id: int) -> Sequence[vo.ViewTe
             try:
                 team_data[team_id].append(vo.ProblemScore(problem_id=target_problem_id,
                                                           score=team_score_problem[team_id],
-                                                          submission_id=team_submission[team_id].id))
-            except KeyError:  # No team submission for problem
+                                                          submission_id=team_submission[team_id]))
+            except KeyError:  # No problem submission for team_id
                 continue
 
     return [vo.ViewTeamProjectScoreboard(team_id=team.id,
