@@ -22,7 +22,7 @@ async def browse_by_challenge(challenge_id: int, include_deleted=False) -> Seque
                 for (id_, challenge_id, challenge_label, title, target_problem_ids, is_deleted, type_, setting_id) in records]
 
 
-async def read(scoreboard_id: int, include_deleted=False) -> do.Scoreboard:
+async def read(scoreboard_id: int, *, include_deleted=False) -> do.Scoreboard:
     async with FetchOne(
             event='read scoreboard',
             sql=fr'SELECT id, challenge_id, challenge_label, title, target_problem_ids, is_deleted, type, setting_id'

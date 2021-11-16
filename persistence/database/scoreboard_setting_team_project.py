@@ -35,14 +35,13 @@ async def add_under_scoreboard(challenge_id: int, challenge_label: str, title: s
         except asyncpg.exceptions.ForeignKeyViolationError:
             raise exc.IllegalInput
 
-async def read(scoreboard_setting_team_project_id: int, include_deleted=False) -> do.ScoreboardSettingTeamProject:
+async def read(scoreboard_setting_team_project_id: int) -> do.ScoreboardSettingTeamProject:
     async with FetchOne(
             event='read scoreboard_setting_team_project',
             sql=fr'SELECT id, scoring_formula, baseline_team_id, rank_by_total_score, team_label_filter'
                 fr'  FROM scoreboard_setting_team_project'
                 fr' WHERE id = %(scoreboard_setting_team_project_id)s',
             scoreboard_setting_team_project_id=scoreboard_setting_team_project_id,
-            fetch=1,
     ) as (id_, scoring_formula, baseline_team_id, rank_by_total_score, team_label_filter):
         return do.ScoreboardSettingTeamProject(id=id_, scoring_formula=scoring_formula, baseline_team_id=baseline_team_id,
                                                rank_by_total_score=rank_by_total_score, team_label_filter=team_label_filter)
