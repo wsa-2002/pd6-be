@@ -24,6 +24,19 @@ class SMTPHandler(metaclass=mcs.Singleton):
 
     @property
     def client(self):
+        try:
+            await self.client.noop()
+        except aiosmtplib.errors.SMTPServerDisconnected as e:
+            try:
+                await self.client.connect()
+            except Exception as e2:
+                raise e2 from e
+
+            try:
+                await self.client.noop()  # verify
+            except Exception as e2:
+                raise e2 from e
+
         return self._client
 
 
