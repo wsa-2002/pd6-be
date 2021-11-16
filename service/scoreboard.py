@@ -8,6 +8,18 @@ import exceptions as exc
 import persistence.database as db
 
 
+FORMULA_AVAILABLE_PARAMS = ['class_best', 'class_worst', 'baseline', 'team_score']
+
+
+# TODO: More Validation
+async def validate_formula(formula: str) -> bool:
+
+    for param in FORMULA_AVAILABLE_PARAMS:
+        formula = formula.replace(param, '')
+
+    return not any(char.isalpha() for char in formula)
+
+
 @dataclass
 class ScoreboardSettingTeamProjectData:
     scoring_formula: str
@@ -34,16 +46,19 @@ async def _team_project_calculate_score(team_raw_score: dict[int, int], formula:
     """
     Return: dict[team_id, score]
     """
-    class_best = max(team_raw_score.values())
-    class_worst = min(team_raw_score.values())
+    params = dict()
+
+    params['class_best'] = max(team_raw_score.values())
+    params['class_worst'] = min(team_raw_score.values())
     if baseline_team_id is not None:
-        baseline = team_raw_score[baseline_team_id]
+        params['baseline'] = team_raw_score[baseline_team_id]
 
     team_score_dict = dict()
     for team_id in team_raw_score:
-        team_score = team_raw_score[team_id]
+        params['team_score'] = team_raw_score[team_id]
+
         try:
-            team_score_dict[team_id] = eval(formula)
+            team_score_dict[team_id] = eval(formula, params)
         except ZeroDivisionError:
             team_score_dict[team_id] = 0  # if divided by zero in formula, team score will be 0
         except (TypeError, NameError):
