@@ -76,6 +76,9 @@ async def view_team_project_scoreboard(scoreboard_id: int) -> Sequence[vo.ViewTe
     except asyncpg.InvalidRegularExpressionError:
         raise exc.InvalidTeamLabelFilter
 
+    if not teams:
+        return []
+
     team_data = {team.id: [] for team in teams}
 
     for target_problem_id in scoreboard.target_problem_ids:
