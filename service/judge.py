@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Sequence
+from typing import Sequence, Optional
 from uuid import UUID
 
 import log
@@ -14,15 +14,16 @@ import persistence.s3 as s3
 
 async def judge_submission(submission_id: int, rejudge=False):
     submission = await db.submission.read(submission_id)
-    judge_problem, judge_testcases, judge_assisting_datas = await _prepare_problem(submission.problem_id)
+    judge_problem, judge_testcases, judge_assisting_datas, judge_setting = await _prepare_problem(submission.problem_id)
     priority = judge_const.PRIORITY_SUBMIT if not rejudge else judge_const.PRIORITY_REJUDGE_SINGLE
 
     await _judge(submission, judge_problem=judge_problem, priority=priority,
-                 judge_testcases=judge_testcases, judge_assisting_datas=judge_assisting_datas)
+                 judge_testcases=judge_testcases, judge_assisting_datas=judge_assisting_datas,
+                 judge_setting=judge_setting)
 
 
 async def judge_problem_submissions(problem_id: int) -> Sequence[do.Submission]:
-    judge_problem, judge_testcases, judge_assisting_datas = await _prepare_problem(problem_id)
+    judge_problem, judge_testcases, judge_assisting_datas, judge_setting = await _prepare_problem(problem_id)
 
     submissions: list[do.Submission] = []
     offset, batch_size = 0, 100
@@ -37,7 +38,8 @@ async def judge_problem_submissions(problem_id: int) -> Sequence[do.Submission]:
 
     for submission in submissions:
         await _judge(submission, judge_problem=judge_problem, priority=judge_const.PRIORITY_REJUDGE_BATCH,
-                     judge_testcases=judge_testcases, judge_assisting_datas=judge_assisting_datas)
+                     judge_testcases=judge_testcases, judge_assisting_datas=judge_assisting_datas,
+                     judge_setting=judge_setting)
 
     return submissions
 
@@ -46,10 +48,12 @@ async def _prepare_problem(problem_id: int) -> tuple[
     judge_do.Problem,
     Sequence[judge_do.Testcase],
     Sequence[judge_do.AssistingData],
+    Optional[judge_do.CustomizedJudgeSetting],
 ]:
     problem = await db.problem.read(problem_id)
     testcases = await db.testcase.browse(problem.id, include_disabled=False)
     assisting_datas = await db.assisting_data.browse(problem.id)
+    customized_judge_setting = await db.problem_judge_setting_customized.read(problem.setting_id)
 
     judge_problem = judge_do.Problem(
         full_score=problem.full_score,
@@ -69,10 +73,15 @@ async def _prepare_problem(problem_id: int) -> tuple[
         filename=assisting_data.filename,
     ) for assisting_data in assisting_datas]
 
-    return judge_problem, judge_testcases, judge_assisting_datas
+    judge_setting = (await _sign_file_url(customized_judge_setting.judge_code_file_uuid,
+                                          filename=customized_judge_setting.judge_code_filename)
+                     if problem.judge_type is enum.ProblemJudgeType.customized else None)
+
+    return judge_problem, judge_testcases, judge_assisting_datas, judge_setting
 
 
 async def _judge(submission: do.Submission, judge_problem: judge_do.Problem, priority: int,
+                 judge_setting: Optional[do.ProblemJudgeSettingCustomized],
                  judge_testcases: Sequence[judge_do.Testcase], judge_assisting_datas: Sequence[judge_do.AssistingData]):
     submission_language = await db.submission.read_language(submission.language_id)
     if submission_language.is_disabled:
@@ -88,6 +97,7 @@ async def _judge(submission: do.Submission, judge_problem: judge_do.Problem, pri
         ),
         testcases=judge_testcases,
         assisting_data=judge_assisting_datas,
+        customized_judge_setting=judge_setting if judge_setting else None
     ), language_queue_name=await db.submission.read_language_queue_name(submission_language.id),
         priority=priority)
 
