@@ -1,6 +1,6 @@
 from typing import TypeVar, Optional
 
-import judge_core_common.enum
+import judge_core_common.base
 
 from .cls import OrderedMixin, StrEnum
 
@@ -39,7 +39,7 @@ class TaskSelectionType(StrEnum):
     best = 'BEST'
 
 
-VerdictType = judge_core_common.enum.VerdictType
+VerdictType = judge_core_common.base.VerdictType
 
 
 class ProblemJudgeType(StrEnum):
