@@ -286,6 +286,9 @@ async def add_team_project_scoreboard_under_challenge(challenge_id: int, data: A
     if not await service.rbac.validate_class(request.account.id, RoleType.manager, challenge_id=challenge_id):
         raise exc.NoPermission
 
+    if not await service.scoreboard.validate_formula(formula=data.scoring_formula):
+        raise exc.InvalidFormula
+
     scoreboard_id = await db.scoreboard_setting_team_project.add_under_scoreboard(
         challenge_id=challenge_id, challenge_label=data.challenge_label, title=data.title,
         target_problem_ids=data.target_problem_ids,
