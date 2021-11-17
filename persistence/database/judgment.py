@@ -242,6 +242,7 @@ async def get_class_last_team_submission_judgment(problem_id: int, class_id: int
                 fr'        AND submission.problem_id = %(problem_id)s'
                 fr' INNER JOIN problem'
                 fr'         ON problem.id = submission.problem_id'
+                fr'        AND NOT problem.is_deleted'
                 fr' INNER JOIN challenge'
                 fr'         ON challenge.id = problem.challenge_id'
                 fr'        AND submission.submit_time <= challenge.end_time'
