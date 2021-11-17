@@ -64,7 +64,7 @@ async def _team_project_calculate_score(team_raw_score: dict[int, int], formula:
             team_score_dict[team_id] = eval(formula, params)
         except ZeroDivisionError:
             team_score_dict[team_id] = 0  # if divided by zero in formula, team score will be 0
-        except (TypeError, NameError):
+        except (TypeError, NameError, SyntaxError):
             raise exc.InvalidFormula
 
     return team_score_dict
