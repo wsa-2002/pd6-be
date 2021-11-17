@@ -12,10 +12,10 @@ async def batch_get_with_judgment(testcase_id: int, judgment_ids: list[int]) -> 
                 fr'  FROM judge_case'
                 fr' INNER JOIN testcase'
                 fr'         ON testcase.id = judge_case.testcase_id'
-                fr'      WHERE judge_case.judgment_id IN ({cond_sql})'
-                fr'        AND judge_case.testcase_id = %(testcase_id)s',
+                fr'      WHERE judge_case.testcase_id = %(testcase_id)s'
+                fr'{f"     AND judge_case.judgment_id IN ({cond_sql})" if cond_sql else ""}',
             testcase_id=testcase_id,
-            raise_not_found=False,
+            raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return {judgment_id: do.JudgeCase(judgment_id=judgment_id, testcase_id=testcase_id, verdict=verdict,
                                           time_lapse=time_lapse, peak_memory=peak_memory, score=score)

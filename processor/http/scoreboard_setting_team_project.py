@@ -27,7 +27,8 @@ async def view_team_project_scoreboard(scoreboard_id: int, request: Request) -> 
     if not await service.rbac.validate_class(request.account.id, RoleType.normal, scoreboard_id=scoreboard_id):
         raise exc.NoPermission
 
-    scoreboard, scoreboard_setting_data = await service.scoreboard.read_with_scoreboard_setting_data(scoreboard_id=scoreboard_id)
+    scoreboard, scoreboard_setting_data = await service.scoreboard.read_with_scoreboard_setting_data(
+        scoreboard_id=scoreboard_id)
 
     result = await service.scoreboard.view_team_project_scoreboard(scoreboard_id=scoreboard_id)
     return [vo.ViewTeamProjectScoreboard(
@@ -57,6 +58,9 @@ async def edit_team_project_scoreboard(scoreboard_id: int, data: EditScoreboardI
     """
     if not await service.rbac.validate_class(request.account.id, RoleType.manager, scoreboard_id=scoreboard_id):
         raise exc.NoPermission
+
+    if data.scoring_formula and not await service.scoreboard.validate_formula(formula=data.scoring_formula):
+        raise exc.InvalidFormula
 
     await db.scoreboard_setting_team_project.edit_with_scoreboard(
         scoreboard_id=scoreboard_id, challenge_label=data.challenge_label, title=data.title,
