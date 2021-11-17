@@ -59,7 +59,7 @@ async def edit_team_project_scoreboard(scoreboard_id: int, data: EditScoreboardI
     if not await service.rbac.validate_class(request.account.id, RoleType.manager, scoreboard_id=scoreboard_id):
         raise exc.NoPermission
 
-    if not await service.scoreboard.validate_formula(formula=data.scoring_formula):
+    if data.scoring_formula and not await service.scoreboard.validate_formula(formula=data.scoring_formula):
         raise exc.InvalidFormula
 
     await db.scoreboard_setting_team_project.edit_with_scoreboard(
