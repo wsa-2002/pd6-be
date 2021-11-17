@@ -62,8 +62,10 @@ async def _prepare_problem(problem_id: int) -> tuple[
     judge_testcases = [judge_do.Testcase(
         id=testcase.id,
         score=testcase.score,
-        input_file_url=await _sign_file_url(testcase.input_file_uuid, filename=f'{i}.in'),
-        output_file_url=await _sign_file_url(testcase.output_file_uuid, filename=f'{i}.out'),
+        input_file_url=await _sign_file_url(testcase.input_file_uuid, filename=f'{i}.in')
+        if testcase.input_file_uuid else None,
+        output_file_url=await _sign_file_url(testcase.output_file_uuid, filename=f'{i}.out')
+        if testcase.output_file_uuid else None,
         time_limit=testcase.time_limit,
         memory_limit=testcase.memory_limit,
     ) for i, testcase in enumerate(testcases)]
