@@ -51,7 +51,10 @@ async def _team_project_calculate_score(team_raw_score: dict[int, int], formula:
     params['class_best'] = max(team_raw_score.values())
     params['class_worst'] = min(team_raw_score.values())
     if baseline_team_id is not None:
-        params['baseline'] = team_raw_score[baseline_team_id]
+        try:
+            params['baseline'] = team_raw_score[baseline_team_id]
+        except KeyError:
+            params['baseline'] = 0  # baseline team have not submitted
 
     team_score_dict = dict()
     for team_id in team_raw_score:
