@@ -66,6 +66,9 @@ async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Se
 
 
 async def browse_with_team_label_filter(class_id: int, team_label_filter: str = None) -> Sequence[do.Team]:
+    """
+    :raises exc.InvalidTeamLabelFilter
+    """
     async with FetchAll(
             event='browse teams with team label filter',
             sql=fr'SELECT team.id, team.name, team.class_id, team.is_deleted, team.label'
@@ -78,6 +81,9 @@ async def browse_with_team_label_filter(class_id: int, team_label_filter: str = 
             team_label_filter=team_label_filter,
             class_id=class_id,
             raise_not_found=False,  # Issue #134: return [] for browse
+            exception_mapping={
+                asyncpg.InvalidRegularExpressionError: exc.InvalidTeamLabelFilter,
+            },
     ) as records:
         return [do.Team(id=id_, name=name, class_id=class_id, is_deleted=is_deleted, label=label)
                 for (id_, name, class_id, is_deleted, label) in records]

@@ -5,7 +5,6 @@ Note that pg default enables auto-commit.
 If you don't want auto-commit, use `async with Connection.transaction(): ...`.
 """
 
-
 import collections
 import typing
 from abc import abstractmethod
@@ -52,6 +51,7 @@ class SafeConnection:
 
     Note that asyncpg does not support keyword-bounded arguments; only positional arguments are allowed.
     """
+
     def __init__(self, event: str, auto_transaction: bool):
         self._start_time = datetime.now()
         self._event = event
@@ -79,10 +79,15 @@ class SafeConnection:
 
 ParamDict = dict[str, Any]
 
+_EXCEPTION_MAPPING = {
+    asyncpg.exceptions.UniqueViolationError: exc.persistence.UniqueViolationError,
+}
+
 
 class _SafeExecutor:
     def __init__(self, event: str, sql: str, parameters: ParamDict = None,
                  fetch: Union[int, str, None] = None, raise_not_found: bool = True,
+                 exception_mapping: dict[Exception, Exception] = None,
                  **kwparams: typing.Any):
         """
         A safe execution context manager to open, execute, fetch, and close connections automatically.
@@ -104,6 +109,8 @@ class _SafeExecutor:
         # Convert to asyncpg position-based arguments because asyncpg does not support that
         self._sql, self._parameters = pyformat2psql(sql, parameters)
 
+        self._exception_mapping = _EXCEPTION_MAPPING | (exception_mapping or {})
+
     async def __aenter__(self) -> Optional[Union[asyncpg.Record, List[asyncpg.Record]]]:
         """
         If fetch
@@ -122,8 +129,8 @@ class _SafeExecutor:
         async with pool_handler.pool.acquire() as conn:
             try:
                 results = await self._exec(conn)
-            except asyncpg.exceptions.UniqueViolationError as e:
-                raise exc.persistence.UniqueViolationError(cause=e)
+            except self._exception_mapping as e:
+                raise self._exception_mapping[type(e)] from e
 
         exec_time_ms = (datetime.now() - start_time).total_seconds() * 1000
         log.info(f"Ended {self.__class__.__name__}: {self._event} after {exec_time_ms} ms")

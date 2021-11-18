@@ -1,9 +1,11 @@
+from typing import Iterable
+
 from base import do
 
 from .base import FetchAll
 
 
-async def batch_get_with_judgment(testcase_id: int, judgment_ids: list[int]) -> dict[int, do.JudgeCase]:
+async def batch_get_with_judgment(testcase_id: int, judgment_ids: Iterable[int]) -> dict[int, do.JudgeCase]:
     cond_sql = ', '.join(str(judgment_id) for judgment_id in judgment_ids)
     async with FetchAll(
             event='batch get judge case with judgment ids',
