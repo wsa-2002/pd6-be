@@ -51,10 +51,8 @@ async def _team_project_calculate_score(team_raw_score: dict[int, int], formula:
     params['class_best'] = max(team_raw_score.values())
     params['class_worst'] = min(team_raw_score.values())
     if baseline_team_id is not None:
-        try:
-            params['baseline'] = team_raw_score[baseline_team_id]
-        except KeyError:
-            params['baseline'] = 0  # baseline team have not submitted
+        params['baseline'] = team_raw_score[baseline_team_id] \
+            if baseline_team_id in team_raw_score.keys() else 0  # Baseline team score will be 0 if no submission
 
     team_score_dict = dict()
     for team_id in team_raw_score:
@@ -63,8 +61,8 @@ async def _team_project_calculate_score(team_raw_score: dict[int, int], formula:
         try:
             team_score_dict[team_id] = eval(formula, params)
         except ZeroDivisionError:
-            team_score_dict[team_id] = 0  # if divided by zero in formula, team score will be 0
-        except (TypeError, NameError):
+            team_score_dict[team_id] = 0  # Team score will be 0 if divided by zero in formula
+        except (TypeError, NameError, SyntaxError):
             raise exc.InvalidFormula
 
     return team_score_dict
@@ -79,16 +77,11 @@ async def view_team_project_scoreboard(scoreboard_id: int) -> Sequence[vo.ViewTe
     except asyncpg.InvalidRegularExpressionError:
         raise exc.InvalidTeamLabelFilter
 
-    if not teams:
-        return []
-
     team_data = {team.id: [] for team in teams}
 
     for target_problem_id in scoreboard.target_problem_ids:
         team_submission, team_judgment = await db.judgment.get_class_last_team_submission_judgment(
             problem_id=target_problem_id, class_id=challenge.class_id, team_ids=[team.id for team in teams])
-        if not team_submission:  # No problem submission for all teams
-            continue
 
         testcases = await db.testcase.browse(problem_id=target_problem_id)
         team_score_problem = {team.id: 0 for team in teams}
@@ -96,8 +89,11 @@ async def view_team_project_scoreboard(scoreboard_id: int) -> Sequence[vo.ViewTe
             judge_cases = await db.judge_case.batch_get_with_judgment(
                 testcase_id=testcase.id, judgment_ids=[judgment_id for team_id, judgment_id in team_judgment.items()])
 
-            team_raw_score = {team_id: judge_cases[judgment_id].score
-                              for team_id, judgment_id in team_judgment.items()}
+            team_raw_score = {
+                team_id: judge_cases[judgment_id].score
+                if judgment_id in judge_cases.keys() else 0  # Judgment without judge_case: judge_case.score will be 0
+                for team_id, judgment_id in team_judgment.items()
+            }
 
             team_calculated_score = await _team_project_calculate_score(
                 team_raw_score=team_raw_score,
@@ -108,13 +104,10 @@ async def view_team_project_scoreboard(scoreboard_id: int) -> Sequence[vo.ViewTe
             for team_id in team_calculated_score:
                 team_score_problem[team_id] += team_calculated_score[team_id]
 
-        for team_id in team_score_problem:
-            try:
-                team_data[team_id].append(vo.ProblemScore(problem_id=target_problem_id,
-                                                          score=team_score_problem[team_id],
-                                                          submission_id=team_submission[team_id]))
-            except KeyError:  # No problem submission for team_id
-                continue
+        for team_id in team_submission:
+            team_data[team_id].append(vo.ProblemScore(problem_id=target_problem_id,
+                                                      score=team_score_problem[team_id],
+                                                      submission_id=team_submission[team_id]))
 
     return [vo.ViewTeamProjectScoreboard(team_id=team.id,
                                          team_name=team.name,
