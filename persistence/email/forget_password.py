@@ -15,5 +15,4 @@ Please click on the following link to reset your password:
 {service_config.url}/reset-password?code={code}
 """) # link to FE reset password page, not BE
 
-    async with smtp_handler.client:
-        await smtp_handler.client.send_message(message)
+    await smtp_handler.send_message(message)
