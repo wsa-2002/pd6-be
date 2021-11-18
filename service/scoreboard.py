@@ -79,16 +79,11 @@ async def view_team_project_scoreboard(scoreboard_id: int) -> Sequence[vo.ViewTe
     except asyncpg.InvalidRegularExpressionError:
         raise exc.InvalidTeamLabelFilter
 
-    if not teams:
-        return []
-
     team_data = {team.id: [] for team in teams}
 
     for target_problem_id in scoreboard.target_problem_ids:
         team_submission, team_judgment = await db.judgment.get_class_last_team_submission_judgment(
             problem_id=target_problem_id, class_id=challenge.class_id, team_ids=[team.id for team in teams])
-        if not team_submission:  # No problem submission for all teams
-            continue
 
         testcases = await db.testcase.browse(problem_id=target_problem_id)
         team_score_problem = {team.id: 0 for team in teams}
@@ -111,13 +106,10 @@ async def view_team_project_scoreboard(scoreboard_id: int) -> Sequence[vo.ViewTe
             for team_id in team_calculated_score:
                 team_score_problem[team_id] += team_calculated_score[team_id]
 
-        for team_id in team_score_problem:
-            try:
-                team_data[team_id].append(vo.ProblemScore(problem_id=target_problem_id,
-                                                          score=team_score_problem[team_id],
-                                                          submission_id=team_submission[team_id]))
-            except KeyError:  # No problem submission for team_id
-                continue
+        for team_id in team_submission:
+            team_data[team_id].append(vo.ProblemScore(problem_id=target_problem_id,
+                                                      score=team_score_problem[team_id],
+                                                      submission_id=team_submission[team_id]))
 
     return [vo.ViewTeamProjectScoreboard(team_id=team.id,
                                          team_name=team.name,

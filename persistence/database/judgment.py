@@ -235,7 +235,7 @@ async def get_class_last_team_submission_judgment(problem_id: int, class_id: int
                 fr' INNER JOIN team'
                 fr'         ON team.id = team_member.team_id'
                 fr'        AND team.class_id = %(class_id)s'
-                fr'{f"     AND team.id IN ({cond_sql})" if cond_sql else ""}'
+                fr'        AND team.id IN ( {f" {cond_sql}" if cond_sql else "NULL"} )'  # Return null when no team_id
                 fr'        AND NOT team.is_deleted'
                 fr' INNER JOIN submission'
                 fr'         ON team_member.member_id = submission.account_id'
