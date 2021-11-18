@@ -91,7 +91,6 @@ async def read(team_id: int, *, include_deleted=False) -> do.Team:
                 fr' WHERE id = %(team_id)s'
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}',
             team_id=team_id,
-            fetch=1,
     ) as (id_, name, class_id, is_deleted, label):
         return do.Team(id=id_, name=name, class_id=class_id, is_deleted=is_deleted, label=label)
 

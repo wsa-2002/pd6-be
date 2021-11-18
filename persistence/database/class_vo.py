@@ -45,7 +45,6 @@ async def browse_member_account_with_student_card_and_institute(
                 fr' LIMIT %(limit)s OFFSET %(offset)s',
             **cond_params,
             limit=limit, offset=offset,
-            fetch='all',
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         data = [(do.ClassMember(member_id=member_id, class_id=class_id, role=RoleType(class_role)),

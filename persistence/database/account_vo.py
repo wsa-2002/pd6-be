@@ -40,7 +40,6 @@ async def browse_with_default_student_card(limit: int, offset: int, filters: lis
                 fr' LIMIT %(limit)s OFFSET %(offset)s',
             **cond_params,
             limit=limit, offset=offset,
-            fetch='all',
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         data = [(do.Account(id=account_id, username=username, nickname=nickname, real_name=real_name,
