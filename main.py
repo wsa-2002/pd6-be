@@ -22,8 +22,9 @@ from version import version
 app = FastAPI(
     title=app_config.title,
     version=version,
-    docs_url=app_config.docs_url,
-    redoc_url=app_config.redoc_url,
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
     description=f"""
 <h2>Documentation</h2>
 {api_doc.all_docs()}
