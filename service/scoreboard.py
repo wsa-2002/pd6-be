@@ -51,10 +51,8 @@ async def _team_project_calculate_score(team_raw_score: dict[int, int], formula:
     params['class_best'] = max(team_raw_score.values())
     params['class_worst'] = min(team_raw_score.values())
     if baseline_team_id is not None:
-        try:
-            params['baseline'] = team_raw_score[baseline_team_id]
-        except KeyError:
-            params['baseline'] = 0  # baseline team have not submitted
+        params['baseline'] = team_raw_score[baseline_team_id] \
+            if baseline_team_id in team_raw_score.keys() else 0  # Baseline team score will be 0 if no submission
 
     team_score_dict = dict()
     for team_id in team_raw_score:
@@ -63,7 +61,7 @@ async def _team_project_calculate_score(team_raw_score: dict[int, int], formula:
         try:
             team_score_dict[team_id] = eval(formula, params)
         except ZeroDivisionError:
-            team_score_dict[team_id] = 0  # if divided by zero in formula, team score will be 0
+            team_score_dict[team_id] = 0  # Team score will be 0 if divided by zero in formula
         except (TypeError, NameError, SyntaxError):
             raise exc.InvalidFormula
 
