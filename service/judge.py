@@ -54,7 +54,8 @@ async def _prepare_problem(problem_id: int) -> tuple[
     problem = await db.problem.read(problem_id)
     testcases = await db.testcase.browse(problem.id, include_disabled=False)
     assisting_datas = await db.assisting_data.browse(problem.id)
-    customized_judge_setting = await db.problem_judge_setting_customized.read(problem.setting_id)
+    customized_judge_setting = await db.problem_judge_setting_customized.read(problem.setting_id) \
+        if problem.judge_type is enum.ProblemJudgeType.customized else None
 
     judge_problem = judge_do.Problem(
         full_score=problem.full_score,
