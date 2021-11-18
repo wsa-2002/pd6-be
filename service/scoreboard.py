@@ -96,8 +96,11 @@ async def view_team_project_scoreboard(scoreboard_id: int) -> Sequence[vo.ViewTe
             judge_cases = await db.judge_case.batch_get_with_judgment(
                 testcase_id=testcase.id, judgment_ids=[judgment_id for team_id, judgment_id in team_judgment.items()])
 
-            team_raw_score = {team_id: judge_cases[judgment_id].score
-                              for team_id, judgment_id in team_judgment.items()}
+            team_raw_score = {
+                team_id: judge_cases[judgment_id].score
+                if judgment_id in judge_cases.keys() else 0  # Judgment without judge_case: judge_case.score will be 0
+                for team_id, judgment_id in team_judgment.items()
+            }
 
             team_calculated_score = await _team_project_calculate_score(
                 team_raw_score=team_raw_score,
