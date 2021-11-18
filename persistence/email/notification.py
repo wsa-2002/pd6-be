@@ -16,8 +16,7 @@ async def send(to: str = None, msg: str = "", bcc: str = None, subject='PDOGS No
     message["Subject"] = subject
     message.set_content(msg)
 
-    async with smtp_handler.client:
-        await smtp_handler.client.send_message(message)
+    await smtp_handler.send_message(message)
 
 
 # update class manager change
@@ -50,5 +49,4 @@ Please download your file with the following url:
 {file_url}
 """)
 
-    async with smtp_handler.client:
-        await smtp_handler.client.send_message(message)
+    await smtp_handler.send_message(message)

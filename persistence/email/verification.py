@@ -17,5 +17,4 @@ Please verify your email with the following url:
 Your username: {username}
 """)
 
-    async with smtp_handler.client:
-        await smtp_handler.client.send_message(message)
+    await smtp_handler.send_message(message)

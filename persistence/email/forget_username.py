@@ -19,5 +19,4 @@ Your username{'s are' if len(accounts) > 1 else ' is'}:
 {joined_usernames}
 """)
 
-    async with smtp_handler.client:
-        await smtp_handler.client.send_message(message)
+    await smtp_handler.send_message(message)
