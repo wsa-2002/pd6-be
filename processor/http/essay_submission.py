@@ -35,7 +35,7 @@ async def upload_essay(essay_id: int, request: Request, essay_file: UploadFile =
 
     essay = await db.essay.read(essay_id=essay_id)
     challenge = await db.challenge.read(essay.challenge_id, include_scheduled=True, ref_time=request.time)
-    if request.time <= challenge.end_time:
+    if request.time >= challenge.end_time:
         raise exc.NoPermission
 
     return await service.submission.submit_essay(file=essay_file.file, filename=essay_file.filename,
