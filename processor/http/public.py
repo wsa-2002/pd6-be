@@ -10,7 +10,7 @@ from persistence import email
 router = APIRouter(tags=['Public'])
 
 
-@router.get("/", status_code=418, response_class=HTMLResponse)
+@router.get("/", status_code=200, response_class=HTMLResponse)
 async def default_page():
     doc_paths = []
     if _url := app_config.docs_url:
