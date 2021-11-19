@@ -307,7 +307,7 @@ async def browse_account_reviewed_peer_review_record(peer_review_id: int, accoun
     challenge = await db.challenge.read(challenge_id=peer_review.challenge_id, include_scheduled=True)
 
     if not (class_role >= RoleType.manager
-            or (request.account.id == account_id and challenge.end_time <= request.time)):
+            or (request.account.id == account_id and challenge.start_time <= request.time)):
         raise exc.NoPermission
 
     peer_review_records = await db.peer_review_record.read_by_peer_review_id(peer_review_id,
