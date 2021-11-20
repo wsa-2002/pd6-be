@@ -82,7 +82,7 @@ def _compile_filter(filter_: Filter, suffix='') -> tuple[str, dict]:  # sql, par
     sql = fr"{filter_.col_name} {filter_.op} %({param_name})s"
 
     if filter_.op in (FilterOperator.like, FilterOperator.not_like):
-        return sql, {param_name: f'%{filter_.value}%'}
+        return sql, {param_name: f'%{escape_pg_like_str(filter_.value)}%'}
 
     return sql, {param_name: filter_.value}
 
@@ -109,3 +109,7 @@ def compile_values(values: Iterable[Iterable]) -> tuple[str, list]:  # sql, para
 
     sql = ', '.join(value_sql)
     return sql, params
+
+
+def escape_pg_like_str(like_str: str) -> str:
+    return like_str.replace('\\', '\\\\')
