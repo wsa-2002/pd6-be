@@ -248,7 +248,7 @@ async def add_peer_review_under_challenge(challenge_id: int, data: AddPeerReview
                                                        include_scheduled=True)
 
     # Only allow peer review to target to same class
-    challenge = await db.challenge.read(challenge_id)
+    challenge = await db.challenge.read(challenge_id, include_scheduled=True)
     if challenge.class_id is not target_problem_challenge.class_id:
         raise exc.IllegalInput
 
