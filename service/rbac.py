@@ -123,7 +123,7 @@ async def get_class_role(account_id: int, *,
     elif essay_submission_id:
         read_role = partial(db.rbac.read_class_role_by_essay_submission_account_id,
                             essay_submission_id=essay_submission_id)
-    elif essay_id:
+    elif grade_id:
         read_role = partial(db.rbac.read_class_role_by_grade_account_id, grade_id=grade_id)
     else:
         raise ValueError
