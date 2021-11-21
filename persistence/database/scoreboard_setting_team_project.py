@@ -35,6 +35,7 @@ async def add_under_scoreboard(challenge_id: int, challenge_label: str, title: s
         except asyncpg.exceptions.ForeignKeyViolationError:
             raise exc.IllegalInput
 
+
 async def read(scoreboard_setting_team_project_id: int) -> do.ScoreboardSettingTeamProject:
     async with FetchOne(
             event='read scoreboard_setting_team_project',
