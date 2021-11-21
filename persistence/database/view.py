@@ -2,7 +2,7 @@ from typing import Sequence
 from datetime import datetime
 
 from base import vo
-from base.enum import SortOrder, FilterOperator, ChallengePublicizeType
+from base.enum import SortOrder, FilterOperator, ChallengePublicizeType, RoleType
 from base.popo import Filter, Sorter
 
 from .base import FetchAll
@@ -556,11 +556,12 @@ async def view_peer_review_record(peer_review_id: int, limit: int, offset: int, 
                 fr'                            ON peer_review.challenge_id = challenge.id'
                 fr'                           AND NOT challenge.is_deleted'
                 fr'                    WHERE peer_review.id = %(peer_review_id)s)'
+                fr'  AND class_member.role = %(class_role)s'
                 fr'{f" AND {cond_sql}" if cond_sql else ""}'
                 fr' GROUP BY account.id, student_card.student_id'
                 fr' ORDER BY {sort_sql} account.id ASC'
                 fr' LIMIT %(limit)s OFFSET %(offset)s',
-                **cond_params, peer_review_id=peer_review_id,
+                **cond_params, peer_review_id=peer_review_id, class_role=RoleType.normal,
                 limit=limit, offset=offset,
                 raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
@@ -591,9 +592,10 @@ async def view_peer_review_record(peer_review_id: int, limit: int, offset: int, 
             fr'                            ON peer_review.challenge_id = challenge.id'
             fr'                           AND NOT challenge.is_deleted'
             fr'                    WHERE peer_review.id = %(peer_review_id)s)'
+            fr'   AND class_role = %(class_role)s'
             fr'{f" AND {cond_sql}" if cond_sql else ""}'
             fr' GROUP BY account.id, student_card.student_id',
-        **cond_params, peer_review_id=peer_review_id,
+        **cond_params, peer_review_id=peer_review_id, class_role=RoleType.normal,
     )
 
     return data, total_count
