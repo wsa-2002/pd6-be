@@ -2,7 +2,7 @@ from typing import Callable
 
 import exceptions as exc
 
-FORMULA_AVAILABLE_PARAMS = ['class_best', 'class_worst', 'baseline', 'team_score']
+FORMULA_AVAILABLE_PARAMS = ['class_max', 'class_min', 'baseline', 'team_score']
 
 
 # TODO: More Validation
@@ -13,14 +13,14 @@ async def validate_formula(formula: str) -> bool:
     return not any(char.isalpha() for char in formula)
 
 
-def get_team_project_calculator(formula: str, class_best: int, class_worst: int, baseline: int = 0) \
+def get_team_project_calculator(formula: str, class_max: int, class_min: int, baseline: int = 0) \
         -> Callable[[int], float]:
     """
     :return: function that calculate a raw score (int) to actual score (float)
     """
     params = {
-        'class_best': class_best,
-        'class_worst': class_worst,
+        'class_max': class_max,
+        'class_min': class_min,
         'baseline': baseline,
     }
 
