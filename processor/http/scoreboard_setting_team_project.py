@@ -70,8 +70,8 @@ async def view_team_project_scoreboard(scoreboard_id: int, request: Request) \
 
             calculator = service.scoreboard.get_team_project_calculator(
                 formula=setting_data.scoring_formula,
-                class_best=max(judge_case.score for judge_case in judgment_id_judge_case.values()),
-                class_worst=min(judge_case.score for judge_case in judgment_id_judge_case.values()),
+                class_best=max((judge_case.score for judge_case in judgment_id_judge_case.values()), default=0),
+                class_worst=min((judge_case.score for judge_case in judgment_id_judge_case.values()), default=0),
                 baseline=judgment_id_judge_case[baseline_judgment_id].score if baseline_judgment_id else 0,
             )
 
