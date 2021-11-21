@@ -8,13 +8,12 @@ from base.enum import RoleType, FilterOperator
 from base.popo import Filter, Sorter
 
 from . import team, challenge
-from .base import SafeExecutor, SafeConnection
+from .base import SafeConnection, FetchAll, FetchOne, OnlyExecute, ParamDict
 from .util import execute_count, compile_filters, compile_values
-from .account import account_referral_to_id
 
 
 async def add(name: str, course_id: int) -> int:
-    async with SafeExecutor(
+    async with FetchOne(
             event='add class',
             sql=r'INSERT INTO class'
                 r'            (name, course_id)'
@@ -22,13 +21,12 @@ async def add(name: str, course_id: int) -> int:
                 r'  RETURNING id',
             name=name,
             course_id=course_id,
-            fetch=1,
     ) as (course_id,):
         return course_id
 
 
 async def browse(course_id: int = None, include_deleted=False) -> Sequence[do.Class]:
-    conditions = {}
+    conditions: ParamDict = {}
     if course_id is not None:
         conditions['course_id'] = course_id
 
@@ -39,14 +37,13 @@ async def browse(course_id: int = None, include_deleted=False) -> Sequence[do.Cl
     cond_sql = ' AND '.join(list(fr"{field_name} = %({field_name})s" for field_name in conditions)
                             + filters)
 
-    async with SafeExecutor(
+    async with FetchAll(
             event='browse classes',
             sql=fr'SELECT id, name, course_id, is_deleted'
                 fr'  FROM class'
                 fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
                 fr' ORDER BY course_id ASC, name DESC, id ASC',
             **conditions,
-            fetch='all',
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return [do.Class(id=id_, name=name, course_id=course_id, is_deleted=is_deleted)
@@ -70,7 +67,7 @@ async def browse_with_filter(limit: int, offset: int, filters: Sequence[Filter],
     if sort_sql:
         sort_sql += ','
 
-    async with SafeExecutor(
+    async with FetchAll(
             event='browse classes',
             sql=fr'SELECT id, name, course_id, is_deleted'
                 fr'  FROM class'
@@ -79,7 +76,6 @@ async def browse_with_filter(limit: int, offset: int, filters: Sequence[Filter],
                 fr' LIMIT %(limit)s OFFSET %(offset)s',
             **cond_params,
             limit=limit, offset=offset,
-            fetch='all',
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         data = [do.Class(id=id_, name=name, course_id=course_id, is_deleted=is_deleted)
@@ -97,7 +93,7 @@ async def browse_with_filter(limit: int, offset: int, filters: Sequence[Filter],
 
 async def browse_from_member_role(member_id: int, role: RoleType, include_deleted=False) \
         -> Sequence[do.Class]:
-    async with SafeExecutor(
+    async with FetchAll(
             event='browse classes from account role',
             sql=fr'SELECT class.id, class.name, class.course_id, class.is_deleted'
                 fr'  FROM class'
@@ -109,7 +105,6 @@ async def browse_from_member_role(member_id: int, role: RoleType, include_delete
                 fr' ORDER BY class.course_id ASC, class.id ASC',
             role=role,
             member_id=member_id,
-            fetch='all',
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return [do.Class(id=id_, name=name, course_id=course_id, is_deleted=is_deleted)
@@ -117,20 +112,19 @@ async def browse_from_member_role(member_id: int, role: RoleType, include_delete
 
 
 async def read(class_id: int, *, include_deleted=False) -> do.Class:
-    async with SafeExecutor(
+    async with FetchOne(
             event='read class by id',
             sql=fr'SELECT id, name, course_id, is_deleted'
                 fr'  FROM class'
                 fr' WHERE id = %(class_id)s'
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}',
             class_id=class_id,
-            fetch=1,
     ) as (id_, name, course_id, is_deleted):
         return do.Class(id=id_, name=name, course_id=course_id, is_deleted=is_deleted)
 
 
 async def edit(class_id: int, name: str = None, course_id: int = None):
-    to_updates = {}
+    to_updates: ParamDict = {}
 
     if name is not None:
         to_updates['name'] = name
@@ -142,7 +136,7 @@ async def edit(class_id: int, name: str = None, course_id: int = None):
 
     set_sql = ', '.join(fr"{field_name} = %({field_name})s" for field_name in to_updates)
 
-    async with SafeExecutor(
+    async with OnlyExecute(
             event='edit class by id',
             sql=fr'UPDATE class'
                 fr'   SET {set_sql}'
@@ -154,7 +148,7 @@ async def edit(class_id: int, name: str = None, course_id: int = None):
 
 
 async def delete(class_id: int) -> None:
-    async with SafeExecutor(
+    async with OnlyExecute(
             event='soft delete class',
             sql=fr'UPDATE class'
                 fr'   SET is_deleted = %(is_deleted)s'
@@ -166,15 +160,15 @@ async def delete(class_id: int) -> None:
 
 
 async def delete_cascade(class_id: int) -> None:
-    async with SafeConnection(event=f'cascade delete from class {class_id=}') as conn:
-        async with conn.transaction():
-            await team.delete_cascade_from_class(class_id=class_id, cascading_conn=conn)
-            await challenge.delete_cascade_from_class(class_id=class_id, cascading_conn=conn)
+    async with SafeConnection(event=f'cascade delete from class {class_id=}',
+                              auto_transaction=True) as conn:
+        await team.delete_cascade_from_class(class_id=class_id, cascading_conn=conn)
+        await challenge.delete_cascade_from_class(class_id=class_id, cascading_conn=conn)
 
-            await conn.execute(fr'UPDATE class'
-                               fr'   SET is_deleted = $1'
-                               fr' WHERE id = $2',
-                               True, class_id)
+        await conn.execute(fr'UPDATE class'
+                           fr'   SET is_deleted = $1'
+                           fr' WHERE id = $2',
+                           True, class_id)
 
 
 async def delete_cascade_from_course(course_id: int, cascading_conn=None) -> None:
@@ -182,9 +176,9 @@ async def delete_cascade_from_course(course_id: int, cascading_conn=None) -> Non
         await _delete_cascade_from_course(course_id, conn=cascading_conn)
         return
 
-    async with SafeConnection(event=f'cascade delete class from course {course_id=}') as conn:
-        async with conn.transaction():
-            await _delete_cascade_from_course(course_id, conn=conn)
+    async with SafeConnection(event=f'cascade delete class from course {course_id=}',
+                              auto_transaction=True) as conn:
+        await _delete_cascade_from_course(course_id, conn=conn)
 
 
 async def _delete_cascade_from_course(course_id: int, conn) -> None:
@@ -198,7 +192,7 @@ async def _delete_cascade_from_course(course_id: int, conn) -> None:
 
 
 async def add_member(class_id: int, member_id: int, role: RoleType):
-    async with SafeExecutor(
+    async with OnlyExecute(
             event='add member to class',
             sql=r'INSERT INTO class_member'
                 r'            (class_id, member_id, role)'
@@ -211,7 +205,8 @@ async def add_member(class_id: int, member_id: int, role: RoleType):
 
 
 async def add_members(class_id: int, member_roles: Collection[Tuple[int, RoleType]]):
-    async with SafeConnection(event='add members to class') as conn:
+    async with SafeConnection(event='add members to class',
+                              auto_transaction=True) as conn:
         await conn.executemany(
             command=r'INSERT INTO class_member'
                     r'            (class_id, member_id, role)'
@@ -223,7 +218,7 @@ async def add_members(class_id: int, member_roles: Collection[Tuple[int, RoleTyp
 
 async def browse_role_by_account_id(account_id: int) \
         -> Sequence[Tuple[do.ClassMember, do.Class, do.Course]]:
-    async with SafeExecutor(
+    async with FetchAll(
             event='browse class role by account_id',
             sql=fr'SELECT class_member.class_id, class_member.member_id, class_member.role,'
                 fr'       class.id, class.name, class.course_id, class.is_deleted,'
@@ -237,19 +232,18 @@ async def browse_role_by_account_id(account_id: int) \
                 fr'        AND course.is_deleted = %(course_is_deleted)s'
                 fr' WHERE class_member.member_id = %(account_id)s',
             account_id=account_id, class_is_deleted=False, course_is_deleted=False,
-            fetch='all',
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return [(do.ClassMember(class_id=class_id, member_id=member_id, role=RoleType(role)),
                  do.Class(id=class_id, name=class_name, course_id=course_id, is_deleted=is_deleted),
-                 do.Course(id=course_id, name=course_name, type=type, is_deleted=is_deleted))
+                 do.Course(id=course_id, name=course_name, type=type_, is_deleted=is_deleted))
                 for (class_id, member_id, role,
                      class_id, class_name, course_id, is_deleted,
-                     course_id, course_name, type, is_deleted) in records]
+                     course_id, course_name, type_, is_deleted) in records]
 
 
 async def browse_members(class_id: int) -> Sequence[do.ClassMember]:
-    async with SafeExecutor(
+    async with FetchAll(
             event='browse class members',
             sql=r'SELECT account.id, class_member.class_id, class_member.role'
                 r'  FROM class_member, account'
@@ -257,7 +251,6 @@ async def browse_members(class_id: int) -> Sequence[do.ClassMember]:
                 r'   AND class_member.class_id = %(class_id)s'
                 r' ORDER BY class_member.role DESC, account.id ASC',
             class_id=class_id,
-            fetch='all',
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return [do.ClassMember(member_id=id_, class_id=class_id, role=RoleType(role_str))
@@ -265,20 +258,19 @@ async def browse_members(class_id: int) -> Sequence[do.ClassMember]:
 
 
 async def read_member(class_id: int, member_id: int) -> do.ClassMember:
-    async with SafeExecutor(
+    async with FetchOne(
             event='read class member role',
             sql=r'SELECT member_id, class_id, role'
                 r'  FROM class_member'
                 r' WHERE class_id = %(class_id)s and member_id = %(member_id)s',
             class_id=class_id,
             member_id=member_id,
-            fetch=1,
     ) as (member_id, class_id, role):
         return do.ClassMember(member_id=member_id, class_id=class_id, role=RoleType(role))
 
 
 async def delete_member(class_id: int, member_id: int):
-    async with SafeExecutor(
+    async with OnlyExecute(
             event='HARD DELETE class member',
             sql=r'DELETE FROM class_member'
                 r'      WHERE class_id = %(class_id)s AND member_id = %(member_id)s',
@@ -289,11 +281,11 @@ async def delete_member(class_id: int, member_id: int):
 
 
 async def browse_member_emails(class_id: int, role: RoleType = None) -> Sequence[str]:
-    conditions = {}
+    conditions: ParamDict = {}
     if role is not None:
         conditions['role'] = role
 
-    async with SafeExecutor(
+    async with FetchAll(
             event='browse class member emails',
             sql=fr'SELECT student_card.email'
                 fr'  FROM class_member, student_card'
@@ -303,7 +295,6 @@ async def browse_member_emails(class_id: int, role: RoleType = None) -> Sequence
                 fr' {"AND class_member.role = %(role)s" if role is not None else ""}',
             class_id=class_id,
             **conditions,
-            fetch='all',
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return [institute_email for institute_email, in records]
@@ -316,45 +307,45 @@ async def replace_members(class_id: int, member_roles: Sequence[Tuple[str, RoleT
     if not member_roles:
         return []
 
-    async with SafeConnection(event=f'replace members from class {class_id=}') as conn:
-        async with conn.transaction():
-            # 1. get the referrals
-            value_sql, value_params = compile_values([
-                (account_referral,)
-                for account_referral, _ in member_roles
-            ])
-            log.info(f'Fetching account ids with values {value_params}')
-            account_ids: list[list[int]] = await conn.fetch(
-                fr'  WITH account_referrals (account_referral)'
-                fr'    AS (VALUES {value_sql})'
-                fr'SELECT account_referral_to_id(account_referral)'
-                fr'  FROM account_referrals',
-                *value_params,
-            )
-            log.info(f'Fetched account ids: {account_ids}')
+    async with SafeConnection(event=f'replace members from class {class_id=}',
+                              auto_transaction=True) as conn:
+        # 1. get the referrals
+        value_sql, value_params = compile_values([
+            (account_referral,)
+            for account_referral, _ in member_roles
+        ])
+        log.info(f'Fetching account ids with values {value_params}')
+        account_ids: list[list[int]] = await conn.fetch(
+            fr'  WITH account_referrals (account_referral)'
+            fr'    AS (VALUES {value_sql})'
+            fr'SELECT account_referral_to_id(account_referral)'
+            fr'  FROM account_referrals',
+            *value_params,
+        )
+        log.info(f'Fetched account ids: {account_ids}')
 
-            # 2. remove the old members
-            await conn.execute(fr'DELETE FROM class_member'
-                               fr'      WHERE class_id = $1',
-                               class_id)
-            log.info('Removed old class members')
+        # 2. remove the old members
+        await conn.execute(fr'DELETE FROM class_member'
+                           fr'      WHERE class_id = $1',
+                           class_id)
+        log.info('Removed old class members')
 
-            # 3. perform insert
-            value_sql, value_params = compile_values(sorted((
-                (class_id, account_id, role)
-                for (account_id,), (_, role) in zip(account_ids, member_roles)
-                if account_id is not None
-            ), key=itemgetter(2), reverse=True))
-            log.info(f'Inserting new class members with values {value_params}')
-            inserted_account_ids: list[list[int]] = await conn.fetch(
-                fr' INSERT INTO class_member'
-                fr'             (class_id, member_id, role)'
-                fr'      VALUES {value_sql}'
-                fr' ON CONFLICT DO NOTHING'
-                fr'   RETURNING member_id',
-                *value_params,
-            )
-            log.info(f'Inserted {len(inserted_account_ids)} out of {len(account_ids)} given new class members')
+        # 3. perform insert
+        value_sql, value_params = compile_values(sorted((
+            (class_id, account_id, role)
+            for (account_id,), (_, role) in zip(account_ids, member_roles)
+            if account_id is not None
+        ), key=itemgetter(2), reverse=True))
+        log.info(f'Inserting new class members with values {value_params}')
+        inserted_account_ids: list[list[int]] = await conn.fetch(
+            fr' INSERT INTO class_member'
+            fr'             (class_id, member_id, role)'
+            fr'      VALUES {value_sql}'
+            fr' ON CONFLICT DO NOTHING'
+            fr'   RETURNING member_id',
+            *value_params,
+        )
+        log.info(f'Inserted {len(inserted_account_ids)} out of {len(account_ids)} given new class members')
 
     # 4. check the failed account ids
     success_account_ids = set(chain(*inserted_account_ids))
@@ -362,14 +353,13 @@ async def replace_members(class_id: int, member_roles: Sequence[Tuple[str, RoleT
 
 
 async def browse_member_referrals(class_id: int, role: RoleType) -> Sequence[str]:
-    async with SafeExecutor(
+    async with FetchAll(
             event='get member account referral by role',
             sql=fr'SELECT account_id_to_referral(member_id)'
                 fr'  FROM class_member'
                 fr' WHERE class_id = %(class_id)s'
                 fr'   AND role = %(role)s',
             class_id=class_id, role=role,
-            fetch='all',
             raise_not_found=False,
     ) as records:
         return [referral for referral, in records]

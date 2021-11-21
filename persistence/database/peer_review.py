@@ -2,13 +2,13 @@ from typing import Sequence
 
 from base import do
 
-from .base import SafeExecutor, SafeConnection
+from .base import SafeConnection, FetchOne, FetchAll, OnlyExecute, ParamDict
 
 
 async def add(challenge_id: int, challenge_label: str, title: str, target_problem_id: int,
               setter_id: int, description: str,
               min_score: int, max_score: int, max_review_count: int) -> int:
-    async with SafeExecutor(
+    async with FetchOne(
             event='Add peer review',
             sql="INSERT INTO peer_review"
                 "            (challenge_id, challenge_label, title, target_problem_id, setter_id, description,"
@@ -19,7 +19,6 @@ async def add(challenge_id: int, challenge_label: str, title: str, target_proble
             challenge_id=challenge_id, challenge_label=challenge_label, title=title,
             target_problem_id=target_problem_id, setter_id=setter_id, description=description,
             min_score=min_score, max_score=max_score, max_review_count=max_review_count,
-            fetch=1,
     ) as (id_,):
         return id_
 
@@ -31,14 +30,13 @@ async def browse(include_deleted=False) -> Sequence[do.PeerReview]:
 
     cond_sql = ' AND '.join(filters)
 
-    async with SafeExecutor(
+    async with FetchAll(
             event='browse peer reviews',
             sql=fr'SELECT id, challenge_id, challenge_label, title, target_problem_id, setter_id, description,'
                 fr'       min_score, max_score, max_review_count, is_deleted'
                 fr'  FROM peer_review'
                 fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
                 fr' ORDER BY id ASC',
-            fetch='all',
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return [do.PeerReview(id=id_, challenge_id=challenge_id, challenge_label=challenge_label, title=title,
@@ -52,7 +50,7 @@ async def browse(include_deleted=False) -> Sequence[do.PeerReview]:
 
 async def browse_by_challenge(challenge_id: int, include_deleted=False) \
         -> Sequence[do.PeerReview]:
-    async with SafeExecutor(
+    async with FetchAll(
             event='browse peer reviews with challenge id',
             sql=fr'SELECT id, challenge_id, challenge_label, title, target_problem_id, setter_id, description,'
                 fr'       min_score, max_score, max_review_count, is_deleted'
@@ -61,7 +59,6 @@ async def browse_by_challenge(challenge_id: int, include_deleted=False) \
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}'
                 fr' ORDER BY id ASC',
             challenge_id=challenge_id,
-            fetch='all',
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return [do.PeerReview(id=id_, challenge_id=challenge_id, challenge_label=challenge_label, title=title,
@@ -74,7 +71,7 @@ async def browse_by_challenge(challenge_id: int, include_deleted=False) \
 
 
 async def read(peer_review_id: int, include_deleted=False) -> do.PeerReview:
-    async with SafeExecutor(
+    async with FetchOne(
             event='read peer review',
             sql=fr'SELECT id, challenge_id, challenge_label, title, target_problem_id, setter_id, description,'
                 fr'       min_score, max_score, max_review_count, is_deleted'
@@ -82,7 +79,6 @@ async def read(peer_review_id: int, include_deleted=False) -> do.PeerReview:
                 fr' WHERE id = %(peer_review_id)s'
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}',
             peer_review_id=peer_review_id,
-            fetch=1,
     ) as (id_, challenge_id, challenge_label, title, target_problem_id, setter_id, description,
           min_score, max_score, max_review_count, is_deleted):
         return do.PeerReview(id=id_, challenge_id=challenge_id, challenge_label=challenge_label, title=title,
@@ -95,7 +91,7 @@ async def edit(peer_review_id: int, challenge_label: str = None, title: str = No
                min_score: int = None, max_score: int = None,
                max_review_count: int = None,
                is_deleted: bool = None) -> None:
-    to_updates = {}
+    to_updates: ParamDict = {}
 
     if challenge_label is not None:
         to_updates['challenge_label'] = challenge_label
@@ -117,7 +113,7 @@ async def edit(peer_review_id: int, challenge_label: str = None, title: str = No
 
     set_sql = ', '.join(fr"{field_name} = %({field_name})s" for field_name in to_updates)
 
-    async with SafeExecutor(
+    async with OnlyExecute(
             event='edit peer review',
             sql=fr'UPDATE peer_review'
                 fr'   SET {set_sql}'
@@ -129,7 +125,7 @@ async def edit(peer_review_id: int, challenge_label: str = None, title: str = No
 
 
 async def delete(peer_review_id: int) -> None:
-    async with SafeExecutor(
+    async with OnlyExecute(
             event='soft delete peer_review',
             sql=fr'UPDATE peer_review'
                 fr'   SET is_deleted = %(is_deleted)s'
@@ -145,9 +141,9 @@ async def delete_cascade_from_challenge(challenge_id: int, cascading_conn=None) 
         await _delete_cascade_from_challenge(challenge_id, conn=cascading_conn)
         return
 
-    async with SafeConnection(event=f'cascade delete peer_review from challenge {challenge_id=}') as conn:
-        async with conn.transaction():
-            await _delete_cascade_from_challenge(challenge_id, conn=conn)
+    async with SafeConnection(event=f'cascade delete peer_review from challenge {challenge_id=}',
+                              auto_transaction=True) as conn:
+        await _delete_cascade_from_challenge(challenge_id, conn=conn)
 
 
 async def _delete_cascade_from_challenge(challenge_id: int, conn) -> None:

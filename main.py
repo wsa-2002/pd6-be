@@ -22,8 +22,9 @@ from version import version
 app = FastAPI(
     title=app_config.title,
     version=version,
-    docs_url=app_config.docs_url,
-    redoc_url=app_config.redoc_url,
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
     description=f"""
 <h2>Documentation</h2>
 {api_doc.all_docs()}
@@ -85,6 +86,9 @@ async def app_shutdown():
     from persistence.s3 import s3_handler
     await s3_handler.close()
 
+    from persistence.amqp_publisher import amqp_publish_handler
+    await amqp_publish_handler.close()
+
 
 # Add middlewares
 # Order matters! First added middlewares are executed last.
@@ -117,8 +121,9 @@ middleware.envelope.hook_exception_envelope_handler(app)
 
 
 # Register routers
-from processor import register_routers
-register_routers(app)
+import processor.http
+
+processor.http.register_routers(app)
 
 
 # Instrument for prometheus

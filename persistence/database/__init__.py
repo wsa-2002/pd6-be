@@ -59,9 +59,12 @@ from . import (
     challenge,
 
     problem,
+    problem_judge_setting_customized,
+
     testcase,
     submission,
     judgment,
+    judge_case,
     essay,
     essay_submission,
     s3_file,
@@ -70,6 +73,9 @@ from . import (
 
     peer_review,
     peer_review_record,
+
+    scoreboard,
+    scoreboard_setting_team_project,
 
     announcement,
     access_log,

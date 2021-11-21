@@ -1,35 +1,16 @@
+"""
+`service` is for reusable code that usually has dependencies to persistence layer.
+"""
+
+
 from . import (
-    public,
-
-    institute,
-    account,
-    student_card,
-    email_verification,
-
-    course,
-    class_,
-    team,
-    grade,
-
-    challenge,
-
-    problem,
-    testcase,
+    csv,
+    downloader,
+    judge,
+    moss,
+    rbac,
+    scoreboard,
+    statistics,
     submission,
-    judgment,
-
-    essay,
-    essay_submission,
-
-    assisting_data,
-
-    peer_review,
-    peer_review_record,
-
-    announcement,
-    access_log,
-
-    s3_file,
-
-    view,
+    task,
 )

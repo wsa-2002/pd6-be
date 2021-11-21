@@ -6,7 +6,13 @@ A `python=3.9`-`asyncio`-based web backend, using web framework `fastapi`.
 
 ## Setup test server
 
-### 0. `python`
+### 0. `git`
+Add `--recursive` in your command in order to clone both `pd6-be` and its submodule `judge_core_common`. 
+```shell
+git clone --recursive https://nas.pdogs.ntu.im:30443/pdogs/pdogs-6/pd6-be.git
+```
+### 1. `python`
+
 > Suggest using PyCharm for development tool; you may also connect your `conda` environment with PyCharm!
 
 Using `conda` as example:
@@ -15,7 +21,7 @@ conda create --name pdogs6-async python=3.9
 conda activate pdogs6-async
 ```
 
-### 1. Environment
+### 2. Environment
 ```shell
 pip install -r requirements.txt
 cp .env.example .env
@@ -28,7 +34,7 @@ Then
 3. Check the `propagate`s in `logging.yaml`, and replace with `True` if you want to show that genre of log on your console.
 4. Manually create your log folder (default `/log` under your cloned `PD6-BE` project folder).
 
-### 2. Start the server
+### 3. Start the server
 
 ```shell
 pip install uvicorn
@@ -82,3 +88,43 @@ For Browse in this project, it is batch reading with pagination.
 Because -- the creator of this project likes BREAD.
 
 If you feel uncomfortable about this, you should go back to the main principles and read [Color of Bikeshed](https://bikeshed.com/).
+
+### Type Checking
+
+Please make sure you use type hints. This is to enhance the readability and safety of our codebase.
+
+You may also use `mypy` to help perform a global type check:
+```shell
+pip install mypy
+mypy .
+```
+
+However, currently there are some non-standard type hint usage, so there are a lot of errors. 🥲
+
+### IDE (PyCharm) Settings
+
+The recommended (actually *forced*) IDE for this project is PyCharm. This is to ensure the code style for everyone;
+please try not use VSCode or other IDEs to code in this project.
+
+PyCharm Professional is free for educational users. You may register a pro account for yourself with your `@ntu.edu.tw`
+email. Since the Professional version provides additional useful functionalities such as in-line SQL check, please
+apply your pro account and use the Professional version.
+
+Here are some recommended settings to apply to your PyCharm Professional, so your IDE will not raise too many 
+false alarms:
+
+#### `.dic`
+
+Config location: Editor > Natural Languages > Spelling
+
+You can add `.dic` file to the "Custom dictionaries" list, so PyCharm will not raise unwanted typos. You may also update
+the `.dic` list as you want.
+
+#### Inspections
+
+Here are some inspection (Editor > Inspections) configurations that are recommended. You can avoid having to manually 
+scan through the long list by entering the inspection item to the search bar.
+
+| Type |       Inspection Item        | Severity |
+|:----:| ---------------------------- |:--------:|
+| SQL  | Redundant ordering direction |   Typo   |

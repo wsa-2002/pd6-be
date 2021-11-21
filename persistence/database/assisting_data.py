@@ -1,13 +1,13 @@
-from typing import Sequence, Tuple
+from typing import Sequence
 from uuid import UUID
 
 from base import do
 
-from .base import SafeExecutor
+from .base import FetchAll, FetchOne, OnlyExecute
 
 
 async def browse(problem_id: int, include_deleted=False) -> Sequence[do.AssistingData]:
-    async with SafeExecutor(
+    async with FetchAll(
             event='browse assisting data',
             sql=fr'SELECT id, problem_id, s3_file_uuid, filename, is_deleted'
                 fr'  FROM assisting_data'
@@ -15,7 +15,6 @@ async def browse(problem_id: int, include_deleted=False) -> Sequence[do.Assistin
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}'
                 fr' ORDER by id ASC',
             problem_id=problem_id,
-            fetch='all',
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return [do.AssistingData(id=id_, problem_id=problem_id, s3_file_uuid=s3_file_uuid,
@@ -24,34 +23,32 @@ async def browse(problem_id: int, include_deleted=False) -> Sequence[do.Assistin
 
 
 async def read(assisting_data_id: int, include_deleted=False) -> do.AssistingData:
-    async with SafeExecutor(
+    async with FetchOne(
             event='read assisting data',
             sql=fr'SELECT id, problem_id, s3_file_uuid, filename, is_deleted'
                 fr'  FROM assisting_data'
                 fr' WHERE id = %(assisting_data_id)s'
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}',
             assisting_data_id=assisting_data_id,
-            fetch=1,
     ) as (id_, problem_id, s3_file_uuid, filename, is_deleted):
         return do.AssistingData(id=id_, problem_id=problem_id, s3_file_uuid=s3_file_uuid,
                                 filename=filename, is_deleted=is_deleted)
 
 
 async def add(problem_id: int, s3_file_uuid: UUID, filename: str) -> int:
-    async with SafeExecutor(
+    async with FetchOne(
             event='add assisting data',
             sql=fr'INSERT INTO assisting_data'
                 fr'            (problem_id, s3_file_uuid, filename, is_deleted)'
                 fr'     VALUES (%(problem_id)s, %(s3_file_uuid)s, %(filename)s, %(is_deleted)s)'
                 fr'  RETURNING id',
             problem_id=problem_id, s3_file_uuid=s3_file_uuid, filename=filename, is_deleted=False,
-            fetch=1,
     ) as (id_,):
         return id_
 
 
 async def edit(assisting_data_id: int, s3_file_uuid: UUID, filename: str):
-    async with SafeExecutor(
+    async with OnlyExecute(
             event='update assisting data',
             sql=fr'UPDATE assisting_data'
                 fr'   SET s3_file_uuid = %(s3_file_uuid)s, filename = %(filename)s'
@@ -63,7 +60,7 @@ async def edit(assisting_data_id: int, s3_file_uuid: UUID, filename: str):
 
 
 async def delete(assisting_data_id: int) -> None:
-    async with SafeExecutor(
+    async with OnlyExecute(
             event='soft delete assisting data',
             sql=fr'UPDATE assisting_data'
                 fr'   SET is_deleted = %(is_deleted)s'

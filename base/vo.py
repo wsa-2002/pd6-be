@@ -75,6 +75,7 @@ class ViewMySubmission:
 @dataclass
 class ViewMySubmissionUnderProblem:
     submission_id: int
+    judgment_id: Optional[int]
     verdict: Optional[enum.VerdictType]
     score: Optional[int]
     total_time: Optional[int]

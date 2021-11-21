@@ -1,12 +1,11 @@
 import json
-from typing import Sequence, Iterable, Any
+from typing import Sequence, Iterable
 
 from base.enum import FilterOperator
 from base.popo import Filter
 import log
 
-from .base import SafeExecutor
-
+from .base import FetchOne
 
 ESTIMATE_COST_THRESHOLD = 5000000  # 65659969?
 
@@ -31,11 +30,10 @@ async def get_query_estimation(sql: str, **kwargs) -> tuple[int, int, int]:
     """
     Note: might raise IndexError or KeyError
     """
-    async with SafeExecutor(
+    async with FetchOne(
             event='get query estimation',
             sql=f"EXPLAIN (format json) {sql}",
             **kwargs,
-            fetch=1,
     ) as (query_plan,):
         query_plan = json.loads(query_plan)
         # Note: might raise IndexError or KeyError in this part
@@ -46,12 +44,11 @@ async def get_query_estimation(sql: str, **kwargs) -> tuple[int, int, int]:
 
 
 async def get_query_actual_count(sql: str, **kwargs) -> int:
-    async with SafeExecutor(
+    async with FetchOne(
             event='get query count',
             sql=f"SELECT COUNT(*)"
                 f"  FROM ({sql}) AS __COUNT_TABLE__",
             **kwargs,
-            fetch=1,
     ) as (count,):
         return count
 
@@ -85,7 +82,7 @@ def _compile_filter(filter_: Filter, suffix='') -> tuple[str, dict]:  # sql, par
     sql = fr"{filter_.col_name} {filter_.op} %({param_name})s"
 
     if filter_.op in (FilterOperator.like, FilterOperator.not_like):
-        return sql, {param_name: f'%{filter_.value}%'}
+        return sql, {param_name: f'%{escape_pg_like_str(filter_.value)}%'}
 
     return sql, {param_name: filter_.value}
 
@@ -112,3 +109,7 @@ def compile_values(values: Iterable[Iterable]) -> tuple[str, list]:  # sql, para
 
     sql = ', '.join(value_sql)
     return sql, params
+
+
+def escape_pg_like_str(like_str: str) -> str:
+    return like_str.replace('\\', '\\\\')

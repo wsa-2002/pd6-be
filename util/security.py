@@ -5,6 +5,7 @@ Handles encryption stuff
 
 from datetime import datetime, timedelta
 from functools import partial
+from typing import NamedTuple
 
 import jwt
 from passlib.hash import argon2
@@ -19,14 +20,20 @@ _jwt_encoder = partial(jwt.encode, key=config.jwt_secret, algorithm=config.jwt_e
 _jwt_decoder = partial(jwt.decode, key=config.jwt_secret, algorithms=[config.jwt_encode_algorithm])
 
 
-def encode_jwt(account_id: int, expire: timedelta) -> str:
+def encode_jwt(account_id: int, expire: timedelta, cached_username: str) -> str:
     return _jwt_encoder({
-        'account-id': account_id,
+        'account_id': account_id,
         'expire': (datetime.now() + expire).isoformat(),
+        'cached_username': cached_username,
     })
 
 
-def decode_jwt(encoded: str, time: datetime) -> int:
+class AuthedAccount(NamedTuple):  # Immutable
+    id: int
+    cached_username: str
+
+
+def decode_jwt(encoded: str, time: datetime) -> AuthedAccount:
     try:
         decoded = _jwt_decoder(encoded)
     except jwt.DecodeError:
@@ -35,7 +42,17 @@ def decode_jwt(encoded: str, time: datetime) -> int:
     expire = datetime.fromisoformat(decoded['expire'])
     if time >= expire:
         raise exc.LoginExpired
-    return decoded['account-id']
+
+    # legacy support
+    account_id = decoded.get('account_id', None)
+    if not account_id:
+        account_id = decoded.get('account-id', None)
+    cached_username = decoded.get('cached_username', None)
+
+    return AuthedAccount(
+        id=account_id,
+        cached_username=cached_username,
+    )
 
 
 def hash_password(password: str) -> str:

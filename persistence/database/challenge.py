@@ -5,14 +5,14 @@ from base import do, enum
 from base.popo import Filter, Sorter
 
 from . import peer_review, problem
-from .base import SafeExecutor, SafeConnection
+from .base import SafeConnection, OnlyExecute, FetchOne, FetchAll, ParamDict
 from .util import execute_count, compile_filters
 
 
 async def add(class_id: int, publicize_type: enum.ChallengePublicizeType, selection_type: enum.TaskSelectionType,
               title: str, setter_id: int, description: Optional[str],
               start_time: datetime, end_time: datetime) -> int:
-    async with SafeExecutor(
+    async with FetchOne(
             event='Add challenge',
             sql="INSERT INTO challenge"
                 "            (class_id, publicize_type, selection_type,"
@@ -22,7 +22,6 @@ async def add(class_id: int, publicize_type: enum.ChallengePublicizeType, select
                 "  RETURNING id",
             class_id=class_id, publicize_type=publicize_type, selection_type=selection_type,
             title=title, setter_id=setter_id, description=description, start_time=start_time, end_time=end_time,
-            fetch=1,
     ) as (id_,):
         return id_
 
@@ -47,7 +46,7 @@ async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Se
         sort_sql += ','
 
     # FIXME: This looks really ugly, only for temp 'All Class'
-    async with SafeExecutor(
+    async with FetchAll(
             event='browse challenges',
             sql=fr'SELECT id, class_id, publicize_type, selection_type, title, setter_id, description,'
                 fr'       start_time, end_time, is_deleted'
@@ -62,7 +61,6 @@ async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Se
             **cond_params,
             end_time=enum.ChallengePublicizeType.end_time, start_time=enum.ChallengePublicizeType.start_time,
             limit=limit, offset=offset, ref_time=ref_time,
-            fetch='all',
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         data = [do.Challenge(id=id_, class_id=class_id, publicize_type=enum.ChallengePublicizeType(publicize_type),
@@ -91,7 +89,7 @@ async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Se
 
 async def read(challenge_id: int, include_scheduled: bool = False, ref_time: datetime = None,
                include_deleted: bool = False) -> do.Challenge:
-    async with SafeExecutor(
+    async with FetchOne(
             event='read challenge by id',
             sql=fr'SELECT id, class_id, publicize_type, selection_type, title, setter_id, description,'
                 fr'       start_time, end_time, is_deleted'
@@ -101,7 +99,6 @@ async def read(challenge_id: int, include_scheduled: bool = False, ref_time: dat
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}',
             challenge_id=challenge_id,
             ref_time=ref_time,
-            fetch=1,
     ) as (id_, class_id, publicize_type, selection_type, title, setter_id, description,
           start_time, end_time, is_deleted):
         return do.Challenge(id=id_, class_id=class_id, publicize_type=enum.ChallengePublicizeType(publicize_type),
@@ -117,7 +114,7 @@ async def edit(challenge_id: int,
                description: Optional[str] = ...,
                start_time: datetime = None,
                end_time: datetime = None, ) -> None:
-    to_updates = {}
+    to_updates: ParamDict = {}
 
     if publicize_type is not None:
         to_updates['publicize_type'] = publicize_type
@@ -137,7 +134,7 @@ async def edit(challenge_id: int,
 
     set_sql = ', '.join(fr"{field_name} = %({field_name})s" for field_name in to_updates)
 
-    async with SafeExecutor(
+    async with OnlyExecute(
             event='edit challenge',
             sql=fr'UPDATE challenge'
                 fr'   SET {set_sql}'
@@ -149,7 +146,7 @@ async def edit(challenge_id: int,
 
 
 async def delete(challenge_id: int) -> None:
-    async with SafeExecutor(
+    async with OnlyExecute(
             event='soft delete challenge',
             sql=fr'UPDATE challenge'
                 fr'   SET is_deleted = %(is_deleted)s'
@@ -161,15 +158,15 @@ async def delete(challenge_id: int) -> None:
 
 
 async def delete_cascade(challenge_id: int) -> None:
-    async with SafeConnection(event=f'cascade delete from challenge {challenge_id=}') as conn:
-        async with conn.transaction():
-            await peer_review.delete_cascade_from_challenge(challenge_id=challenge_id, cascading_conn=conn)
-            await problem.delete_cascade_from_challenge(challenge_id=challenge_id, cascading_conn=conn)
+    async with SafeConnection(event=f'cascade delete from challenge {challenge_id=}',
+                              auto_transaction=True) as conn:
+        await peer_review.delete_cascade_from_challenge(challenge_id=challenge_id, cascading_conn=conn)
+        await problem.delete_cascade_from_challenge(challenge_id=challenge_id, cascading_conn=conn)
 
-            await conn.execute(fr'UPDATE challenge'
-                               fr'   SET is_deleted = $1'
-                               fr' WHERE id = $2',
-                               True, challenge_id)
+        await conn.execute(fr'UPDATE challenge'
+                           fr'   SET is_deleted = $1'
+                           fr' WHERE id = $2',
+                           True, challenge_id)
 
 
 async def delete_cascade_from_class(class_id: int, cascading_conn=None) -> None:
@@ -177,9 +174,9 @@ async def delete_cascade_from_class(class_id: int, cascading_conn=None) -> None:
         await _delete_cascade_from_class(class_id, conn=cascading_conn)
         return
 
-    async with SafeConnection(event=f'cascade delete challenge from class {class_id=}') as conn:
-        async with conn.transaction():
-            await _delete_cascade_from_class(class_id, conn=conn)
+    async with SafeConnection(event=f'cascade delete challenge from class {class_id=}',
+                              auto_transaction=True) as conn:
+        await _delete_cascade_from_class(class_id, conn=conn)
 
 
 async def _delete_cascade_from_class(class_id: int, conn) -> None:

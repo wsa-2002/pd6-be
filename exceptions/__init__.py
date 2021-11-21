@@ -48,6 +48,27 @@ class FileDecodeError(PdogsException):
     """
 
 
+class MaxPeerReviewCount(PdogsException):
+    """
+    User had reached the maximum of peer review count
+    """
+
+
+# Team Project Scoreboard
+
+
+class InvalidFormula(PdogsException):
+    """
+    A malformed scoring formula is given
+    """
+
+
+class InvalidTeamLabelFilter(PdogsException):
+    """
+    A malformed team label filter is given
+    """
+
+
 # For import usage
 from . import (
     account,

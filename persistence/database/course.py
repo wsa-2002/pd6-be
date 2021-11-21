@@ -4,11 +4,11 @@ from base import do
 from base.enum import CourseType
 
 from . import class_
-from .base import SafeExecutor, SafeConnection
+from .base import SafeConnection, FetchOne, FetchAll, OnlyExecute, ParamDict
 
 
 async def add(name: str, course_type: CourseType) -> int:
-    async with SafeExecutor(
+    async with FetchOne(
             event='create course',
             sql=r'INSERT INTO course'
                 r'            (name, type)'
@@ -16,7 +16,6 @@ async def add(name: str, course_type: CourseType) -> int:
                 r'  RETURNING id',
             name=name,
             course_type=course_type,
-            fetch=1,
     ) as (course_id,):
         return course_id
 
@@ -28,13 +27,12 @@ async def browse(*, include_deleted=False) -> Sequence[do.Course]:
 
     cond_sql = ' AND '.join(conditions)
 
-    async with SafeExecutor(
+    async with FetchAll(
             event='get all courses',
             sql=fr'SELECT id, name, type, is_deleted'
                 fr'  FROM course'
                 fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
                 fr' ORDER BY id ASC',
-            fetch='all',
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
         return [do.Course(id=id_, name=name, type=CourseType(c_type), is_deleted=is_deleted)
@@ -42,20 +40,19 @@ async def browse(*, include_deleted=False) -> Sequence[do.Course]:
 
 
 async def read(course_id: int, *, include_deleted=False) -> do.Course:
-    async with SafeExecutor(
+    async with FetchOne(
             event='get course by id',
             sql=fr'SELECT id, name, type, is_deleted'
                 fr'  FROM course'
                 fr' WHERE id = %(course_id)s'
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}',
             course_id=course_id,
-            fetch=1,
     ) as (id_, name, c_type, is_deleted):
         return do.Course(id=id_, name=name, type=CourseType(c_type), is_deleted=is_deleted)
 
 
 async def edit(course_id: int, name: str = None, course_type: CourseType = None):
-    to_updates = {}
+    to_updates: ParamDict = {}
 
     if name is not None:
         to_updates['name'] = name
@@ -67,7 +64,7 @@ async def edit(course_id: int, name: str = None, course_type: CourseType = None)
 
     set_sql = ', '.join(fr"{field_name} = %({field_name})s" for field_name in to_updates)
 
-    async with SafeExecutor(
+    async with OnlyExecute(
             event='update course by id',
             sql=fr'UPDATE course'
                 fr'   SET {set_sql}'
@@ -79,7 +76,7 @@ async def edit(course_id: int, name: str = None, course_type: CourseType = None)
 
 
 async def delete(course_id: int) -> None:
-    async with SafeExecutor(
+    async with OnlyExecute(
             event='soft delete course',
             sql=fr'UPDATE course'
                 fr'   SET is_deleted = %(is_deleted)s'
@@ -91,11 +88,11 @@ async def delete(course_id: int) -> None:
 
 
 async def delete_cascade(course_id: int) -> None:
-    async with SafeConnection(event=f'cascade delete from course {course_id=}') as conn:
-        async with conn.transaction():
-            await class_.delete_cascade_from_course(course_id=course_id, cascading_conn=conn)
+    async with SafeConnection(event=f'cascade delete from course {course_id=}',
+                              auto_transaction=True) as conn:
+        await class_.delete_cascade_from_course(course_id=course_id, cascading_conn=conn)
 
-            await conn.execute(fr'UPDATE course'
-                               fr'   SET is_deleted = $1'
-                               fr' WHERE id = $2',
-                               True, course_id)
+        await conn.execute(fr'UPDATE course'
+                           fr'   SET is_deleted = $1'
+                           fr' WHERE id = $2',
+                           True, course_id)
