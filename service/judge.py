@@ -114,25 +114,3 @@ async def _sign_file_url(uuid: UUID, filename: str):
         filename=filename,
         as_attachment=True,
     )
-
-
-async def save_report(report: judge_do.JudgeReport) -> int:
-    judgment_id = await db.judgment.add(
-        submission_id=report.judgment.submission_id,
-        verdict=report.judgment.verdict,
-        total_time=report.judgment.total_time,
-        max_memory=report.judgment.max_memory,
-        score=report.judgment.score,
-        error_message=None,  # FIXME
-        judge_time=datetime.now(),
-    )
-    for judge_case in report.judge_cases:
-        await db.judgment.add_case(
-            judgment_id=judgment_id,
-            testcase_id=judge_case.testcase_id,
-            verdict=judge_case.verdict,
-            score=judge_case.score,
-            time_lapse=judge_case.time_lapse,
-            peak_memory=judge_case.peak_memory,
-        )
-    return judgment_id
