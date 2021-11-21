@@ -7,10 +7,17 @@ FORMULA_AVAILABLE_PARAMS = ['class_max', 'class_min', 'baseline', 'team_score']
 
 # TODO: More Validation
 async def validate_formula(formula: str) -> bool:
+    if not formula:
+        return False
+
     for param in FORMULA_AVAILABLE_PARAMS:
         formula = formula.replace(param, '')
 
-    return formula is '' or not any(char.isalpha() for char in formula)
+    formula = formula.strip()
+    if not formula:
+        return True
+
+    return not any(char.isalpha() for char in formula)
 
 
 def get_team_project_calculator(formula: str, class_max: int, class_min: int, baseline: int = 0) \
