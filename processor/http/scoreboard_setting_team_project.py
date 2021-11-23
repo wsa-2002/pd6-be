@@ -3,7 +3,7 @@ from typing import Optional, Sequence
 
 from pydantic import BaseModel
 
-from base.enum import RoleType, ScoreboardType
+from base.enum import RoleType, ScoreboardType, VerdictType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth, Request
 import persistence.database as db
@@ -20,7 +20,7 @@ router = APIRouter(
 @dataclass
 class ViewTeamProjectScoreboardProblemScoreOutput:
     problem_id: int
-    score: int
+    score: float
     submission_id: int
 
 
@@ -28,7 +28,7 @@ class ViewTeamProjectScoreboardProblemScoreOutput:
 class ViewTeamProjectScoreboardOutput:
     team_id: int
     team_name: str
-    total_score: Optional[int]
+    total_score: Optional[float]
     target_problem_data: Sequence[ViewTeamProjectScoreboardProblemScoreOutput]
 
 
@@ -66,7 +66,7 @@ async def view_team_project_scoreboard(scoreboard_id: int, request: Request) \
         teams_score = {team.id: 0 for team in teams}
         for testcase in testcases:
             judgment_id_judge_case = await db.judge_case.batch_get_with_judgment(
-                testcase_id=testcase.id, judgment_ids=team_judgments.values())
+                testcase_id=testcase.id, judgment_ids=team_judgments.values(), verdict=VerdictType.accepted)
 
             calculator = service.scoreboard.get_team_project_calculator(
                 formula=setting_data.scoring_formula,
