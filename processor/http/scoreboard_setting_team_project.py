@@ -20,7 +20,7 @@ router = APIRouter(
 @dataclass
 class ViewTeamProjectScoreboardProblemScoreOutput:
     problem_id: int
-    score: int
+    score: float
     submission_id: int
 
 
@@ -28,7 +28,7 @@ class ViewTeamProjectScoreboardProblemScoreOutput:
 class ViewTeamProjectScoreboardOutput:
     team_id: int
     team_name: str
-    total_score: Optional[int]
+    total_score: Optional[float]
     target_problem_data: Sequence[ViewTeamProjectScoreboardProblemScoreOutput]
 
 
