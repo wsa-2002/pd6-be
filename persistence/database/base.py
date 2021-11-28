@@ -129,7 +129,7 @@ class _SafeExecutor:
         async with pool_handler.pool.acquire() as conn:
             try:
                 results = await self._exec(conn)
-            except self._exception_mapping as e:
+            except tuple(self._exception_mapping) as e:
                 raise self._exception_mapping[type(e)] from e
 
         exec_time_ms = (datetime.now() - start_time).total_seconds() * 1000
