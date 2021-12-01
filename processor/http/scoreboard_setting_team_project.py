@@ -65,6 +65,9 @@ async def view_team_project_scoreboard(scoreboard_id: int, request: Request) \
         testcases = await db.testcase.browse(problem_id=problem_id)
         teams_score = {team.id: 0 for team in teams}
         for testcase in testcases:
+            if testcase.is_sample:
+                continue
+
             judgment_id_judge_case = await db.judge_case.batch_get_with_judgment(
                 testcase_id=testcase.id, judgment_ids=team_judgments.values(), verdict=VerdictType.accepted)
 
