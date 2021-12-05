@@ -2,20 +2,23 @@ from typing import Callable
 
 import exceptions as exc
 
-FORMULA_AVAILABLE_PARAMS = ['class_max', 'class_min', 'baseline', 'team_score']
+FORMULA_AVAILABLE_PARAMS = [
+    'class_max',
+    'class_min',
+    'baseline',
+    'team_score',
+
+    'if',
+    'else',
+]
 
 
-# TODO: More Validation
 async def validate_formula(formula: str) -> bool:
     if not formula:
         return False
 
     for param in FORMULA_AVAILABLE_PARAMS:
         formula = formula.replace(param, '')
-
-    formula = formula.strip()
-    if not formula:
-        return True
 
     return not any(char.isalpha() for char in formula)
 
