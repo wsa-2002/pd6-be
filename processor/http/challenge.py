@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Optional, Sequence
 
 from fastapi import BackgroundTasks
-from pydantic import BaseModel
+from pydantic import BaseModel, constr
 
 import const
 import log
@@ -269,7 +269,7 @@ class AddTeamProjectScoreboardInput(BaseModel):
     target_problem_ids: Sequence[int]
 
     # team_project_scoreboard
-    scoring_formula: str
+    scoring_formula: constr(strip_whitespace=True, to_lower=True, strict=True)
     baseline_team_id: Optional[int]
     rank_by_total_score: bool
     team_label_filter: Optional[str]

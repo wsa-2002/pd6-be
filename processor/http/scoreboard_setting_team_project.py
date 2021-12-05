@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional, Sequence
 
-from pydantic import BaseModel
+from pydantic import BaseModel, constr
 
 from base.enum import RoleType, ScoreboardType, VerdictType
 import exceptions as exc
@@ -102,7 +102,7 @@ class EditScoreboardInput(BaseModel):
     challenge_label: str = None
     title: str = None
     target_problem_ids: Sequence[int] = None
-    scoring_formula: str = None
+    scoring_formula: constr(strip_whitespace=True, to_lower=True, strict=True) = None
     baseline_team_id: Optional[int] = model.can_omit
     rank_by_total_score: bool = None
     team_label_filter: Optional[str] = model.can_omit
