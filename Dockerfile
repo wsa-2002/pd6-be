@@ -1,6 +1,6 @@
 # FROM tiangolo/uvicorn-gunicorn:python3.8
 
-FROM python:3.10
+FROM python:3.9
 
 LABEL maintainer="NTUIM PDOGS 6"
 
