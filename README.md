@@ -1,27 +1,28 @@
 # `pd6-be`: Async Web Backend for PDOGS 6
 
-A `python=3.9`-`asyncio`-based web backend, using web framework `fastapi`.
+A `python=3.10`-`asyncio`-based web backend, using web framework `fastapi`.
 
 *Please* do proper research about `python`'s `asyncio` before committing to this project.
 
 ## Setup test server
 
-### 0. `git`
+### 1. `git`
 Add `--recursive` in your command in order to clone both `pd6-be` and its submodule `judge_core_common`. 
 ```shell
 git clone --recursive https://nas.pdogs.ntu.im:30443/pdogs/pdogs-6/pd6-be.git
 ```
-### 1. `python`
+
+### 2. `python`
 
 > Suggest using PyCharm for development tool; you may also connect your `conda` environment with PyCharm!
 
 Using `conda` as example:
 ```shell
-conda create --name pdogs6-async python=3.9
-conda activate pdogs6-async
+conda create --name pd6-be python=3.10
+conda activate pd6-be
 ```
 
-### 2. Environment
+### 3. Environment
 ```shell
 pip install -r requirements.txt
 cp .env.example .env
@@ -34,7 +35,7 @@ Then
 3. Check the `propagate`s in `logging.yaml`, and replace with `True` if you want to show that genre of log on your console.
 4. Manually create your log folder (default `/log` under your cloned `PD6-BE` project folder).
 
-### 3. Start the server
+### 4. Start the server
 
 ```shell
 pip install uvicorn
@@ -103,8 +104,11 @@ However, currently there are some non-standard type hint usage, so there are a l
 
 ### IDE (PyCharm) Settings
 
-The recommended (actually *forced*) IDE for this project is PyCharm. This is to ensure the code style for everyone;
-please try not use VSCode or other IDEs to code in this project.
+The recommended (actually *forced*) IDE for this project is PyCharm >= 2021.3.
+This is to
+1. ensure the code style for everyone; 
+2. ensure that you get the correct type hinting.
+Please try not use VSCode or other IDEs to code in this project.
 
 PyCharm Professional is free for educational users. You may register a pro account for yourself with your `@ntu.edu.tw`
 email. Since the Professional version provides additional useful functionalities such as in-line SQL check, please
