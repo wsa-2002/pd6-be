@@ -1,5 +1,5 @@
 import asyncio
-from collections import Sequence
+from typing import Sequence
 
 import aiohttp
 
