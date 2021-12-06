@@ -448,9 +448,9 @@ async def download_all_submissions(challenge_id: int, request: Request, as_attac
         raise exc.NoPermission
 
     async def _task() -> None:
-        log.info("Start download all essay submission")
+        log.info("Start download all submission")
 
-        challenge = await db.challenge.read(challenge_id)
+        challenge = await db.challenge.read(challenge_id, include_scheduled=True)
         s3_file = await service.downloader.all_submissions(challenge_id=challenge_id)
         file_url = await s3.tools.sign_url(bucket=s3_file.bucket, key=s3_file.key,
                                            expire_secs=const.SUBMISSION_PACKAGE_S3_EXPIRE_SECS,
