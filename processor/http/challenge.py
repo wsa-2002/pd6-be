@@ -449,7 +449,7 @@ async def download_all_submissions(challenge_id: int, as_attachment: bool,
     async def _task() -> None:
         log.info("Start download all submission")
 
-        challenge = await db.challenge.read(challenge_id, include_scheduled=True)
+        challenge = await db.challenge.read(challenge_id)
         s3_file = await service.downloader.all_submissions(challenge_id=challenge_id)
         file_url = await s3.tools.sign_url(bucket=s3_file.bucket, key=s3_file.key,
                                            expire_secs=const.S3_MANAGER_EXPIRE_SECS,
@@ -486,7 +486,7 @@ async def download_all_plagiarism_reports(challenge_id: int, as_attachment: bool
 
         account, student_card = await db.account_vo.read_with_default_student_card(account_id=context.account.id)
 
-        challenge = await db.challenge.read(challenge_id, include_scheduled=True)
+        challenge = await db.challenge.read(challenge_id)
         problems = await db.problem.browse_by_challenge(challenge_id=challenge_id)
         for problem in problems:
             problem_title = challenge.title + ' ' + problem.challenge_label
