@@ -3,6 +3,7 @@ from typing import Optional, Sequence
 
 from base import do, enum
 from base.popo import Filter, Sorter
+from util.context import context
 
 from . import peer_review, problem
 from .base import SafeConnection, OnlyExecute, FetchOne, FetchAll, ParamDict
@@ -27,11 +28,12 @@ async def add(class_id: int, publicize_type: enum.ChallengePublicizeType, select
 
 
 async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter],
-                 include_scheduled: bool = False, ref_time: datetime = None,
+                 exclude_scheduled: bool = False, ref_time: datetime = None,
                  include_deleted: bool = False, by_publicize_type: bool = False) -> tuple[Sequence[do.Challenge], int]:
-    if not include_scheduled:
-        if not ref_time:
-            raise ValueError
+    if not ref_time:
+        ref_time = context.request_time
+
+    if exclude_scheduled:
         filters += [Filter(col_name='start_time',
                            op=enum.FilterOperator.le,
                            value=ref_time)]
@@ -87,7 +89,7 @@ async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Se
     return data, total_count
 
 
-async def read(challenge_id: int, include_scheduled: bool = False, ref_time: datetime = None,
+async def read(challenge_id: int, exclude_scheduled: bool = False, ref_time: datetime = None,
                include_deleted: bool = False) -> do.Challenge:
     async with FetchOne(
             event='read challenge by id',
@@ -95,10 +97,10 @@ async def read(challenge_id: int, include_scheduled: bool = False, ref_time: dat
                 fr'       start_time, end_time, is_deleted'
                 fr'  FROM challenge'
                 fr' WHERE id = %(challenge_id)s'
-                fr'{" AND start_time <= %(ref_time)s" if not include_scheduled else ""}'
+                fr'{" AND start_time <= %(ref_time)s" if exclude_scheduled else ""}'
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}',
             challenge_id=challenge_id,
-            ref_time=ref_time,
+            ref_time=ref_time or context.request_time,
     ) as (id_, class_id, publicize_type, selection_type, title, setter_id, description,
           start_time, end_time, is_deleted):
         return do.Challenge(id=id_, class_id=class_id, publicize_type=enum.ChallengePublicizeType(publicize_type),

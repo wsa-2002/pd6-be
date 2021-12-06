@@ -95,7 +95,7 @@ async def submit(problem_id: int, language_id: int, content_file: UploadFile = F
 
     # Validate problem
     problem = await db.problem.read(problem_id)
-    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=context.request_time)
+    challenge = await db.challenge.read(problem.challenge_id)
     class_role = await service.rbac.get_class_role(context.account.id, class_id=challenge.class_id)
     publicize_time = (challenge.start_time if challenge.publicize_type == ChallengePublicizeType.start_time
                       else challenge.end_time)

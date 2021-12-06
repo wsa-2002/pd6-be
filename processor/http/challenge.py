@@ -98,7 +98,7 @@ async def browse_challenge_under_class(
 
     challenges, total_count = await db.challenge.browse(limit=limit, offset=offset, filters=filters,
                                                         sorters=sorters,
-                                                        include_scheduled=(class_role == RoleType.manager),
+                                                        exclude_scheduled=class_role < RoleType.manager,
                                                         ref_time=context.request_time,
                                                         by_publicize_type=True if not class_role else False)
 
@@ -117,7 +117,7 @@ async def read_challenge(challenge_id: int) -> do.Challenge:
     if not await service.rbac.validate_system(context.account.id, RoleType.normal):
         raise exc.NoPermission
 
-    challenge = await db.challenge.read(challenge_id=challenge_id, include_scheduled=True, ref_time=context.request_time)
+    challenge = await db.challenge.read(challenge_id=challenge_id, ref_time=context.request_time)
     class_role = await service.rbac.get_class_role(context.account.id, challenge_id=challenge_id)
 
     publicize_time = (challenge.start_time if challenge.publicize_type == ChallengePublicizeType.start_time
@@ -244,11 +244,10 @@ async def add_peer_review_under_challenge(challenge_id: int, data: AddPeerReview
 
     # validate problem belongs to same class
     target_problem = await db.problem.read(problem_id=data.target_problem_id)
-    target_problem_challenge = await db.challenge.read(challenge_id=target_problem.challenge_id,
-                                                       include_scheduled=True)
+    target_problem_challenge = await db.challenge.read(challenge_id=target_problem.challenge_id)
 
     # Only allow peer review to target to same class
-    challenge = await db.challenge.read(challenge_id, include_scheduled=True)
+    challenge = await db.challenge.read(challenge_id)
     if challenge.class_id is not target_problem_challenge.class_id:
         raise exc.IllegalInput
 
@@ -316,7 +315,7 @@ async def browse_all_task_under_challenge(challenge_id: int) -> BrowseTaskOutput
     - Class guest (active/archived challenges)
     - System Normal (by challenge publicize type)
     """
-    challenge = await db.challenge.read(challenge_id=challenge_id, include_scheduled=True, ref_time=context.request_time)
+    challenge = await db.challenge.read(challenge_id=challenge_id, ref_time=context.request_time)
     class_role = await service.rbac.get_class_role(context.account.id, challenge_id=challenge_id)
 
     publicize_time = (challenge.start_time if challenge.publicize_type == ChallengePublicizeType.start_time
@@ -450,7 +449,7 @@ async def download_all_submissions(challenge_id: int, as_attachment: bool,
     async def _task() -> None:
         log.info("Start download all submission")
 
-        challenge = await db.challenge.read(challenge_id, include_scheduled=True)
+        challenge = await db.challenge.read(challenge_id)
         s3_file = await service.downloader.all_submissions(challenge_id=challenge_id)
         file_url = await s3.tools.sign_url(bucket=s3_file.bucket, key=s3_file.key,
                                            expire_secs=const.SUBMISSION_PACKAGE_S3_EXPIRE_SECS,
@@ -487,7 +486,7 @@ async def download_all_plagiarism_reports(challenge_id: int, as_attachment: bool
 
         account, student_card = await db.account_vo.read_with_default_student_card(account_id=context.account.id)
 
-        challenge = await db.challenge.read(challenge_id, include_scheduled=True)
+        challenge = await db.challenge.read(challenge_id)
         problems = await db.problem.browse_by_challenge(challenge_id=challenge_id)
         for problem in problems:
             problem_title = challenge.title + ' ' + problem.challenge_label

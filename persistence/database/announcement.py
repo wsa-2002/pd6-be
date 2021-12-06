@@ -5,6 +5,7 @@ import log
 from base import do
 from base.enum import FilterOperator
 from base.popo import Filter, Sorter
+from util.context import context
 
 from .base import FetchOne, FetchAll, OnlyExecute, ParamDict
 from .util import execute_count, compile_filters
@@ -24,17 +25,12 @@ async def add(title: str, content: str, author_id: int, post_time: datetime, exp
 
 
 async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter],
-                 include_scheduled: bool, ref_time: datetime = None, include_deleted=False) \
+                 include_deleted=False, exclude_scheduled=False, ref_time: datetime = None) \
         -> tuple[Sequence[do.Announcement], int]:
-    """
-    ref_time must be given if include_scheduled is False
-    """
-    if not include_scheduled:
-        if not ref_time:
-            raise ValueError
+    if exclude_scheduled:
         filters += [Filter(col_name='post_time',
                            op=FilterOperator.le,
-                           value=ref_time)]
+                           value=ref_time or context.request_time)]
     if not include_deleted:
         filters += [Filter(col_name='is_deleted',
                            op=FilterOperator.eq,
@@ -70,19 +66,17 @@ async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Se
     return data, total_count
 
 
-async def read(announcement_id: int, include_scheduled: bool, ref_time: datetime = None, include_deleted=False) \
+async def read(announcement_id: int, include_deleted=False, exclude_scheduled=False, ref_time: datetime = None) \
         -> do.Announcement:
-    """
-    ref_time must be given if include_scheduled is False
-    """
-    if not include_scheduled and not ref_time:
-        raise ValueError
+    if exclude_scheduled and not ref_time:
+        ref_time = context.request_time
+
     async with FetchOne(
             event='get all announcements',
             sql=fr'SELECT id, title, content, author_id, post_time, expire_time, is_deleted'
                 fr'  FROM announcement'
                 fr' WHERE id = %(announcement_id)s'
-                fr'{" AND post_time <= %(ref_time)s" if not include_scheduled else ""}'
+                fr'{" AND post_time <= %(ref_time)s" if exclude_scheduled else ""}'
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}',
             announcement_id=announcement_id,
             ref_time=ref_time,

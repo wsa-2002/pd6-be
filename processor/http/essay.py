@@ -34,7 +34,7 @@ async def read_essay(essay_id: int) -> do.Essay:
         raise exc.NoPermission
 
     essay = await db.essay.read(essay_id=essay_id)
-    challenge = await db.challenge.read(essay.challenge_id, include_scheduled=True, ref_time=context.request_time)
+    challenge = await db.challenge.read(essay.challenge_id)
     is_scheduled = challenge.start_time > context.request_time
 
     if is_scheduled and class_role < RoleType.manager:

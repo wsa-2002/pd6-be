@@ -20,7 +20,7 @@ async def get_member_submission_statistics(challenge_id: int) \
     :return: [id, [problem_id, judgment], [essay_submission]]
     """
 
-    challenge = await db.challenge.read(challenge_id, include_scheduled=True)
+    challenge = await db.challenge.read(challenge_id)
     class_members = await db.class_.browse_members(class_id=challenge.class_id)
     problems = await db.problem.browse_by_challenge(challenge_id=challenge_id)
     essays = await db.essay.browse_by_challenge(challenge_id=challenge_id)
