@@ -487,7 +487,7 @@ async def download_all_plagiarism_reports(challenge_id: int, request: Request, a
 
         account, student_card = await db.account_vo.read_with_default_student_card(account_id=request.account.id)
 
-        challenge = await db.challenge.read(challenge_id)
+        challenge = await db.challenge.read(challenge_id, include_scheduled=True)
         problems = await db.problem.browse_by_challenge(challenge_id=challenge_id)
         for problem in problems:
             problem_title = challenge.title + ' ' + problem.challenge_label
