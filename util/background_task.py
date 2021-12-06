@@ -10,6 +10,6 @@ def launch(background_task: BackgroundTasks, task: Callable[..., Coroutine], *ar
         try:
             await task(*args, **kwargs)
         except Exception as e:
-            log.error(e)
+            log.exception(e)
 
     background_task.add_task(_wrapped_task)
