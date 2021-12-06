@@ -7,12 +7,13 @@ from pydantic import BaseModel
 from base import do, enum, popo
 from base.enum import RoleType, FilterOperator
 import exceptions as exc
-from middleware import APIRouter, response, enveloped, auth, Request
+from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
 import service
 from persistence import email
 import util
 from util import model
+from util.context import context
 
 router = APIRouter(
     tags=['Class'],
@@ -32,7 +33,6 @@ BROWSE_CLASS_COLUMNS = {
 @enveloped
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_CLASS_COLUMNS.items()})
 async def browse_class(
-        request: Request,
         limit: model.Limit = 50, offset: model.Offset = 0,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
 ) -> model.BrowseOutputBase:
@@ -42,7 +42,7 @@ async def browse_class(
 
     ### Available columns
     """
-    if not await service.rbac.validate_system(request.account.id, RoleType.normal):
+    if not await service.rbac.validate_system(context.account.id, RoleType.normal):
         raise exc.NoPermission
 
     filters = model.parse_filter(filter, BROWSE_CLASS_COLUMNS)
@@ -55,12 +55,12 @@ async def browse_class(
 
 @router.get('/class/{class_id}')
 @enveloped
-async def read_class(class_id: int, request: Request) -> do.Class:
+async def read_class(class_id: int) -> do.Class:
     """
     ### 權限
     - System normal: all
     """
-    if not await service.rbac.validate_system(request.account.id, RoleType.normal):
+    if not await service.rbac.validate_system(context.account.id, RoleType.normal):
         raise exc.NoPermission
 
     return await db.class_.read(class_id=class_id)
@@ -73,12 +73,12 @@ class EditClassInput(BaseModel):
 
 @router.patch('/class/{class_id}')
 @enveloped
-async def edit_class(class_id: int, data: EditClassInput, request: Request) -> None:
+async def edit_class(class_id: int, data: EditClassInput) -> None:
     """
     ### 權限
     - Class+ manager
     """
-    if not await service.rbac.validate_inherit(request.account.id, RoleType.manager, class_id=class_id):
+    if not await service.rbac.validate_inherit(context.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
 
     await db.class_.edit(
@@ -90,12 +90,12 @@ async def edit_class(class_id: int, data: EditClassInput, request: Request) -> N
 
 @router.delete('/class/{class_id}')
 @enveloped
-async def delete_class(class_id: int, request: Request) -> None:
+async def delete_class(class_id: int) -> None:
     """
     ### 權限
     - System manager
     """
-    if not await service.rbac.validate_system(request.account.id, RoleType.manager):
+    if not await service.rbac.validate_system(context.account.id, RoleType.manager):
         raise exc.NoPermission
 
     await db.class_.delete(class_id)
@@ -123,7 +123,6 @@ BROWSE_CLASS_MEMBER_COLUMNS = {
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_CLASS_MEMBER_COLUMNS.items()})
 async def browse_class_member(
         class_id: int,
-        request: Request,
         limit: model.Limit = 50, offset: model.Offset = 0,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
 ) -> model.BrowseOutputBase:
@@ -134,8 +133,8 @@ async def browse_class_member(
 
     ### Available columns
     """
-    if (not await service.rbac.validate_class(request.account.id, RoleType.normal, class_id=class_id)
-            and not await service.rbac.validate_inherit(request.account.id, RoleType.manager, class_id=class_id)):
+    if (not await service.rbac.validate_class(context.account.id, RoleType.normal, class_id=class_id)
+            and not await service.rbac.validate_inherit(context.account.id, RoleType.manager, class_id=class_id)):
         raise exc.NoPermission
 
     filters = model.parse_filter(filter, BROWSE_CLASS_MEMBER_COLUMNS)
@@ -164,15 +163,15 @@ class ReadClassMemberOutput:
 
 @router.get('/class/{class_id}/member/account-referral')
 @enveloped
-async def browse_all_class_member_with_account_referral(class_id: int, request: Request) \
+async def browse_all_class_member_with_account_referral(class_id: int) \
         -> Sequence[ReadClassMemberOutput]:
     """
     ### 權限
     - Class normal
     - Class+ manager
     """
-    if (not await service.rbac.validate_class(request.account.id, RoleType.normal, class_id=class_id)
-            and not await service.rbac.validate_inherit(request.account.id, RoleType.manager, class_id=class_id)):
+    if (not await service.rbac.validate_class(context.account.id, RoleType.normal, class_id=class_id)
+            and not await service.rbac.validate_inherit(context.account.id, RoleType.manager, class_id=class_id)):
         raise exc.NoPermission
 
     results = await db.class_vo.browse_class_member_with_account_referral(class_id=class_id)
@@ -189,12 +188,12 @@ class SetClassMemberInput(BaseModel):
 
 @router.put('/class/{class_id}/member')
 @enveloped
-async def replace_class_members(class_id: int, data: Sequence[SetClassMemberInput], request: Request) -> Sequence[bool]:
+async def replace_class_members(class_id: int, data: Sequence[SetClassMemberInput]) -> Sequence[bool]:
     """
     ### 權限
     - Class+ manager
     """
-    if not await service.rbac.validate_inherit(request.account.id, RoleType.manager, class_id=class_id):
+    if not await service.rbac.validate_inherit(context.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
 
     member_roles = [(member.account_referral, member.role) for member in data]
@@ -210,7 +209,7 @@ async def replace_class_members(class_id: int, data: Sequence[SetClassMemberInpu
     if cm_before != cm_after:
         class_ = await db.class_.read(class_id=class_id)
         course = await db.course.read(course_id=class_.course_id)
-        operator = await db.account.read(account_id=request.account.id)
+        operator = await db.account.read(account_id=context.account.id)
         await email.notification.notify_cm_change(
             tos=(emails_after | emails_before),
             added_account_referrals=cm_after.difference(cm_before),
@@ -225,12 +224,12 @@ async def replace_class_members(class_id: int, data: Sequence[SetClassMemberInpu
 
 @router.delete('/class/{class_id}/member/{member_id}')
 @enveloped
-async def delete_class_member(class_id: int, member_id: int, request: Request) -> None:
+async def delete_class_member(class_id: int, member_id: int) -> None:
     """
     ### 權限
     - Class+ manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, class_id=class_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
 
     await db.class_.delete_member(class_id=class_id, member_id=member_id)
@@ -243,12 +242,12 @@ class AddTeamInput(BaseModel):
 
 @router.post('/class/{class_id}/team', tags=['Team'])
 @enveloped
-async def add_team_under_class(class_id: int, data: AddTeamInput, request: Request) -> model.AddOutput:
+async def add_team_under_class(class_id: int, data: AddTeamInput) -> model.AddOutput:
     """
     ### 權限
     - Class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, class_id=class_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
 
     team_id = await db.team.add(
@@ -274,7 +273,6 @@ BROWSE_TEAM_UNDER_CLASS_COLUMNS = {
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_TEAM_UNDER_CLASS_COLUMNS.items()})
 async def browse_team_under_class(
         class_id: int,
-        request: Request,
         limit: model.Limit = 50, offset: model.Offset = 0,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
 ) -> model.BrowseOutputBase:
@@ -284,7 +282,7 @@ async def browse_team_under_class(
 
     ### Available columns
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.normal, class_id=class_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.normal, class_id=class_id):
         raise exc.NoPermission
 
     filters = model.parse_filter(filter, BROWSE_TEAM_UNDER_CLASS_COLUMNS)
@@ -314,7 +312,6 @@ BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS = {
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS.items()})
 async def browse_submission_under_class(
         class_id: int,
-        request: Request,
         limit: model.Limit = 50, offset: model.Offset = 0,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
 ) -> model.BrowseOutputBase:
@@ -324,7 +321,7 @@ async def browse_submission_under_class(
 
     ### Available columns
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, class_id=class_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
 
     filters = model.parse_filter(filter, BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS)

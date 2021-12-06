@@ -8,11 +8,12 @@ from pydantic import BaseModel
 from base import do, popo
 import exceptions as exc
 from base.enum import RoleType, FilterOperator
-from middleware import APIRouter, response, enveloped, auth, Request
+from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
 import service
 import util
 from util import model
+from util.context import context
 
 router = APIRouter(
     tags=['Grade'],
@@ -23,16 +24,16 @@ router = APIRouter(
 
 @router.post('/class/{class_id}/grade-import', tags=['Class'])
 @enveloped
-async def import_class_grade(class_id: int, title: str, request: Request, grade_file: UploadFile = File(...)):
+async def import_class_grade(class_id: int, title: str, grade_file: UploadFile = File(...)):
     """
     ### 權限
     - Class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, class_id=class_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
 
     await service.csv.import_class_grade(grade_file=grade_file.file, class_id=class_id,
-                                         title=title, update_time=request.time)
+                                         title=title, update_time=context.request_time)
 
 
 class AddGradeInput(BaseModel):
@@ -45,17 +46,17 @@ class AddGradeInput(BaseModel):
 
 @router.post('/class/{class_id}/grade')
 @enveloped
-async def add_grade(class_id: int, data: AddGradeInput, request: Request) -> model.AddOutput:
+async def add_grade(class_id: int, data: AddGradeInput) -> model.AddOutput:
     """
     ### 權限
     - Class Manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, class_id=class_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
 
     grade_id = await db.grade.add(receiver=data.receiver_referral, grader=data.grader_referral, class_id=class_id,
                                   title=data.title, score=data.score, comment=data.comment,
-                                  update_time=request.time)
+                                  update_time=context.request_time)
 
     return model.AddOutput(id=grade_id)
 
@@ -74,7 +75,7 @@ BROWSE_CLASS_GRADE_COLUMNS = {
 @router.get('/class/{class_id}/grade', tags=['Class'])
 @enveloped
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_CLASS_GRADE_COLUMNS.items()})
-async def browse_class_grade(class_id: int, request: Request,
+async def browse_class_grade(class_id: int,
                              limit: int = 50, offset: int = 0,
                              filter: model.FilterStr = None, sort: model.SorterStr = None) \
         -> model.BrowseOutputBase:
@@ -85,7 +86,7 @@ async def browse_class_grade(class_id: int, request: Request,
 
     ### Available columns
     """
-    class_role = await service.rbac.get_class_role(request.account.id, class_id=class_id)
+    class_role = await service.rbac.get_class_role(context.account.id, class_id=class_id)
     if class_role < RoleType.normal:
         raise exc.NoPermission
 
@@ -101,7 +102,7 @@ async def browse_class_grade(class_id: int, request: Request,
     else:  # Self
         filters.append(popo.Filter(col_name='receiver_id',
                                    op=FilterOperator.eq,
-                                   value=request.account.id))
+                                   value=context.account.id))
         grades, total_count = await db.grade.browse(limit=limit, offset=offset, filters=filters, sorters=sorters)
         return model.BrowseOutputBase(grades, total_count=total_count)
 
@@ -118,7 +119,7 @@ BROWSE_ACCOUNT_GRADE_COLUMNS = {
 @router.get('/account/{account_id}/grade', tags=['Account'])
 @enveloped
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_ACCOUNT_GRADE_COLUMNS.items()})
-async def browse_account_grade(account_id: int, request: Request,
+async def browse_account_grade(account_id: int,
                                limit: model.Limit = 50, offset: model.Offset = 0,
                                filter: model.FilterStr = None, sort: model.SorterStr = None) \
         -> model.BrowseOutputBase:
@@ -128,14 +129,14 @@ async def browse_account_grade(account_id: int, request: Request,
 
     ### Available columns
     """
-    if request.account.id != account_id:  # only self
+    if context.account.id != account_id:  # only self
         raise exc.NoPermission
 
     filters = model.parse_filter(filter, BROWSE_ACCOUNT_GRADE_COLUMNS)
     sorters = model.parse_sorter(sort, BROWSE_ACCOUNT_GRADE_COLUMNS)
     filters.append(popo.Filter(col_name='receiver_id',
                                op=FilterOperator.eq,
-                               value=request.account.id))
+                               value=context.account.id))
     grades, total_count = await db.grade.browse(limit=limit, offset=offset, filters=filters, sorters=sorters)
 
     return model.BrowseOutputBase(grades, total_count=total_count)
@@ -149,12 +150,12 @@ class GetGradeTemplateOutput:
 
 @router.get('/grade/template')
 @enveloped
-async def get_grade_template_file(request: Request) -> GetGradeTemplateOutput:
+async def get_grade_template_file() -> GetGradeTemplateOutput:
     """
     ### 權限
     - system normal
     """
-    if not await service.rbac.validate_system(request.account.id, RoleType.normal):
+    if not await service.rbac.validate_system(context.account.id, RoleType.normal):
         raise exc.NoPermission
 
     s3_file, filename = await service.csv.get_grade_template()
@@ -163,20 +164,20 @@ async def get_grade_template_file(request: Request) -> GetGradeTemplateOutput:
 
 @router.get('/grade/{grade_id}')
 @enveloped
-async def get_grade(grade_id: int, request: Request) -> do.Grade:
+async def get_grade(grade_id: int) -> do.Grade:
     """
     ### 權限
     - Class manager (all)
     - Class normal (self)
     """
-    class_role = await service.rbac.get_class_role(request.account.id, grade_id=grade_id)
+    class_role = await service.rbac.get_class_role(context.account.id, grade_id=grade_id)
     if class_role < RoleType.normal:
         raise exc.NoPermission
 
     is_class_manager = class_role >= RoleType.manager
 
     grade = await db.grade.read(grade_id=grade_id)
-    is_self = request.account.id == grade.receiver_id
+    is_self = context.account.id == grade.receiver_id
 
     if not (is_class_manager or is_self):
         raise exc.NoPermission
@@ -192,26 +193,26 @@ class EditGradeInput(BaseModel):
 
 @router.patch('/grade/{grade_id}')
 @enveloped
-async def edit_grade(grade_id: int, data: EditGradeInput, request: Request) -> None:
+async def edit_grade(grade_id: int, data: EditGradeInput) -> None:
     """
     ### 權限
     - Class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, grade_id=grade_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, grade_id=grade_id):
         raise exc.NoPermission
 
-    await db.grade.edit(grade_id=grade_id, grader_id=request.account.id, title=data.title, score=data.score,
-                        comment=data.comment, update_time=request.time)
+    await db.grade.edit(grade_id=grade_id, grader_id=context.account.id, title=data.title, score=data.score,
+                        comment=data.comment, update_time=context.request_time)
 
 
 @router.delete('/grade/{grade_id}')
 @enveloped
-async def delete_grade(grade_id: int, request: Request):
+async def delete_grade(grade_id: int):
     """
     ### 權限
     - Class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, grade_id=grade_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, grade_id=grade_id):
         raise exc.NoPermission
 
     await db.grade.delete(grade_id)

@@ -5,10 +5,11 @@ from pydantic import BaseModel
 from base import do
 import exceptions as exc
 from base.enum import RoleType
-from middleware import APIRouter, response, enveloped, auth, Request
+from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
 import service
 from util import model
+from util.context import context
 
 router = APIRouter(
     tags=['Institute'],
@@ -26,12 +27,12 @@ class AddInstituteInput(BaseModel):
 
 @router.post('/institute')
 @enveloped
-async def add_institute(data: AddInstituteInput, request: Request) -> model.AddOutput:
+async def add_institute(data: AddInstituteInput) -> model.AddOutput:
     """
     ### 權限
     - System Manager
     """
-    if not await service.rbac.validate_system(request.account.id, RoleType.manager):
+    if not await service.rbac.validate_system(context.account.id, RoleType.manager):
         raise exc.NoPermission
 
     institute_id = await db.institute.add(abbreviated_name=data.abbreviated_name, full_name=data.full_name,
@@ -68,12 +69,12 @@ class EditInstituteInput(BaseModel):
 
 @router.patch('/institute/{institute_id}')
 @enveloped
-async def edit_institute(institute_id: int, data: EditInstituteInput, request: Request) -> None:
+async def edit_institute(institute_id: int, data: EditInstituteInput) -> None:
     """
     ### 權限
     - System Manager
     """
-    if not await service.rbac.validate_system(request.account.id, RoleType.manager):
+    if not await service.rbac.validate_system(context.account.id, RoleType.manager):
         raise exc.NoPermission
 
     await db.institute.edit(

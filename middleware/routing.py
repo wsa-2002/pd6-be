@@ -16,6 +16,7 @@ from fastapi.encoders import DictIntStrAny, SetIntStr
 from fastapi.routing import JSONResponse, Response
 
 import log
+from util.context import context
 
 
 def jsonable_encoder(
@@ -273,35 +274,8 @@ def get_request_handler(
     return app
 
 
-class SecretAPIRoute(fastapi.routing.APIRoute):
-    def get_route_handler(self) -> Callable[[fastapi.routing.Request], fastapi.routing.Coroutine[Any, Any, Response]]:
-        original_route_handler = get_request_handler(
-            dependant=self.dependant,
-            body_field=self.body_field,
-            status_code=self.status_code,
-            response_class=self.response_class,
-            response_field=self.secure_cloned_response_field,
-            response_model_include=self.response_model_include,
-            response_model_exclude=self.response_model_exclude,
-            response_model_by_alias=self.response_model_by_alias,
-            response_model_exclude_unset=self.response_model_exclude_unset,
-            response_model_exclude_defaults=self.response_model_exclude_defaults,
-            response_model_exclude_none=self.response_model_exclude_none,
-            dependency_overrides_provider=self.dependency_overrides_provider,
-        )
-
-        async def custom_route_handler(request: fastapi.Request) -> fastapi.Response:
-            """
-            Replace request
-            """
-            from . import Request
-            request = Request(request.scope, request.receive)
-
-            response = await original_route_handler(request)
-
-            return response
-
-        return custom_route_handler
+class NoLogAPIRoute(fastapi.routing.APIRoute):
+    pass
 
 
 class APIRoute(fastapi.routing.APIRoute):
@@ -325,26 +299,28 @@ class APIRoute(fastapi.routing.APIRoute):
             """
             Replace request logs body
             """
-            from . import Request
-            request = Request(request.scope, request.receive)
-
             request_body = ''
             if 'json' in request.headers.get('Content-Type', ''):
                 request_body = await request.body()
             query_string = ''
             if request_query_string := request.scope.get("query_string"):
                 query_string = urllib.parse.unquote(request_query_string)
-            log.info(f'>>\tQuery params: {query_string}')
-            log.info(f'>>\tJSON Body: {request_body}')
+
+            log.info(f'>> {request.method}\t{request.url.path}'
+                     f'\tAccount: {context.get_account()}'
+                     f'\tQuery params: {query_string}' 
+                     f'\tJSON Body: {request_body}')
 
             response = await original_route_handler(request)
 
             response_body = ''
             if isinstance(response, fastapi.responses.JSONResponse):
                 response_body = response.body
-            log.info(f"<<\tJSON Body: {response_body}")
+
+            log.info(f'<< {request.method}\t{request.url.path}'
+                     f'\tAccount: {context.get_account()}'
+                     f'\tJSON Body: {response_body}')
 
             return response
 
         return custom_route_handler
-

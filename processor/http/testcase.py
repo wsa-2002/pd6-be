@@ -4,12 +4,13 @@ from typing import Optional
 
 from base.enum import RoleType
 import exceptions as exc
-from middleware import APIRouter, response, enveloped, auth, Request
+from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
 import service
 from persistence import s3
 import util
 from util import model
+from util.context import context
 
 from .problem import ReadTestcaseOutput
 
@@ -22,15 +23,15 @@ router = APIRouter(
 
 @router.get('/testcase/{testcase_id}')
 @enveloped
-async def read_testcase(testcase_id: int, request: Request) -> ReadTestcaseOutput:
+async def read_testcase(testcase_id: int) -> ReadTestcaseOutput:
     """
     ### 權限
     - System normal
     """
-    if not await service.rbac.validate_system(request.account.id, RoleType.normal):
+    if not await service.rbac.validate_system(context.account.id, RoleType.normal):
         raise exc.NoPermission
 
-    class_role = await service.rbac.get_class_role(request.account.id, testcase_id=testcase_id)
+    class_role = await service.rbac.get_class_role(context.account.id, testcase_id=testcase_id)
     is_class_manager = class_role >= RoleType.manager
 
     testcase = await db.testcase.read(testcase_id=testcase_id)
@@ -64,12 +65,12 @@ class EditTestcaseInput(BaseModel):
 
 @router.patch('/testcase/{testcase_id}')
 @enveloped
-async def edit_testcase(testcase_id: int, data: EditTestcaseInput, request: Request) -> None:
+async def edit_testcase(testcase_id: int, data: EditTestcaseInput) -> None:
     """
     ### 權限
     - Class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, testcase_id=testcase_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, testcase_id=testcase_id):
         raise exc.NoPermission
 
     await db.testcase.edit(testcase_id=testcase_id, is_sample=data.is_sample, score=data.score, label=data.label,
@@ -79,12 +80,12 @@ async def edit_testcase(testcase_id: int, data: EditTestcaseInput, request: Requ
 
 @router.put('/testcase/{testcase_id}/input-data')
 @enveloped
-async def upload_testcase_input_data(testcase_id: int, request: Request, input_file: UploadFile = File(...)) -> None:
+async def upload_testcase_input_data(testcase_id: int, input_file: UploadFile = File(...)) -> None:
     """
     ### 權限
     - Class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, testcase_id=testcase_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, testcase_id=testcase_id):
         raise exc.NoPermission
 
     # Issue #26: CRLF
@@ -100,12 +101,12 @@ async def upload_testcase_input_data(testcase_id: int, request: Request, input_f
 
 @router.put('/testcase/{testcase_id}/output-data')
 @enveloped
-async def upload_testcase_output_data(testcase_id: int, request: Request, output_file: UploadFile = File(...)):
+async def upload_testcase_output_data(testcase_id: int, output_file: UploadFile = File(...)):
     """
     ### 權限
     - Class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, testcase_id=testcase_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, testcase_id=testcase_id):
         raise exc.NoPermission
 
     # Issue #26: CRLF
@@ -121,12 +122,12 @@ async def upload_testcase_output_data(testcase_id: int, request: Request, output
 
 @router.delete('/testcase/{testcase_id}')
 @enveloped
-async def delete_testcase(testcase_id: int, request: Request) -> None:
+async def delete_testcase(testcase_id: int) -> None:
     """
     ### 權限
     - Class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, testcase_id=testcase_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, testcase_id=testcase_id):
         raise exc.NoPermission
 
     await db.testcase.delete(testcase_id=testcase_id)
@@ -134,12 +135,12 @@ async def delete_testcase(testcase_id: int, request: Request) -> None:
 
 @router.delete('/testcase/{testcase_id}/input-data')
 @enveloped
-async def delete_testcase_input_data(testcase_id: int, request: Request):
+async def delete_testcase_input_data(testcase_id: int):
     """
     ### 權限
     - Class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, testcase_id=testcase_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, testcase_id=testcase_id):
         raise exc.NoPermission
 
     await db.testcase.delete_input_data(testcase_id=testcase_id)
@@ -147,12 +148,12 @@ async def delete_testcase_input_data(testcase_id: int, request: Request):
 
 @router.delete('/testcase/{testcase_id}/output-data')
 @enveloped
-async def delete_testcase_output_data(testcase_id: int, request: Request):
+async def delete_testcase_output_data(testcase_id: int):
     """
     ### 權限
     - Class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, testcase_id=testcase_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, testcase_id=testcase_id):
         raise exc.NoPermission
 
     await db.testcase.delete_output_data(testcase_id=testcase_id)
