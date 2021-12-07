@@ -6,11 +6,12 @@ from base.enum import RoleType, FilterOperator
 from base import do, popo
 import const
 import exceptions as exc
-from middleware import APIRouter, response, enveloped, auth, Request
+from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
 import service
 import util
 from util import model
+from util.context import context
 
 router = APIRouter(
     tags=['Essay Submission'],
@@ -22,7 +23,7 @@ router = APIRouter(
 @router.post('/essay/{essay_id}/essay-submission',
              dependencies=[Depends(util.file.valid_file_length(file_length=const.ESSAY_UPLOAD_LIMIT))])
 @enveloped
-async def upload_essay(essay_id: int, request: Request, essay_file: UploadFile = File(...)) -> int:
+async def upload_essay(essay_id: int, essay_file: UploadFile = File(...)) -> int:
     """
     ### 權限
     - class normal
@@ -30,17 +31,17 @@ async def upload_essay(essay_id: int, request: Request, essay_file: UploadFile =
     ### 限制
     - 上傳檔案 < 10mb
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.normal, essay_id=essay_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.normal, essay_id=essay_id):
         raise exc.NoPermission
 
     essay = await db.essay.read(essay_id=essay_id)
-    challenge = await db.challenge.read(essay.challenge_id, include_scheduled=True, ref_time=request.time)
-    if request.time >= challenge.end_time:
+    challenge = await db.challenge.read(essay.challenge_id, include_scheduled=True, ref_time=context.request_time)
+    if context.request_time >= challenge.end_time:
         raise exc.NoPermission
 
     return await service.submission.submit_essay(file=essay_file.file, filename=essay_file.filename,
-                                                 account_id=request.account.id, essay_id=essay_id,
-                                                 submit_time=request.time)
+                                                 account_id=context.account.id, essay_id=essay_id,
+                                                 submit_time=context.request_time)
 
 
 BROWSE_ESSAY_SUBMISSION_COLUMNS = {
@@ -58,7 +59,6 @@ BROWSE_ESSAY_SUBMISSION_COLUMNS = {
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_ESSAY_SUBMISSION_COLUMNS.items()})
 async def browse_essay_submission_by_essay_id(
         essay_id: int,
-        request: Request,
         limit: model.Limit = 50, offset: model.Offset = 0,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
 ) -> model.BrowseOutputBase:
@@ -69,7 +69,7 @@ async def browse_essay_submission_by_essay_id(
 
     ### Available columns
     """
-    class_role = await service.rbac.get_class_role(request.account.id, essay_id=essay_id)
+    class_role = await service.rbac.get_class_role(context.account.id, essay_id=essay_id)
     if not (class_role >= RoleType.normal):
         raise exc.NoPermission
 
@@ -83,7 +83,7 @@ async def browse_essay_submission_by_essay_id(
     if class_role is RoleType.normal:
         filters.append(popo.Filter(col_name='account_id',
                                    op=FilterOperator.eq,
-                                   value=request.account.id))
+                                   value=context.account.id))
 
     essay_submissions, total_count = await db.essay_submission.browse(limit=limit, offset=offset,
                                                                       filters=filters, sorters=sorters)
@@ -92,20 +92,20 @@ async def browse_essay_submission_by_essay_id(
 
 @router.get('/essay-submission/{essay_submission_id}')
 @enveloped
-async def read_essay_submission(essay_submission_id: int, request: Request) -> do.EssaySubmission:
+async def read_essay_submission(essay_submission_id: int) -> do.EssaySubmission:
     """
     ### 權限
     - class manager (always)
     - class normal (self)
     """
-    class_role = await service.rbac.get_class_role(request.account.id, essay_submission_id=essay_submission_id)
+    class_role = await service.rbac.get_class_role(context.account.id, essay_submission_id=essay_submission_id)
     if class_role < RoleType.normal:
         raise exc.NoPermission
 
     essay_submission = await db.essay_submission.read(essay_submission_id=essay_submission_id)
 
     if (class_role >= RoleType.manager
-            or request.account.id == essay_submission.account_id):
+            or context.account.id == essay_submission.account_id):
         return essay_submission
 
     raise exc.NoPermission
@@ -114,7 +114,7 @@ async def read_essay_submission(essay_submission_id: int, request: Request) -> d
 @router.put('/essay-submission/{essay_submission_id}',
             dependencies=[Depends(util.file.valid_file_length(file_length=const.ESSAY_UPLOAD_LIMIT))])
 @enveloped
-async def reupload_essay(essay_submission_id: int, request: Request, essay_file: UploadFile = File(...)):
+async def reupload_essay(essay_submission_id: int, essay_file: UploadFile = File(...)):
     """
     ### 權限
     - Class normal = self
@@ -122,7 +122,7 @@ async def reupload_essay(essay_submission_id: int, request: Request, essay_file:
     ### 限制
     - 上傳檔案 < 10mb
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.normal,
+    if not await service.rbac.validate_class(context.account.id, RoleType.normal,
                                              essay_submission_id=essay_submission_id):
         raise exc.NoPermission
 
@@ -130,9 +130,9 @@ async def reupload_essay(essay_submission_id: int, request: Request, essay_file:
     essay = await db.essay.read(essay_id=essay_submission.essay_id)
     challenge = await db.challenge.read(challenge_id=essay.challenge_id, include_scheduled=True)
 
-    if not (request.account.id == essay_submission.account_id and request.time <= challenge.end_time):
+    if not (context.account.id == essay_submission.account_id and context.request_time <= challenge.end_time):
         raise exc.NoPermission
 
     return await service.submission.resubmit_essay(file=essay_file.file, filename=essay_file.filename,
                                                    essay_submission_id=essay_submission_id,
-                                                   submit_time=request.time)
+                                                   submit_time=context.request_time)

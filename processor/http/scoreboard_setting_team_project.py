@@ -5,10 +5,11 @@ from pydantic import BaseModel, constr
 
 from base.enum import RoleType, ScoreboardType, VerdictType
 import exceptions as exc
-from middleware import APIRouter, response, enveloped, auth, Request
+from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
 import service
 from util import model
+from util.context import context
 
 router = APIRouter(
     tags=['Team Project Scoreboard'],
@@ -34,13 +35,13 @@ class ViewTeamProjectScoreboardOutput:
 
 @router.get('/team-project-scoreboard/view/{scoreboard_id}')
 @enveloped
-async def view_team_project_scoreboard(scoreboard_id: int, request: Request) \
+async def view_team_project_scoreboard(scoreboard_id: int) \
         -> Sequence[ViewTeamProjectScoreboardOutput]:
     """
     ### 權限
     - Class normal
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.normal, scoreboard_id=scoreboard_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.normal, scoreboard_id=scoreboard_id):
         raise exc.NoPermission
 
     scoreboard = await db.scoreboard.read(scoreboard_id)
@@ -110,12 +111,12 @@ class EditScoreboardInput(BaseModel):
 
 @router.patch('/team-project-scoreboard/{scoreboard_id}')
 @enveloped
-async def edit_team_project_scoreboard(scoreboard_id: int, data: EditScoreboardInput, request: Request) -> None:
+async def edit_team_project_scoreboard(scoreboard_id: int, data: EditScoreboardInput) -> None:
     """
     ### 權限
     - Class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, scoreboard_id=scoreboard_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, scoreboard_id=scoreboard_id):
         raise exc.NoPermission
 
     if data.scoring_formula and not await service.scoreboard.validate_formula(formula=data.scoring_formula):

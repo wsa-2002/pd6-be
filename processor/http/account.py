@@ -8,12 +8,13 @@ from pydantic import BaseModel
 from base.enum import RoleType
 from base import do
 import exceptions as exc
-from middleware import APIRouter, response, enveloped, auth, Request
+from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
 import service
 from persistence import email
 import util
 from util import model
+from util.context import context
 
 router = APIRouter(
     tags=['Account'],
@@ -48,7 +49,6 @@ BROWSE_ACCOUNT_COLUMNS = {
 @enveloped
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_ACCOUNT_COLUMNS.items()})
 async def browse_account_with_default_student_id(
-        request: Request,
         limit: model.Limit = 50, offset: model.Offset = 0,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
 ) -> model.BrowseOutputBase:
@@ -56,7 +56,7 @@ async def browse_account_with_default_student_id(
     ### 權限
     - System Manager
     """
-    is_manager = await service.rbac.validate_system(request.account.id, RoleType.manager)
+    is_manager = await service.rbac.validate_system(context.account.id, RoleType.manager)
     if not is_manager:
         raise exc.NoPermission
 
@@ -84,7 +84,7 @@ class BatchGetAccountOutput:
 
 @router.get('/account-summary/batch')
 @enveloped
-async def batch_get_account_with_default_student_id(request: Request, account_ids: pydantic.Json) \
+async def batch_get_account_with_default_student_id(account_ids: pydantic.Json) \
         -> Sequence[BatchGetAccountOutput]:
     """
     ### 權限
@@ -97,7 +97,7 @@ async def batch_get_account_with_default_student_id(request: Request, account_id
     if not account_ids:
         return []
 
-    is_normal = await service.rbac.validate_system(request.account.id, RoleType.normal)
+    is_normal = await service.rbac.validate_system(context.account.id, RoleType.normal)
     if not is_normal:
         raise exc.NoPermission
 
@@ -109,7 +109,7 @@ async def batch_get_account_with_default_student_id(request: Request, account_id
 
 @router.get('/account-summary/batch-by-account-referral')
 @enveloped
-async def batch_get_account_by_account_referrals(account_referrals: pydantic.Json, request: Request) \
+async def batch_get_account_by_account_referrals(account_referrals: pydantic.Json) \
         -> Sequence[BatchGetAccountOutput]:
     """
     ### 權限
@@ -122,7 +122,7 @@ async def batch_get_account_by_account_referrals(account_referrals: pydantic.Jso
     if not account_referrals:
         return []
 
-    if not await service.rbac.validate_system(request.account.id, RoleType.normal):
+    if not await service.rbac.validate_system(context.account.id, RoleType.normal):
         raise exc.NoPermission
 
     result = await db.account_vo.batch_read_by_account_referral(account_referrals=account_referrals)
@@ -143,7 +143,7 @@ class BrowseAccountWithRoleOutput:
 
 @router.get('/account/{account_id}/class')
 @enveloped
-async def browse_all_account_with_class_role(account_id: int, request: Request) \
+async def browse_all_account_with_class_role(account_id: int) \
         -> Sequence[BrowseAccountWithRoleOutput]:
     """
     ### 權限
@@ -151,7 +151,7 @@ async def browse_all_account_with_class_role(account_id: int, request: Request) 
 
     ### Available columns
     """
-    if account_id != request.account.id:
+    if account_id != context.account.id:
         raise exc.NoPermission
     results = await db.class_.browse_role_by_account_id(account_id=account_id)
 
@@ -172,12 +172,12 @@ class GetAccountTemplateOutput:
 
 @router.get('/account/template')
 @enveloped
-async def get_account_template_file(request: Request) -> GetAccountTemplateOutput:
+async def get_account_template_file() -> GetAccountTemplateOutput:
     """
     ### 權限
     - System Manager
     """
-    if not await service.rbac.validate_system(request.account.id, RoleType.manager):
+    if not await service.rbac.validate_system(context.account.id, RoleType.manager):
         raise exc.NoPermission
 
     s3_file, filename = await service.csv.get_account_template()
@@ -198,16 +198,16 @@ class ReadAccountOutput:
 
 @router.get('/account/{account_id}')
 @enveloped
-async def read_account_with_default_student_id(account_id: int, request: Request) -> ReadAccountOutput:
+async def read_account_with_default_student_id(account_id: int) -> ReadAccountOutput:
     """
     ### 權限
     - System Manager
     - Self
     - System Normal (個資除外)
     """
-    is_manager = await service.rbac.validate_system(request.account.id, RoleType.manager)
-    is_normal = await service.rbac.validate_system(request.account.id, RoleType.normal)
-    is_self = request.account.id == account_id
+    is_manager = await service.rbac.validate_system(context.account.id, RoleType.manager)
+    is_normal = await service.rbac.validate_system(context.account.id, RoleType.normal)
+    is_self = context.account.id == account_id
 
     if not (is_manager or is_normal or is_self):
         raise exc.NoPermission
@@ -236,14 +236,14 @@ class EditAccountInput(BaseModel):
 
 @router.patch('/account/{account_id}')
 @enveloped
-async def edit_account(account_id: int, data: EditAccountInput, request: Request) -> None:
+async def edit_account(account_id: int, data: EditAccountInput) -> None:
     """
     ### 權限
     - System Manager
     - Self
     """
-    is_manager = await service.rbac.validate_system(request.account.id, RoleType.manager)
-    is_self = request.account.id == account_id
+    is_manager = await service.rbac.validate_system(context.account.id, RoleType.manager)
+    is_self = context.account.id == account_id
 
     if not ((is_self and not data.real_name) or is_manager):
         raise exc.NoPermission
@@ -263,14 +263,14 @@ async def edit_account(account_id: int, data: EditAccountInput, request: Request
 
 @router.delete('/account/{account_id}')
 @enveloped
-async def delete_account(account_id: int, request: Request) -> None:
+async def delete_account(account_id: int) -> None:
     """
     ### 權限
     - System manager
     - Self
     """
-    is_manager = await service.rbac.validate_system(request.account.id, RoleType.manager)
-    is_self = request.account.id == account_id
+    is_manager = await service.rbac.validate_system(context.account.id, RoleType.manager)
+    is_self = context.account.id == account_id
 
     if not (is_manager or is_self):
         raise exc.NoPermission
@@ -284,7 +284,7 @@ class DefaultStudentCardInput(BaseModel):
 
 @router.put('/account/{account_id}/default-student-card')
 @enveloped
-async def make_student_card_default(account_id: int, data: DefaultStudentCardInput, request: Request) -> None:
+async def make_student_card_default(account_id: int, data: DefaultStudentCardInput) -> None:
     """
     ### 權限
     - System manager
@@ -294,8 +294,8 @@ async def make_student_card_default(account_id: int, data: DefaultStudentCardInp
     if account_id != owner_id:
         raise exc.account.StudentCardDoesNotBelong
 
-    is_manager = await service.rbac.validate_system(request.account.id, RoleType.manager)
-    is_self = request.account.id == owner_id
+    is_manager = await service.rbac.validate_system(context.account.id, RoleType.manager)
+    is_self = context.account.id == owner_id
 
     if not (is_manager or is_self):
         raise exc.NoPermission
@@ -305,15 +305,15 @@ async def make_student_card_default(account_id: int, data: DefaultStudentCardInp
 
 @router.get('/account/{account_id}/email-verification')
 @enveloped
-async def browse_all_account_pending_email_verification(account_id: int, request: Request) \
+async def browse_all_account_pending_email_verification(account_id: int) \
         -> Sequence[do.EmailVerification]:
     """
     ### 權限
     - System manager
     - Self
     """
-    if not (await service.rbac.validate_system(request.account.id, RoleType.manager)
-            or request.account.id == account_id):
+    if not (await service.rbac.validate_system(context.account.id, RoleType.manager)
+            or context.account.id == account_id):
         raise exc.NoPermission
 
     return await db.email_verification.browse(account_id=account_id)

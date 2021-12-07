@@ -3,9 +3,10 @@ from typing import Sequence, Any
 
 from base.enum import RoleType, ScoreboardType
 import exceptions as exc
-from middleware import APIRouter, response, enveloped, auth, Request
+from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
 import service
+from util.context import context
 
 router = APIRouter(
     tags=['Scoreboard'],
@@ -28,12 +29,12 @@ class ReadScoreboardOutput:
 
 @router.get('/scoreboard/{scoreboard_id}')
 @enveloped
-async def read_scoreboard(scoreboard_id: int, request: Request) -> ReadScoreboardOutput:
+async def read_scoreboard(scoreboard_id: int) -> ReadScoreboardOutput:
     """
     ### 權限
     - Class normal
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.normal, scoreboard_id=scoreboard_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.normal, scoreboard_id=scoreboard_id):
         raise exc.NoPermission
 
     scoreboard = await db.scoreboard.read(scoreboard_id=scoreboard_id)
@@ -56,12 +57,12 @@ async def read_scoreboard(scoreboard_id: int, request: Request) -> ReadScoreboar
 
 @router.delete('/scoreboard/{scoreboard_id}')
 @enveloped
-async def delete_scoreboard(scoreboard_id: int, request: Request) -> None:
+async def delete_scoreboard(scoreboard_id: int) -> None:
     """
     ### 權限
     - Class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, scoreboard_id=scoreboard_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, scoreboard_id=scoreboard_id):
         raise exc.NoPermission
 
     await db.scoreboard.delete(scoreboard_id=scoreboard_id)

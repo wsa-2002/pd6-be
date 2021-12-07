@@ -10,14 +10,15 @@ from base.enum import RoleType
 import const
 import exceptions as exc
 from config import config
-from middleware import APIRouter, JSONResponse, enveloped, Request, auth, routing
+from middleware import APIRouter, JSONResponse, enveloped, auth, routing
 import persistence.database as db
 import service
 from persistence import email
 from util import security, model
+from util.context import context
 
 router = APIRouter(
-    route_class=routing.SecretAPIRoute,  # Does not log the I/O data
+    route_class=routing.NoLogAPIRoute,  # Does not log the I/O data
     dependencies=auth.doc_dependencies,
 )
 
@@ -121,12 +122,12 @@ class AddNormalAccountInput(BaseModel):
 
 @router.post('/account-normal', tags=['Account'], response_class=JSONResponse)
 @enveloped
-async def add_normal_account(data: AddNormalAccountInput, request: Request) -> model.AddOutput:
+async def add_normal_account(data: AddNormalAccountInput) -> model.AddOutput:
     """
     ### 權限
     - System Manager
     """
-    if not await service.rbac.validate_system(request.account.id, RoleType.manager):
+    if not await service.rbac.validate_system(context.account.id, RoleType.manager):
         raise exc.NoPermission
 
     # 要先檢查以免創立了帳號後才出事
@@ -147,12 +148,12 @@ async def add_normal_account(data: AddNormalAccountInput, request: Request) -> m
 
 @router.post('/account-import', tags=['Account'], response_class=JSONResponse)
 @enveloped
-async def import_account(request: Request, account_file: UploadFile = File(...)):
+async def import_account(account_file: UploadFile = File(...)):
     """
     ### 權限
     - System Manager
     """
-    if not await service.rbac.validate_system(request.account.id, RoleType.manager):
+    if not await service.rbac.validate_system(context.account.id, RoleType.manager):
         raise exc.NoPermission
 
     await service.csv.import_account(account_file=account_file.file)
@@ -165,14 +166,14 @@ class EditPasswordInput(BaseModel):
 
 @router.put('/account/{account_id}/pass_hash', tags=['Account'], response_class=JSONResponse)
 @enveloped
-async def edit_password(account_id: int, data: EditPasswordInput, request: Request):
+async def edit_password(account_id: int, data: EditPasswordInput):
     """
     ### 權限
     - System Manager
     - Self (need old password)
     """
 
-    is_self = request.account.id == account_id
+    is_self = context.account.id == account_id
     if is_self:
         pass_hash = await db.account.read_pass_hash(account_id=account_id, include_4s_hash=False)
         if not security.verify_password(to_test=data.old_password, hashed=pass_hash):
@@ -181,7 +182,7 @@ async def edit_password(account_id: int, data: EditPasswordInput, request: Reque
         return await db.account.edit_pass_hash(account_id=account_id,
                                                pass_hash=security.hash_password(data.new_password))
 
-    is_manager = await service.rbac.validate_system(request.account.id, RoleType.manager)
+    is_manager = await service.rbac.validate_system(context.account.id, RoleType.manager)
     if is_manager:
         return await db.account.edit_pass_hash(account_id=account_id,
                                                pass_hash=security.hash_password(data.new_password))

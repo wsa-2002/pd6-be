@@ -4,11 +4,12 @@ from typing import Sequence
 from base.enum import RoleType, FilterOperator, VerdictType
 from base import popo, vo
 import exceptions as exc
-from middleware import APIRouter, response, enveloped, auth, Request
+from middleware import APIRouter, response, enveloped, auth
 from persistence import database as db
 import service
 import util
 from util import model
+from util.context import context
 
 router = APIRouter(
     tags=['View'],
@@ -33,7 +34,6 @@ class ViewAccountOutput(model.BrowseOutputBase):
 @enveloped
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_ACCOUNT_COLUMNS.items()})
 async def browse_account_with_default_student_id(
-        request: Request,
         limit: model.Limit = 50, offset: model.Offset = 0,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
 ) -> ViewAccountOutput:
@@ -43,7 +43,7 @@ async def browse_account_with_default_student_id(
 
     ### Available columns
     """
-    is_system_manager = await service.rbac.validate_system(request.account.id, RoleType.manager)
+    is_system_manager = await service.rbac.validate_system(context.account.id, RoleType.manager)
     if not is_system_manager:
         raise exc.NoPermission
 
@@ -76,7 +76,6 @@ class ViewClassMemberOutput(model.BrowseOutputBase):
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_CLASS_MEMBER_COLUMNS.items()})
 async def browse_class_member(
         class_id: int,
-        request: Request,
         limit: model.Limit = 50, offset: model.Offset = 0,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
 ) -> ViewClassMemberOutput:
@@ -87,8 +86,8 @@ async def browse_class_member(
 
     ### Available columns
     """
-    if (not await service.rbac.validate_class(request.account.id, RoleType.normal, class_id=class_id)
-            and not await service.rbac.validate_inherit(request.account.id, RoleType.manager, class_id=class_id)):
+    if (not await service.rbac.validate_class(context.account.id, RoleType.normal, class_id=class_id)
+            and not await service.rbac.validate_inherit(context.account.id, RoleType.manager, class_id=class_id)):
         raise exc.NoPermission
 
     filters = model.parse_filter(filter, BROWSE_CLASS_MEMBER_COLUMNS)
@@ -129,7 +128,6 @@ class ViewSubmissionUnderClassOutput(model.BrowseOutputBase):
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS.items()})
 async def browse_submission_under_class(
         class_id: int,
-        request: Request,
         limit: model.Limit = 50, offset: model.Offset = 0,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
 ) -> ViewSubmissionUnderClassOutput:
@@ -139,7 +137,7 @@ async def browse_submission_under_class(
 
     ### Available columns
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, class_id=class_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
 
     filters = model.parse_filter(filter, BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS)
@@ -175,7 +173,7 @@ class ViewMySubmissionOutput(model.BrowseOutputBase):
 @router.get('/view/my-submission')
 @enveloped
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_SUBMISSION_COLUMNS.items()})
-async def browse_submission(account_id: int, request: Request, limit: model.Limit = 50, offset: model.Offset = 0,
+async def browse_submission(account_id: int, limit: model.Limit = 50, offset: model.Offset = 0,
                             filter: model.FilterStr = None, sort: model.SorterStr = None) \
         -> ViewMySubmissionOutput:
     """
@@ -184,7 +182,7 @@ async def browse_submission(account_id: int, request: Request, limit: model.Limi
 
     ### Available columns
     """
-    if account_id != request.account.id:
+    if account_id != context.account.id:
         raise exc.NoPermission
 
     filters = model.parse_filter(filter, BROWSE_SUBMISSION_COLUMNS)
@@ -193,7 +191,7 @@ async def browse_submission(account_id: int, request: Request, limit: model.Limi
     # 只能看自己的
     filters.append(popo.Filter(col_name='account_id',
                                op=FilterOperator.eq,
-                               value=request.account.id))
+                               value=context.account.id))
 
     submissions, total_count = await db.view.my_submission(limit=limit, offset=offset,
                                                            filters=filters, sorters=sorters)
@@ -224,7 +222,6 @@ class ViewMySubmissionUnderProblemOutput(model.BrowseOutputBase):
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_MY_SUBMISSION_UNDER_PROBLEM_COLUMNS.items()})
 async def browse_my_submission_under_problem(account_id: int,
                                              problem_id: int,
-                                             request: Request,
                                              limit: model.Limit = 50, offset: model.Offset = 0,
                                              filter: model.FilterStr = None, sort: model.SorterStr = None) \
         -> ViewMySubmissionUnderProblemOutput:
@@ -234,7 +231,7 @@ async def browse_my_submission_under_problem(account_id: int,
 
     ### Available columns
     """
-    if account_id != request.account.id:
+    if account_id != context.account.id:
         raise exc.NoPermission
 
     filters = model.parse_filter(filter, BROWSE_MY_SUBMISSION_UNDER_PROBLEM_COLUMNS)
@@ -243,7 +240,7 @@ async def browse_my_submission_under_problem(account_id: int,
     # 只能看自己的
     filters.append(popo.Filter(col_name='account_id',
                                op=FilterOperator.eq,
-                               value=request.account.id))
+                               value=context.account.id))
 
     filters.append(popo.Filter(col_name='problem_id',
                                op=FilterOperator.eq,
@@ -275,7 +272,6 @@ class ViewProblemSetOutput(model.BrowseOutputBase):
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_PROBLEM_SET_COLUMNS.items()})
 async def browse_problem_set_under_class(
         class_id: int,
-        request: Request,
         limit: model.Limit = 50, offset: model.Offset = 0,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
 ) -> ViewProblemSetOutput:
@@ -285,7 +281,7 @@ async def browse_problem_set_under_class(
 
     ### Available columns
     """
-    system_role = await service.rbac.get_system_role(request.account.id)
+    system_role = await service.rbac.get_system_role(context.account.id)
     if not system_role >= RoleType.normal:
         raise exc.NoPermission
 
@@ -297,7 +293,7 @@ async def browse_problem_set_under_class(
                                value=class_id))
 
     result, total_count = await db.view.problem_set(limit=limit, offset=offset,
-                                                    filters=filters, sorters=sorters, ref_time=request.time)
+                                                    filters=filters, sorters=sorters, ref_time=context.request_time)
     return ViewProblemSetOutput(result, total_count=total_count)
 
 
@@ -322,7 +318,7 @@ class ViewGradeOutput(model.BrowseOutputBase):
 @router.get('/class/{class_id}/view/grade')
 @enveloped
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_CLASS_GRADE_COLUMNS.items()})
-async def browse_class_grade(class_id: int, request: Request,
+async def browse_class_grade(class_id: int,
                              limit: int = 50, offset: int = 0,
                              filter: model.FilterStr = None, sort: model.SorterStr = None) \
         -> ViewGradeOutput:
@@ -340,13 +336,13 @@ async def browse_class_grade(class_id: int, request: Request,
                                op=FilterOperator.eq,
                                value=class_id))
 
-    if await service.rbac.validate_class(request.account.id, RoleType.manager, class_id=class_id):  # Class manager
+    if await service.rbac.validate_class(context.account.id, RoleType.manager, class_id=class_id):  # Class manager
         grades, total_count = await db.view.grade(limit=limit, offset=offset, filters=filters, sorters=sorters)
         return ViewGradeOutput(grades, total_count=total_count)
     else:  # Self
         filters.append(popo.Filter(col_name='account_id',
                                    op=FilterOperator.eq,
-                                   value=request.account.id))
+                                   value=context.account.id))
 
         grades, total_count = await db.view.grade(limit=limit, offset=offset, filters=filters, sorters=sorters)
         return ViewGradeOutput(grades, total_count=total_count)
@@ -374,7 +370,6 @@ class ViewAccessLogOutput(model.BrowseOutputBase):
 @enveloped
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_ACCESS_LOG_COLUMNS.items()})
 async def browse_access_log(
-        req: Request,
         limit: model.Limit, offset: model.Offset,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
 ) -> ViewAccessLogOutput:
@@ -384,8 +379,8 @@ async def browse_access_log(
 
     ### Available columns
     """
-    if not (await service.rbac.validate_system(req.account.id, RoleType.manager)  # System manager
-            # or await rbac.any_class_role(member_id=req.account.id, role=RoleType.manager)):  # Any class manager
+    if not (await service.rbac.validate_system(context.account.id, RoleType.manager)  # System manager
+            # or await rbac.any_class_role(member_id=context.account.id, role=RoleType.manager)):  # Any class manager
     ):
         raise exc.NoPermission
 
@@ -413,7 +408,7 @@ class ViewPeerReviewRecordOutput(model.BrowseOutputBase):
 @router.get('/peer-review/{peer_review_id}/view/reviewer-summary')
 @enveloped
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_PEER_REVIEW_RECORD_COLUMNS.items()})
-async def peer_review_summary_review(peer_review_id: int, request: Request,
+async def peer_review_summary_review(peer_review_id: int,
                                      limit: model.Limit = 50, offset: model.Offset = 0,
                                      filter: model.FilterStr = None, sort: model.SorterStr = None) \
         -> ViewPeerReviewRecordOutput:
@@ -423,7 +418,7 @@ async def peer_review_summary_review(peer_review_id: int, request: Request,
 
     ### Available columns
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, peer_review_id=peer_review_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, peer_review_id=peer_review_id):
         raise exc.NoPermission
 
     filters = model.parse_filter(filter, BROWSE_PEER_REVIEW_RECORD_COLUMNS)
@@ -439,7 +434,7 @@ async def peer_review_summary_review(peer_review_id: int, request: Request,
 @router.get('/peer-review/{peer_review_id}/view/receiver-summary')
 @enveloped
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_PEER_REVIEW_RECORD_COLUMNS.items()})
-async def peer_review_summary_receive(peer_review_id: int, request: Request,
+async def peer_review_summary_receive(peer_review_id: int,
                                       limit: model.Limit = 50, offset: model.Offset = 0,
                                       filter: model.FilterStr = None, sort: model.SorterStr = None) \
         -> ViewPeerReviewRecordOutput:
@@ -449,7 +444,7 @@ async def peer_review_summary_receive(peer_review_id: int, request: Request,
 
     ### Available columns
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, peer_review_id=peer_review_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, peer_review_id=peer_review_id):
         raise exc.NoPermission
 
     filters = model.parse_filter(filter, BROWSE_PEER_REVIEW_RECORD_COLUMNS)

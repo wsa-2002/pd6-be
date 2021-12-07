@@ -9,12 +9,13 @@ import log
 from base import do, enum, popo
 from base.enum import RoleType, FilterOperator, ChallengePublicizeType, ScoreboardType
 import exceptions as exc
-from middleware import APIRouter, response, enveloped, auth, Request
+from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
 import service
 from persistence import email, s3
 import util
 from util import model
+from util.context import context
 
 router = APIRouter(
     tags=['Challenge'],
@@ -34,12 +35,12 @@ class AddChallengeInput(BaseModel):
 
 @router.post('/class/{class_id}/challenge', tags=['Course'])
 @enveloped
-async def add_challenge_under_class(class_id: int, data: AddChallengeInput, request: Request) -> model.AddOutput:
+async def add_challenge_under_class(class_id: int, data: AddChallengeInput) -> model.AddOutput:
     """
     ### 權限
     - Class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, class_id=class_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
 
     if data.start_time > data.end_time:
@@ -47,7 +48,7 @@ async def add_challenge_under_class(class_id: int, data: AddChallengeInput, requ
 
     challenge_id = await db.challenge.add(
         class_id=class_id, publicize_type=data.publicize_type, selection_type=data.selection_type,
-        title=data.title, setter_id=request.account.id, description=data.description,
+        title=data.title, setter_id=context.account.id, description=data.description,
         start_time=data.start_time, end_time=data.end_time
     )
     return model.AddOutput(id=challenge_id)
@@ -72,7 +73,6 @@ BROWSE_CHALLENGE_COLUMNS = {
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_CHALLENGE_COLUMNS.items()})
 async def browse_challenge_under_class(
         class_id: int,
-        request: Request,
         limit: model.Limit = 50, offset: model.Offset = 0,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
 ) -> model.BrowseOutputBase:
@@ -83,8 +83,8 @@ async def browse_challenge_under_class(
 
     ### Available columns
     """
-    system_role = await service.rbac.get_system_role(request.account.id)
-    class_role = await service.rbac.get_class_role(request.account.id, class_id=class_id)
+    system_role = await service.rbac.get_system_role(context.account.id)
+    class_role = await service.rbac.get_class_role(context.account.id, class_id=class_id)
 
     if system_role < RoleType.normal:
         raise exc.NoPermission
@@ -99,7 +99,7 @@ async def browse_challenge_under_class(
     challenges, total_count = await db.challenge.browse(limit=limit, offset=offset, filters=filters,
                                                         sorters=sorters,
                                                         include_scheduled=(class_role == RoleType.manager),
-                                                        ref_time=request.time,
+                                                        ref_time=context.request_time,
                                                         by_publicize_type=True if not class_role else False)
 
     return model.BrowseOutputBase(challenges, total_count=total_count)
@@ -107,25 +107,25 @@ async def browse_challenge_under_class(
 
 @router.get('/challenge/{challenge_id}')
 @enveloped
-async def read_challenge(challenge_id: int, request: Request) -> do.Challenge:
+async def read_challenge(challenge_id: int) -> do.Challenge:
     """
     ### 權限
     - Class manager (all)
     - Class normal & guest (after start time)
     - System normal (after scheduled time)
     """
-    if not await service.rbac.validate_system(request.account.id, RoleType.normal):
+    if not await service.rbac.validate_system(context.account.id, RoleType.normal):
         raise exc.NoPermission
 
-    challenge = await db.challenge.read(challenge_id=challenge_id, include_scheduled=True, ref_time=request.time)
-    class_role = await service.rbac.get_class_role(request.account.id, challenge_id=challenge_id)
+    challenge = await db.challenge.read(challenge_id=challenge_id, include_scheduled=True, ref_time=context.request_time)
+    class_role = await service.rbac.get_class_role(context.account.id, challenge_id=challenge_id)
 
     publicize_time = (challenge.start_time if challenge.publicize_type == ChallengePublicizeType.start_time
                       else challenge.end_time)
-    is_challenge_publicized = request.time >= publicize_time
+    is_challenge_publicized = context.request_time >= publicize_time
 
     if not (is_challenge_publicized
-            or (class_role and request.time >= challenge.start_time)
+            or (class_role and context.request_time >= challenge.start_time)
             or class_role == RoleType.manager):
         raise exc.NoPermission
 
@@ -144,12 +144,12 @@ class EditChallengeInput(BaseModel):
 
 @router.patch('/challenge/{challenge_id}')
 @enveloped
-async def edit_challenge(challenge_id: int, data: EditChallengeInput, request: Request) -> None:
+async def edit_challenge(challenge_id: int, data: EditChallengeInput) -> None:
     """
     ### 權限
     - Class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, challenge_id=challenge_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, challenge_id=challenge_id):
         raise exc.NoPermission
 
     await db.challenge.edit(challenge_id=challenge_id, publicize_type=data.publicize_type,
@@ -160,12 +160,12 @@ async def edit_challenge(challenge_id: int, data: EditChallengeInput, request: R
 
 @router.delete('/challenge/{challenge_id}')
 @enveloped
-async def delete_challenge(challenge_id: int, request: Request) -> None:
+async def delete_challenge(challenge_id: int) -> None:
     """
     ### 權限
     - Class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, challenge_id=challenge_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, challenge_id=challenge_id):
         raise exc.NoPermission
 
     await db.challenge.delete(challenge_id)
@@ -183,17 +183,17 @@ class AddProblemInput(BaseModel):
 
 @router.post('/challenge/{challenge_id}/problem', tags=['Problem'])
 @enveloped
-async def add_problem_under_challenge(challenge_id: int, data: AddProblemInput, request: Request) -> model.AddOutput:
+async def add_problem_under_challenge(challenge_id: int, data: AddProblemInput) -> model.AddOutput:
     """
     ### 權限
     - Class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, challenge_id=challenge_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, challenge_id=challenge_id):
         raise exc.NoPermission
 
     problem_id = await db.problem.add(
         challenge_id=challenge_id, challenge_label=data.challenge_label,
-        title=data.title, setter_id=request.account.id, full_score=data.full_score,
+        title=data.title, setter_id=context.account.id, full_score=data.full_score,
         description=data.description, io_description=data.io_description, source=data.source, hint=data.hint,
     )
 
@@ -208,16 +208,16 @@ class AddEssayInput(BaseModel):
 
 @router.post('/challenge/{challenge_id}/essay', tags=['Essay'])
 @enveloped
-async def add_essay_under_challenge(challenge_id: int, data: AddEssayInput, request: Request) -> model.AddOutput:
+async def add_essay_under_challenge(challenge_id: int, data: AddEssayInput) -> model.AddOutput:
     """
     ### 權限
     - Class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, challenge_id=challenge_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, challenge_id=challenge_id):
         raise exc.NoPermission
 
     essay_id = await db.essay.add(challenge_id=challenge_id, challenge_label=data.challenge_label,
-                                  title=data.title, setter_id=request.account.id, description=data.description)
+                                  title=data.title, setter_id=context.account.id, description=data.description)
     return model.AddOutput(id=essay_id)
 
 
@@ -233,13 +233,13 @@ class AddPeerReviewInput(BaseModel):
 
 @router.post('/challenge/{challenge_id}/peer-review', tags=['Peer Review'])
 @enveloped
-async def add_peer_review_under_challenge(challenge_id: int, data: AddPeerReviewInput, request: Request) \
+async def add_peer_review_under_challenge(challenge_id: int, data: AddPeerReviewInput) \
         -> model.AddOutput:
     """
     ### 權限
     - Class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, challenge_id=challenge_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, challenge_id=challenge_id):
         raise exc.NoPermission
 
     # validate problem belongs to same class
@@ -256,7 +256,7 @@ async def add_peer_review_under_challenge(challenge_id: int, data: AddPeerReview
                                               challenge_label=data.challenge_label,
                                               title=data.title,
                                               target_problem_id=data.target_problem_id,
-                                              setter_id=request.account.id,
+                                              setter_id=context.account.id,
                                               description=data.description,
                                               min_score=data.min_score, max_score=data.max_score,
                                               max_review_count=data.max_review_count)
@@ -277,13 +277,13 @@ class AddTeamProjectScoreboardInput(BaseModel):
 
 @router.post('/challenge/{challenge_id}/team-project-scoreboard', tags=['Team Project Scoreboard'])
 @enveloped
-async def add_team_project_scoreboard_under_challenge(challenge_id: int, data: AddTeamProjectScoreboardInput,
-                                                      request: Request) -> model.AddOutput:
+async def add_team_project_scoreboard_under_challenge(challenge_id: int, data: AddTeamProjectScoreboardInput) \
+        -> model.AddOutput:
     """
     ### 權限
     - Class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, challenge_id=challenge_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, challenge_id=challenge_id):
         raise exc.NoPermission
 
     if not await service.scoreboard.validate_formula(formula=data.scoring_formula):
@@ -309,22 +309,22 @@ class BrowseTaskOutput:
 
 @router.get('/challenge/{challenge_id}/task')
 @enveloped
-async def browse_all_task_under_challenge(challenge_id: int, request: Request) -> BrowseTaskOutput:
+async def browse_all_task_under_challenge(challenge_id: int) -> BrowseTaskOutput:
     """
     ### 權限
     - Class manager (all)
     - Class guest (active/archived challenges)
     - System Normal (by challenge publicize type)
     """
-    challenge = await db.challenge.read(challenge_id=challenge_id, include_scheduled=True, ref_time=request.time)
-    class_role = await service.rbac.get_class_role(request.account.id, challenge_id=challenge_id)
+    challenge = await db.challenge.read(challenge_id=challenge_id, include_scheduled=True, ref_time=context.request_time)
+    class_role = await service.rbac.get_class_role(context.account.id, challenge_id=challenge_id)
 
     publicize_time = (challenge.start_time if challenge.publicize_type == ChallengePublicizeType.start_time
                       else challenge.end_time)
-    is_challenge_publicized = request.time >= publicize_time
+    is_challenge_publicized = context.request_time >= publicize_time
 
-    if not ((class_role >= RoleType.guest and request.time >= challenge.start_time)  # Class guest
-            or (await service.rbac.validate_system(request.account.id,
+    if not ((class_role >= RoleType.guest and context.request_time >= challenge.start_time)  # Class guest
+            or (await service.rbac.validate_system(context.account.id,
                                                    RoleType.normal) and is_challenge_publicized)  # System normal
             or class_role == RoleType.manager):  # Class manager
         raise exc.NoPermission
@@ -352,15 +352,15 @@ class ReadStatusOutput:
 
 @router.get('/challenge/{challenge_id}/task-status')
 @enveloped
-async def browse_all_task_status_under_challenge(challenge_id: int, request: Request) -> Sequence[ReadStatusOutput]:
+async def browse_all_task_status_under_challenge(challenge_id: int) -> Sequence[ReadStatusOutput]:
     """
     ### 權限
     - Self: see self
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.guest, challenge_id=challenge_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.guest, challenge_id=challenge_id):
         raise exc.NoPermission
 
-    results = await service.task.browse_status(challenge_id, account_id=request.account.id)
+    results = await service.task.browse_status(challenge_id, account_id=context.account.id)
     return [ReadStatusOutput(problem=[ReadProblemStatusOutput(problem_id=problem.id, submission_id=submission.id)
                                       for (problem, submission) in results])]
 
@@ -380,12 +380,12 @@ class GetChallengeStatOutput:
 
 @router.get('/challenge/{challenge_id}/statistics/summary')
 @enveloped
-async def get_challenge_statistics(challenge_id: int, request: Request) -> GetChallengeStatOutput:
+async def get_challenge_statistics(challenge_id: int) -> GetChallengeStatOutput:
     """
     ### 權限
     - class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, challenge_id=challenge_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, challenge_id=challenge_id):
         raise exc.NoPermission
 
     result = await service.statistics.get_challenge_statistics(challenge_id=challenge_id)
@@ -416,12 +416,12 @@ class GetMemberSubmissionStatOutput:
 
 @router.get('/challenge/{challenge_id}/statistics/member-submission')
 @enveloped
-async def get_member_submission_statistics(challenge_id: int, request: Request) -> model.BrowseOutputBase:
+async def get_member_submission_statistics(challenge_id: int) -> model.BrowseOutputBase:
     """
     ### 權限
     - class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, challenge_id=challenge_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, challenge_id=challenge_id):
         raise exc.NoPermission
 
     results = await service.statistics.get_member_submission_statistics(challenge_id=challenge_id)
@@ -438,13 +438,13 @@ async def get_member_submission_statistics(challenge_id: int, request: Request) 
 
 @router.post('/challenge/{challenge_id}/all-submission')
 @enveloped
-async def download_all_submissions(challenge_id: int, request: Request, as_attachment: bool,
+async def download_all_submissions(challenge_id: int, as_attachment: bool,
                                    background_tasks: BackgroundTasks) -> None:
     """
     ### 權限
     - class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, challenge_id=challenge_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, challenge_id=challenge_id):
         raise exc.NoPermission
 
     async def _task() -> None:
@@ -459,7 +459,7 @@ async def download_all_submissions(challenge_id: int, request: Request, as_attac
 
         log.info("URL signed, sending email")
 
-        account, student_card = await db.account_vo.read_with_default_student_card(account_id=request.account.id)
+        account, student_card = await db.account_vo.read_with_default_student_card(account_id=context.account.id)
         if student_card.email:
             await email.notification.send_file_download_url(to=student_card.email, file_url=file_url,
                                                             subject=f'[PDOGS] All submissions for {challenge.title}')
@@ -473,19 +473,19 @@ async def download_all_submissions(challenge_id: int, request: Request, as_attac
 
 @router.post('/challenge/{challenge_id}/all-plagiarism-report')
 @enveloped
-async def download_all_plagiarism_reports(challenge_id: int, request: Request, as_attachment: bool,
+async def download_all_plagiarism_reports(challenge_id: int, as_attachment: bool,
                                           background_tasks: BackgroundTasks) -> None:
     """
     ### 權限
     - class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, challenge_id=challenge_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, challenge_id=challenge_id):
         raise exc.NoPermission
 
     async def _task() -> None:
         log.info("Start download all essay submission")
 
-        account, student_card = await db.account_vo.read_with_default_student_card(account_id=request.account.id)
+        account, student_card = await db.account_vo.read_with_default_student_card(account_id=context.account.id)
 
         challenge = await db.challenge.read(challenge_id, include_scheduled=True)
         problems = await db.problem.browse_by_challenge(challenge_id=challenge_id)

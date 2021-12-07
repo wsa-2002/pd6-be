@@ -5,10 +5,11 @@ from pydantic import BaseModel
 from base import do
 from base.enum import CourseType, RoleType
 import exceptions as exc
-from middleware import APIRouter, response, enveloped, auth, Request
+from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
 import service
 from util import model
+from util.context import context
 
 router = APIRouter(
     tags=['Course'],
@@ -24,12 +25,12 @@ class AddCourseInput(BaseModel):
 
 @router.post('/course')
 @enveloped
-async def add_course(data: AddCourseInput, request: Request) -> model.AddOutput:
+async def add_course(data: AddCourseInput) -> model.AddOutput:
     """
     ### 權限
     - System manager
     """
-    if not await service.rbac.validate_system(request.account.id, RoleType.manager):
+    if not await service.rbac.validate_system(context.account.id, RoleType.manager):
         raise exc.NoPermission
 
     course_id = await db.course.add(
@@ -41,13 +42,13 @@ async def add_course(data: AddCourseInput, request: Request) -> model.AddOutput:
 
 @router.get('/course')
 @enveloped
-async def browse_all_course(request: Request) -> Sequence[do.Course]:
+async def browse_all_course() -> Sequence[do.Course]:
     """
     ### 權限
     - System manager (hidden)
     - System normal (not hidden)
     """
-    system_role = await service.rbac.get_system_role(request.account.id)
+    system_role = await service.rbac.get_system_role(context.account.id)
     if system_role < RoleType.normal:
         raise exc.NoPermission
 
@@ -57,13 +58,13 @@ async def browse_all_course(request: Request) -> Sequence[do.Course]:
 
 @router.get('/course/{course_id}')
 @enveloped
-async def read_course(course_id: int, request: Request) -> do.Course:
+async def read_course(course_id: int) -> do.Course:
     """
     ### 權限
     - System manager (hidden)
     - System normal (not hidden)
     """
-    system_role = await service.rbac.get_system_role(request.account.id)
+    system_role = await service.rbac.get_system_role(context.account.id)
     if system_role < RoleType.normal:
         raise exc.NoPermission
 
@@ -78,12 +79,12 @@ class EditCourseInput(BaseModel):
 
 @router.patch('/course/{course_id}')
 @enveloped
-async def edit_course(course_id: int, data: EditCourseInput, request: Request) -> None:
+async def edit_course(course_id: int, data: EditCourseInput) -> None:
     """
     ### 權限
     - System manager
     """
-    if not await service.rbac.validate_system(request.account.id, RoleType.manager):
+    if not await service.rbac.validate_system(context.account.id, RoleType.manager):
         raise exc.NoPermission
 
     await db.course.edit(
@@ -95,12 +96,12 @@ async def edit_course(course_id: int, data: EditCourseInput, request: Request) -
 
 @router.delete('/course/{course_id}')
 @enveloped
-async def delete_course(course_id: int, request: Request) -> None:
+async def delete_course(course_id: int) -> None:
     """
     ### 權限
     - System manager
     """
-    if not await service.rbac.validate_system(request.account.id, RoleType.manager):
+    if not await service.rbac.validate_system(context.account.id, RoleType.manager):
         raise exc.NoPermission
 
     await db.course.delete(course_id)
@@ -112,12 +113,12 @@ class AddClassInput(BaseModel):
 
 @router.post('/course/{course_id}/class', tags=['Class'])
 @enveloped
-async def add_class_under_course(course_id: int, data: AddClassInput, request: Request) -> model.AddOutput:
+async def add_class_under_course(course_id: int, data: AddClassInput) -> model.AddOutput:
     """
     ### 權限
     - System manager
     """
-    if not await service.rbac.validate_system(request.account.id, RoleType.manager):
+    if not await service.rbac.validate_system(context.account.id, RoleType.manager):
         raise exc.NoPermission
 
     class_id = await db.class_.add(
@@ -130,13 +131,13 @@ async def add_class_under_course(course_id: int, data: AddClassInput, request: R
 
 @router.get('/course/{course_id}/class', tags=['Class'])
 @enveloped
-async def browse_all_class_under_course(course_id: int, request: Request) -> Sequence[do.Class]:
+async def browse_all_class_under_course(course_id: int) -> Sequence[do.Class]:
     """
     ### 權限
     - Class+ manager (hidden)
     - System normal (not hidden)
     """
-    if not await service.rbac.validate_system(request.account.id, RoleType.normal):
+    if not await service.rbac.validate_system(context.account.id, RoleType.normal):
         raise exc.NoPermission
 
     return await db.class_.browse(course_id=course_id)
