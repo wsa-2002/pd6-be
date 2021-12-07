@@ -267,6 +267,7 @@ async def class_total_ac_member_count(problem_id: int) -> int:
                 fr'         ON submission.account_id = class_member.member_id'
                 fr' INNER JOIN judgment'
                 fr'         ON judgment.submission_id = submission.id'
+                fr'        AND submission_last_judgment_id(submission.id) = judgment.id'
                 fr'        AND judgment.verdict = %(judgment_verdict)s'
                 fr' INNER JOIN problem'
                 fr'         ON problem.id = submission.problem_id'
