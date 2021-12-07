@@ -76,7 +76,7 @@ async def read_problem(problem_id: int) -> ReadProblemOutput:
     is_system_normal = await service.rbac.validate_system(context.account.id, RoleType.normal)
 
     problem = await db.problem.read(problem_id)
-    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=context.request_time)
+    challenge = await db.challenge.read(problem.challenge_id)
     publicize_time = (challenge.start_time if challenge.publicize_type == ChallengePublicizeType.start_time
                       else challenge.end_time)
     is_challenge_publicized = context.request_time >= publicize_time
@@ -399,7 +399,7 @@ async def get_score_by_challenge_type_under_problem(problem_id: int) -> GetScore
     - Self
     """
     problem = await db.problem.read(problem_id)
-    challenge = await db.challenge.read(challenge_id=problem.challenge_id, include_scheduled=True)
+    challenge = await db.challenge.read(challenge_id=problem.challenge_id)
     submission_judgment = await db.judgment.read_by_challenge_type(problem_id=problem_id,
                                                                    account_id=context.account.id,  # 只能看自己的
                                                                    selection_type=challenge.selection_type,

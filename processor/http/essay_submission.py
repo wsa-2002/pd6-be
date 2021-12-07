@@ -35,7 +35,7 @@ async def upload_essay(essay_id: int, essay_file: UploadFile = File(...)) -> int
         raise exc.NoPermission
 
     essay = await db.essay.read(essay_id=essay_id)
-    challenge = await db.challenge.read(essay.challenge_id, include_scheduled=True, ref_time=context.request_time)
+    challenge = await db.challenge.read(essay.challenge_id, ref_time=context.request_time)
     if context.request_time >= challenge.end_time:
         raise exc.NoPermission
 
@@ -128,7 +128,7 @@ async def reupload_essay(essay_submission_id: int, essay_file: UploadFile = File
 
     essay_submission = await db.essay_submission.read(essay_submission_id=essay_submission_id)
     essay = await db.essay.read(essay_id=essay_submission.essay_id)
-    challenge = await db.challenge.read(challenge_id=essay.challenge_id, include_scheduled=True)
+    challenge = await db.challenge.read(challenge_id=essay.challenge_id)
 
     if not (context.account.id == essay_submission.account_id and context.request_time <= challenge.end_time):
         raise exc.NoPermission

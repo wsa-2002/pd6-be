@@ -73,9 +73,9 @@ async def browse_announcement(
     filters = model.parse_filter(filter, BROWSE_ANNOUNCEMENT_COLUMNS)
     sorters = model.parse_sorter(sort, BROWSE_ANNOUNCEMENT_COLUMNS)
 
-    announcements, total_count = await db.announcement.browse(limit=limit, offset=offset, filters=filters,
-                                                              sorters=sorters,
-                                                              include_scheduled=system_role >= RoleType.manager,
+    announcements, total_count = await db.announcement.browse(limit=limit, offset=offset,
+                                                              filters=filters, sorters=sorters,
+                                                              exclude_scheduled=system_role < RoleType.manager,
                                                               ref_time=context.request_time)
     return model.BrowseOutputBase(announcements, total_count=total_count)
 
@@ -93,7 +93,7 @@ async def read_announcement(announcement_id: int) -> do.Announcement:
         raise exc.NoPermission
 
     return await db.announcement.read(announcement_id,
-                                      include_scheduled=system_role >= RoleType.manager, ref_time=context.request_time)
+                                      exclude_scheduled=system_role < RoleType.manager, ref_time=context.request_time)
 
 
 class EditAnnouncementInput(BaseModel):

@@ -35,7 +35,7 @@ async def read_peer_review(peer_review_id: int) -> do.PeerReview:
         raise exc.NoPermission
 
     peer_review = await db.peer_review.read(peer_review_id)
-    challenge = await db.challenge.read(peer_review.challenge_id, include_scheduled=True, ref_time=context.request_time)
+    challenge = await db.challenge.read(peer_review.challenge_id)
     is_scheduled = challenge.start_time > context.request_time
 
     if not (is_scheduled and class_role >= RoleType.manager  # hidden => need manager
@@ -164,7 +164,7 @@ async def assign_peer_review_record(peer_review_id: int) -> AssignPeerReviewOutp
         raise exc.NoPermission
 
     peer_review = await db.peer_review.read(peer_review_id)
-    challenge = await db.challenge.read(challenge_id=peer_review.challenge_id, include_scheduled=True)
+    challenge = await db.challenge.read(challenge_id=peer_review.challenge_id)
     if not challenge.start_time <= context.request_time <= challenge.end_time:
         raise exc.NoPermission
 
@@ -211,7 +211,7 @@ async def read_peer_review_record(peer_review_record_id: int) -> ReadPeerReviewR
     is_manager = class_role >= RoleType.manager
     peer_review_record = await db.peer_review_record.read(peer_review_record_id)
     peer_review = await db.peer_review.read(peer_review_id=peer_review_record.peer_review_id)
-    challenge = await db.challenge.read(challenge_id=peer_review.challenge_id, include_scheduled=True)
+    challenge = await db.challenge.read(challenge_id=peer_review.challenge_id)
     is_grader = context.account.id == peer_review_record.grader_id
     is_receiver = context.account.id == peer_review_record.receiver_id
     if not (is_manager
@@ -254,7 +254,7 @@ async def submit_peer_review_record(peer_review_record_id: int, data: SubmitPeer
 
     peer_review_record = await db.peer_review_record.read(peer_review_record_id)
     peer_review = await db.peer_review.read(peer_review_id=peer_review_record.peer_review_id)
-    challenge = await db.challenge.read(challenge_id=peer_review.challenge_id, include_scheduled=True)
+    challenge = await db.challenge.read(challenge_id=peer_review.challenge_id)
     if not challenge.start_time <= context.request_time <= challenge.end_time:
         raise exc.NoPermission
     # 檢查 score 是否在規定範圍內
@@ -279,7 +279,7 @@ async def browse_account_received_peer_review_record(peer_review_id: int, accoun
         raise exc.NoPermission
 
     peer_review = await db.peer_review.read(peer_review_id)
-    challenge = await db.challenge.read(challenge_id=peer_review.challenge_id, include_scheduled=True)
+    challenge = await db.challenge.read(challenge_id=peer_review.challenge_id)
 
     if not (class_role >= RoleType.manager
             or (context.account.id == account_id and challenge.end_time <= context.request_time)):
@@ -305,7 +305,7 @@ async def browse_account_reviewed_peer_review_record(peer_review_id: int, accoun
         raise exc.NoPermission
 
     peer_review = await db.peer_review.read(peer_review_id)
-    challenge = await db.challenge.read(challenge_id=peer_review.challenge_id, include_scheduled=True)
+    challenge = await db.challenge.read(challenge_id=peer_review.challenge_id)
 
     if not (class_role >= RoleType.manager
             or (context.account.id == account_id and challenge.start_time <= context.request_time)):

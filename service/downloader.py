@@ -29,7 +29,7 @@ async def all_essay_submissions(essay_id: int) -> do.S3File:
 async def all_submissions(challenge_id: int) -> do.S3File:
     log.info(f'Downloading all submissions for {challenge_id=}')
 
-    challenge = await db.challenge.read(challenge_id, include_scheduled=True)
+    challenge = await db.challenge.read(challenge_id)
     problems = await db.problem.browse_by_challenge(challenge_id=challenge_id)
 
     _submission_languages: dict[int, do.SubmissionLanguage] = dict()

@@ -50,7 +50,7 @@ async def view_team_project_scoreboard(scoreboard_id: int) \
 
     setting_data = await db.scoreboard_setting_team_project.read(scoreboard.setting_id)
 
-    class_id = (await db.challenge.read(challenge_id=scoreboard.challenge_id, include_scheduled=True)).class_id
+    class_id = (await db.challenge.read(challenge_id=scoreboard.challenge_id)).class_id
     teams = await db.team.browse_with_team_label_filter(class_id=class_id,
                                                         team_label_filter=setting_data.team_label_filter)
 
