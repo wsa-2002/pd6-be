@@ -1,6 +1,6 @@
 from typing import Sequence
 
-from pydantic import BaseModel
+from pydantic import BaseModel, constr
 
 from base import do
 import exceptions as exc
@@ -19,8 +19,8 @@ router = APIRouter(
 
 class AddStudentCardInput(BaseModel):
     institute_id: int
-    institute_email_prefix: str
-    student_id: str
+    institute_email_prefix: constr(to_lower=True)
+    student_id: constr(to_lower=True)
 
 
 @router.post('/account/{account_id}/student-card', tags=['Account'])
@@ -42,7 +42,7 @@ async def add_student_card_to_account(account_id: int, data: AddStudentCardInput
     except exc.persistence.NotFound:
         raise exc.account.InvalidInstitute
 
-    if data.student_id.lower() != data.institute_email_prefix.lower():
+    if data.student_id != data.institute_email_prefix:
         raise exc.account.StudentIdNotMatchEmail
 
     if await db.student_card.is_duplicate(institute.id, data.student_id):

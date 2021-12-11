@@ -2,8 +2,7 @@ from typing import Optional
 from dataclasses import dataclass
 
 from fastapi import UploadFile, File
-import pydantic
-from pydantic import BaseModel
+from pydantic import BaseModel, constr
 
 from base import enum
 from base.enum import RoleType
@@ -39,11 +38,11 @@ class AddAccountInput(BaseModel):
     password: str
     nickname: str
     real_name: str
-    alternative_email: Optional[pydantic.EmailStr] = model.can_omit
+    alternative_email: Optional[model.CaseInsensitiveEmailStr] = model.can_omit
     # Student card
     institute_id: int
-    student_id: str
-    institute_email_prefix: str
+    student_id: constr(to_lower=True)
+    institute_email_prefix: constr(to_lower=True)
 
 
 @router.post('/account', tags=['Public', 'Account'], response_class=JSONResponse)
@@ -58,7 +57,7 @@ async def add_account(data: AddAccountInput) -> None:
     except exc.persistence.NotFound:
         raise exc.account.InvalidInstitute
 
-    if data.student_id.lower() != data.institute_email_prefix.lower():
+    if data.student_id != data.institute_email_prefix:
         raise exc.account.StudentIdNotMatchEmail
 
     if await db.student_card.is_duplicate(institute.id, data.student_id):
@@ -116,7 +115,7 @@ class AddNormalAccountInput(BaseModel):
     username: str
     password: str
     nickname: str = ''
-    alternative_email: Optional[pydantic.EmailStr] = model.can_omit
+    alternative_email: Optional[model.CaseInsensitiveEmailStr] = model.can_omit
 
 
 @router.post('/account-normal', tags=['Account'], response_class=JSONResponse)
