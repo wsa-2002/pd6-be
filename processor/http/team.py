@@ -8,9 +8,10 @@ from pydantic import BaseModel
 from base import do
 from base.enum import RoleType
 import exceptions as exc
-from middleware import APIRouter, response, enveloped, auth, Request
+from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
 import service
+from util.context import context
 
 router = APIRouter(
     tags=['Team'],
@@ -27,12 +28,12 @@ class GetTeamTemplateOutput:
 
 @router.post('/class/{class_id}/team-import', tags=['Class'])
 @enveloped
-async def import_team(class_id: int, label: str, request: Request, team_file: UploadFile = File(...)):
+async def import_team(class_id: int, label: str, team_file: UploadFile = File(...)):
     """
     ### 權限
     - Class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, class_id=class_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
 
     await service.csv.import_team(team_file.file, class_id=class_id, label=label)
@@ -40,12 +41,12 @@ async def import_team(class_id: int, label: str, request: Request, team_file: Up
 
 @router.get('/team/template')
 @enveloped
-async def get_team_template_file(request: Request) -> GetTeamTemplateOutput:
+async def get_team_template_file() -> GetTeamTemplateOutput:
     """
     ### 權限
     - system normal
     """
-    if not await service.rbac.validate_system(request.account.id, RoleType.normal):
+    if not await service.rbac.validate_system(context.account.id, RoleType.normal):
         raise exc.NoPermission
 
     s3_file, filename = await service.csv.get_team_template()
@@ -54,12 +55,12 @@ async def get_team_template_file(request: Request) -> GetTeamTemplateOutput:
 
 @router.get('/team/{team_id}')
 @enveloped
-async def read_team(team_id: int, request: Request) -> do.Team:
+async def read_team(team_id: int) -> do.Team:
     """
     ### 權限
     - Class normal
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.normal, team_id=team_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.normal, team_id=team_id):
         raise exc.NoPermission
 
     return await db.team.read(team_id)
@@ -73,14 +74,14 @@ class EditTeamInput(BaseModel):
 
 @router.patch('/team/{team_id}')
 @enveloped
-async def edit_team(team_id: int, data: EditTeamInput, request: Request) -> None:
+async def edit_team(team_id: int, data: EditTeamInput) -> None:
     """
     ### 權限
     - Class manager
     - Team manager (limited)
     """
-    is_class_manager = await service.rbac.validate_class(request.account.id, RoleType.manager, team_id=team_id)
-    is_team_manager = await service.rbac.validate_team(request.account.id, RoleType.manager, team_id=team_id)
+    is_class_manager = await service.rbac.validate_class(context.account.id, RoleType.manager, team_id=team_id)
+    is_team_manager = await service.rbac.validate_team(context.account.id, RoleType.manager, team_id=team_id)
 
     if not is_class_manager and not is_team_manager:
         raise exc.NoPermission
@@ -95,12 +96,12 @@ async def edit_team(team_id: int, data: EditTeamInput, request: Request) -> None
 
 @router.delete('/team/{team_id}')
 @enveloped
-async def delete_team(team_id: int, request: Request) -> None:
+async def delete_team(team_id: int) -> None:
     """
     ### 權限
     - Class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, team_id=team_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, team_id=team_id):
         raise exc.NoPermission
 
     await db.team.delete(team_id)
@@ -108,12 +109,12 @@ async def delete_team(team_id: int, request: Request) -> None:
 
 @router.get('/team/{team_id}/member')
 @enveloped
-async def browse_team_all_member(team_id: int, request: Request, ) -> Sequence[do.TeamMember]:
+async def browse_team_all_member(team_id: int, ) -> Sequence[do.TeamMember]:
     """
     ### 權限
     - Class normal
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.normal, team_id=team_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.normal, team_id=team_id):
         raise exc.NoPermission
 
     return await db.team.browse_members(team_id=team_id)
@@ -126,12 +127,12 @@ class AddMemberInput(BaseModel):
 
 @router.post('/team/{team_id}/member')
 @enveloped
-async def add_team_member(team_id: int, data: Sequence[AddMemberInput], request: Request) -> Sequence[bool]:
+async def add_team_member(team_id: int, data: Sequence[AddMemberInput]) -> Sequence[bool]:
     """
     ### 權限
     - class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, team_id=team_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, team_id=team_id):
         raise exc.NoPermission
 
     return await db.team.add_members(team_id=team_id,
@@ -146,12 +147,12 @@ class EditMemberInput(BaseModel):
 
 @router.patch('/team/{team_id}/member')
 @enveloped
-async def edit_team_member(team_id: int, data: Sequence[EditMemberInput], request: Request) -> None:
+async def edit_team_member(team_id: int, data: Sequence[EditMemberInput]) -> None:
     """
     ### 權限
     - Class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, team_id=team_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, team_id=team_id):
         raise exc.NoPermission
 
     for member in data:
@@ -160,12 +161,12 @@ async def edit_team_member(team_id: int, data: Sequence[EditMemberInput], reques
 
 @router.delete('/team/{team_id}/member/{member_id}')
 @enveloped
-async def delete_team_member(team_id: int, member_id: int, request: Request) -> None:
+async def delete_team_member(team_id: int, member_id: int) -> None:
     """
     ### 權限
     - Class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, team_id=team_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, team_id=team_id):
         raise exc.NoPermission
 
     await db.team.delete_member(team_id=team_id, member_id=member_id)

@@ -1,14 +1,15 @@
 from typing import Sequence
 
-from pydantic import BaseModel
+from pydantic import BaseModel, constr
 
 from base import do
 import exceptions as exc
 from base.enum import RoleType
-from middleware import APIRouter, response, enveloped, auth, Request
+from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
-import service
 from persistence import email
+import service
+from util.context import context
 
 router = APIRouter(
     tags=['Student Card'],
@@ -19,20 +20,20 @@ router = APIRouter(
 
 class AddStudentCardInput(BaseModel):
     institute_id: int
-    institute_email_prefix: str
-    student_id: str
+    institute_email_prefix: constr(to_lower=True)
+    student_id: constr(to_lower=True)
 
 
 @router.post('/account/{account_id}/student-card', tags=['Account'])
 @enveloped
-async def add_student_card_to_account(account_id: int, data: AddStudentCardInput, request: Request) -> None:
+async def add_student_card_to_account(account_id: int, data: AddStudentCardInput) -> None:
     """
     ### 權限
     - System manager
     - Self
     """
-    is_manager = await service.rbac.validate_system(request.account.id, RoleType.manager)
-    is_self = request.account.id == account_id
+    is_manager = await service.rbac.validate_system(context.account.id, RoleType.manager)
+    is_self = context.account.id == account_id
 
     if not (is_manager or is_self):
         raise exc.NoPermission
@@ -42,7 +43,7 @@ async def add_student_card_to_account(account_id: int, data: AddStudentCardInput
     except exc.persistence.NotFound:
         raise exc.account.InvalidInstitute
 
-    if data.student_id.lower() != data.institute_email_prefix.lower():
+    if data.student_id != data.institute_email_prefix:
         raise exc.account.StudentIdNotMatchEmail
 
     if await db.student_card.is_duplicate(institute.id, data.student_id):
@@ -57,14 +58,14 @@ async def add_student_card_to_account(account_id: int, data: AddStudentCardInput
 
 @router.get('/account/{account_id}/student-card', tags=['Account'])
 @enveloped
-async def browse_all_account_student_card(account_id: int, request: Request, ) -> Sequence[do.StudentCard]:
+async def browse_all_account_student_card(account_id: int, ) -> Sequence[do.StudentCard]:
     """
     ### 權限
     - System manager
     - Self
     """
-    is_manager = await service.rbac.validate_system(request.account.id, RoleType.manager)
-    is_self = request.account.id == account_id
+    is_manager = await service.rbac.validate_system(context.account.id, RoleType.manager)
+    is_self = context.account.id == account_id
 
     if not (is_manager or is_self):
         raise exc.NoPermission
@@ -76,15 +77,15 @@ async def browse_all_account_student_card(account_id: int, request: Request, ) -
 
 @router.get('/student-card/{student_card_id}')
 @enveloped
-async def read_student_card(student_card_id: int, request: Request) -> do.StudentCard:
+async def read_student_card(student_card_id: int) -> do.StudentCard:
     """
     ### 權限
     - System manager
     - Self
     """
-    is_manager = await service.rbac.validate_system(request.account.id, RoleType.manager)
+    is_manager = await service.rbac.validate_system(context.account.id, RoleType.manager)
     owner_id = await db.student_card.read_owner_id(student_card_id=student_card_id)
-    is_self = request.account.id == owner_id
+    is_self = context.account.id == owner_id
 
     if not (is_manager or is_self):
         raise exc.NoPermission

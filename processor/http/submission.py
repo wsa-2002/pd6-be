@@ -8,11 +8,12 @@ from base import do, popo
 from base.enum import RoleType, ChallengePublicizeType, FilterOperator
 import const
 import exceptions as exc
-from middleware import APIRouter, response, enveloped, auth, Request
+from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
 import service
 import util
 from util import model
+from util.context import context
 
 router = APIRouter(
     tags=['Submission'],
@@ -23,12 +24,12 @@ router = APIRouter(
 
 @router.get('/submission/language', tags=['Administrative'])
 @enveloped
-async def browse_all_submission_language(request: Request) -> Sequence[do.SubmissionLanguage]:
+async def browse_all_submission_language() -> Sequence[do.SubmissionLanguage]:
     """
     ### 權限
     - System normal
     """
-    if not await service.rbac.validate_system(request.account.id, RoleType.normal):
+    if not await service.rbac.validate_system(context.account.id, RoleType.normal):
         raise exc.NoPermission
 
     return await db.submission.browse_language()
@@ -43,12 +44,12 @@ class AddSubmissionLanguageInput(BaseModel):
 
 @router.post('/submission/language', tags=['Administrative'])
 @enveloped
-async def add_submission_language(data: AddSubmissionLanguageInput, request: Request) -> model.AddOutput:
+async def add_submission_language(data: AddSubmissionLanguageInput) -> model.AddOutput:
     """
     ### 權限
     - System manager
     """
-    if not await service.rbac.validate_system(request.account.id, RoleType.manager):
+    if not await service.rbac.validate_system(context.account.id, RoleType.manager):
         raise exc.NoPermission
 
     language_id = await db.submission.add_language(name=data.name, version=data.version, queue_name=data.queue_name,
@@ -64,12 +65,12 @@ class EditSubmissionLanguageInput(BaseModel):
 
 @router.patch('/submission/language/{language_id}', tags=['Administrative'])
 @enveloped
-async def edit_submission_language(language_id: int, data: EditSubmissionLanguageInput, request: Request) -> None:
+async def edit_submission_language(language_id: int, data: EditSubmissionLanguageInput) -> None:
     """
     ### 權限
     - System manager
     """
-    if not await service.rbac.validate_system(request.account.id, RoleType.manager):
+    if not await service.rbac.validate_system(context.account.id, RoleType.manager):
         raise exc.NoPermission
 
     return await db.submission.edit_language(language_id,
@@ -79,7 +80,7 @@ async def edit_submission_language(language_id: int, data: EditSubmissionLanguag
 @router.post('/problem/{problem_id}/submission', tags=['Problem'],
              dependencies=[Depends(util.file.valid_file_length(file_length=const.CODE_UPLOAD_LIMIT))])
 @enveloped
-async def submit(problem_id: int, language_id: int, request: Request, content_file: UploadFile = File(...)) \
+async def submit(problem_id: int, language_id: int, content_file: UploadFile = File(...)) \
         -> model.AddOutput:
     """
     ### 權限
@@ -89,19 +90,19 @@ async def submit(problem_id: int, language_id: int, request: Request, content_fi
     ### 限制
     - 上傳檔案 < 1mb
     """
-    if not await service.rbac.validate_system(request.account.id, RoleType.normal):
+    if not await service.rbac.validate_system(context.account.id, RoleType.normal):
         raise exc.NoPermission
 
     # Validate problem
     problem = await db.problem.read(problem_id)
-    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
-    class_role = await service.rbac.get_class_role(request.account.id, class_id=challenge.class_id)
+    challenge = await db.challenge.read(problem.challenge_id)
+    class_role = await service.rbac.get_class_role(context.account.id, class_id=challenge.class_id)
     publicize_time = (challenge.start_time if challenge.publicize_type == ChallengePublicizeType.start_time
                       else challenge.end_time)
-    is_challenge_publicized = request.time >= publicize_time
+    is_challenge_publicized = context.request_time >= publicize_time
 
     if not (is_challenge_publicized
-            or (class_role and request.time >= challenge.start_time)
+            or (class_role and context.request_time >= challenge.start_time)
             or class_role == RoleType.manager):
         raise exc.NoPermission
 
@@ -113,9 +114,9 @@ async def submit(problem_id: int, language_id: int, request: Request, content_fi
     file_length = len(await content_file.read())
     await content_file.seek(0)
     submission_id = await service.submission.submit(file=content_file.file, filename=content_file.filename,
-                                                    account_id=request.account.id, problem_id=problem.id,
+                                                    account_id=context.account.id, problem_id=problem.id,
                                                     file_length=file_length,
-                                                    language_id=language.id, submit_time=request.time)
+                                                    language_id=language.id, submit_time=context.request_time)
     await service.judge.judge_submission(submission_id)
 
     return model.AddOutput(id=submission_id)
@@ -131,7 +132,7 @@ BROWSE_SUBMISSION_COLUMNS = {
 @router.get('/submission')
 @enveloped
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_SUBMISSION_COLUMNS.items()})
-async def browse_submission(account_id: int, request: Request, limit: model.Limit = 50, offset: model.Offset = 0,
+async def browse_submission(account_id: int, limit: model.Limit = 50, offset: model.Offset = 0,
                             filter: model.FilterStr = None, sort: model.SorterStr = None) \
         -> model.BrowseOutputBase:
     """
@@ -140,7 +141,7 @@ async def browse_submission(account_id: int, request: Request, limit: model.Limi
 
     ### Available columns
     """
-    if account_id != request.account.id:
+    if account_id != context.account.id:
         raise exc.NoPermission
 
     filters = model.parse_filter(filter, BROWSE_SUBMISSION_COLUMNS)
@@ -149,7 +150,7 @@ async def browse_submission(account_id: int, request: Request, limit: model.Limi
     # 只能看自己的
     filters.append(popo.Filter(col_name='account_id',
                                op=FilterOperator.eq,
-                               value=request.account.id))
+                               value=context.account.id))
 
     submissions, total_count = await db.submission.browse(limit=limit, offset=offset,
                                                           filters=filters, sorters=sorters)
@@ -159,7 +160,7 @@ async def browse_submission(account_id: int, request: Request, limit: model.Limi
 
 @router.get('/submission/judgment/batch')
 @enveloped
-async def batch_get_submission_judgment(request: Request, submission_ids: pydantic.Json) -> Sequence[do.Judgment]:
+async def batch_get_submission_judgment(submission_ids: pydantic.Json) -> Sequence[do.Judgment]:
     """
     ### 權限
     - System Normal
@@ -171,7 +172,7 @@ async def batch_get_submission_judgment(request: Request, submission_ids: pydant
     if not submission_ids:
         return []
 
-    if not await service.rbac.validate_system(request.account.id, RoleType.normal):
+    if not await service.rbac.validate_system(context.account.id, RoleType.normal):
         raise exc.NoPermission
 
     return await db.judgment.browse_latest_with_submission_ids(submission_ids=submission_ids)
@@ -179,7 +180,7 @@ async def batch_get_submission_judgment(request: Request, submission_ids: pydant
 
 @router.get('/submission/{submission_id}')
 @enveloped
-async def read_submission(submission_id: int, request: Request) -> do.Submission:
+async def read_submission(submission_id: int) -> do.Submission:
     """
     ### 權限
     - Self
@@ -188,11 +189,11 @@ async def read_submission(submission_id: int, request: Request) -> do.Submission
     submission = await db.submission.read(submission_id=submission_id)
 
     # 可以看自己的
-    if submission.account_id == request.account.id:
+    if submission.account_id == context.account.id:
         return submission
 
     # 助教可以看他的 class 的
-    if await service.rbac.validate_class(request.account.id, RoleType.manager, submission_id=submission_id):
+    if await service.rbac.validate_class(context.account.id, RoleType.manager, submission_id=submission_id):
         return submission
 
     raise exc.NoPermission
@@ -200,12 +201,12 @@ async def read_submission(submission_id: int, request: Request) -> do.Submission
 
 @router.get('/submission/{submission_id}/judgment', tags=['Judgment'])
 @enveloped
-async def browse_all_submission_judgment(submission_id: int, request: Request) -> Sequence[do.Judgment]:
+async def browse_all_submission_judgment(submission_id: int) -> Sequence[do.Judgment]:
     """
     ### 權限
     - Class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, submission_id=submission_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, submission_id=submission_id):
         raise exc.NoPermission
 
     return await db.judgment.browse(submission_id=submission_id)
@@ -213,7 +214,7 @@ async def browse_all_submission_judgment(submission_id: int, request: Request) -
 
 @router.get('/submission/{submission_id}/latest-judgment', tags=['Judgment'])
 @enveloped
-async def read_submission_latest_judgment(submission_id: int, request: Request) -> do.Judgment:
+async def read_submission_latest_judgment(submission_id: int) -> do.Judgment:
     """
     ### 權限
     - Self: see self
@@ -222,11 +223,11 @@ async def read_submission_latest_judgment(submission_id: int, request: Request) 
     submission = await db.submission.read(submission_id=submission_id)
 
     # 可以看自己的
-    if submission.account_id == request.account.id:
+    if submission.account_id == context.account.id:
         return await db.submission.read_latest_judgment(submission_id=submission_id)
 
     # 助教可以看管理的 class 的
-    if await service.rbac.validate_class(request.account.id, RoleType.manager, submission_id=submission_id):
+    if await service.rbac.validate_class(context.account.id, RoleType.manager, submission_id=submission_id):
         return await db.submission.read_latest_judgment(submission_id=submission_id)
 
     raise exc.NoPermission
@@ -234,12 +235,12 @@ async def read_submission_latest_judgment(submission_id: int, request: Request) 
 
 @router.post('/submission/{submission_id}/rejudge')
 @enveloped
-async def rejudge_submission(submission_id: int, request: Request) -> None:
+async def rejudge_submission(submission_id: int) -> None:
     """
     ### 權限
     - Class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, submission_id=submission_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, submission_id=submission_id):
         raise exc.NoPermission
 
     await service.judge.judge_submission(submission_id)

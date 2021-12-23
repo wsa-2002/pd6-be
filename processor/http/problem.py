@@ -11,12 +11,13 @@ import log
 from base import do
 from base.enum import RoleType, ChallengePublicizeType, TaskSelectionType, ProblemJudgeType
 import exceptions as exc
-from middleware import APIRouter, response, enveloped, auth, Request
+from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
 import service
 from persistence import s3, email
 import util
 from util import model
+from util.context import context
 
 router = APIRouter(
     tags=['Problem'],
@@ -28,15 +29,15 @@ router = APIRouter(
 # TODO: Browse method
 @router.get('/problem')
 @enveloped
-async def browse_problem_set(request: Request) -> Sequence[do.Problem]:
+async def browse_problem_set() -> Sequence[do.Problem]:
     """
     ### 權限
     - System normal (not hidden)
     """
-    if not service.rbac.validate_system(request.account.id, RoleType.normal):
+    if not service.rbac.validate_system(context.account.id, RoleType.normal):
         raise exc.NoPermission
 
-    return await db.problem.browse_problem_set(request_time=request.time)
+    return await db.problem.browse_problem_set(request_time=context.request_time)
 
 
 @dataclass
@@ -65,23 +66,23 @@ class ReadProblemOutput:
 
 @router.get('/problem/{problem_id}')
 @enveloped
-async def read_problem(problem_id: int, request: Request) -> ReadProblemOutput:
+async def read_problem(problem_id: int) -> ReadProblemOutput:
     """
     ### 權限
     - Class manager (hidden)
     - System normal (not hidden)
     """
-    class_role = await service.rbac.get_class_role(request.account.id, problem_id=problem_id)
-    is_system_normal = await service.rbac.validate_system(request.account.id, RoleType.normal)
+    class_role = await service.rbac.get_class_role(context.account.id, problem_id=problem_id)
+    is_system_normal = await service.rbac.validate_system(context.account.id, RoleType.normal)
 
     problem = await db.problem.read(problem_id)
-    challenge = await db.challenge.read(problem.challenge_id, include_scheduled=True, ref_time=request.time)
+    challenge = await db.challenge.read(problem.challenge_id)
     publicize_time = (challenge.start_time if challenge.publicize_type == ChallengePublicizeType.start_time
                       else challenge.end_time)
-    is_challenge_publicized = request.time >= publicize_time
+    is_challenge_publicized = context.request_time >= publicize_time
 
     if not (class_role == RoleType.manager
-            or (class_role and request.time >= challenge.start_time)
+            or (class_role and context.request_time >= challenge.start_time)
             or (is_system_normal and is_challenge_publicized)):
         raise exc.NoPermission
 
@@ -129,12 +130,12 @@ class EditProblemInput(BaseModel):
 
 @router.patch('/problem/{problem_id}')
 @enveloped
-async def edit_problem(problem_id: int, data: EditProblemInput, request: Request):
+async def edit_problem(problem_id: int, data: EditProblemInput):
     """
     ### 權限
     - Class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, problem_id=problem_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, problem_id=problem_id):
         raise exc.NoPermission
 
     if ((data.judge_type is ProblemJudgeType.customized and not data.judge_source)
@@ -166,12 +167,12 @@ async def edit_problem(problem_id: int, data: EditProblemInput, request: Request
 
 @router.delete('/problem/{problem_id}')
 @enveloped
-async def delete_problem(problem_id: int, request: Request):
+async def delete_problem(problem_id: int):
     """
     ### 權限
     - Class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, problem_id=problem_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, problem_id=problem_id):
         raise exc.NoPermission
 
     return await db.problem.delete(problem_id=problem_id)
@@ -189,12 +190,12 @@ class AddTestcaseInput(BaseModel):
 
 @router.post('/problem/{problem_id}/testcase', tags=['Testcase'])
 @enveloped
-async def add_testcase_under_problem(problem_id: int, data: AddTestcaseInput, request: Request) -> model.AddOutput:
+async def add_testcase_under_problem(problem_id: int, data: AddTestcaseInput) -> model.AddOutput:
     """
     ### 權限
     - Class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, problem_id=problem_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, problem_id=problem_id):
         raise exc.NoPermission
 
     testcase_id = await db.testcase.add(problem_id=problem_id, is_sample=data.is_sample, score=data.score,
@@ -225,16 +226,16 @@ class ReadTestcaseOutput:
 
 @router.get('/problem/{problem_id}/testcase')
 @enveloped
-async def browse_all_testcase_under_problem(problem_id: int, request: Request) -> Sequence[ReadTestcaseOutput]:
+async def browse_all_testcase_under_problem(problem_id: int) -> Sequence[ReadTestcaseOutput]:
     """
     ### 權限
     - System normal (data without file uuid)
     - CM (all data)
     """
-    if not await service.rbac.validate_system(request.account.id, RoleType.normal):
+    if not await service.rbac.validate_system(context.account.id, RoleType.normal):
         raise exc.NoPermission
 
-    is_class_manager = await service.rbac.validate_class(request.account.id, RoleType.manager, problem_id=problem_id)
+    is_class_manager = await service.rbac.validate_class(context.account.id, RoleType.manager, problem_id=problem_id)
 
     testcases = await db.testcase.browse(problem_id=problem_id, include_disabled=True)
     return [ReadTestcaseOutput(
@@ -265,13 +266,13 @@ class ReadAssistingDataOutput:
 
 @router.get('/problem/{problem_id}/assisting-data')
 @enveloped
-async def browse_all_assisting_data_under_problem(problem_id: int, request: Request) \
+async def browse_all_assisting_data_under_problem(problem_id: int) \
         -> Sequence[ReadAssistingDataOutput]:
     """
     ### 權限
     - class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, problem_id=problem_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, problem_id=problem_id):
         raise exc.NoPermission
 
     result = await db.assisting_data.browse(problem_id=problem_id)
@@ -282,13 +283,13 @@ async def browse_all_assisting_data_under_problem(problem_id: int, request: Requ
 
 @router.post('/problem/{problem_id}/assisting-data')
 @enveloped
-async def add_assisting_data_under_problem(problem_id: int, request: Request, assisting_data: UploadFile = File(...)) \
+async def add_assisting_data_under_problem(problem_id: int, assisting_data: UploadFile = File(...)) \
         -> model.AddOutput:
     """
     ### 權限
     - class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, problem_id=problem_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, problem_id=problem_id):
         raise exc.NoPermission
 
     s3_file = await s3.assisting_data.upload(file=assisting_data.file)
@@ -302,13 +303,13 @@ async def add_assisting_data_under_problem(problem_id: int, request: Request, as
 
 @router.post('/problem/{problem_id}/all-assisting-data')
 @enveloped
-async def download_all_assisting_data(problem_id: int, request: Request, as_attachment: bool,
+async def download_all_assisting_data(problem_id: int, as_attachment: bool,
                                       background_tasks: BackgroundTasks) -> None:
     """
     ### 權限
     - class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, problem_id=problem_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, problem_id=problem_id):
         raise exc.NoPermission
 
     async def _task() -> None:
@@ -320,7 +321,7 @@ async def download_all_assisting_data(problem_id: int, request: Request, as_atta
 
         log.info("URL signed, sending email")
 
-        account, student_card = await db.account_vo.read_with_default_student_card(account_id=request.account.id)
+        account, student_card = await db.account_vo.read_with_default_student_card(account_id=context.account.id)
         await email.notification.send_file_download_url(to=student_card.email, file_url=file_url)
 
         log.info('Done')
@@ -330,13 +331,13 @@ async def download_all_assisting_data(problem_id: int, request: Request, as_atta
 
 @router.post('/problem/{problem_id}/all-sample-testcase')
 @enveloped
-async def download_all_sample_testcase(problem_id: int, request: Request, as_attachment: bool,
+async def download_all_sample_testcase(problem_id: int, as_attachment: bool,
                                        background_tasks: BackgroundTasks) -> None:
     """
     ### 權限
     - class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, problem_id=problem_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, problem_id=problem_id):
         raise exc.NoPermission
 
     async def _task() -> None:
@@ -348,7 +349,7 @@ async def download_all_sample_testcase(problem_id: int, request: Request, as_att
 
         log.info("URL signed, sending email")
 
-        account, student_card = await db.account_vo.read_with_default_student_card(account_id=request.account.id)
+        account, student_card = await db.account_vo.read_with_default_student_card(account_id=context.account.id)
         await email.notification.send_file_download_url(to=student_card.email, file_url=file_url)
 
         log.info('Done')
@@ -358,13 +359,13 @@ async def download_all_sample_testcase(problem_id: int, request: Request, as_att
 
 @router.post('/problem/{problem_id}/all-non-sample-testcase')
 @enveloped
-async def download_all_non_sample_testcase(problem_id: int, request: Request, as_attachment: bool,
+async def download_all_non_sample_testcase(problem_id: int, as_attachment: bool,
                                            background_tasks: BackgroundTasks) -> None:
     """
     ### 權限
     - class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, problem_id=problem_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, problem_id=problem_id):
         raise exc.NoPermission
 
     async def _task() -> None:
@@ -376,7 +377,7 @@ async def download_all_non_sample_testcase(problem_id: int, request: Request, as
 
         log.info("URL signed, sending email")
 
-        account, student_card = await db.account_vo.read_with_default_student_card(account_id=request.account.id)
+        account, student_card = await db.account_vo.read_with_default_student_card(account_id=context.account.id)
         await email.notification.send_file_download_url(to=student_card.email, file_url=file_url)
 
         log.info('Done')
@@ -392,15 +393,15 @@ class GetScoreByTypeOutput:
 
 @router.get('/problem/{problem_id}/score')
 @enveloped
-async def get_score_by_challenge_type_under_problem(problem_id: int, request: Request) -> GetScoreByTypeOutput:
+async def get_score_by_challenge_type_under_problem(problem_id: int) -> GetScoreByTypeOutput:
     """
     ### 權限
     - Self
     """
     problem = await db.problem.read(problem_id)
-    challenge = await db.challenge.read(challenge_id=problem.challenge_id, include_scheduled=True)
+    challenge = await db.challenge.read(challenge_id=problem.challenge_id)
     submission_judgment = await db.judgment.read_by_challenge_type(problem_id=problem_id,
-                                                                   account_id=request.account.id,  # 只能看自己的
+                                                                   account_id=context.account.id,  # 只能看自己的
                                                                    selection_type=challenge.selection_type,
                                                                    challenge_end_time=challenge.end_time)
     return GetScoreByTypeOutput(challenge_type=challenge.selection_type, score=submission_judgment.score)
@@ -408,7 +409,7 @@ async def get_score_by_challenge_type_under_problem(problem_id: int, request: Re
 
 @router.get('/problem/{problem_id}/best-score')
 @enveloped
-async def get_score_by_best_under_problem(problem_id: int, request: Request) -> GetScoreByTypeOutput:
+async def get_score_by_best_under_problem(problem_id: int) -> GetScoreByTypeOutput:
     """
     ### 權限
     - Self
@@ -416,7 +417,7 @@ async def get_score_by_best_under_problem(problem_id: int, request: Request) -> 
     problem = await db.problem.read(problem_id)
     # 只能看自己的
     submission_judgment = await db.judgment.get_best_submission_judgment_all_time(problem_id=problem.id,
-                                                                                  account_id=request.account.id)
+                                                                                  account_id=context.account.id)
     return GetScoreByTypeOutput(challenge_type=TaskSelectionType.best, score=submission_judgment.score)
 
 
@@ -427,12 +428,12 @@ class RejudgeProblemOutput:
 
 @router.post('/problem/{problem_id}/rejudge')
 @enveloped
-async def rejudge_problem(problem_id: int, request: Request) -> RejudgeProblemOutput:
+async def rejudge_problem(problem_id: int) -> RejudgeProblemOutput:
     """
     ### 權限
     - Class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, problem_id=problem_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, problem_id=problem_id):
         raise exc.NoPermission
 
     rejudged_submissions = await service.judge.judge_problem_submissions(problem_id)
@@ -448,12 +449,12 @@ class GetProblemStatOutput:
 
 @router.get('/problem/{problem_id}/statistics')
 @enveloped
-async def get_problem_statistics(problem_id: int, request: Request) -> GetProblemStatOutput:
+async def get_problem_statistics(problem_id: int) -> GetProblemStatOutput:
     """
     ### 權限
     - System normal
     """
-    if not await service.rbac.validate_system(request.account.id, RoleType.normal):
+    if not await service.rbac.validate_system(context.account.id, RoleType.normal):
         raise exc.NoPermission
 
     solved_member_count, submission_count, member_count = await service.statistics.get_problem_statistics(

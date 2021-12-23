@@ -20,7 +20,7 @@ async def browse(challenge_id: int) -> tuple[
 
 async def browse_status(challenge_id: int, account_id: int) \
         -> Sequence[tuple[do.Problem, do.Submission]]:
-    challenge = await db.challenge.read(challenge_id=challenge_id, include_scheduled=True)
+    challenge = await db.challenge.read(challenge_id=challenge_id)
     problems = await db.problem.browse_by_challenge(challenge_id=challenge_id)
 
     return [

@@ -8,11 +8,12 @@ from pydantic import BaseModel
 from base import do, popo
 from base.enum import RoleType, FilterOperator
 import exceptions as exc
-from middleware import APIRouter, response, enveloped, auth, Request
+from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
 import service
 import util
 from util import model
+from util.context import context
 
 router = APIRouter(
     tags=['Peer Review'],
@@ -23,19 +24,19 @@ router = APIRouter(
 
 @router.get('/peer-review/{peer_review_id}')
 @enveloped
-async def read_peer_review(peer_review_id: int, request: Request) -> do.PeerReview:
+async def read_peer_review(peer_review_id: int) -> do.PeerReview:
     """
     ### 權限
     - Class manager (hidden)
     - Class normal (not hidden)
     """
-    class_role = await service.rbac.get_class_role(request.account.id, peer_review_id=peer_review_id)
+    class_role = await service.rbac.get_class_role(context.account.id, peer_review_id=peer_review_id)
     if class_role < RoleType.normal:
         raise exc.NoPermission
 
     peer_review = await db.peer_review.read(peer_review_id)
-    challenge = await db.challenge.read(peer_review.challenge_id, include_scheduled=True, ref_time=request.time)
-    is_scheduled = challenge.start_time > request.time
+    challenge = await db.challenge.read(peer_review.challenge_id)
+    is_scheduled = challenge.start_time > context.request_time
 
     if not (is_scheduled and class_role >= RoleType.manager  # hidden => need manager
             or not is_scheduled and class_role >= RoleType.normal):  # not hidden => need normal
@@ -55,12 +56,12 @@ class EditPeerReviewInput(BaseModel):
 
 @router.patch('/peer-review/{peer_review_id}')
 @enveloped
-async def edit_peer_review(peer_review_id: int, data: EditPeerReviewInput, request: Request) -> None:
+async def edit_peer_review(peer_review_id: int, data: EditPeerReviewInput) -> None:
     """
     ### 權限
     - Class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, peer_review_id=peer_review_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, peer_review_id=peer_review_id):
         raise exc.NoPermission
 
     return await db.peer_review.edit(peer_review_id=peer_review_id,
@@ -73,12 +74,12 @@ async def edit_peer_review(peer_review_id: int, data: EditPeerReviewInput, reque
 
 @router.delete('/peer-review/{peer_review_id}')
 @enveloped
-async def delete_peer_review(peer_review_id: int, request: Request) -> None:
+async def delete_peer_review(peer_review_id: int) -> None:
     """
     ### 權限
     - Class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, peer_review_id=peer_review_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, peer_review_id=peer_review_id):
         raise exc.NoPermission
 
     return await db.peer_review.delete(peer_review_id=peer_review_id)
@@ -108,7 +109,7 @@ class BrowsePeerReviewRecordOutput:
 @router.get('/peer-review/{peer_review_id}/record')
 @enveloped
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_PEER_REVIEW_RECORD_COLUMNS.items()})
-async def browse_peer_review_record(peer_review_id: int, request: Request,
+async def browse_peer_review_record(peer_review_id: int,
                                     limit: model.Limit, offset: model.Offset,
                                     filter: model.FilterStr = None, sort: model.SorterStr = None, ) \
         -> model.BrowseOutputBase:
@@ -119,7 +120,7 @@ async def browse_peer_review_record(peer_review_id: int, request: Request,
 
     ### Available columns
     """
-    is_manager = await service.rbac.validate_class(request.account.id, RoleType.manager, peer_review_id=peer_review_id)
+    is_manager = await service.rbac.validate_class(context.account.id, RoleType.manager, peer_review_id=peer_review_id)
 
     filters = model.parse_filter(filter, BROWSE_PEER_REVIEW_RECORD_COLUMNS)
     sorters = model.parse_sorter(sort, BROWSE_PEER_REVIEW_RECORD_COLUMNS)
@@ -127,7 +128,7 @@ async def browse_peer_review_record(peer_review_id: int, request: Request,
     if not is_manager:  # 不是 class manager 的話只能看自己的
         filters.append(popo.Filter(col_name='receiver_id',
                                    op=FilterOperator.eq,
-                                   value=request.account.id))
+                                   value=context.account.id))
 
     peer_review_record, total_count = await db.peer_review_record.browse(peer_review_id=peer_review_id,
                                                                          limit=limit, offset=offset,
@@ -151,31 +152,31 @@ class AssignPeerReviewOutput:
 # 改一下這些 function name
 @router.post('/peer-review/{peer_review_id}/record')
 @enveloped
-async def assign_peer_review_record(peer_review_id: int, request: Request) -> AssignPeerReviewOutput:
+async def assign_peer_review_record(peer_review_id: int) -> AssignPeerReviewOutput:
     """
     發互評 (決定 A 要評誰 )
 
     ### 權限
     - Self is class *normal ONLY*
     """
-    class_role = await service.rbac.get_class_role(request.account.id, peer_review_id=peer_review_id)
+    class_role = await service.rbac.get_class_role(context.account.id, peer_review_id=peer_review_id)
     if class_role is not RoleType.normal:
         raise exc.NoPermission
 
     peer_review = await db.peer_review.read(peer_review_id)
-    challenge = await db.challenge.read(challenge_id=peer_review.challenge_id, include_scheduled=True)
-    if not challenge.start_time <= request.time <= challenge.end_time:
+    challenge = await db.challenge.read(challenge_id=peer_review.challenge_id)
+    if not challenge.start_time <= context.request_time <= challenge.end_time:
         raise exc.NoPermission
 
     peer_review_records = await db.peer_review_record.read_by_peer_review_id(peer_review_id=peer_review.id,
-                                                                             account_id=request.account.id,
+                                                                             account_id=context.account.id,
                                                                              is_receiver=False)
 
     if len(peer_review_records) >= peer_review.max_review_count:
         raise exc.MaxPeerReviewCount
 
     peer_review_record_ids = [await db.peer_review_record.add_auto(peer_review_id=peer_review.id,
-                                                                   grader_id=request.account.id)
+                                                                   grader_id=context.account.id)
                               for _ in range(peer_review.max_review_count)]
 
     return AssignPeerReviewOutput(peer_review_record_ids)
@@ -197,25 +198,25 @@ class ReadPeerReviewRecordOutput:
 
 @router.get('/peer-review-record/{peer_review_record_id}')
 @enveloped
-async def read_peer_review_record(peer_review_record_id: int, request: Request) -> ReadPeerReviewRecordOutput:
+async def read_peer_review_record(peer_review_record_id: int) -> ReadPeerReviewRecordOutput:
     """
     ### 權限
     - Class manager (full)
     - Self = Class normal (看不到對方)
     """
-    class_role = await service.rbac.get_class_role(request.account.id, peer_review_record_id=peer_review_record_id)
+    class_role = await service.rbac.get_class_role(context.account.id, peer_review_record_id=peer_review_record_id)
     if class_role < RoleType.normal:
         raise exc.NoPermission
 
     is_manager = class_role >= RoleType.manager
     peer_review_record = await db.peer_review_record.read(peer_review_record_id)
     peer_review = await db.peer_review.read(peer_review_id=peer_review_record.peer_review_id)
-    challenge = await db.challenge.read(challenge_id=peer_review.challenge_id, include_scheduled=True)
-    is_grader = request.account.id == peer_review_record.grader_id
-    is_receiver = request.account.id == peer_review_record.receiver_id
+    challenge = await db.challenge.read(challenge_id=peer_review.challenge_id)
+    is_grader = context.account.id == peer_review_record.grader_id
+    is_receiver = context.account.id == peer_review_record.receiver_id
     if not (is_manager
             or is_grader
-            or (is_receiver and challenge.end_time <= request.time)):
+            or (is_receiver and challenge.end_time <= context.request_time)):
         raise exc.NoPermission
 
     submission = await db.submission.read(submission_id=peer_review_record.submission_id)
@@ -240,48 +241,48 @@ class SubmitPeerReviewInput(BaseModel):
 
 @router.patch('/peer-review-record/{peer_review_record_id}')
 @enveloped
-async def submit_peer_review_record(peer_review_record_id: int, data: SubmitPeerReviewInput, request: Request) -> None:
+async def submit_peer_review_record(peer_review_record_id: int, data: SubmitPeerReviewInput) -> None:
     """
     互評完了，交互評成績評語
 
     ### 權限
     - Self is class *normal ONLY*
     """
-    class_role = await service.rbac.get_class_role(request.account.id, peer_review_record_id=peer_review_record_id)
+    class_role = await service.rbac.get_class_role(context.account.id, peer_review_record_id=peer_review_record_id)
     if class_role is not RoleType.normal:  # only class normal
         raise exc.NoPermission
 
     peer_review_record = await db.peer_review_record.read(peer_review_record_id)
     peer_review = await db.peer_review.read(peer_review_id=peer_review_record.peer_review_id)
-    challenge = await db.challenge.read(challenge_id=peer_review.challenge_id, include_scheduled=True)
-    if not challenge.start_time <= request.time <= challenge.end_time:
+    challenge = await db.challenge.read(challenge_id=peer_review.challenge_id)
+    if not challenge.start_time <= context.request_time <= challenge.end_time:
         raise exc.NoPermission
     # 檢查 score 是否在規定範圍內
     if not (peer_review.min_score <= data.score <= peer_review.max_score):
         raise exc.IllegalInput
 
     await db.peer_review_record.edit_score(peer_review_record.id, score=data.score,
-                                           comment=data.comment, submit_time=request.time)
+                                           comment=data.comment, submit_time=context.request_time)
 
 
 @router.get('/peer-review/{peer_review_id}/account/{account_id}/receive')
 @enveloped
-async def browse_account_received_peer_review_record(peer_review_id: int, account_id: int, request: Request) \
+async def browse_account_received_peer_review_record(peer_review_id: int, account_id: int) \
         -> list[int]:
     """
     ### 權限
     - Class Manager (all)
     - Self = Class normal
     """
-    class_role = await service.rbac.get_class_role(request.account.id, peer_review_id=peer_review_id)
+    class_role = await service.rbac.get_class_role(context.account.id, peer_review_id=peer_review_id)
     if class_role < RoleType.normal:
         raise exc.NoPermission
 
     peer_review = await db.peer_review.read(peer_review_id)
-    challenge = await db.challenge.read(challenge_id=peer_review.challenge_id, include_scheduled=True)
+    challenge = await db.challenge.read(challenge_id=peer_review.challenge_id)
 
     if not (class_role >= RoleType.manager
-            or (request.account.id == account_id and challenge.end_time <= request.time)):
+            or (context.account.id == account_id and challenge.end_time <= context.request_time)):
         raise exc.NoPermission
 
     peer_review_records = await db.peer_review_record.read_by_peer_review_id(peer_review_id,
@@ -292,22 +293,22 @@ async def browse_account_received_peer_review_record(peer_review_id: int, accoun
 
 @router.get('/peer-review/{peer_review_id}/account/{account_id}/review')
 @enveloped
-async def browse_account_reviewed_peer_review_record(peer_review_id: int, account_id: int, request: Request) \
+async def browse_account_reviewed_peer_review_record(peer_review_id: int, account_id: int) \
         -> list[int]:
     """
     ### 權限
     - Class Manager (all)
     - Self = Class normal
     """
-    class_role = await service.rbac.get_class_role(request.account.id, peer_review_id=peer_review_id)
+    class_role = await service.rbac.get_class_role(context.account.id, peer_review_id=peer_review_id)
     if class_role < RoleType.normal:
         raise exc.NoPermission
 
     peer_review = await db.peer_review.read(peer_review_id)
-    challenge = await db.challenge.read(challenge_id=peer_review.challenge_id, include_scheduled=True)
+    challenge = await db.challenge.read(challenge_id=peer_review.challenge_id)
 
     if not (class_role >= RoleType.manager
-            or (request.account.id == account_id and challenge.start_time <= request.time)):
+            or (context.account.id == account_id and challenge.start_time <= context.request_time)):
         raise exc.NoPermission
 
     peer_review_records = await db.peer_review_record.read_by_peer_review_id(peer_review_id,

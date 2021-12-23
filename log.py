@@ -4,7 +4,7 @@ import logging
 import traceback
 
 from config import logger_config
-from util.tracker import get_request_uuid
+from util.context import context
 
 
 class _Logger:
@@ -19,22 +19,22 @@ class _Logger:
 
 
 def info(msg):
-    _Logger.event_logger.info(f"request {get_request_uuid()}\t{msg}")
+    _Logger.event_logger.info(f"request {context.get_request_uuid()}\t{msg}")
 
 
 def debug(msg):
-    _Logger.event_logger.debug(f"request {get_request_uuid()}\t{msg}")
+    _Logger.event_logger.debug(f"request {context.get_request_uuid()}\t{msg}")
 
 
 def error(msg):
-    _Logger.event_logger.error(f"request {get_request_uuid()}\t{msg}")
+    _Logger.event_logger.error(f"request {context.get_request_uuid()}\t{msg}")
 
 
 def exception(exc: Exception, msg='', info_level=False):
     if info_level:
         _Logger.event_logger.info(f"{format_exc(exc)}\n{traceback.format_exc()}")
     else:
-        _Logger.event_logger.error(f"request {get_request_uuid()}\t{msg}\t{exc.__repr__()}")
+        _Logger.event_logger.error(f"request {context.get_request_uuid()}\t{msg}\t{exc.__repr__()}")
         _Logger.event_logger.exception(exc)
 
 

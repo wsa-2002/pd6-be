@@ -5,11 +5,12 @@ from fastapi import UploadFile, File
 
 from base.enum import RoleType
 import exceptions as exc
-from middleware import APIRouter, response, enveloped, auth, Request
+from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
 from persistence import s3
 import service
 import util
+from util.context import context
 
 router = APIRouter(
     tags=['Assisting Data'],
@@ -28,12 +29,12 @@ class ReadAssistingDataOutput:
 
 @router.get('/assisting-data/{assisting_data_id}')
 @enveloped
-async def read_assisting_data(assisting_data_id: int, request: Request) -> ReadAssistingDataOutput:
+async def read_assisting_data(assisting_data_id: int) -> ReadAssistingDataOutput:
     """
     ### 權限
     - class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, assisting_data_id=assisting_data_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, assisting_data_id=assisting_data_id):
         raise exc.NoPermission
 
     assisting_data = await db.assisting_data.read(assisting_data_id=assisting_data_id)
@@ -45,13 +46,13 @@ async def read_assisting_data(assisting_data_id: int, request: Request) -> ReadA
 
 @router.put('/assisting-data/{assisting_data_id}')
 @enveloped
-async def edit_assisting_data(assisting_data_id: int, request: Request, assisting_data_file: UploadFile = File(...)) \
+async def edit_assisting_data(assisting_data_id: int, assisting_data_file: UploadFile = File(...)) \
         -> None:
     """
     ### 權限
     - class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, assisting_data_id=assisting_data_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, assisting_data_id=assisting_data_id):
         raise exc.NoPermission
 
     # Issue #26: CRLF
@@ -67,12 +68,12 @@ async def edit_assisting_data(assisting_data_id: int, request: Request, assistin
 
 @router.delete('/assisting-data/{assisting_data_id}')
 @enveloped
-async def delete_assisting_data(assisting_data_id: int, request: Request) -> None:
+async def delete_assisting_data(assisting_data_id: int) -> None:
     """
     ### 權限
     - class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, assisting_data_id=assisting_data_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, assisting_data_id=assisting_data_id):
         raise exc.NoPermission
 
     await db.assisting_data.delete(assisting_data_id=assisting_data_id)

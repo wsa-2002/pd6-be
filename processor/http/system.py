@@ -1,10 +1,11 @@
 from base.enum import RoleType
 import exceptions as exc
-from middleware import APIRouter, response, enveloped, auth, Request
+from middleware import APIRouter, response, enveloped, auth
 from persistence import database as db
 import service
 import util
 from util import model
+from util.context import context
 
 router = APIRouter(
     tags=['System'],
@@ -25,7 +26,6 @@ BROWSE_ACCESS_LOG_COLUMNS = {
 @enveloped
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_ACCESS_LOG_COLUMNS.items()})
 async def browse_access_log(
-        req: Request,
         limit: model.Limit, offset: model.Offset,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
 ) -> model.BrowseOutputBase:
@@ -35,8 +35,8 @@ async def browse_access_log(
     
     ### Available columns
     """
-    if not (await service.rbac.validate_system(req.account.id, RoleType.manager)  # System manager
-            # or await rbac.any_class_role(member_id=req.account.id, role=RoleType.manager)):  # Any class manager
+    if not (await service.rbac.validate_system(context.account.id, RoleType.manager)  # System manager
+            # or await rbac.any_class_role(member_id=context.account.id, role=RoleType.manager)):  # Any class manager
     ):
         raise exc.NoPermission
 

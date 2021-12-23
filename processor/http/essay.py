@@ -7,12 +7,13 @@ import log
 from base.enum import RoleType
 from base import do
 import exceptions as exc
-from middleware import APIRouter, response, enveloped, auth, Request
+from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
 import service
 from persistence import s3, email
 import util
 from util import model
+from util.context import context
 
 router = APIRouter(
     tags=['Essay'],
@@ -23,18 +24,18 @@ router = APIRouter(
 
 @router.get('/essay/{essay_id}')
 @enveloped
-async def read_essay(essay_id: int, request: Request) -> do.Essay:
+async def read_essay(essay_id: int) -> do.Essay:
     """
     ### 權限
     - class normal
     """
-    class_role = await service.rbac.get_class_role(request.account.id, essay_id=essay_id)
+    class_role = await service.rbac.get_class_role(context.account.id, essay_id=essay_id)
     if class_role < RoleType.normal:
         raise exc.NoPermission
 
     essay = await db.essay.read(essay_id=essay_id)
-    challenge = await db.challenge.read(essay.challenge_id, include_scheduled=True, ref_time=request.time)
-    is_scheduled = challenge.start_time > request.time
+    challenge = await db.challenge.read(essay.challenge_id)
+    is_scheduled = challenge.start_time > context.request_time
 
     if is_scheduled and class_role < RoleType.manager:
         raise exc.NoPermission
@@ -50,26 +51,26 @@ class EditEssayInput(BaseModel):
 
 @router.patch('/essay/{essay_id}')
 @enveloped
-async def edit_essay(essay_id: int, data: EditEssayInput, request: Request) -> None:
+async def edit_essay(essay_id: int, data: EditEssayInput) -> None:
     """
     ### 權限
     - class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, essay_id=essay_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, essay_id=essay_id):
         raise exc.NoPermission
 
-    await db.essay.edit(essay_id=essay_id, setter_id=request.account.id, title=data.title,
+    await db.essay.edit(essay_id=essay_id, setter_id=context.account.id, title=data.title,
                         challenge_label=data.challenge_label, description=data.description)
 
 
 @router.delete('/essay/{essay_id}')
 @enveloped
-async def delete_essay(essay_id: int, request: Request) -> None:
+async def delete_essay(essay_id: int) -> None:
     """
     ### 權限
     - class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, essay_id=essay_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, essay_id=essay_id):
         raise exc.NoPermission
 
     await db.essay.delete(essay_id=essay_id)
@@ -77,13 +78,13 @@ async def delete_essay(essay_id: int, request: Request) -> None:
 
 @router.post('/essay/{essay_id}/all-essay-submission')
 @enveloped
-async def download_all_essay_submission(essay_id: int, request: Request, as_attachment: bool,
+async def download_all_essay_submission(essay_id: int, as_attachment: bool,
                                         background_tasks: BackgroundTasks) -> None:
     """
     ### 權限
     - class manager
     """
-    if not await service.rbac.validate_class(request.account.id, RoleType.manager, essay_id=essay_id):
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, essay_id=essay_id):
         raise exc.NoPermission
 
     async def _task() -> None:
@@ -95,7 +96,7 @@ async def download_all_essay_submission(essay_id: int, request: Request, as_atta
 
         log.info("URL signed, sending email")
 
-        account, student_card = await db.account_vo.read_with_default_student_card(account_id=request.account.id)
+        account, student_card = await db.account_vo.read_with_default_student_card(account_id=context.account.id)
         await email.notification.send_file_download_url(to=student_card.email, file_url=file_url)
 
         log.info('Done')

@@ -2,22 +2,22 @@ from typing import Optional
 from dataclasses import dataclass
 
 from fastapi import UploadFile, File
-import pydantic
-from pydantic import BaseModel
+from pydantic import BaseModel, constr
 
 from base import enum
 from base.enum import RoleType
 import const
 import exceptions as exc
 from config import config
-from middleware import APIRouter, JSONResponse, enveloped, Request, auth, routing
+from middleware import APIRouter, JSONResponse, enveloped, auth, routing
 import persistence.database as db
 import service
 from persistence import email
 from util import security, model
+from util.context import context
 
 router = APIRouter(
-    route_class=routing.SecretAPIRoute,  # Does not log the I/O data
+    route_class=routing.NoLogAPIRoute,  # Does not log the I/O data
     dependencies=auth.doc_dependencies,
 )
 
@@ -39,11 +39,11 @@ class AddAccountInput(BaseModel):
     password: str
     nickname: str
     real_name: str
-    alternative_email: Optional[pydantic.EmailStr] = model.can_omit
+    alternative_email: Optional[model.CaseInsensitiveEmailStr] = model.can_omit
     # Student card
     institute_id: int
-    student_id: str
-    institute_email_prefix: str
+    student_id: constr(to_lower=True)
+    institute_email_prefix: constr(to_lower=True)
 
 
 @router.post('/account', tags=['Public', 'Account'], response_class=JSONResponse)
@@ -58,7 +58,7 @@ async def add_account(data: AddAccountInput) -> None:
     except exc.persistence.NotFound:
         raise exc.account.InvalidInstitute
 
-    if data.student_id.lower() != data.institute_email_prefix.lower():
+    if data.student_id != data.institute_email_prefix:
         raise exc.account.StudentIdNotMatchEmail
 
     if await db.student_card.is_duplicate(institute.id, data.student_id):
@@ -116,17 +116,17 @@ class AddNormalAccountInput(BaseModel):
     username: str
     password: str
     nickname: str = ''
-    alternative_email: Optional[pydantic.EmailStr] = model.can_omit
+    alternative_email: Optional[model.CaseInsensitiveEmailStr] = model.can_omit
 
 
 @router.post('/account-normal', tags=['Account'], response_class=JSONResponse)
 @enveloped
-async def add_normal_account(data: AddNormalAccountInput, request: Request) -> model.AddOutput:
+async def add_normal_account(data: AddNormalAccountInput) -> model.AddOutput:
     """
     ### 權限
     - System Manager
     """
-    if not await service.rbac.validate_system(request.account.id, RoleType.manager):
+    if not await service.rbac.validate_system(context.account.id, RoleType.manager):
         raise exc.NoPermission
 
     # 要先檢查以免創立了帳號後才出事
@@ -147,12 +147,12 @@ async def add_normal_account(data: AddNormalAccountInput, request: Request) -> m
 
 @router.post('/account-import', tags=['Account'], response_class=JSONResponse)
 @enveloped
-async def import_account(request: Request, account_file: UploadFile = File(...)):
+async def import_account(account_file: UploadFile = File(...)):
     """
     ### 權限
     - System Manager
     """
-    if not await service.rbac.validate_system(request.account.id, RoleType.manager):
+    if not await service.rbac.validate_system(context.account.id, RoleType.manager):
         raise exc.NoPermission
 
     await service.csv.import_account(account_file=account_file.file)
@@ -165,14 +165,14 @@ class EditPasswordInput(BaseModel):
 
 @router.put('/account/{account_id}/pass_hash', tags=['Account'], response_class=JSONResponse)
 @enveloped
-async def edit_password(account_id: int, data: EditPasswordInput, request: Request):
+async def edit_password(account_id: int, data: EditPasswordInput):
     """
     ### 權限
     - System Manager
     - Self (need old password)
     """
 
-    is_self = request.account.id == account_id
+    is_self = context.account.id == account_id
     if is_self:
         pass_hash = await db.account.read_pass_hash(account_id=account_id, include_4s_hash=False)
         if not security.verify_password(to_test=data.old_password, hashed=pass_hash):
@@ -181,7 +181,7 @@ async def edit_password(account_id: int, data: EditPasswordInput, request: Reque
         return await db.account.edit_pass_hash(account_id=account_id,
                                                pass_hash=security.hash_password(data.new_password))
 
-    is_manager = await service.rbac.validate_system(request.account.id, RoleType.manager)
+    is_manager = await service.rbac.validate_system(context.account.id, RoleType.manager)
     if is_manager:
         return await db.account.edit_pass_hash(account_id=account_id,
                                                pass_hash=security.hash_password(data.new_password))

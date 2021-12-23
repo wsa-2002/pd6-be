@@ -101,3 +101,9 @@ class ServerTZDatetime(datetime.datetime):
             converted = converted.astimezone().replace(tzinfo=None)
 
         return converted
+
+
+class CaseInsensitiveEmailStr(pydantic.EmailStr):
+    @classmethod
+    def validate(cls, value) -> str:
+        return super().validate(value).lower()
