@@ -40,7 +40,7 @@ async def sign_url_from_do(s3_file: do.S3File, expire_secs: int, filename: str, 
     )
 
 
-async def get_file_content(bucket: str, key: str):
+async def get_file_content(bucket: str, key: str) -> bytes:
     """
     :return: infile content
     """
@@ -48,7 +48,7 @@ async def get_file_content(bucket: str, key: str):
     return await s3_handler.get_file_content(bucket=bucket, key=key)
 
 
-async def get_file_content_from_do(s3_file: do.S3File):
+async def get_file_content_from_do(s3_file: do.S3File) -> bytes:
     """
     :return: infile content
     """
