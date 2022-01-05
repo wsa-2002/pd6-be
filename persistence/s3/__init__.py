@@ -58,7 +58,7 @@ class S3Handler(metaclass=mcs.Singleton):
             ExpiresIn=expire_secs,
         )
 
-    async def get_file_content(self, bucket: str, key: str):
+    async def get_file_content(self, bucket: str, key: str) -> bytes:
         infile_object = await self._client.get_object(Bucket=bucket, Key=key)
         infile_content = await infile_object['Body'].read()
         return infile_content
