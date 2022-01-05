@@ -452,7 +452,7 @@ async def download_all_submissions(challenge_id: int, as_attachment: bool,
         challenge = await db.challenge.read(challenge_id)
         s3_file = await service.downloader.all_submissions(challenge_id=challenge_id)
         file_url = await s3.tools.sign_url(bucket=s3_file.bucket, key=s3_file.key,
-                                           expire_secs=const.SUBMISSION_PACKAGE_S3_EXPIRE_SECS,
+                                           expire_secs=const.S3_MANAGER_EXPIRE_SECS,
                                            filename=util.text.get_valid_filename(f'{challenge.title}.zip'),
                                            as_attachment=as_attachment)
 
@@ -511,7 +511,7 @@ async def download_all_plagiarism_reports(challenge_id: int, as_attachment: bool
             s3_file = await service.downloader.moss_report(report_url=report_url)
             file_url = await s3.tools.sign_url(
                 bucket=s3_file.bucket, key=s3_file.key,
-                expire_secs=const.SUBMISSION_PACKAGE_S3_EXPIRE_SECS,
+                expire_secs=const.S3_MANAGER_EXPIRE_SECS,
                 filename=util.text.get_valid_filename(f'{challenge.title}_plagiarism_report.zip'),
                 as_attachment=as_attachment,
             )

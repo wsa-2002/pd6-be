@@ -317,7 +317,8 @@ async def download_all_assisting_data(problem_id: int, as_attachment: bool,
 
         s3_file = await service.downloader.all_assisting_data(problem_id=problem_id)
         file_url = await s3.tools.sign_url(bucket=s3_file.bucket, key=s3_file.key,
-                                           filename='assisting_data.zip', as_attachment=as_attachment)
+                                           filename='assisting_data.zip', as_attachment=as_attachment,
+                                           expire_secs=const.S3_MANAGER_EXPIRE_SECS)
 
         log.info("URL signed, sending email")
 
@@ -345,7 +346,8 @@ async def download_all_sample_testcase(problem_id: int, as_attachment: bool,
 
         s3_file = await service.downloader.all_testcase(problem_id=problem_id, is_sample=True)
         file_url = await s3.tools.sign_url(bucket=s3_file.bucket, key=s3_file.key,
-                                           filename='sample_testcase.zip', as_attachment=as_attachment)
+                                           filename='sample_testcase.zip', as_attachment=as_attachment,
+                                           expire_secs=const.S3_MANAGER_EXPIRE_SECS)
 
         log.info("URL signed, sending email")
 
@@ -373,7 +375,8 @@ async def download_all_non_sample_testcase(problem_id: int, as_attachment: bool,
 
         s3_file = await service.downloader.all_testcase(problem_id=problem_id, is_sample=False)
         file_url = await s3.tools.sign_url(bucket=s3_file.bucket, key=s3_file.key,
-                                           filename='non_sample_testcase.zip', as_attachment=as_attachment)
+                                           filename='non_sample_testcase.zip', as_attachment=as_attachment,
+                                           expire_secs=const.S3_MANAGER_EXPIRE_SECS)
 
         log.info("URL signed, sending email")
 
