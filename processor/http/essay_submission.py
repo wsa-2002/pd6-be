@@ -79,9 +79,15 @@ async def browse_essay_submission_by_essay_id(
                                op=FilterOperator.eq,
                                value=essay_id))
 
+    # Hardcode for PBC 110-1: Only allow specific managers to download final project data
+    if essay_id in (2, 3, 4) \
+            and (await db.essay.read(essay_id)).challenge_id is 367 \
+            and context.account.id not in (14, 1760, 2646, 2648):
+        class_role = min(class_role, RoleType.normal)
+
     filters.append(popo.Filter(col_name='account_id',
-                               op=FilterOperator.eq,
-                               value=context.account.id))
+                                op=FilterOperator.eq,
+                                value=context.account.id))
 
     essay_submissions, total_count = await db.essay_submission.browse(limit=limit, offset=offset,
                                                                       filters=filters, sorters=sorters)
@@ -101,6 +107,12 @@ async def read_essay_submission(essay_submission_id: int) -> do.EssaySubmission:
         raise exc.NoPermission
 
     essay_submission = await db.essay_submission.read(essay_submission_id=essay_submission_id)
+
+    # Hardcode for PBC 110-1: Only allow specific managers to download final project data
+    if essay_submission.essay_id in (2, 3, 4) \
+            and (await db.essay.read(essay_submission.essay_id)).challenge_id is 367 \
+            and context.account.id not in (14, 1760, 2646, 2648):
+        class_role = min(class_role, RoleType.normal)
 
     if (class_role >= RoleType.manager
             or context.account.id == essay_submission.account_id):
