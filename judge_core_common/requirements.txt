@@ -1,0 +1,4 @@
+boto3
+pika
+python-dotenv
+pydantic
