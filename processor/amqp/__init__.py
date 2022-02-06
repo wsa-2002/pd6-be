@@ -1,6 +1,8 @@
 from datetime import datetime
 
-from judge_core_common import marshal
+import pydantic
+
+import common.do
 import log
 import persistence.database as db
 from util import dtype
@@ -8,7 +10,7 @@ from util import dtype
 
 async def save_report(body: bytes) -> None:
     log.info('Received save report task')
-    report = marshal.unmarshal_report(body)
+    report = pydantic.parse_raw_as(common.do.JudgeReport, body.decode())
 
     # Help ensure data is valid for database
     for judge_case in report.judge_cases:
