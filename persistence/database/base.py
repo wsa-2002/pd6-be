@@ -16,6 +16,9 @@ import log
 
 
 # https://github.com/MagicStack/asyncpg/issues/9#issuecomment-600659015
+from util import serialize
+
+
 def pyformat2psql(query: str, named_args: Dict[str, Any]) -> Tuple[str, List[Any]]:
     positional_generator = itertools.count(1)
     positional_map = collections.defaultdict(lambda: '${}'.format(next(positional_generator)))
@@ -61,6 +64,7 @@ class SafeConnection:
 
     async def __aenter__(self) -> asyncpg.connection.Connection:
         self._conn: asyncpg.connection.Connection = await pool_handler.pool.acquire()
+        await self._conn.set_type_codec('json', encoder=serialize.dumps, decoder=serialize.loads)
         log.info(f"Starting {self.__class__.__name__}: {self._event}")
         if self._auto_transaction:
             self._transaction = self._conn.transaction()
@@ -127,6 +131,7 @@ class _SafeExecutor:
         log.info(f"Starting {self.__class__.__name__}: {self._event}, sql: {self._sql}, params: {self._parameters}")
 
         async with pool_handler.pool.acquire() as conn:
+            await conn.set_type_codec('json', encoder=serialize.dumps, decoder=serialize.loads)
             try:
                 results = await self._exec(conn)
             except tuple(self._exception_mapping) as e:

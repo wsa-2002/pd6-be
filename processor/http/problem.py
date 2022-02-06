@@ -9,7 +9,7 @@ from pydantic import BaseModel, PositiveInt
 import const
 import log
 from base import do
-from base.enum import RoleType, ChallengePublicizeType, TaskSelectionType, ProblemJudgeType
+from base.enum import RoleType, ChallengePublicizeType, TaskSelectionType, ProblemJudgeType, ReviserSettingType
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
@@ -48,6 +48,13 @@ class JudgeSource:
 
 
 @dataclass
+class ProblemReviser:
+    judge_language: str
+    code_uuid: UUID
+    filename: str
+
+
+@dataclass
 class ReadProblemOutput:
     id: int
     challenge_id: int
@@ -62,6 +69,8 @@ class ReadProblemOutput:
     hint: Optional[str]
     is_deleted: bool
     judge_source: Optional[JudgeSource]
+    reviser_is_enabled: Optional[bool]
+    reviser: Optional[ProblemReviser]
 
 
 @router.get('/problem/{problem_id}')
@@ -89,6 +98,9 @@ async def read_problem(problem_id: int) -> ReadProblemOutput:
     customized_setting = await db.problem_judge_setting_customized.read(customized_id=problem.setting_id) \
         if problem.judge_type is ProblemJudgeType.customized else None
 
+    reviser_setting = await db.problem_reviser_settings.read_customized(customized_id=problem.reviser_settings[0].id) \
+        if problem.reviser_settings else None
+
     return ReadProblemOutput(
         id=problem.id,
         challenge_id=problem.challenge_id,
@@ -103,14 +115,25 @@ async def read_problem(problem_id: int) -> ReadProblemOutput:
         hint=problem.hint,
         is_deleted=problem.is_deleted,
         judge_source=JudgeSource(
-            judge_language="python 3.8",
+            judge_language=const.TEMPORARY_CUSTOMIZED_JUDGE_LANGUAGE,
             code_uuid=customized_setting.judge_code_file_uuid,
             filename=customized_setting.judge_code_filename
-        ) if problem.judge_type is ProblemJudgeType.customized and class_role is RoleType.manager else None
+        ) if problem.judge_type is ProblemJudgeType.customized and class_role is RoleType.manager else None,
+        reviser_is_enabled=len(problem.reviser_settings) > 0,
+        reviser=ProblemReviser(
+            judge_language=const.TEMPORARY_CUSTOMIZED_REVISER_LANGUAGE,
+            code_uuid=reviser_setting.judge_code_file_uuid,
+            filename=reviser_setting.judge_code_filename,
+        ) if problem.reviser_settings and class_role is RoleType.manager else None,
     )
 
 
 class JudgeSourceInput(BaseModel):
+    judge_language: str
+    judge_code: str
+
+
+class CustomizedReviserInput(BaseModel):
     judge_language: str
     judge_code: str
 
@@ -126,6 +149,8 @@ class EditProblemInput(BaseModel):
     hint: Optional[str] = model.can_omit
     judge_type: ProblemJudgeType
     judge_source: Optional[JudgeSourceInput]
+    reviser_is_enabled: Optional[bool] = model.can_omit
+    reviser: Optional[CustomizedReviserInput]
 
 
 @router.patch('/problem/{problem_id}')
@@ -142,7 +167,8 @@ async def edit_problem(problem_id: int, data: EditProblemInput):
             or (data.judge_type is ProblemJudgeType.normal and data.judge_source)):
         raise exc.IllegalInput
 
-    if data.judge_source and (data.judge_source.judge_language != 'python 3.8' or not data.judge_source.judge_code):
+    if data.judge_source and (data.judge_source.judge_language != const.TEMPORARY_CUSTOMIZED_JUDGE_LANGUAGE
+                              or not data.judge_source.judge_code):
         raise exc.IllegalInput
 
     setting_id = None
@@ -155,10 +181,30 @@ async def edit_problem(problem_id: int, data: EditProblemInput):
         setting_id = await db.problem_judge_setting_customized.add(judge_code_file_uuid=s3_file_uuid,
                                                                    judge_code_filename=str(s3_file_uuid))
 
+    if data.reviser_is_enabled is ...:
+        reviser_settings = ...
+    elif not data.reviser_is_enabled:
+        reviser_settings = []
+    else:  # has reviser setting
+        if not data.reviser or data.reviser.judge_language != const.TEMPORARY_CUSTOMIZED_REVISER_LANGUAGE \
+                or not data.reviser.judge_code:
+            raise exc.IllegalInput
+        with io.BytesIO(data.reviser.judge_code.encode(const.JUDGE_CODE_ENCODING)) as file:
+            s3_file = await s3.customized_code.upload(file=file)
+        s3_file_uuid = await db.s3_file.add_with_do(s3_file=s3_file)
+
+        setting_id = await db.problem_reviser_settings.add_customized(judge_code_file_uuid=s3_file_uuid,
+                                                                      judge_code_filename=str(s3_file_uuid))
+        reviser_settings = [do.ProblemReviserSetting(
+            id=setting_id,
+            type=ReviserSettingType.customized,
+        )]
+
     await db.problem.edit(problem_id, challenge_label=data.challenge_label, title=data.title,
                           full_score=data.full_score,
                           description=data.description, io_description=data.io_description, source=data.source,
-                          hint=data.hint, setting_id=setting_id, judge_type=data.judge_type)
+                          hint=data.hint, setting_id=setting_id, judge_type=data.judge_type,
+                          reviser_settings=reviser_settings)
 
     if data.testcase_disabled is not None:
         await db.testcase.disable_enable_testcase_by_problem(problem_id=problem_id,

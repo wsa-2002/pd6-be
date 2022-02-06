@@ -60,6 +60,7 @@ from . import (
 
     problem,
     problem_judge_setting_customized,
+    problem_reviser_settings,
 
     testcase,
     submission,
