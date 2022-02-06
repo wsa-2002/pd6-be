@@ -193,10 +193,10 @@ async def edit_problem(problem_id: int, data: EditProblemInput):
             s3_file = await s3.customized_code.upload(file=file)
         s3_file_uuid = await db.s3_file.add_with_do(s3_file=s3_file)
 
-        setting_id = await db.problem_reviser_settings.add_customized(judge_code_file_uuid=s3_file_uuid,
-                                                                      judge_code_filename=str(s3_file_uuid))
+        reviser_setting_id = await db.problem_reviser_settings.add_customized(judge_code_file_uuid=s3_file_uuid,
+                                                                              judge_code_filename=str(s3_file_uuid))
         reviser_settings = [do.ProblemReviserSetting(
-            id=setting_id,
+            id=reviser_setting_id,
             type=ReviserSettingType.customized,
         )]
 
