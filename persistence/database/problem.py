@@ -202,7 +202,7 @@ async def edit(problem_id: int,
     if setting_id is not ...:
         to_updates['setting_id'] = setting_id
     if reviser_settings is not ...:
-        to_updates['reviser_settings'] = reviser_settings
+        to_updates['reviser_settings'] = serialize.marshal(reviser_settings)
     if full_score is not ...:
         to_updates['full_score'] = full_score
     if description is not ...:

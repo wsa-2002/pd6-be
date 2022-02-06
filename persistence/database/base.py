@@ -62,7 +62,6 @@ class SafeConnection:
 
     async def __aenter__(self) -> asyncpg.connection.Connection:
         self._conn: asyncpg.connection.Connection = await pool_handler.pool.acquire()
-        await self._conn.set_type_codec('json', encoder=serialize.dumps, decoder=serialize.loads, schema='pg_catalog')
         log.info(f"Starting {self.__class__.__name__}: {self._event}")
         if self._auto_transaction:
             self._transaction = self._conn.transaction()
@@ -129,7 +128,6 @@ class _SafeExecutor:
         log.info(f"Starting {self.__class__.__name__}: {self._event}, sql: {self._sql}, params: {self._parameters}")
 
         async with pool_handler.pool.acquire() as conn:
-            await conn.set_type_codec('json', encoder=serialize.dumps, decoder=serialize.loads, schema='pg_catalog')
             try:
                 results = await self._exec(conn)
             except tuple(self._exception_mapping) as e:
