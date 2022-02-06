@@ -13,12 +13,10 @@ import itertools
 from typing import Any, Dict, Tuple, List, Optional, Union
 
 import log
-
-
-# https://github.com/MagicStack/asyncpg/issues/9#issuecomment-600659015
 from util import serialize
 
 
+# https://github.com/MagicStack/asyncpg/issues/9#issuecomment-600659015
 def pyformat2psql(query: str, named_args: Dict[str, Any]) -> Tuple[str, List[Any]]:
     positional_generator = itertools.count(1)
     positional_map = collections.defaultdict(lambda: '${}'.format(next(positional_generator)))
