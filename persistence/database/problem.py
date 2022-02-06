@@ -51,7 +51,7 @@ async def browse(include_scheduled: bool = False, include_deleted=False) -> Sequ
                            challenge_id=challenge_id, challenge_label=challenge_label,
                            title=title, setter_id=setter_id, full_score=full_score,
                            judge_type=enum.ProblemJudgeType(judge_type), setting_id=setting_id,
-                           reviser_settings=serialize.unmarshal_obj(reviser_settings, list[do.ProblemReviserSetting]),
+                           reviser_settings=serialize.unmarshal(reviser_settings, list[do.ProblemReviserSetting]),
                            description=description, io_description=io_description, source=source, hint=hint,
                            is_deleted=is_deleted, )
                 for (id_, challenge_id, challenge_label, title, setter_id, full_score, judge_type, setting_id,
@@ -84,7 +84,7 @@ async def browse_problem_set(request_time: datetime, include_deleted=False) \
                            title=title, setter_id=setter_id, full_score=full_score,
                            description=description, io_description=io_description,
                            judge_type=enum.ProblemJudgeType(judge_type), setting_id=setting_id,
-                           reviser_settings=serialize.unmarshal_obj(reviser_settings, list[do.ProblemReviserSetting]),
+                           reviser_settings=serialize.unmarshal(reviser_settings, list[do.ProblemReviserSetting]),
                            source=source, hint=hint,
                            is_deleted=is_deleted)
                 for (id_, challenge_id, challenge_label, title, setter_id, full_score,
@@ -109,7 +109,7 @@ async def browse_by_challenge(challenge_id: int, include_deleted=False) -> Seque
                            challenge_id=challenge_id, challenge_label=challenge_label,
                            title=title, setter_id=setter_id, full_score=full_score,
                            judge_type=enum.ProblemJudgeType(judge_type), setting_id=setting_id,
-                           reviser_settings=serialize.unmarshal_obj(reviser_settings, list[do.ProblemReviserSetting]),
+                           reviser_settings=serialize.unmarshal(reviser_settings, list[do.ProblemReviserSetting]),
                            description=description, io_description=io_description, source=source, hint=hint,
                            is_deleted=is_deleted)
                 for (id_, challenge_id, challenge_label, title, setter_id, full_score, judge_type, setting_id,
@@ -133,7 +133,7 @@ async def read(problem_id: int, include_deleted=False) -> do.Problem:
                           challenge_id=challenge_id, challenge_label=challenge_label,
                           title=title, setter_id=setter_id, full_score=full_score,
                           judge_type=enum.ProblemJudgeType(judge_type), setting_id=setting_id,
-                          reviser_settings=serialize.unmarshal_obj(reviser_settings, list[do.ProblemReviserSetting]),
+                          reviser_settings=serialize.unmarshal(reviser_settings, list[do.ProblemReviserSetting]),
                           description=description, io_description=io_description, source=source, hint=hint,
                           is_deleted=is_deleted)
 
@@ -174,7 +174,7 @@ async def read_task_status_by_type(problem_id: int, account_id: int,
         return (do.Problem(id=problem_id, challenge_id=challenge_id, challenge_label=challenge_label, title=title,
                            setter_id=setter_id, full_score=full_score,
                            judge_type=enum.ProblemJudgeType(judge_type), setting_id=setting_id,
-                           reviser_settings=serialize.unmarshal_obj(reviser_settings, list[do.ProblemReviserSetting]),
+                           reviser_settings=serialize.unmarshal(reviser_settings, list[do.ProblemReviserSetting]),
                            description=description,
                            io_description=io_description, source=source, hint=hint, is_deleted=is_deleted),
                 do.Submission(id=submission_id, account_id=account_id, problem_id=problem_id, filename=filename,
