@@ -72,3 +72,7 @@ class SortOrder(StrEnum):
 class ScoreboardType(StrEnum):
     team_project = 'TEAM_PROJECT'
     team_contest = 'TEAM_CONTEST'
+
+
+class ReviserSettingType(StrEnum):
+    customized = 'CUSTOMIZED'

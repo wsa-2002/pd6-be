@@ -24,4 +24,4 @@ def marshal(obj) -> str:
 
 
 def unmarshal(body: str | bytes, as_type: typing.Type[T]) -> T:
-    return pydantic.parse_raw_as(as_type, body.decode())
+    return pydantic.parse_raw_as(as_type, body)
