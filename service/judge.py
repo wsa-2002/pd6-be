@@ -13,17 +13,18 @@ import persistence.s3 as s3
 
 async def judge_submission(submission_id: int, rejudge=False):
     submission = await db.submission.read(submission_id)
-    judge_problem, judge_testcases, judge_assisting_datas, customized_judge_setting = await _prepare_problem(
-        submission.problem_id)
+    judge_problem, judge_testcases, judge_assisting_datas, customized_judge_setting, reviser_settings = \
+        await _prepare_problem(submission.problem_id)
     priority = common.const.PRIORITY_SUBMIT if not rejudge else common.const.PRIORITY_REJUDGE_SINGLE
 
     await _judge(submission, judge_problem=judge_problem, priority=priority,
                  judge_testcases=judge_testcases, judge_assisting_datas=judge_assisting_datas,
-                 customized_judge_setting=customized_judge_setting)
+                 customized_judge_setting=customized_judge_setting, reviser_settings=reviser_settings)
 
 
 async def judge_problem_submissions(problem_id: int) -> Sequence[do.Submission]:
-    judge_problem, judge_testcases, judge_assisting_datas, customized_judge_setting = await _prepare_problem(problem_id)
+    judge_problem, judge_testcases, judge_assisting_datas, customized_judge_setting, reviser_settings = \
+        await _prepare_problem(problem_id)
 
     submissions: list[do.Submission] = []
     offset, batch_size = 0, 100
@@ -39,7 +40,7 @@ async def judge_problem_submissions(problem_id: int) -> Sequence[do.Submission]:
     for submission in submissions:
         await _judge(submission, judge_problem=judge_problem, priority=common.const.PRIORITY_REJUDGE_BATCH,
                      judge_testcases=judge_testcases, judge_assisting_datas=judge_assisting_datas,
-                     customized_judge_setting=customized_judge_setting)
+                     customized_judge_setting=customized_judge_setting, reviser_settings=reviser_settings)
 
     return submissions
 
@@ -49,12 +50,15 @@ async def _prepare_problem(problem_id: int) -> tuple[
     Sequence[common.do.Testcase],
     Sequence[common.do.AssistingData],
     Optional[common.do.CustomizedJudgeSetting],
+    Sequence[common.do.ReviserSetting],
 ]:
     problem = await db.problem.read(problem_id)
     testcases = await db.testcase.browse(problem.id, include_disabled=False)
     assisting_datas = await db.assisting_data.browse(problem.id)
     customized_judge_setting = await db.problem_judge_setting_customized.read(problem.setting_id) \
         if problem.judge_type is enum.ProblemJudgeType.customized else None
+    reviser_settings = [await db.problem_reviser_settings.read_customized(reviser_setting.id)
+                        for reviser_setting in problem.reviser_settings]
 
     judge_problem = common.do.Problem(
         full_score=problem.full_score,
@@ -81,11 +85,16 @@ async def _prepare_problem(problem_id: int) -> tuple[
         filename=customized_judge_setting.judge_code_filename)) \
         if problem.judge_type is enum.ProblemJudgeType.customized else None
 
-    return judge_problem, judge_testcases, judge_assisting_datas, customized_judge_setting
+    reviser_settings = [common.do.ReviserSetting(await _sign_file_url(reviser_setting.judge_code_file_uuid,
+                                                                      filename=reviser_setting.judge_code_filename))
+                        for reviser_setting in reviser_settings]
+
+    return judge_problem, judge_testcases, judge_assisting_datas, customized_judge_setting, reviser_settings
 
 
 async def _judge(submission: do.Submission, judge_problem: common.do.Problem, priority: int,
-                 customized_judge_setting: Optional[do.ProblemJudgeSettingCustomized],
+                 customized_judge_setting: Optional[common.do.CustomizedJudgeSetting],
+                 reviser_settings: Sequence[common.do.ReviserSetting],
                  judge_testcases: Sequence[common.do.Testcase],
                  judge_assisting_datas: Sequence[common.do.AssistingData]):
     submission_language = await db.submission.read_language(submission.language_id)
@@ -104,7 +113,7 @@ async def _judge(submission: do.Submission, judge_problem: common.do.Problem, pr
             testcases=judge_testcases,
             assisting_data=judge_assisting_datas,
             customized_judge_setting=customized_judge_setting,
-            reviser_settings=[],  # TODO
+            reviser_settings=reviser_settings,
         ),
         language_queue_name=await db.submission.read_language_queue_name(submission_language.id),
         priority=priority,
