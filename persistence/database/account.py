@@ -123,12 +123,13 @@ async def delete_alternative_email_by_id(account_id: int) -> None:
         return
 
 
-async def read_login_by_username(username: str, include_deleted: bool = False) -> Tuple[int, str, bool]:
+async def read_login_by_username(username: str, include_deleted: bool = False, case_sensitive: bool = False) \
+        -> Tuple[int, str, bool]:
     async with FetchOne(
             event='read account login by username',
             sql=fr'SELECT id, pass_hash, is_4s_hash'
                 fr'  FROM account'
-                fr' WHERE username = %(username)s'
+                fr' WHERE {"username = %(username)s" if case_sensitive else "LOWER(username) = LOWER(%(username)s)"}'
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}',
             username=username,
     ) as (id_, pass_hash, is_4s_hash):
