@@ -229,6 +229,7 @@ async def read_account_with_default_student_id(account_id: int) -> ReadAccountOu
 
 
 class EditAccountInput(BaseModel):
+    username: str = None
     nickname: str = None
     alternative_email: Optional[str] = model.can_omit
     real_name: str = None
@@ -258,7 +259,7 @@ async def edit_account(account_id: int, data: EditAccountInput) -> None:
     else:  # 刪掉 alternative email
         await db.account.delete_alternative_email_by_id(account_id=account_id)
 
-    await db.account.edit(account_id=account_id, nickname=data.nickname, real_name=data.real_name)
+    await db.account.edit(account_id=account_id, username=data.username, nickname=data.nickname, real_name=data.real_name)
 
 
 @router.delete('/account/{account_id}')
