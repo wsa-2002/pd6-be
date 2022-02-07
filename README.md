@@ -7,7 +7,7 @@ A `python=3.10`-`asyncio`-based web backend, using web framework `fastapi`.
 ## Setup test server
 
 ### 1. `git`
-Add `--recursive` in your command in order to clone both `pd6-be` and its submodule `judge_core_common`. 
+Add `--recursive` in your command in order to clone both `pd6-be` and its submodule `common`(`pd6-common`). 
 ```shell
 git clone --recursive https://nas.pdogs.ntu.im:30443/pdogs/pdogs-6/pd6-be.git
 ```

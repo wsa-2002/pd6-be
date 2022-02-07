@@ -115,6 +115,12 @@ class Challenge:
 
 
 @dataclass
+class ProblemReviserSetting:
+    id: int
+    type: enum.ReviserSettingType
+
+
+@dataclass
 class Problem:
     id: int
     challenge_id: int
@@ -129,10 +135,18 @@ class Problem:
     source: Optional[str]
     hint: Optional[str]
     is_deleted: bool
+    reviser_settings: Sequence[ProblemReviserSetting]
 
 
 @dataclass
 class ProblemJudgeSettingCustomized:
+    id: int
+    judge_code_file_uuid: UUID
+    judge_code_filename: str
+
+
+@dataclass
+class ProblemReviserSettingCustomized:
     id: int
     judge_code_file_uuid: UUID
     judge_code_filename: str

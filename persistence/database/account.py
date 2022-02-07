@@ -68,9 +68,11 @@ async def read(account_id: int, *, include_deleted: bool = False) -> do.Account:
                           is_deleted=is_deleted, alternative_email=alternative_email)
 
 
-async def edit(account_id: int, real_name: str = None, nickname: str = None) -> None:
+async def edit(account_id: int, username: str = None, real_name: str = None, nickname: str = None) -> None:
     to_updates: ParamDict = {}
 
+    if username is not None:
+        to_updates['username'] = username
     if real_name is not None:
         to_updates['real_name'] = real_name
     if nickname is not None:
@@ -121,12 +123,13 @@ async def delete_alternative_email_by_id(account_id: int) -> None:
         return
 
 
-async def read_login_by_username(username: str, include_deleted: bool = False) -> Tuple[int, str, bool]:
+async def read_login_by_username(username: str, include_deleted: bool = False, case_sensitive: bool = False) \
+        -> Tuple[int, str, bool]:
     async with FetchOne(
             event='read account login by username',
             sql=fr'SELECT id, pass_hash, is_4s_hash'
                 fr'  FROM account'
-                fr' WHERE username = %(username)s'
+                fr' WHERE {"username = %(username)s" if case_sensitive else "LOWER(username) = LOWER(%(username)s)"}'
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}',
             username=username,
     ) as (id_, pass_hash, is_4s_hash):

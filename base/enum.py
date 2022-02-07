@@ -1,6 +1,6 @@
 from typing import TypeVar, Optional
 
-import judge_core_common.base
+import common.base
 
 from .cls import OrderedMixin, StrEnum
 
@@ -39,7 +39,7 @@ class TaskSelectionType(StrEnum):
     best = 'BEST'
 
 
-VerdictType = judge_core_common.base.VerdictType
+VerdictType = common.base.VerdictType
 
 
 class ProblemJudgeType(StrEnum):
@@ -73,3 +73,6 @@ class ScoreboardType(StrEnum):
     team_project = 'TEAM_PROJECT'
     team_contest = 'TEAM_CONTEST'
 
+
+class ReviserSettingType(StrEnum):
+    customized = 'CUSTOMIZED'
