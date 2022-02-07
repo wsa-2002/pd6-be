@@ -68,9 +68,11 @@ async def read(account_id: int, *, include_deleted: bool = False) -> do.Account:
                           is_deleted=is_deleted, alternative_email=alternative_email)
 
 
-async def edit(account_id: int, real_name: str = None, nickname: str = None) -> None:
+async def edit(account_id: int, username: str = None, real_name: str = None, nickname: str = None) -> None:
     to_updates: ParamDict = {}
 
+    if username is not None:
+        to_updates['username'] = username
     if real_name is not None:
         to_updates['real_name'] = real_name
     if nickname is not None:
