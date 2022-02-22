@@ -1,4 +1,5 @@
 from typing import Tuple, Sequence, Optional, Iterable, Any
+from uuid import UUID
 
 import asyncpg
 
@@ -208,7 +209,7 @@ async def add_email_verification(email: str, account_id: int, institute_id: int 
         return code
 
 
-async def verify_email(code: str) -> None:
+async def verify_email(code: UUID) -> None:
     async with SafeConnection(event='Verify email',
                               auto_transaction=True) as conn:
         try:

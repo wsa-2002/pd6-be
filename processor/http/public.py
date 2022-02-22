@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
@@ -30,7 +32,7 @@ async def default_page():
 @router.get('/email-verification', tags=['Account', 'Student Card'])
 @router.post('/email-verification', tags=['Account', 'Student Card'])
 @enveloped
-async def email_verification(code: str):
+async def email_verification(code: UUID):
     await db.account.verify_email(code=code)
 
 
