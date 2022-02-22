@@ -6,6 +6,7 @@ import exceptions as exc
 from middleware import APIRouter, JSONResponse, enveloped
 import persistence.database as db
 from persistence import email
+from util import model
 
 router = APIRouter(tags=['Public'])
 
@@ -36,7 +37,7 @@ async def email_verification(code: str):
 
 class ForgetPasswordInput(BaseModel):
     username: str
-    email: str
+    email: model.CaseInsensitiveEmailStr
 
 
 @router.post('/account/forget-password', tags=['Account'], response_class=JSONResponse)
@@ -54,7 +55,7 @@ async def forget_password(data: ForgetPasswordInput) -> None:
 
 
 class ForgetUsernameInput(BaseModel):
-    email: str
+    email: model.CaseInsensitiveEmailStr
 
 
 @router.post('/account/forget-username', tags=['Account'], response_class=JSONResponse)
