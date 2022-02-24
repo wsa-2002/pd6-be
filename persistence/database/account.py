@@ -1,4 +1,5 @@
 from typing import Tuple, Sequence, Optional, Iterable, Any
+from uuid import UUID
 
 import asyncpg
 
@@ -136,7 +137,10 @@ async def read_login_by_username(username: str, include_deleted: bool = False, c
         return id_, pass_hash, is_4s_hash
 
 
-async def browse_by_email(email: str, username: str = None, search_exhaustive=False) -> Sequence[do.Account]:
+async def browse_by_email(email: str, username: str = None, search_exhaustive=False, case_sensitive: bool = False) \
+        -> Sequence[do.Account]:
+    username_eq = 'username = %(username)s' if case_sensitive else 'LOWER(username) = LOWER(%(username)s)'
+
     accounts = []
 
     # institute_email
@@ -148,7 +152,7 @@ async def browse_by_email(email: str, username: str = None, search_exhaustive=Fa
                 fr'         ON student_card.account_id = account.id'
                 fr'        AND LOWER(student_card.email) = LOWER(%(email)s)'
                 fr' WHERE NOT is_deleted'
-                fr' {"AND username = %(username)s" if username else ""}',
+                fr' {"AND " + username_eq if username else ""}',
             email=email, username=username,
             raise_not_found=False,
     ) as results:
@@ -166,7 +170,7 @@ async def browse_by_email(email: str, username: str = None, search_exhaustive=Fa
                 fr'  FROM account'
                 fr' WHERE LOWER(alternative_email) = LOWER(%(email)s)'
                 fr'   AND NOT is_deleted'
-                fr' {"AND username = %(username)s" if username else ""}',
+                fr' {"AND " + username_eq if username else ""}',
             email=email, username=username,
             raise_not_found=False,
     ) as results:
@@ -208,7 +212,7 @@ async def add_email_verification(email: str, account_id: int, institute_id: int 
         return code
 
 
-async def verify_email(code: str) -> None:
+async def verify_email(code: UUID) -> None:
     async with SafeConnection(event='Verify email',
                               auto_transaction=True) as conn:
         try:
@@ -303,6 +307,8 @@ async def account_referral_to_id(account_referral: str) -> int:
 
 async def browse_referral_wth_ids(account_ids: Iterable[int]) -> Sequence[Optional[str]]:
     value_sql = ','.join(f'({account_id})' for account_id in account_ids)
+    if not value_sql:
+        return []
     async with FetchAll(
             event='browse account referral with ids',
             sql=fr'SELECT account_id_to_referral(account_id::INTEGER)'

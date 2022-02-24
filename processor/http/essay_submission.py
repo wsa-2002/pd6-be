@@ -64,8 +64,7 @@ async def browse_essay_submission_by_essay_id(
 ) -> model.BrowseOutputBase:
     """
     ### 權限
-    - class manager (all)
-    - class normal (self)
+    - Self
 
     ### Available columns
     """
@@ -86,10 +85,9 @@ async def browse_essay_submission_by_essay_id(
             and context.account.id not in (14, 1760, 2646, 2648):
         class_role = min(class_role, RoleType.normal)
 
-    if class_role is RoleType.normal:
-        filters.append(popo.Filter(col_name='account_id',
-                                   op=FilterOperator.eq,
-                                   value=context.account.id))
+    filters.append(popo.Filter(col_name='account_id',
+                                op=FilterOperator.eq,
+                                value=context.account.id))
 
     essay_submissions, total_count = await db.essay_submission.browse(limit=limit, offset=offset,
                                                                       filters=filters, sorters=sorters)

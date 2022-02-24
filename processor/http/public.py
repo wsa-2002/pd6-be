@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
@@ -6,6 +8,7 @@ import exceptions as exc
 from middleware import APIRouter, JSONResponse, enveloped
 import persistence.database as db
 from persistence import email
+from util import model
 
 router = APIRouter(tags=['Public'])
 
@@ -30,13 +33,13 @@ async def default_page():
 @router.get('/email-verification', tags=['Account', 'Student Card'])
 @router.post('/email-verification', tags=['Account', 'Student Card'])
 @enveloped
-async def email_verification(code: str):
+async def email_verification(code: UUID):
     await db.account.verify_email(code=code)
 
 
 class ForgetPasswordInput(BaseModel):
     username: str
-    email: str
+    email: model.CaseInsensitiveEmailStr
 
 
 @router.post('/account/forget-password', tags=['Account'], response_class=JSONResponse)
@@ -54,7 +57,7 @@ async def forget_password(data: ForgetPasswordInput) -> None:
 
 
 class ForgetUsernameInput(BaseModel):
-    email: str
+    email: model.CaseInsensitiveEmailStr
 
 
 @router.post('/account/forget-username', tags=['Account'], response_class=JSONResponse)
