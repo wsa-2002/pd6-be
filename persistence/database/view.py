@@ -406,20 +406,37 @@ async def grade(limit: int, offset: int, filters: Sequence[Filter], sorters: Seq
         -> tuple[Sequence[vo.ViewGrade], int]:
     cond_sql, cond_params = compile_filters(filters)
     sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
-    if sort_sql:
-        sort_sql += ','
 
+    view_sql = (fr'SELECT * '
+                fr'FROM ('
+                fr'    SELECT grade.receiver_id AS account_id,'
+                fr'           account.username,'
+                fr'           student_card.student_id,'
+                fr'           account.real_name,'
+                fr'           grade.title,'
+                fr'           grade.score,'
+                fr'           grade.update_time,'
+                fr'           grade.id AS grade_id,'
+                fr'           grade.class_id'
+                fr'      FROM grade'
+                fr'      JOIN account'
+                fr'        ON account.id = grade.receiver_id'
+                fr'       AND NOT account.is_deleted'
+                fr'      LEFT JOIN student_card '
+                fr'        ON student_card.account_id = grade.receiver_id '
+                fr'       AND student_card.is_default'
+                fr'     WHERE NOT grade.is_deleted'
+                fr'{f" AND {cond_sql}" if cond_sql else ""}'
+                fr' ORDER BY class_id ASC, grade_id ASC'
+                fr') __TABLE__')
     async with FetchAll(
             event='browse grades under class',
-            sql=fr'SELECT account_id, username, student_id, real_name,'
-                fr'       title, score, update_time, grade_id, class_id'
-                fr'  FROM view_grade'
-                fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
-                fr' ORDER BY {sort_sql} class_id ASC, grade_id ASC'
+            sql=fr'{view_sql}'
+                fr'{f" ORDER BY {sort_sql}" if sort_sql else ""}'
                 fr' LIMIT %(limit)s OFFSET %(offset)s',
             **cond_params,
             limit=limit, offset=offset,
-            raise_not_found=False,  # Issue #134: return [] for browse
+            raise_not_found=False,
     ) as records:
         data = [vo.ViewGrade(account_id=account_id,
                              username=username,
@@ -433,12 +450,7 @@ async def grade(limit: int, offset: int, filters: Sequence[Filter], sorters: Seq
                 for (account_id, username, student_id, real_name, title, score, update_time, grade_id, class_id)
                 in records]
 
-    total_count = await execute_count(
-        sql=fr'SELECT *'
-            fr'  FROM view_grade'
-            fr'{f" WHERE {cond_sql}" if cond_sql else ""}',
-        **cond_params,
-    )
+    total_count = await execute_count(view_sql, **cond_params)
 
     return data, total_count
 
