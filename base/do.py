@@ -298,6 +298,13 @@ class ScoreboardSettingTeamProject:
 
 
 @dataclass
+class ScoreboardSettingTeamContest:
+    id: int
+    penalty_formula: str
+    team_label_filter: Optional[str]
+
+
+@dataclass
 class Announcement:
     id: int
     title: str

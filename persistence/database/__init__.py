@@ -77,6 +77,7 @@ from . import (
 
     scoreboard,
     scoreboard_setting_team_project,
+    scoreboard_setting_team_contest,
 
     announcement,
     access_log,
