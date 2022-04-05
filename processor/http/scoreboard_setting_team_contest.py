@@ -84,8 +84,8 @@ async def view_team_contest_scoreboard(scoreboard_id: int) \
             if verdict is VerdictType.accepted:
                 if not first_solve_team_id:
                     first_solve_team_id = team_id
-                team_solve_mins[team_id] = math.floor((submit_time - challenge.start_time)
-                                                      / datetime.timedelta(minutes=1))  # todo: ceil? floor?
+                team_solve_mins[team_id] = math.ceil((submit_time - challenge.start_time)
+                                                     / datetime.timedelta(minutes=1))
             else:
                 team_wa_count[team_id] = team_wa_count.get(team_id, 0) + 1
 
