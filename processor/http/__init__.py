@@ -35,6 +35,7 @@ def register_routers(app: fastapi.FastAPI):
 
         scoreboard,
         scoreboard_setting_team_project,
+        scoreboard_setting_team_contest,
 
         announcement,
         system,
