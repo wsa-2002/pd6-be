@@ -51,6 +51,9 @@ async def read_scoreboard(scoreboard_id: int) -> ReadScoreboardOutput:
     if scoreboard.type is ScoreboardType.team_project:
         result.data = await db.scoreboard_setting_team_project.read(scoreboard.setting_id)
         return result
+    elif scoreboard.type is ScoreboardType.team_contest:
+        result.data = await db.scoreboard_setting_team_contest.read(scoreboard.setting_id)
+        return result
 
     raise exc.SystemException  # should not happen
 
