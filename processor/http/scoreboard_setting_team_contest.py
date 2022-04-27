@@ -90,11 +90,7 @@ async def view_team_contest_scoreboard(scoreboard_id: int) \
                 team_solve_mins[team_id] = math.ceil((submit_time - challenge.start_time)
                                                      / datetime.timedelta(minutes=1))
             else:
-                # team_wa_count[team_id] = team_wa_count.get(team_id, 0) + 1
-                if team_id in team_wa_count:
-                    team_wa_count[team_id] += 1
-                else:
-                    team_wa_count[team_id] = 1
+                team_wa_count[team_id] = team_wa_count.get(team_id, 0) + 1
 
         for team_id in team_problem_datas:
             if team_id not in team_submission_id:
@@ -107,7 +103,7 @@ async def view_team_contest_scoreboard(scoreboard_id: int) \
                 is_first=team_id is first_solve_team_id,
                 penalty=(service.scoreboard.calculate_penalty(formula=setting_data.penalty_formula,
                                                               solved_time_mins=team_solve_mins[team_id],
-                                                              wrong_submissions=team_wa_count[team_id])
+                                                              wrong_submissions=team_wa_count.get(team_id, 0))
                          if team_id in team_solve_mins else 0),
                 submission_id=team_submission_id[team_id],
             ))
