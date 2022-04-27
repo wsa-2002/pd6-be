@@ -56,7 +56,7 @@ async def browse(problem_id: int, is_sample=None, include_disabled=False, includ
                 fr'{" AND NOT is_sample" if is_sample is False else ""}'
                 fr'{" AND NOT is_disabled" if not include_disabled else ""}'
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}'
-                fr' ORDER BY is_sample DESC, id ASC',
+                fr' ORDER BY is_sample DESC, CAST(label AS Numeric(10,0)) ASC',
             problem_id=problem_id,
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
