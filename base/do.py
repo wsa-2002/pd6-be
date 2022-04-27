@@ -134,6 +134,7 @@ class Problem:
     io_description: Optional[str]
     source: Optional[str]
     hint: Optional[str]
+    is_lazy_judge: bool
     is_deleted: bool
     reviser_settings: Sequence[ProblemReviserSetting]
 

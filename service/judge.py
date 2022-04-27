@@ -62,6 +62,7 @@ async def _prepare_problem(problem_id: int) -> tuple[
 
     judge_problem = common.do.Problem(
         full_score=problem.full_score,
+        is_lazy_judge=problem.is_lazy_judge,
     )
 
     judge_testcases = [common.do.Testcase(
