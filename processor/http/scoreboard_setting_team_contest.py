@@ -73,13 +73,13 @@ async def view_team_contest_scoreboard(scoreboard_id: int) \
         team_solve_mins: dict[int, int] = {}
         team_wa_count: dict[int, int] = {}
         team_submit_count: dict[int, int] = {}
-        team_submission_id = dict[int, int] = {}
+        team_submission_id: dict[int, int] = {}
 
         for team_id, submission_id, submit_time, verdict in team_verdict_infos:
             if team_id in team_solve_mins:
                 continue
             team_submit_count[team_id] += 1
-            team_submission_id[team_id] = team_submission_id
+            team_submission_id[team_id] = submission_id
 
             if verdict is VerdictType.accepted:
                 if not first_solve_team_id:
