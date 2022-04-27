@@ -26,8 +26,8 @@ class TimeInfo:
 
 @dataclass
 class EachRun:
-    team_id: int
-    problem_id: int
+    team: int
+    problem: int
     result: str
     submissionTime: int  # minutes
 
@@ -35,8 +35,8 @@ class EachRun:
 @dataclass
 class ReturnEachRun:
     id: int
-    team_id: int
-    problem_id: int
+    team: int
+    problem: int
     result: str
     submissionTime: int  # minutes
 
@@ -69,7 +69,7 @@ async def view_team_contest_scoreboard_runs(scoreboard_id: int) -> ViewTeamConte
     challenge = await db.challenge.read(scoreboard.challenge_id)
 
     problem_run_infos = [
-        EachRun(team_id=team_id, problem_id=problem_id,
+        EachRun(team=team_id, problem=problem_id,
                 result="Yes" if verdict is VerdictType.accepted else "No - Wrong Answer",
                 submissionTime=math.ceil((submit_time - challenge.start_time) / datetime.timedelta(minutes=1)))
         for problem_id in scoreboard.target_problem_ids
@@ -89,8 +89,8 @@ async def view_team_contest_scoreboard_runs(scoreboard_id: int) -> ViewTeamConte
         ),
         runs=[ReturnEachRun(
             id=i,
-            team_id=run.team_id,
-            problem_id=run.problem_id,
+            team=run.team,
+            problem=run.problem,
             result=run.result,
             submissionTime=run.submissionTime,
         ) for i, run in enumerate(problem_run_infos)]
