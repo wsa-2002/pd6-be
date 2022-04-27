@@ -99,7 +99,7 @@ async def view_team_contest_scoreboard(scoreboard_id: int) \
                 problem_id=problem_id,
                 submit_count=team_submit_count[team_id],
                 is_solved=team_id in team_solve_mins,
-                solve_time=team_solve_mins[team_id],
+                solve_time=team_solve_mins.get(team_id, 0),
                 is_first=team_id is first_solve_team_id,
                 penalty=(service.scoreboard.calculate_penalty(formula=setting_data.penalty_formula,
                                                               solved_time_mins=team_solve_mins[team_id],
