@@ -1,0 +1,97 @@
+import datetime
+import math
+from dataclasses import dataclass
+from typing import Sequence
+
+from base.enum import RoleType, ScoreboardType, VerdictType
+import exceptions as exc
+from middleware import APIRouter, response, enveloped, auth
+import persistence.database as db
+import service
+from util.context import context
+
+router = APIRouter(
+    tags=['Hardcode'],
+    default_response_class=response.JSONResponse,
+    dependencies=auth.doc_dependencies,
+)
+
+
+@dataclass
+class TimeInfo:
+    contestTime: int  # seconds
+    noMoreUpdate: bool
+    timestamp: int
+
+
+@dataclass
+class EachRun:
+    team_id: int
+    problem_id: int
+    result: str
+    submissionTime: int  # minutes
+
+
+@dataclass
+class ReturnEachRun:
+    id: int
+    team_id: int
+    problem_id: int
+    result: str
+    submissionTime: int  # minutes
+
+
+@dataclass
+class ViewTeamContestScoreboardRunsOutput:
+    time: TimeInfo
+    runs: Sequence[ReturnEachRun]
+
+
+@router.get('/hardcode/team-contest-scoreboard/{scoreboard_id}/runs')
+@enveloped
+async def view_team_contest_scoreboard_runs(scoreboard_id: int) -> ViewTeamContestScoreboardRunsOutput:
+    """
+    ### 權限
+    - System Normal
+    """
+    if not await service.rbac.validate_class(context.account.id, RoleType.normal, scoreboard_id=scoreboard_id):
+        raise exc.NoPermission
+
+    scoreboard = await db.scoreboard.read(scoreboard_id)
+    if scoreboard.type != ScoreboardType.team_contest:
+        raise exc.IllegalInput
+
+    setting_data = await db.scoreboard_setting_team_contest.read(scoreboard.setting_id)
+
+    class_id = (await db.challenge.read(challenge_id=scoreboard.challenge_id)).class_id
+    teams = await db.team.browse_with_team_label_filter(class_id=class_id,
+                                                        team_label_filter=setting_data.team_label_filter)
+    challenge = await db.challenge.read(scoreboard.challenge_id)
+
+    problem_run_infos = [
+        EachRun(team_id=team_id, problem_id=problem_id,
+                result="Yes" if verdict is VerdictType.accepted else "No - Wrong Answer",
+                submissionTime=math.ceil((submit_time - challenge.start_time) / datetime.timedelta(minutes=1)))
+        for problem_id in scoreboard.target_problem_ids
+        for team_id, submission_id, submit_time, verdict
+        in await db.judgment.get_class_all_team_all_submission_verdict(problem_id=problem_id, class_id=class_id,
+                                                                       team_ids=[team.id for team in teams])
+    ]
+
+    # sort it again
+    problem_run_infos = sorted(problem_run_infos, key=lambda run: run.submissionTime)
+
+    return ViewTeamContestScoreboardRunsOutput(
+        time=TimeInfo(
+            contestTime=math.ceil((challenge.end_time - challenge.start_time) / datetime.timedelta(seconds=1)),
+            noMoreUpdate=False,
+            timestamp=0,
+        ),
+        runs=[ReturnEachRun(
+            id=i,
+            team_id=run.team_id,
+            problem_id=run.problem_id,
+            result=run.result,
+            submissionTime=run.submissionTime,
+        ) for i, run in enumerate(problem_run_infos)]
+    )
