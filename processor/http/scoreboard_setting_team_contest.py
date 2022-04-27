@@ -73,13 +73,16 @@ async def view_team_contest_scoreboard(scoreboard_id: int) \
         team_solve_mins: dict[int, int] = {}
         team_wa_count: dict[int, int] = {}
         team_submit_count: dict[int, int] = {}
-        team_submission_id = dict[int, int] = {}
+        team_submission_id: dict[int, int] = {}
 
         for team_id, submission_id, submit_time, verdict in team_verdict_infos:
             if team_id in team_solve_mins:
                 continue
-            team_submit_count[team_id] += 1
-            team_submission_id[team_id] = team_submission_id
+            if team_id in team_submit_count:
+                team_submit_count[team_id] += 1
+            else:
+                team_submit_count[team_id] = 1
+            team_submission_id[team_id] = submission_id
 
             if verdict is VerdictType.accepted:
                 if not first_solve_team_id:
@@ -96,11 +99,11 @@ async def view_team_contest_scoreboard(scoreboard_id: int) \
                 problem_id=problem_id,
                 submit_count=team_submit_count[team_id],
                 is_solved=team_id in team_solve_mins,
-                solve_time=team_solve_mins[team_id],
+                solve_time=team_solve_mins.get(team_id, 0),
                 is_first=team_id is first_solve_team_id,
                 penalty=(service.scoreboard.calculate_penalty(formula=setting_data.penalty_formula,
                                                               solved_time_mins=team_solve_mins[team_id],
-                                                              wrong_submissions=team_wa_count[team_id])
+                                                              wrong_submissions=team_wa_count.get(team_id, 0))
                          if team_id in team_solve_mins else 0),
                 submission_id=team_submission_id[team_id],
             ))

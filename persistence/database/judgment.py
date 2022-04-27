@@ -308,6 +308,7 @@ async def get_class_all_team_all_submission_verdict(problem_id: int, class_id: i
                 fr'        AND NOT problem.is_deleted'
                 fr' INNER JOIN challenge'
                 fr'         ON challenge.id = problem.challenge_id'
+                fr'        AND submission.submit_time >= challenge.start_time'
                 fr'        AND submission.submit_time <= challenge.end_time'
                 fr' INNER JOIN judgment'
                 fr'         ON submission.id = judgment.submission_id'
