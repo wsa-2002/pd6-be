@@ -78,8 +78,10 @@ async def view_team_contest_scoreboard(scoreboard_id: int) \
         for team_id, submission_id, submit_time, verdict in team_verdict_infos:
             if team_id in team_solve_mins:
                 continue
-
-            team_submit_count[team_id] = team_submit_count.get(team_id, 0) + 1
+            if team_id in team_submit_count:
+                team_submit_count[team_id] += 1
+            else:
+                team_submit_count[team_id] = 1
             team_submission_id[team_id] = submission_id
 
             if verdict is VerdictType.accepted:
@@ -88,7 +90,11 @@ async def view_team_contest_scoreboard(scoreboard_id: int) \
                 team_solve_mins[team_id] = math.ceil((submit_time - challenge.start_time)
                                                      / datetime.timedelta(minutes=1))
             else:
-                team_wa_count[team_id] = team_wa_count.get(team_id, 0) + 1
+                # team_wa_count[team_id] = team_wa_count.get(team_id, 0) + 1
+                if team_id in team_wa_count:
+                    team_wa_count[team_id] += 1
+                else:
+                    team_wa_count[team_id] = 1
 
         for team_id in team_problem_datas:
             if team_id not in team_submission_id:
