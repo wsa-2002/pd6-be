@@ -85,7 +85,7 @@ async def view_team_contest_scoreboard_runs(scoreboard_id: int) -> ViewTeamConte
         time=TimeInfo(
             contestTime=math.ceil((challenge.end_time - challenge.start_time) / datetime.timedelta(seconds=1)),
             noMoreUpdate=False,
-            timestamp=0,
+            timestamp=math.ceil((datetime.datetime.now() - challenge.start_time) / datetime.timedelta(seconds=1)),
         ),
         runs=[ReturnEachRun(
             id=i,
