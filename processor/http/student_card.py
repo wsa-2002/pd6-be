@@ -1,5 +1,6 @@
 from typing import Sequence
 
+import pydantic
 from pydantic import BaseModel, constr
 
 from base import do
@@ -50,6 +51,11 @@ async def add_student_card_to_account(account_id: int, data: AddStudentCardInput
         raise exc.account.StudentCardExists
 
     institute_email = f"{data.institute_email_prefix}@{institute.email_domain}"
+    try:
+        pydantic.validate_email(institute_email)
+    except pydantic.EmailError as e:
+        raise exc.account.InvalidEmail from e
+
     code = await db.account.add_email_verification(email=institute_email, account_id=account_id,
                                                    institute_id=data.institute_id, student_id=data.student_id)
     account = await db.account.read(account_id)
