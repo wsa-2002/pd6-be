@@ -106,4 +106,7 @@ class ServerTZDatetime(datetime.datetime):
 class CaseInsensitiveEmailStr(pydantic.EmailStr):
     @classmethod
     def validate(cls, value) -> str:
-        return super().validate(value).lower()
+        validated = super().validate(value).lower()
+        if '+' in validated:
+            raise exc.account.InvalidEmail
+        return validated

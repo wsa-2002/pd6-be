@@ -73,7 +73,7 @@ async def add_account(data: AddAccountInput) -> None:
 
     institute_email = f"{data.institute_email_prefix}@{institute.email_domain}"
     try:
-        pydantic.validate_email(institute_email)
+        institute_email = pydantic.parse_obj_as(model.CaseInsensitiveEmailStr, institute_email)
     except pydantic.EmailError as e:
         raise exc.account.InvalidEmail from e
 
