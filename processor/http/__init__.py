@@ -42,6 +42,8 @@ def register_routers(app: fastapi.FastAPI):
 
         view,
 
+        hardcode,
+
         secret,
 
         docs,
@@ -82,6 +84,8 @@ def register_routers(app: fastapi.FastAPI):
     app.include_router(system.router)
 
     app.include_router(view.router)
+
+    app.include_router(hardcode.router)
 
     app.include_router(secret.router)
 
