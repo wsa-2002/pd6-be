@@ -75,6 +75,7 @@ async def _prepare_problem(problem_id: int) -> tuple[
         if testcase.output_file_uuid else None,
         time_limit=testcase.time_limit,
         memory_limit=testcase.memory_limit,
+        is_sample=testcase.is_sample,
     ) for i, testcase in enumerate(testcases)]
 
     judge_assisting_datas = [common.do.AssistingData(
