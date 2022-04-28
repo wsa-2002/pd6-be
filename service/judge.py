@@ -62,17 +62,20 @@ async def _prepare_problem(problem_id: int) -> tuple[
 
     judge_problem = common.do.Problem(
         full_score=problem.full_score,
+        is_lazy_judge=problem.is_lazy_judge,
     )
 
     judge_testcases = [common.do.Testcase(
         id=testcase.id,
         score=testcase.score,
+        label=testcase.label,
         input_file_url=await _sign_file_url(testcase.input_file_uuid, filename=f'{i}.in')
         if testcase.input_file_uuid else None,
         output_file_url=await _sign_file_url(testcase.output_file_uuid, filename=f'{i}.out')
         if testcase.output_file_uuid else None,
         time_limit=testcase.time_limit,
         memory_limit=testcase.memory_limit,
+        is_sample=testcase.is_sample,
     ) for i, testcase in enumerate(testcases)]
 
     judge_assisting_datas = [common.do.AssistingData(

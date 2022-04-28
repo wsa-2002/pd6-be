@@ -151,6 +151,7 @@ class EditProblemInput(BaseModel):
     judge_source: Optional[JudgeSourceInput]
     reviser_is_enabled: Optional[bool] = model.can_omit
     reviser: Optional[CustomizedReviserInput]
+    is_lazy_judge: bool = None
 
 
 @router.patch('/problem/{problem_id}')
@@ -204,7 +205,7 @@ async def edit_problem(problem_id: int, data: EditProblemInput):
                           full_score=data.full_score,
                           description=data.description, io_description=data.io_description, source=data.source,
                           hint=data.hint, setting_id=setting_id, judge_type=data.judge_type,
-                          reviser_settings=reviser_settings)
+                          reviser_settings=reviser_settings, is_lazy_judge=data.is_lazy_judge)
 
     if data.testcase_disabled is not None:
         await db.testcase.disable_enable_testcase_by_problem(problem_id=problem_id,
