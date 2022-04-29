@@ -134,6 +134,7 @@ class Problem:
     io_description: Optional[str]
     source: Optional[str]
     hint: Optional[str]
+    is_lazy_judge: bool
     is_deleted: bool
     reviser_settings: Sequence[ProblemReviserSetting]
 
@@ -294,6 +295,13 @@ class ScoreboardSettingTeamProject:
     scoring_formula: str
     baseline_team_id: Optional[int]
     rank_by_total_score: bool
+    team_label_filter: Optional[str]
+
+
+@dataclass
+class ScoreboardSettingTeamContest:
+    id: int
+    penalty_formula: str
     team_label_filter: Optional[str]
 
 

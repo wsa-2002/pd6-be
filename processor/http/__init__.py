@@ -35,11 +35,14 @@ def register_routers(app: fastapi.FastAPI):
 
         scoreboard,
         scoreboard_setting_team_project,
+        scoreboard_setting_team_contest,
 
         announcement,
         system,
 
         view,
+
+        hardcode,
 
         secret,
 
@@ -75,11 +78,14 @@ def register_routers(app: fastapi.FastAPI):
 
     app.include_router(scoreboard.router)
     app.include_router(scoreboard_setting_team_project.router)
+    app.include_router(scoreboard_setting_team_contest.router)
 
     app.include_router(announcement.router)
     app.include_router(system.router)
 
     app.include_router(view.router)
+
+    app.include_router(hardcode.router)
 
     app.include_router(secret.router)
 

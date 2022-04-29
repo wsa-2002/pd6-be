@@ -43,3 +43,31 @@ def get_team_project_calculator(formula: str, class_max: int, class_min: int, ba
             raise exc.InvalidFormula
 
     return calculate
+
+
+PENALTY_FORMULA_AVAILABLE_PARAMS = [
+    'solved_time_mins',
+    'wrong_submissions',
+]
+
+
+def validate_penalty_formula(formula: str) -> bool:
+    if not formula:
+        return False
+
+    for param in PENALTY_FORMULA_AVAILABLE_PARAMS:
+        formula = formula.replace(param, '')
+
+    return not any(char.isalpha() for char in formula)
+
+
+def calculate_penalty(formula: str, solved_time_mins: int, wrong_submissions: int):
+    try:
+        return eval(formula, {
+            'solved_time_mins': solved_time_mins,
+            'wrong_submissions': wrong_submissions,
+        })
+    except ZeroDivisionError:
+        raise exc.InvalidFormula
+    except (TypeError, NameError, SyntaxError):
+        raise exc.InvalidFormula

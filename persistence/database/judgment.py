@@ -264,3 +264,61 @@ async def get_class_last_team_submission_judgment(problem_id: int, class_id: int
             {team_id: submission_id for team_id, submission_id, judgment_id in records},
             {team_id: judgment_id for team_id, submission_id, judgment_id in records},
         )
+
+
+async def get_class_all_team_all_submission_verdict(problem_id: int, class_id: int, team_ids: Sequence[int]) \
+        -> Sequence[Tuple[int, int, datetime, enum.VerdictType]]:
+    """
+    Returns only submitted & judged teams
+
+    :return: list of (team_id, submission_id, submit_time, verdict) ordered by submit time asc
+    """
+    cond_sql = ', '.join(str(team_id) for team_id in team_ids)
+    async with FetchAll(
+            event='get class best team submission judgment',
+            sql=fr'  WITH data_table AS ( '
+                fr'SELECT team_member.team_id          AS team_id,'
+                fr'       submission.id                AS submission_id,'
+                fr'       submission.account_id        AS account_id,'
+                fr'       submission.problem_id        AS problem_id,'
+                fr'       submission.language_id       AS language_id,'
+                fr'       submission.content_length    AS content_length,'
+                fr'       submission.submit_time       AS submit_time,'
+                fr'       submission.content_file_uuid AS content_file_uuid,'
+                fr'       submission.filename          AS filename,'
+                fr'       judgment.id                  AS judgment_id,'
+                fr'       judgment.submission_id       AS judgment_submission_id,'
+                fr'       judgment.verdict             AS verdict,'
+                fr'       judgment.total_time          AS total_time,'
+                fr'       judgment.max_memory          AS max_memory,'
+                fr'       judgment.score               AS score,'
+                fr'       judgment.judge_time          AS judge_time,'
+                fr'       judgment.error_message       AS error_message'
+                fr'  FROM team_member'
+                fr' INNER JOIN team'
+                fr'         ON team.id = team_member.team_id'
+                fr'        AND team.class_id = %(class_id)s'
+                fr'        AND team.id IN ( {f" {cond_sql}" if cond_sql else "NULL"} )'  # Return null when no team_id
+                fr'        AND NOT team.is_deleted'
+                fr' INNER JOIN submission'
+                fr'         ON team_member.member_id = submission.account_id'
+                fr'        AND submission.problem_id = %(problem_id)s'
+                fr' INNER JOIN problem'
+                fr'         ON problem.id = submission.problem_id'
+                fr'        AND NOT problem.is_deleted'
+                fr' INNER JOIN challenge'
+                fr'         ON challenge.id = problem.challenge_id'
+                fr'        AND submission.submit_time >= challenge.start_time'
+                fr'        AND submission.submit_time <= challenge.end_time'
+                fr' INNER JOIN judgment'
+                fr'         ON submission.id = judgment.submission_id'
+                fr'        AND submission_last_judgment_id(submission.id) = judgment.id'
+                fr') '
+                fr'SELECT team_id, submission_id, submit_time, verdict'
+                fr'  FROM data_table t1'
+                fr' ORDER BY submit_time ASC',
+            class_id=class_id, problem_id=problem_id,
+            raise_not_found=False,
+    ) as records:
+        return [(team_id, submission_id, submit_time, enum.VerdictType(raw_verdict))
+                for team_id, submission_id, submit_time, raw_verdict in records]

@@ -536,3 +536,35 @@ async def download_all_plagiarism_reports(challenge_id: int, as_attachment: bool
         log.info('Done')
 
     util.background_task.launch(background_tasks, _task)
+
+
+class AddTeamContestScoreboardInput(BaseModel):
+    challenge_label: str
+    title: str
+    target_problem_ids: Sequence[int]
+
+    # team_project_scoreboard
+    penalty_formula: constr(strip_whitespace=True, to_lower=True, strict=True)
+    team_label_filter: Optional[str]
+
+
+@router.post('/challenge/{challenge_id}/team-contest-scoreboard', tags=['Team Contest Scoreboard'])
+async def add_team_contest_scoreboard_under_challenge(challenge_id: int, data: AddTeamContestScoreboardInput) \
+        -> model.AddOutput:
+    """
+    ### 權限
+    - class manager
+    """
+    if not await service.rbac.validate_class(context.account.id, RoleType.manager, challenge_id=challenge_id):
+        raise exc.NoPermission
+
+    if not service.scoreboard.validate_penalty_formula(formula=data.penalty_formula):
+        raise exc.InvalidFormula
+
+    scoreboard_id = await db.scoreboard_setting_team_contest.add_under_scoreboard(
+        challenge_id=challenge_id, challenge_label=data.challenge_label, title=data.title,
+        target_problem_ids=data.target_problem_ids,
+        penalty_formula=data.penalty_formula, team_label_filter=data.team_label_filter,
+    )
+
+    return model.AddOutput(id=scoreboard_id)

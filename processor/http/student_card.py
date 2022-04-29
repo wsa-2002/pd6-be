@@ -1,5 +1,6 @@
 from typing import Sequence
 
+import pydantic
 from pydantic import BaseModel, constr
 
 from base import do
@@ -9,6 +10,7 @@ from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
 from persistence import email
 import service
+from util import model
 from util.context import context
 
 router = APIRouter(
@@ -50,6 +52,11 @@ async def add_student_card_to_account(account_id: int, data: AddStudentCardInput
         raise exc.account.StudentCardExists
 
     institute_email = f"{data.institute_email_prefix}@{institute.email_domain}"
+    try:
+        institute_email = pydantic.parse_obj_as(model.CaseInsensitiveEmailStr, institute_email)
+    except pydantic.EmailError as e:
+        raise exc.account.InvalidEmail from e
+
     code = await db.account.add_email_verification(email=institute_email, account_id=account_id,
                                                    institute_id=data.institute_id, student_id=data.student_id)
     account = await db.account.read(account_id)

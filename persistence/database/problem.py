@@ -41,7 +41,7 @@ async def browse(include_scheduled: bool = False, include_deleted=False) -> Sequ
     async with FetchAll(
             event='browse problems',
             sql=fr'SELECT id, challenge_id, challenge_label, title, setter_id, full_score, judge_type, setting_id,'
-                fr'       reviser_settings, description, io_description, source, hint, is_deleted'
+                fr'       reviser_settings, description, io_description, source, hint, is_deleted, is_lazy_judge'
                 fr'  FROM problem'
                 fr'{f" WHERE {cond_sql}" if cond_sql else ""}'
                 fr' ORDER BY id ASC',
@@ -53,9 +53,9 @@ async def browse(include_scheduled: bool = False, include_deleted=False) -> Sequ
                            judge_type=enum.ProblemJudgeType(judge_type), setting_id=setting_id,
                            reviser_settings=serialize.unmarshal(reviser_settings, list[do.ProblemReviserSetting]),
                            description=description, io_description=io_description, source=source, hint=hint,
-                           is_deleted=is_deleted, )
+                           is_deleted=is_deleted, is_lazy_judge=is_lazy_judge)
                 for (id_, challenge_id, challenge_label, title, setter_id, full_score, judge_type, setting_id,
-                     reviser_settings, description, io_description, source, hint, is_deleted)
+                     reviser_settings, description, io_description, source, hint, is_deleted, is_lazy_judge)
                 in records]
 
 
@@ -66,7 +66,8 @@ async def browse_problem_set(request_time: datetime, include_deleted=False) \
             sql=fr'SELECT problem.id, problem.challenge_id, problem.challenge_label,'
                 fr'       problem.title, problem.setter_id, problem.full_score,'
                 fr'       problem.description, problem.io_description, problem.judge_type, problem.setting_id,'
-                fr'       problem.reviser_settings, problem.source, problem.hint, problem.is_deleted'
+                fr'       problem.reviser_settings, problem.source, problem.hint, problem.is_deleted, '
+                fr'       problem.is_lazy_judge'
                 fr'  FROM problem'
                 fr'       INNER JOIN challenge'
                 fr'               ON challenge.id = problem.challenge_id'
@@ -86,10 +87,10 @@ async def browse_problem_set(request_time: datetime, include_deleted=False) \
                            judge_type=enum.ProblemJudgeType(judge_type), setting_id=setting_id,
                            reviser_settings=serialize.unmarshal(reviser_settings, list[do.ProblemReviserSetting]),
                            source=source, hint=hint,
-                           is_deleted=is_deleted)
+                           is_deleted=is_deleted, is_lazy_judge=is_lazy_judge)
                 for (id_, challenge_id, challenge_label, title, setter_id, full_score,
                      description, io_description, judge_type, setting_id, reviser_settings,
-                     source, hint, is_deleted)
+                     source, hint, is_deleted, is_lazy_judge)
                 in records]
 
 
@@ -97,7 +98,7 @@ async def browse_by_challenge(challenge_id: int, include_deleted=False) -> Seque
     async with FetchAll(
             event='browse problems with challenge id',
             sql=fr'SELECT id, challenge_id, challenge_label, title, setter_id, full_score, judge_type, setting_id,'
-                fr'       reviser_settings, description, io_description, source, hint, is_deleted'
+                fr'       reviser_settings, description, io_description, source, hint, is_deleted, is_lazy_judge'
                 fr'  FROM problem'
                 fr' WHERE challenge_id = %(challenge_id)s'
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}'
@@ -111,9 +112,9 @@ async def browse_by_challenge(challenge_id: int, include_deleted=False) -> Seque
                            judge_type=enum.ProblemJudgeType(judge_type), setting_id=setting_id,
                            reviser_settings=serialize.unmarshal(reviser_settings, list[do.ProblemReviserSetting]),
                            description=description, io_description=io_description, source=source, hint=hint,
-                           is_deleted=is_deleted)
+                           is_deleted=is_deleted, is_lazy_judge=is_lazy_judge)
                 for (id_, challenge_id, challenge_label, title, setter_id, full_score, judge_type, setting_id,
-                     reviser_settings, description, io_description, source, hint, is_deleted)
+                     reviser_settings, description, io_description, source, hint, is_deleted, is_lazy_judge)
                 in records]
 
 
@@ -122,20 +123,20 @@ async def read(problem_id: int, include_deleted=False) -> do.Problem:
             event='read problem by id',
             sql=fr'SELECT id, challenge_id, challenge_label, title, setter_id, full_score,'
                 fr'       judge_type, setting_id, reviser_settings,'
-                fr'       description, io_description, source, hint, is_deleted'
+                fr'       description, io_description, source, hint, is_deleted, is_lazy_judge'
                 fr'  FROM problem'
                 fr' WHERE id = %(problem_id)s'
                 fr'{" AND NOT is_deleted" if not include_deleted else ""}',
             problem_id=problem_id,
-    ) as (id_, challenge_id, challenge_label, title, setter_id, full_score,
-          judge_type, setting_id, reviser_settings, description, io_description, source, hint, is_deleted):
+    ) as (id_, challenge_id, challenge_label, title, setter_id, full_score, judge_type,
+          setting_id, reviser_settings, description, io_description, source, hint, is_deleted, is_lazy_judge):
         return do.Problem(id=id_,
                           challenge_id=challenge_id, challenge_label=challenge_label,
                           title=title, setter_id=setter_id, full_score=full_score,
                           judge_type=enum.ProblemJudgeType(judge_type), setting_id=setting_id,
                           reviser_settings=serialize.unmarshal(reviser_settings, list[do.ProblemReviserSetting]),
                           description=description, io_description=io_description, source=source, hint=hint,
-                          is_deleted=is_deleted)
+                          is_deleted=is_deleted, is_lazy_judge=is_lazy_judge)
 
 
 async def read_task_status_by_type(problem_id: int, account_id: int,
@@ -149,7 +150,7 @@ async def read_task_status_by_type(problem_id: int, account_id: int,
                 fr'       problem.setter_id, problem.full_score,'
                 fr'       problem.judge_type, problem.setting_id, problem.reviser_settings,'
                 fr'       problem.description, problem.io_description,'
-                fr'       problem.source, problem.hint, problem.is_deleted,'
+                fr'       problem.source, problem.hint, problem.is_deleted, is_lazy_judge,'
                 fr'       submission.id, submission.account_id, submission.problem_id,'
                 fr'       submission.language_id, submission.filename,'
                 fr'       submission.content_file_uuid, submission.content_length, submission.submit_time'
@@ -168,15 +169,15 @@ async def read_task_status_by_type(problem_id: int, account_id: int,
             problem_id=problem_id,
             challenge_end_time=challenge_end_time,
             account_id=account_id,
-    ) as (problem_id, challenge_id, challenge_label, title, setter_id, full_score,
-          judge_type, setting_id, reviser_settings, description, io_description, source, hint, is_deleted,
+    ) as (problem_id, challenge_id, challenge_label, title, setter_id, full_score, judge_type,
+          setting_id, reviser_settings, description, io_description, source, hint, is_deleted, is_lazy_judge,
           submission_id, account_id, problem_id, language_id, filename, content_file_uuid, content_length, submit_time):
         return (do.Problem(id=problem_id, challenge_id=challenge_id, challenge_label=challenge_label, title=title,
                            setter_id=setter_id, full_score=full_score,
                            judge_type=enum.ProblemJudgeType(judge_type), setting_id=setting_id,
                            reviser_settings=serialize.unmarshal(reviser_settings, list[do.ProblemReviserSetting]),
-                           description=description,
-                           io_description=io_description, source=source, hint=hint, is_deleted=is_deleted),
+                           description=description, io_description=io_description, source=source,
+                           hint=hint, is_deleted=is_deleted, is_lazy_judge=is_lazy_judge),
                 do.Submission(id=submission_id, account_id=account_id, problem_id=problem_id, filename=filename,
                               language_id=language_id, content_file_uuid=content_file_uuid,
                               content_length=content_length, submit_time=submit_time))
@@ -192,7 +193,8 @@ async def edit(problem_id: int,
                description: Optional[str] = ...,
                io_description: Optional[str] = ...,
                source: Optional[str] = ...,
-               hint: Optional[str] = ..., ) -> None:
+               hint: Optional[str] = ...,
+               is_lazy_judge: Optional[bool] = None,) -> None:
     to_updates: ParamDict = {'judge_type': judge_type}
 
     if challenge_label is not None:
@@ -213,6 +215,8 @@ async def edit(problem_id: int,
         to_updates['source'] = source
     if hint is not ...:
         to_updates['hint'] = hint
+    if is_lazy_judge is not None:
+        to_updates['is_lazy_judge'] = is_lazy_judge
 
     if not to_updates:
         return
