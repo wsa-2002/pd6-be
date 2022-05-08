@@ -275,7 +275,7 @@ async def get_class_all_team_all_submission_verdict(problem_id: int, class_id: i
     """
     cond_sql = ', '.join(str(team_id) for team_id in team_ids)
     async with FetchAll(
-            event='get class best team submission judgment',
+            event='get class all team all submission verdict',
             sql=fr'  WITH data_table AS ( '
                 fr'SELECT team_member.team_id          AS team_id,'
                 fr'       submission.id                AS submission_id,'

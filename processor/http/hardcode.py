@@ -5,7 +5,7 @@ from typing import Sequence
 
 from base.enum import RoleType, ScoreboardType, VerdictType
 import exceptions as exc
-from middleware import APIRouter, response, enveloped, auth
+from middleware import APIRouter, response, enveloped, auth, routing
 import persistence.database as db
 import service
 from util.context import context
@@ -14,6 +14,7 @@ router = APIRouter(
     tags=['Hardcode'],
     default_response_class=response.JSONResponse,
     dependencies=auth.doc_dependencies,
+    route_class=routing.NoLogAPIRoute,
 )
 
 
@@ -49,6 +50,7 @@ class ViewTeamContestScoreboardRunsOutput:
 
 @router.get('/hardcode/team-contest-scoreboard/{scoreboard_id}/runs')
 @enveloped
+# TODO: 裝一個 [最好是 thread-safe 的] lru cache (不然跑 PDAO 的時候這隻 api 一直被打，db 會被打爆)
 async def view_team_contest_scoreboard_runs(scoreboard_id: int) -> ViewTeamContestScoreboardRunsOutput:
     """
     ### 權限
