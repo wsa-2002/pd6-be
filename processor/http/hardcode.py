@@ -67,15 +67,18 @@ async def view_team_contest_scoreboard_runs(scoreboard_id: int) -> ViewTeamConte
     teams = await db.team.browse_with_team_label_filter(class_id=class_id,
                                                         team_label_filter=setting_data.team_label_filter)
     challenge = await db.challenge.read(scoreboard.challenge_id)
-
+    freeze_time = challenge.end_time - datetime.timedelta(hours=1)
+    is_freeze = freeze_time < context.request_time < challenge.end_time
     problem_run_infos = [
         EachRun(team=team_id, problem=problem_id,
                 result="Yes" if verdict is VerdictType.accepted else "No - Wrong Answer",
                 submissionTime=math.ceil((submit_time - challenge.start_time) / datetime.timedelta(minutes=1)))
         for problem_id in scoreboard.target_problem_ids
         for team_id, submission_id, submit_time, verdict
-        in await db.judgment.get_class_all_team_all_submission_verdict(problem_id=problem_id, class_id=class_id,
-                                                                       team_ids=[team.id for team in teams])
+        in await db.judgment.get_class_all_team_submission_verdict_before_freeze(problem_id=problem_id,
+                                                                                 class_id=class_id,
+                                                                                 team_ids=[team.id for team in teams],
+                                                                                 freeze_time=freeze_time if is_freeze else None)  # noqa
     ]
 
     # sort it again
