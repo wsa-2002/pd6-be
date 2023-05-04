@@ -3,11 +3,7 @@ import math
 from dataclasses import dataclass
 from typing import Sequence
 
-import asyncache
-import cachetools
-
 from base.enum import RoleType, ScoreboardType, VerdictType
-from config import config
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
@@ -53,7 +49,6 @@ class ViewTeamContestScoreboardRunsOutput:
 
 @router.get('/hardcode/team-contest-scoreboard/{scoreboard_id}/runs')
 @enveloped
-@asyncache.cached(cachetools.TTLCache(128, ttl=config.scoreboard_hardcode_ttl))
 async def view_team_contest_scoreboard_runs(scoreboard_id: int) -> ViewTeamContestScoreboardRunsOutput:
     """
     ### 權限
