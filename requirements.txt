@@ -17,5 +17,3 @@ pyinstrument  # profiling
 aiohttp
 beautifulsoup4
 lxml  # required for beautifulsoup html/xml parsing
-asyncache
-cachetools
