@@ -23,11 +23,11 @@ class TestValidateInherit(unittest.IsolatedAsyncioTestCase):
             db_rbac = controller.mock_module('persistence.database.rbac')
             team = controller.mock_module('persistence.database.team')
 
-            db_rbac.function('read_team_role_by_account_id').expect_call(
+            db_rbac.async_func('read_team_role_by_account_id').expect_call(
                 team_id=1, account_id=1,
             ).raises(exc.persistence.NotFound)
-            team.function('read').expect_call(team_id=1).returns(self.team)
-            db_rbac.function('read_class_role_by_account_id').expect_call(
+            team.async_func('read').expect_call(team_id=1).returns(self.team)
+            db_rbac.async_func('read_class_role_by_account_id').expect_call(
                 class_id=1, account_id=1,
             ).returns(enum.RoleType.normal)
 
