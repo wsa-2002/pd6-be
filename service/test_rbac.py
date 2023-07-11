@@ -2,7 +2,7 @@ import unittest
 
 from base import enum, do
 import exceptions as exc
-from util.test_tool import AsyncMockController
+from util import mock
 
 from . import rbac
 
@@ -18,7 +18,7 @@ class TestValidateInherit(unittest.IsolatedAsyncioTestCase):
         )
 
     async def test_validate_inherit_team_id_class_normal_v2(self):
-        with AsyncMockController() as controller:
+        with mock.Controller() as controller:
 
             db_rbac = controller.mock_module('persistence.database.rbac')
             team = controller.mock_module('persistence.database.team')
