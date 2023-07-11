@@ -65,7 +65,7 @@ class MockFunction:
         return result
 
 
-class AsyncMockFunction(MockFunction):
+class MockAsyncFunction(MockFunction):
     MockType = AsyncMock
 
     async def __call__(self, *args, **kwargs):
@@ -83,7 +83,7 @@ class AsyncMockFunction(MockFunction):
 class MockModule:
     def __init__(self, controller: 'Controller', name: str):
         self._controller = controller
-        self._mocked_funcs: dict[str, MockFunction | AsyncMockFunction] = dict()
+        self._mocked_funcs: dict[str, MockFunction | MockAsyncFunction] = dict()
         self._name = name
 
     def __str__(self):
@@ -117,14 +117,14 @@ class MockModule:
 
         return mocked_func
 
-    def async_func(self, func_name: str) -> AsyncMockFunction:
+    def async_func(self, func_name: str) -> MockAsyncFunction:
         if func_name in self._mocked_funcs:
             mocked_func = self._mocked_funcs[func_name]
         else:
-            mocked_func = AsyncMockFunction(self, func_name)
+            mocked_func = MockAsyncFunction(self, func_name)
             self._mocked_funcs[func_name] = mocked_func
 
-        if not isinstance(mocked_func, AsyncMockFunction):
+        if not isinstance(mocked_func, MockAsyncFunction):
             raise AssertionError(f'{self} should be an async mock function')
 
         return mocked_func
