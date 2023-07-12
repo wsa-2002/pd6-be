@@ -8,7 +8,7 @@ class CallRecord(typing.NamedTuple):
     called_kwargs: dict[str, typing.Any]
 
     def __str__(self):
-        f_args = ', '.join(self.called_args)
+        f_args = ', '.join(str(arg) for arg in self.called_args)
         f_kwargs = ', '.join(f'{k}={v}' for k, v in self.called_kwargs.items())
         formatted = f_args + ', ' + f_kwargs if f_args and f_kwargs else f_args + f_kwargs
 
@@ -29,7 +29,7 @@ class CallRecorder:
         self._called = True
 
     def returns(self, *return_values):
-        self._record(*return_values)
+        self._record(return_values)
 
     def raises(self, exception: typing.Type[Exception]):
         self._record(exception)
@@ -87,7 +87,7 @@ class MockModule:
         self._name = name
 
     def __str__(self):
-        return f'Mocked {self._name}'
+        return f'{self._name}'
 
     def __repr__(self):
         return f'<MockModule {self}>'
