@@ -28,8 +28,13 @@ class CallRecorder:
         self._mock.side_effect = orig_side_effect
         self._called = True
 
-    def returns(self, *return_values):
-        self._record(return_values)
+    def returns(self, *return_value):
+        if len(return_value) == 0:
+            self._record(None)
+        elif len(return_value) == 1:
+            self._record(return_value[0])
+        else:
+            self._record(return_value)
 
     def raises(self, exception: typing.Type[Exception]):
         self._record(exception)
@@ -49,7 +54,7 @@ class MockFunction:
     def __repr__(self):
         return f'<{self.__class__.__name__} {self}>'
 
-    def expect_call(self, *args, **kwargs) -> CallRecorder:
+    def call_with(self, *args, **kwargs) -> CallRecorder:
         self._module._register_call(CallRecord(self._mock, args, kwargs))
         return CallRecorder(self._mock)
 
