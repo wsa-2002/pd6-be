@@ -1,32 +1,15 @@
-import types
 from unittest.mock import patch
 
 import util.context
 
 
-class _Context(util.context.Context):
-    _context = dict()
+class Context:
+    def __init__(self):
+        self._patch = patch(f'{util.context.__name__}.{util.context.Context.__name__}._context', dict())
 
-    def reset(self):
-        self._context = dict()
-
-
-class ContextInModule:
-    def __init__(self, module: str | types.ModuleType, module_context_name='context'):
-        if isinstance(module, str):
-            self._mock_name = module + '.' + module_context_name
-        elif isinstance(module, types.ModuleType):
-            self._mock_name = module.__name__ + '.' + module_context_name
-        else:
-            raise AssertionError('Given module is not module nor string')
-
-        self._context = _Context()
-
-    def __enter__(self) -> _Context:
-        self._patched = patch(self._mock_name, self._context)
-        self._patched.__enter__()
-        return self._context
+    def __enter__(self) -> util.context.Context:
+        self._patch.__enter__()
+        return util.context.context
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self._context.reset()
-        return self._patched.__exit__(exc_type, exc_val, exc_tb)
+        return self._patch.__exit__(exc_type, exc_val, exc_tb)

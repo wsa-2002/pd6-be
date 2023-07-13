@@ -37,7 +37,7 @@ class TestReadAccountWithDefaultStudentId(unittest.IsolatedAsyncioTestCase):
     async def test_happy_flow_normal(self):
         with (
             mock.Controller() as controller,
-            mock.ContextInModule(account) as context,
+            mock.Context() as context,
         ):
             context.set_account(self.other_login_account)
 
@@ -61,7 +61,7 @@ class TestReadAccountWithDefaultStudentId(unittest.IsolatedAsyncioTestCase):
     async def test_happy_flow_manager(self):
         with (
             mock.Controller() as controller,
-            mock.ContextInModule(account) as context,
+            mock.Context() as context,
         ):
             context.set_account(self.other_login_account)
 

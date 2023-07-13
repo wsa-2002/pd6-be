@@ -1,2 +1,2 @@
 from .mock import Controller
-from .context import ContextInModule
+from .context import Context
