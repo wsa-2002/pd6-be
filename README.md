@@ -9,7 +9,7 @@ A `python=3.10`-`asyncio`-based web backend, using web framework `fastapi`.
 ### 1. `git`
 Add `--recursive` in your command in order to clone both `pd6-be` and its submodule `common`(`pd6-common`). 
 ```shell
-git clone --recursive https://nas.pdogs.ntu.im:30443/pdogs/pdogs-6/pd6-be.git
+git clone --recursive ssh://git@git.ntu.im:30001/pdogs/pdogs-6/pd6-be.git
 ```
 
 ### 2. `python`
