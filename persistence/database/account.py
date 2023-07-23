@@ -39,7 +39,8 @@ async def batch_add_normal(accounts: Sequence[tuple[str, str, str, str, str]], r
                 fr'     VALUES {value_sql}',
                 *value_params)
         except asyncpg.exceptions.UniqueViolationError:
-            raise exc.persistence.UniqueViolationError
+            raise exc.persistence\
+                .UniqueViolationError
 
 
 async def add_normal(username: str, pass_hash: str, real_name: str, nickname: str,
@@ -302,7 +303,10 @@ async def account_referral_to_id(account_referral: str) -> int:
             sql=f"SELECT account_referral_to_id(%(account_referral)s)",
             account_referral=account_referral,
     ) as (account_id,):
-        return account_id
+        if account_id:
+            return account_id
+        raise exc.account.AccountDoesNotExist
+
 
 
 async def browse_referral_wth_ids(account_ids: Iterable[int]) -> Sequence[Optional[str]]:

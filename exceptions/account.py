@@ -58,3 +58,9 @@ class PasswordVerificationFailed(PdogsException):
     """
     Wrong old_password while changing password
     """
+
+
+class AccountDoesNotExist(PdogsException):
+    """
+    Account does not exist
+    """
