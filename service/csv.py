@@ -29,11 +29,8 @@ async def import_account(account_file: typing.IO):
         rows = csv.DictReader(codecs.iterdecode(account_file, 'utf_8_sig'))
         data = []
 
-        if len(rows.fieldnames) != len(standard_headers):
+        if set(rows.fieldnames) != standard_headers:
             raise exc.IllegalInput
-        for header in rows.fieldnames:
-            if header not in standard_headers:
-                raise exc.IllegalInput
 
         for row in rows:
             for header in standard_headers:
