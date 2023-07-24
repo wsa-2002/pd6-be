@@ -60,7 +60,3 @@ class PasswordVerificationFailed(PdogsException):
     """
 
 
-class AccountDoesNotExist(PdogsException):
-    """
-    Account does not exist
-    """

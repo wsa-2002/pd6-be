@@ -304,7 +304,7 @@ async def account_referral_to_id(account_referral: str) -> int:
     ) as (account_id,):
         if account_id:
             return account_id
-        raise exc.account.AccountDoesNotExist
+        raise exc.persistence.NotFound
 
 
 
