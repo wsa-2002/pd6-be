@@ -28,7 +28,7 @@ class GetTeamTemplateOutput:
 
 @router.post('/class/{class_id}/team-import', tags=['Class'])
 @enveloped
-async def import_team(class_id: int, label: str, team_file: UploadFile = File(...)):
+async def import_team(class_id: int, label: str, team_file: UploadFile = File(...)) -> None:
     """
     ### 權限
     - Class manager
