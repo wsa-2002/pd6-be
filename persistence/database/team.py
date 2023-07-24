@@ -273,12 +273,10 @@ async def add_team_and_add_member(class_id: int, team_label: str,
                     team_name, class_id, team_label, False,
                 )
 
-                values = []
-                for account_referral, role in member_roles:
-                    member_id = await account_referral_to_id(account_referral)
-                    if member_id is None:
-                        raise exc.persistence.NotFound
-                    values.append((team_id, member_id, role))
+                values = [(team_id,
+                           await account_referral_to_id(account_referral),
+                           role)
+                          for account_referral, role in member_roles]
 
                 value_sql, value_params = compile_values(values=values)
 

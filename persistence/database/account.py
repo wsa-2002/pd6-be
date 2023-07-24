@@ -302,7 +302,9 @@ async def account_referral_to_id(account_referral: str) -> int:
             sql=f"SELECT account_referral_to_id(%(account_referral)s)",
             account_referral=account_referral,
     ) as (account_id,):
-        return account_id
+        if account_id:
+            return account_id
+        raise exc.persistence.NotFound
 
 
 async def browse_referral_wth_ids(account_ids: Iterable[int]) -> Sequence[Optional[str]]:
