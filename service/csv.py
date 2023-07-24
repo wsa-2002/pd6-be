@@ -57,7 +57,7 @@ async def import_team(team_file: typing.IO, class_id: int, label: str):
             for item in row:
                 if str(item) == 'TeamName':  # column name is 'TeamName'
                     continue
-                if str(item) == 'Manager':  # column name is 'Manager'
+                if str(item) == 'Manager' and row[str(item)]:  # column name is 'Manager'
                     member_roles += [(row[str(item)], enum.RoleType.manager)]
                 elif row[str(item)]:
                     member_roles += [(row[str(item)], enum.RoleType.normal)]
