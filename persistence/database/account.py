@@ -39,8 +39,7 @@ async def batch_add_normal(accounts: Sequence[tuple[str, str, str, str, str]], r
                 fr'     VALUES {value_sql}',
                 *value_params)
         except asyncpg.exceptions.UniqueViolationError:
-            raise exc.persistence\
-                .UniqueViolationError
+            raise exc.persistence.UniqueViolationError
 
 
 async def add_normal(username: str, pass_hash: str, real_name: str, nickname: str,
