@@ -1,3 +1,3 @@
 [submodule "common"]
 	path = common
-	url = https://git.ntu.im/pdogs/pdogs-6/pd6-common.git
+	url = ssh://git@git.ntu.im:30001/pdogs/pdogs-6/pd6-common.git
