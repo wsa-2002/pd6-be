@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Sequence
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -95,7 +95,7 @@ BROWSE_PEER_REVIEW_RECORD_COLUMNS = {
 
 
 @dataclass
-class BrowsePeerReviewRecordOutput:
+class BrowsePeerReviewRecordData:
     id: int
     peer_review_id: int
     grader_id: Optional[int]
@@ -106,13 +106,17 @@ class BrowsePeerReviewRecordOutput:
     submit_time: datetime
 
 
+class BrowsePeerReviewRecordOutput(model.BrowseOutputBase):
+    data: Sequence[BrowsePeerReviewRecordData]
+
+
 @router.get('/peer-review/{peer_review_id}/record')
 @enveloped
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_PEER_REVIEW_RECORD_COLUMNS.items()})
 async def browse_peer_review_record(peer_review_id: int,
                                     limit: model.Limit, offset: model.Offset,
                                     filter: model.FilterStr = None, sort: model.SorterStr = None, ) \
-        -> model.BrowseOutputBase:
+        -> BrowsePeerReviewRecordOutput:
     """
     ### 權限
     - Class manager (full)
@@ -134,14 +138,14 @@ async def browse_peer_review_record(peer_review_id: int,
                                                                          limit=limit, offset=offset,
                                                                          filters=filters, sorters=sorters)
 
-    records = [BrowsePeerReviewRecordOutput(id=record.id, peer_review_id=record.peer_review_id,
-                                            submission_id=record.submission_id,
-                                            grader_id=record.grader_id if is_manager else None,  # self 不能看 grader_id
-                                            receiver_id=record.receiver_id,
-                                            score=record.score, comment=record.comment, submit_time=record.submit_time)
+    records = [BrowsePeerReviewRecordData(id=record.id, peer_review_id=record.peer_review_id,
+                                          submission_id=record.submission_id,
+                                          grader_id=record.grader_id if is_manager else None,  # self 不能看 grader_id
+                                          receiver_id=record.receiver_id,
+                                          score=record.score, comment=record.comment, submit_time=record.submit_time)
                for record in peer_review_record]
 
-    return model.BrowseOutputBase(records, total_count=total_count)
+    return BrowsePeerReviewRecordOutput(records, total_count=total_count)
 
 
 @dataclass
