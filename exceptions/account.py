@@ -58,5 +58,3 @@ class PasswordVerificationFailed(PdogsException):
     """
     Wrong old_password while changing password
     """
-
-

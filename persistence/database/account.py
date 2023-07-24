@@ -307,7 +307,6 @@ async def account_referral_to_id(account_referral: str) -> int:
         raise exc.persistence.NotFound
 
 
-
 async def browse_referral_wth_ids(account_ids: Iterable[int]) -> Sequence[Optional[str]]:
     value_sql = ','.join(f'({account_id})' for account_id in account_ids)
     if not value_sql:
