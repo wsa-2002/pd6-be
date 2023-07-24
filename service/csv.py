@@ -22,11 +22,6 @@ async def get_account_template() -> tuple[do.S3File, str]:
         s3_file = await s3.temp.upload(file=file)
         return s3_file, ACCOUNT_TEMPLATE_FILENAME
 
-def check_headers(headers: list, standard_headers: list) -> bool:
-    for header in standard_headers:
-        if header not in headers:
-            return False
-    return True
 
 async def import_account(account_file: typing.IO):
     try:
@@ -34,9 +29,14 @@ async def import_account(account_file: typing.IO):
         rows = csv.DictReader(codecs.iterdecode(account_file, 'utf_8_sig'))
         data = []
 
-        if check_headers(rows.fieldnames, standard_headers) == False:
-            raise exc.IllegalInput
+        for header in standard_headers:
+            if header not in rows.fieldnames:
+                raise exc.IllegalInput
+
         for row in rows:
+            for header in standard_headers:
+                if header != 'AlternativeEmail' and row[header] == "":
+                    raise exc.IllegalInput
             data.append((row['RealName'], row['Username'], security.hash_password(row['Password']),
                          row['AlternativeEmail'], row['Nickname']))
         await db.account.batch_add_normal(data)
