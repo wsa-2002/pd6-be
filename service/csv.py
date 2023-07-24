@@ -27,7 +27,6 @@ async def import_account(account_file: typing.IO):
     try:
         rows = csv.DictReader(codecs.iterdecode(account_file, 'utf_8_sig'))
         data = []
-
         for row in rows:
             data.append((row['RealName'], row['Username'], security.hash_password(row['Password']),
                          row['AlternativeEmail'], row['Nickname']))
