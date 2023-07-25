@@ -305,6 +305,12 @@ async def replace_members(class_id: int, member_roles: Sequence[Tuple[str, RoleT
     :return: a list of bool indicating if the insertion is successful (true) or not (false)
     """
     if not member_roles:
+        async with SafeConnection(event=f'replace members from class {class_id=}',
+                                  auto_transaction=True) as conn:
+            await conn.execute(fr'DELETE FROM class_member'
+                               fr'      WHERE class_id = $1',
+                               class_id)
+            log.info('Removed all class members')
         return []
 
     async with SafeConnection(event=f'replace members from class {class_id=}',
