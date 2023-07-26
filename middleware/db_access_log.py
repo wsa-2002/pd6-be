@@ -7,10 +7,15 @@ from util.context import context
 
 from .envelope import middleware_error_enveloped
 
+import log
+
 
 @middleware_error_enveloped
 async def middleware(request: fastapi.Request, call_next):
     account = starlette_context.context.get(const.CONTEXT_AUTHED_ACCOUNT_KEY, None)
+    if not request.client.host:
+        log.info(f'Request header: {request.headers}')
+        log.info(f'Request client: {request.client}')
     await db.access_log.add(
         access_time=context.request_time,
         request_method=request.method,
