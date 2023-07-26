@@ -25,11 +25,11 @@ async def get_account_template() -> tuple[do.S3File, str]:
 
 async def import_account(account_file: typing.IO):
     try:
-        standard_headers = {'RealName', 'Username', 'Password', 'AlternativeEmail', 'Nickname'}
+        standard_headers = ACCOUNT_TEMPLATE.decode('utf_8_sig').split(',')
         rows = csv.DictReader(codecs.iterdecode(account_file, 'utf_8_sig'))
         data = []
 
-        if set(rows.fieldnames) != standard_headers:
+        if set(rows.fieldnames) != set(standard_headers):
             raise exc.IllegalInput
 
         for row in rows:
