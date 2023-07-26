@@ -309,7 +309,7 @@ async def replace_members(class_id: int, member_roles: Sequence[Tuple[str, RoleT
             event=f'remove all members from class {class_id=}',
             sql=fr'DELETE FROM class_member'
                 fr'      WHERE class_id = %(class_id)s',
-            class_id=class_id
+            class_id=class_id,
         ):
             log.info('Removed all class members')
             return []
