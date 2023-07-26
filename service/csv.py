@@ -58,8 +58,13 @@ async def get_team_template() -> tuple[do.S3File, str]:
 
 async def import_team(team_file: typing.IO, class_id: int, label: str):
     try:
+        standard_headers = TEAM_TEMPLATE.decode('utf_8_sig').split(',')
         rows = csv.DictReader(codecs.iterdecode(team_file, 'utf_8_sig'))
         data = []
+
+        if set(rows.fieldnames) != set(standard_headers):
+            raise exc.IllegalInput
+
         for row in rows:
             member_roles = []
             for item in row:
@@ -81,8 +86,13 @@ GRADE_TEMPLATE_FILENAME = 'grade_template.csv'
 
 async def import_class_grade(grade_file: typing.IO, title: str, class_id: int, update_time: datetime):
     try:
+        standard_headers = GRADE_TEMPLATE.decode('utf_8_sig').split('\n')[0].split(',')
         rows = csv.DictReader(codecs.iterdecode(grade_file, 'utf_8_sig'))
         data = []
+
+        if set(rows.fieldnames) != set(standard_headers):
+            raise exc.IllegalInput
+
         for row in rows:
             data.append((row['Receiver'], row['Score'], row['Comment'], row['Grader']))
         await db.grade.batch_add(class_id=class_id, title=title, grades=data, update_time=update_time)
