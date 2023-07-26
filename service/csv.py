@@ -54,13 +54,13 @@ async def import_team(team_file: typing.IO, class_id: int, label: str):
         data = []
         for row in rows:
             member_roles = []
-            for item in row:
-                if str(item) == 'TeamName':  # column name is 'TeamName'
+            for column_name, item in row.items():
+                if column_name == 'TeamName':  # column name is 'TeamName'
                     continue
-                if str(item) == 'Manager' and row[str(item)]:  # column name is 'Manager'
-                    member_roles += [(row[str(item)], enum.RoleType.manager)]
-                elif row[str(item)]:
-                    member_roles += [(row[str(item)], enum.RoleType.normal)]
+                if column_name == 'Manager' and item:  # column name is 'Manager'
+                    member_roles += [(item, enum.RoleType.manager)]
+                elif item:
+                    member_roles += [(item, enum.RoleType.normal)]
             data.append((row['TeamName'], member_roles))
         await db.team.add_team_and_add_member(class_id=class_id, team_label=label, datas=data)
     except UnicodeDecodeError:
