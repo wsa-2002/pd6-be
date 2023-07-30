@@ -39,6 +39,9 @@ class CallRecorder:
     def raises(self, exception: typing.Type[Exception]):
         self._record(exception)
 
+    def executes(self, func):
+        self._record(func)
+
 
 class MockFunction:
     MockType = Mock
