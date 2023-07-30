@@ -174,7 +174,7 @@ class ViewMySubmissionOutput(model.BrowseOutputBase):
 @enveloped
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_SUBMISSION_COLUMNS.items()})
 async def view_browse_submission(account_id: int, limit: model.Limit = 50, offset: model.Offset = 0,
-                            filter: model.FilterStr = None, sort: model.SorterStr = None) \
+                                 filter: model.FilterStr = None, sort: model.SorterStr = None) \
         -> ViewMySubmissionOutput:
     """
     ### 權限
@@ -221,9 +221,9 @@ class ViewMySubmissionUnderProblemOutput(model.BrowseOutputBase):
 @enveloped
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_MY_SUBMISSION_UNDER_PROBLEM_COLUMNS.items()})
 async def view_browse_my_submission_under_problem(account_id: int,
-                                             problem_id: int,
-                                             limit: model.Limit = 50, offset: model.Offset = 0,
-                                             filter: model.FilterStr = None, sort: model.SorterStr = None) \
+                                                  problem_id: int,
+                                                  limit: model.Limit = 50, offset: model.Offset = 0,
+                                                  filter: model.FilterStr = None, sort: model.SorterStr = None) \
         -> ViewMySubmissionUnderProblemOutput:
     """
     ### 權限
@@ -319,8 +319,8 @@ class ViewGradeOutput(model.BrowseOutputBase):
 @enveloped
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_CLASS_GRADE_COLUMNS.items()})
 async def view_browse_class_grade(class_id: int,
-                             limit: int = 50, offset: int = 0,
-                             filter: model.FilterStr = None, sort: model.SorterStr = None) \
+                                  limit: int = 50, offset: int = 0,
+                                  filter: model.FilterStr = None, sort: model.SorterStr = None) \
         -> ViewGradeOutput:
     """
     ### 權限
@@ -409,8 +409,8 @@ class ViewPeerReviewRecordOutput(model.BrowseOutputBase):
 @enveloped
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_PEER_REVIEW_RECORD_COLUMNS.items()})
 async def view_peer_review_summary_review(peer_review_id: int,
-                                     limit: model.Limit = 50, offset: model.Offset = 0,
-                                     filter: model.FilterStr = None, sort: model.SorterStr = None) \
+                                          limit: model.Limit = 50, offset: model.Offset = 0,
+                                          filter: model.FilterStr = None, sort: model.SorterStr = None) \
         -> ViewPeerReviewRecordOutput:
     """
     ### 權限
@@ -435,8 +435,8 @@ async def view_peer_review_summary_review(peer_review_id: int,
 @enveloped
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_PEER_REVIEW_RECORD_COLUMNS.items()})
 async def view_peer_review_summary_receive(peer_review_id: int,
-                                      limit: model.Limit = 50, offset: model.Offset = 0,
-                                      filter: model.FilterStr = None, sort: model.SorterStr = None) \
+                                           limit: model.Limit = 50, offset: model.Offset = 0,
+                                           filter: model.FilterStr = None, sort: model.SorterStr = None) \
         -> ViewPeerReviewRecordOutput:
     """
     ### 權限
