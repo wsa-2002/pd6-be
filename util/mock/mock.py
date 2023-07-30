@@ -1,3 +1,4 @@
+import contextlib
 import typing
 from unittest.mock import patch, Mock, AsyncMock
 
@@ -6,35 +7,37 @@ class CallRecord(typing.NamedTuple):
     mocked: Mock
     called_args: tuple[typing.Any]
     called_kwargs: dict[str, typing.Any]
+    side_effect: typing.Any
 
     def __str__(self):
         f_args = ', '.join(str(arg) for arg in self.called_args)
         f_kwargs = ', '.join(f'{k}={v}' for k, v in self.called_kwargs.items())
         formatted = f_args + ', ' + f_kwargs if f_args and f_kwargs else f_args + f_kwargs
 
-        return f'{self.__class__.__name__}: {self.mocked._extract_mock_name()}({formatted})'
+        return f'{self.__class__.__name__}: {self.mocked._extract_mock_name()}({formatted}) -> {self.side_effect}'
 
 
 class CallRecorder:
-    def __init__(self, mocked: Mock):
-        self._mock = mocked
+    def __init__(self, module: 'MockModule', record_without_side_effect: CallRecord):
+        self._module = module
+        self._partial_record = record_without_side_effect
         self._called = False
 
     def _record(self, side_effect):
         if self._called:
             raise AssertionError('can only set call record once')
-        orig_side_effect = list(self._mock.side_effect)
-        orig_side_effect.append(side_effect)
-        self._mock.side_effect = orig_side_effect
+
+        self._module._register_call(CallRecord(
+            self._partial_record.mocked,
+            self._partial_record.called_args,
+            self._partial_record.called_kwargs,
+            side_effect,
+        ))
+
         self._called = True
 
-    def returns(self, *return_value):
-        if len(return_value) == 0:
-            self._record(None)
-        elif len(return_value) == 1:
-            self._record(return_value[0])
-        else:
-            self._record(return_value)
+    def returns(self, *return_values):
+        self._record(return_values)
 
     def raises(self, exception: typing.Type[Exception]):
         self._record(exception)
@@ -58,34 +61,40 @@ class MockFunction:
         return f'<{self.__class__.__name__} {self}>'
 
     def call_with(self, *args, **kwargs) -> CallRecorder:
-        self._module._register_call(CallRecord(self._mock, args, kwargs))
-        return CallRecorder(self._mock)
+        return CallRecorder(self._module, CallRecord(self._mock, args, kwargs, None))
+
+    def _prepare_mock_call(self) -> typing.ContextManager:
+        @contextlib.contextmanager
+        def manager():
+            call_record = self._module._pop_call()
+            if call_record.mocked is not self._mock:
+                raise AssertionError(f'Mocked {self} is not expected to be called; expected {call_record}')
+            self._mock.side_effect = call_record.side_effect
+
+            try:
+                yield None
+            finally:
+                self._assert_mock_call(*call_record.called_args, **call_record.called_kwargs)
+
+        return manager()
+
+    def _assert_mock_call(self, *args, **kwargs):
+        self._mock.assert_called_with(*args, **kwargs)
 
     def __call__(self, *args, **kwargs):
-        call_record = self._module._pop_call()
-        if call_record.mocked is not self._mock:
-            raise AssertionError(f'Mocked {self} is not expected to be called with: {args=} {kwargs=}')
-
-        result = self._mock(*args, **kwargs)
-
-        self._mock.assert_called_with(*call_record.called_args, **call_record.called_kwargs)
-
-        return result
+        with self._prepare_mock_call():
+            return self._mock(*args, **kwargs)
 
 
 class MockAsyncFunction(MockFunction):
     MockType = AsyncMock
 
+    def _assert_mock_call(self, *args, **kwargs):
+        self._mock.assert_awaited_with(*args, **kwargs)
+
     async def __call__(self, *args, **kwargs):
-        call_record = self._module._pop_call()
-        if call_record.mocked is not self._mock:
-            raise AssertionError(f'Mocked {self} is not expected to be called with: {args=} {kwargs=}')
-
-        result = await self._mock(*args, **kwargs)
-
-        self._mock.assert_awaited_with(*call_record.called_args, **call_record.called_kwargs)
-
-        return result
+        with self._prepare_mock_call():
+            return await self._mock(*args, **kwargs)
 
 
 class MockModule:
