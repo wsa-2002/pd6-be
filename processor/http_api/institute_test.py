@@ -5,21 +5,13 @@ from util import mock, security
 
 from . import institute
 from util import model
+import exceptions as exc
 
 
 class TestAddInstitute(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
 
-        self.login_account = security.AuthedAccount(id=1, cached_username='self')
-        self.account = do.Account(
-            id=self.login_account.id,
-            username="user",
-            nickname="nick",
-            real_name="real",
-            role=enum.RoleType.manager,
-            is_deleted=False,
-            alternative_email="alternative",
-        )
+        self.account = security.AuthedAccount(id=1, cached_username='self')
         self.institute = do.Institute(
             id=1,
             abbreviated_name="abbreviated",
@@ -35,18 +27,18 @@ class TestAddInstitute(unittest.IsolatedAsyncioTestCase):
         )
         self.result = model.AddOutput(id=self.institute.id)
 
-    async def test_happy_flow_manager(self):
+    async def test_happy_flow(self):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
         ):
-            context.set_account(self.login_account)
+            context.set_account(self.account)
 
             service_rbac = controller.mock_module('service.rbac')
             db_institute = controller.mock_module('persistence.database.institute')
 
             service_rbac.async_func('validate_system').call_with(
-                self.login_account.id, enum.RoleType.manager,
+                self.account.id, enum.RoleType.manager,
             ).returns(True)
             db_institute.async_func('add').call_with(
                 abbreviated_name=self.data.abbreviated_name, full_name=self.data.full_name,
@@ -58,6 +50,21 @@ class TestAddInstitute(unittest.IsolatedAsyncioTestCase):
             result = await institute.add_institute.__wrapped__(data=self.data)
 
         self.assertEqual(result, self.result)
+
+    async def test_no_permission(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+        ):
+            context.set_account(self.account)
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('validate_system').call_with(
+                self.account.id, enum.RoleType.manager,
+            ).returns(False)
+
+            with self.assertRaises(exc.NoPermission):
+                await institute.add_institute.__wrapped__(data=self.data)
 
 
 class TestBrowseAllInstitute(unittest.IsolatedAsyncioTestCase):
@@ -113,7 +120,6 @@ class TestReadInstitute(unittest.IsolatedAsyncioTestCase):
             mock.Controller() as controller,
         ):
             db_institute = controller.mock_module('persistence.database.institute')
-
             db_institute.async_func('read').call_with(self.institute.id).returns(
                 self.institute,
             )
@@ -125,16 +131,7 @@ class TestReadInstitute(unittest.IsolatedAsyncioTestCase):
 
 class TestEditInstitute(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
-        self.login_account = security.AuthedAccount(id=1, cached_username='self')
-        self.account = do.Account(
-            id=self.login_account.id,
-            username="user",
-            nickname="nick",
-            real_name="real",
-            role=enum.RoleType.manager,
-            is_deleted=False,
-            alternative_email="alternative",
-        )
+        self.account = security.AuthedAccount(id=1, cached_username='self')
         self.institute = do.Institute(
             id=1,
             abbreviated_name="abbreviated",
@@ -149,25 +146,40 @@ class TestEditInstitute(unittest.IsolatedAsyncioTestCase):
             is_disabled=False,
         )
 
-    async def test_happy_flow_manager(self):
+    async def test_happy_flow(self):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
         ):
-            context.set_account(self.login_account)
+            context.set_account(self.account)
 
             service_rbac = controller.mock_module('service.rbac')
             db_institute = controller.mock_module('persistence.database.institute')
 
             service_rbac.async_func('validate_system').call_with(
-                self.login_account.id, enum.RoleType.manager,
+                self.account.id, enum.RoleType.manager,
             ).returns(True)
             db_institute.async_func('edit').call_with(
                 institute_id=self.institute.id, abbreviated_name=self.data.abbreviated_name,
                 full_name=self.data.full_name, email_domain=self.data.email_domain,
                 is_disabled=self.data.is_disabled,
-            ).returns()
+            ).returns(None)
 
             result = await institute.edit_institute.__wrapped__(institute_id=self.institute.id, data=self.data)
 
         self.assertIsNone(result)
+
+    async def test_no_permission(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+        ):
+            context.set_account(self.account)
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('validate_system').call_with(
+                self.account.id, enum.RoleType.manager,
+            ).returns(False)
+
+            with self.assertRaises(exc.NoPermission):
+                await institute.edit_institute.__wrapped__(institute_id=self.institute.id, data=self.data)
