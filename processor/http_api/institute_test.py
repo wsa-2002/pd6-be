@@ -1,16 +1,14 @@
 import unittest
 
+import exceptions as exc
 from base import enum, do
-from util import mock, security
+from util import mock, model, security
 
 from . import institute
-from util import model
-import exceptions as exc
 
 
 class TestAddInstitute(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
-
         self.account = security.AuthedAccount(id=1, cached_username='self')
         self.institute = do.Institute(
             id=1,
@@ -69,7 +67,6 @@ class TestAddInstitute(unittest.IsolatedAsyncioTestCase):
 
 class TestBrowseAllInstitute(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
-
         self.all_institute = [
             do.Institute(
                 id=1,
@@ -105,7 +102,6 @@ class TestBrowseAllInstitute(unittest.IsolatedAsyncioTestCase):
 
 class TestReadInstitute(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
-
         self.institute = do.Institute(
             id=1,
             abbreviated_name="abbreviated",
