@@ -66,7 +66,11 @@ class MockFunction:
     def _prepare_mock_call(self) -> typing.ContextManager:
         @contextlib.contextmanager
         def manager():
-            call_record = self._module._pop_call()
+            try:
+                call_record = self._module._pop_call()
+            except IndexError:
+                raise AssertionError(f'Mocked {self} is not expected to be called')
+
             if call_record.mocked is not self._mock:
                 raise AssertionError(f'Mocked {self} is not expected to be called; expected {call_record}')
             self._mock.side_effect = call_record.side_effect
