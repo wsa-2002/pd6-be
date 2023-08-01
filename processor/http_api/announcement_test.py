@@ -75,8 +75,6 @@ class TestBrowseAnnouncement(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
 
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
-        self.other_account = security.AuthedAccount(id=3, cached_username='other')
-
         self.time = datetime.now()
 
         self.browse_announcement_columns = {
@@ -187,18 +185,223 @@ class TestBrowseAnnouncement(unittest.IsolatedAsyncioTestCase):
             mock.Controller() as controller,
             mock.Context() as context,
         ):
-            context.set_account(self.other_account)
+            context.set_account(self.login_account)
 
             service_rbac = controller.mock_module('service.rbac')
 
             service_rbac.async_func('get_system_role').call_with(
-                self.other_account.id,
+                self.login_account.id,
             ).returns(None)
 
-        with self.assertRaises(exc.NoPermission):
-            await announcement.browse_announcement.__wrapped__(
-                limit=self.limit,
-                offset=self.offset,
-                filter=self.filter,
-                sort=self.sort,
+            with self.assertRaises(exc.NoPermission):
+                await announcement.browse_announcement.__wrapped__(
+                    limit=self.limit,
+                    offset=self.offset,
+                    filter=self.filter,
+                    sort=self.sort,
+                )
+
+
+class TestReadAnnouncement(unittest.IsolatedAsyncioTestCase):
+    def setUp(self) -> None:
+
+        self.login_account = security.AuthedAccount(id=1, cached_username='self')
+
+        self.time = datetime.now()
+
+        self.announcement_id = 1
+
+        self.expected_output_data = do.Announcement(
+            id=1,
+            title='title',
+            content='content',
+            author_id=1,
+            post_time=self.time,
+            expire_time=self.time,
+            is_deleted=False,
+        )
+
+    async def test_happy_flow_manager(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+        ):
+            context.set_account(self.login_account)
+            context.set_request_time(self.time)
+
+            service_rbac = controller.mock_module('service.rbac')
+            db_announcement = controller.mock_module('persistence.database.announcement')
+
+            service_rbac.async_func('get_system_role').call_with(
+                self.login_account.id,
+            ).returns(enum.RoleType.manager)
+            db_announcement.async_func('read').call_with(
+                1,
+                exclude_scheduled=False,
+                ref_time=self.time,
+            ).returns(self.expected_output_data)
+
+            result = await announcement.read_announcement.__wrapped__(
+                announcement_id=self.announcement_id,
             )
+
+        self.assertEqual(result, self.expected_output_data)
+
+    async def test_happy_flow_guest(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+        ):
+            context.set_account(self.login_account)
+            context.set_request_time(self.time)
+
+            service_rbac = controller.mock_module('service.rbac')
+            db_announcement = controller.mock_module('persistence.database.announcement')
+
+            service_rbac.async_func('get_system_role').call_with(
+                self.login_account.id,
+            ).returns(enum.RoleType.guest)
+            db_announcement.async_func('read').call_with(
+                1,
+                exclude_scheduled=True,
+                ref_time=self.time,
+            ).returns(self.expected_output_data)
+
+            result = await announcement.read_announcement.__wrapped__(
+                announcement_id=self.announcement_id,
+            )
+
+        self.assertEqual(result, self.expected_output_data)
+
+    async def test_no_permission(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('get_system_role').call_with(
+                self.login_account.id,
+            ).returns(None)
+
+            with self.assertRaises(exc.NoPermission):
+                await announcement.read_announcement.__wrapped__(
+                    announcement_id=self.announcement_id,
+                )
+
+
+class TestEditAnnouncement(unittest.IsolatedAsyncioTestCase):
+    def setUp(self) -> None:
+
+        self.login_account = security.AuthedAccount(id=1, cached_username='self')
+
+        self.time = datetime.now()
+
+        self.announcement_id = 1
+
+        self.input_data = announcement.EditAnnouncementInput(
+            title='test',
+            content='test',
+            post_time=self.time,
+            expire_time=self.time,
+        )
+
+    async def test_happy_flow(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+            db_announcement = controller.mock_module('persistence.database.announcement')
+
+            service_rbac.async_func('validate_system').call_with(
+                self.login_account.id, enum.RoleType.manager,
+            ).returns(True)
+            db_announcement.async_func('edit').call_with(
+                announcement_id=self.announcement_id,
+                title=self.input_data.title,
+                content=self.input_data.content,
+                post_time=self.input_data.post_time,
+                expire_time=self.input_data.expire_time,
+            ).returns(None)
+
+            result = await announcement.edit_announcement.__wrapped__(
+                announcement_id=self.announcement_id,
+                data=self.input_data,
+            )
+
+        self.assertIsNone(result)
+
+    async def test_no_permission(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('validate_system').call_with(
+                self.login_account.id, enum.RoleType.manager,
+            ).returns(False)
+
+            with self.assertRaises(exc.NoPermission):
+                await announcement.edit_announcement.__wrapped__(
+                    announcement_id=self.announcement_id,
+                    data=self.input_data,
+                )
+
+
+class TestDeleteAnnouncement(unittest.IsolatedAsyncioTestCase):
+    def setUp(self) -> None:
+
+        self.login_account = security.AuthedAccount(id=1, cached_username='self')
+
+        self.time = datetime.now()
+
+        self.announcement_id = 1
+
+    async def test_happy_flow(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+            db_announcement = controller.mock_module('persistence.database.announcement')
+
+            service_rbac.async_func('validate_system').call_with(
+                self.login_account.id, enum.RoleType.manager,
+            ).returns(True)
+            db_announcement.async_func('delete').call_with(
+                announcement_id=self.announcement_id,
+            ).returns(None)
+
+            result = await announcement.delete_announcement.__wrapped__(
+                announcement_id=self.announcement_id,
+            )
+
+        self.assertIsNone(result)
+
+    async def test_no_permission(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('validate_system').call_with(
+                self.login_account.id, enum.RoleType.manager,
+            ).returns(False)
+
+            with self.assertRaises(exc.NoPermission):
+                await announcement.delete_announcement.__wrapped__(
+                    announcement_id=self.announcement_id,
+                )
