@@ -130,14 +130,6 @@ class _SafeExecutor:
         async with pool_handler.pool.acquire() as conn:
             try:
                 results = await self._exec(conn)
-                # print('results:::', results)
-                # print('dir::', dir(results))
-                # print('result0:::', results[0])
-                # print('contain:', None in results)
-                # print('value', results.values())
-                # print('keys', results.keys())
-                # print('item', results.items())
-
             except tuple(self._exception_mapping) as e:
                 raise self._exception_mapping[type(e)] from e
 
@@ -145,7 +137,7 @@ class _SafeExecutor:
         log.info(f"Ended {self.__class__.__name__}: {self._event} after {exec_time_ms} ms")
         util.metric.sql_time(self._event, exec_time_ms)
 
-        if self._raise_not_found and not results[0]:
+        if self._raise_not_found and not results:
             raise exc.persistence.NotFound
 
         return results
