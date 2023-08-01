@@ -7,6 +7,7 @@ from base import do
 from base.enum import RoleType
 import exceptions as exc
 
+from . import student_card
 from .base import SafeConnection, FetchOne, OnlyExecute, FetchAll, ParamDict
 from .util import compile_values
 
@@ -225,6 +226,8 @@ async def verify_email(code: UUID) -> None:
             raise exc.persistence.NotFound
 
         if student_id:  # student card email
+            if student_card.is_duplicate(institute_id, student_id):
+                raise exc.account.StudentCardExists
             await conn.execute(r'UPDATE student_card'
                                r'   SET is_default = $1'
                                r' WHERE account_id = $2'
