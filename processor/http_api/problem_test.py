@@ -74,7 +74,7 @@ class TestBrowseProblemSet(unittest.IsolatedAsyncioTestCase):
                 request_time=self.request_time
             ).returns(self.expected_output)
 
-            result = await problem.browse_problem_set.__wrapped__()
+            result = await mock.unwrap(problem.browse_problem_set)()
 
         self.assertEqual(result, self.expected_output)
 
@@ -90,7 +90,7 @@ class TestBrowseProblemSet(unittest.IsolatedAsyncioTestCase):
             ).returns(False)
 
             with self.assertRaises(exc.NoPermission):
-                await problem.browse_problem_set.__wrapped__()
+                await mock.unwrap(problem.browse_problem_set)()
 
 
 class TestReadProblem(unittest.IsolatedAsyncioTestCase):
@@ -208,7 +208,7 @@ class TestReadProblem(unittest.IsolatedAsyncioTestCase):
                 self.problem.challenge_id,
             ).returns(self.public_challenge)
 
-            result = await problem.read_problem.__wrapped__(self.problem.id)
+            result = await mock.unwrap(problem.read_problem)(self.problem.id)
 
         self.assertEqual(result, self.expected_output_happy_flow)
 
@@ -237,7 +237,7 @@ class TestReadProblem(unittest.IsolatedAsyncioTestCase):
                 self.problem.challenge_id,
             ).returns(self.public_challenge)
 
-            result = await problem.read_problem.__wrapped__(self.problem.id)
+            result = await mock.unwrap(problem.read_problem)(self.problem.id)
 
         self.assertEqual(result, self.expected_output_happy_flow)
 
@@ -266,7 +266,7 @@ class TestReadProblem(unittest.IsolatedAsyncioTestCase):
             ).returns(self.hidden_challenge)
 
             with self.assertRaises(exc.NoPermission):
-                await problem.read_problem.__wrapped__(self.hidden_challenge.id)
+                await mock.unwrap(problem.read_problem)(self.hidden_challenge.id)
 
     async def test_manager_read_customize_judge(self):
         with (
@@ -296,7 +296,7 @@ class TestReadProblem(unittest.IsolatedAsyncioTestCase):
             db_customized_judge.async_func('read').call_with(
                 customized_id=self.problem_with_customized_setting.setting_id,
             ).returns(self.customized_setting)
-            result = await problem.read_problem.__wrapped__(problem_id=self.problem.id)
+            result = await mock.unwrap(problem.read_problem)(problem_id=self.problem.id)
 
         self.assertEqual(result, self.expected_output_with_customized_setting)
 
@@ -331,7 +331,7 @@ class TestReadProblem(unittest.IsolatedAsyncioTestCase):
                 customized_id=self.problem_with_reviser_setting.reviser_settings[0].id,
             ).returns(self.reviser_setting)
 
-            result = await problem.read_problem.__wrapped__(self.problem.id)
+            result = await mock.unwrap(problem.read_problem)(self.problem.id)
 
         self.assertEqual(result, self.expected_output_with_reviser_setting)
 
@@ -440,7 +440,7 @@ class TestEditProblem(unittest.IsolatedAsyncioTestCase):
                 testcase_disabled=self.data.testcase_disabled,
             ).returns(None)
 
-            result = await problem.edit_problem.__wrapped__(problem_id=self.problem_id, data=self.data)
+            result = await mock.unwrap(problem.edit_problem)(problem_id=self.problem_id, data=self.data)
 
         self.assertIsNone(result)
 
@@ -457,7 +457,7 @@ class TestEditProblem(unittest.IsolatedAsyncioTestCase):
                 context.account.id, enum.RoleType.manager, problem_id=self.problem_id,
             ).returns(False)
             with self.assertRaises(exc.NoPermission):
-                await problem.edit_problem.__wrapped__(problem_id=self.problem_id, data=self.data)
+                await mock.unwrap(problem.edit_problem)(problem_id=self.problem_id, data=self.data)
 
     async def test_illegal_input_wrong_customized_judge_language(self):
         data = copy.deepcopy(self.data)
@@ -475,7 +475,7 @@ class TestEditProblem(unittest.IsolatedAsyncioTestCase):
                 context.account.id, enum.RoleType.manager, problem_id=self.problem_id,
             ).returns(True)
             with self.assertRaises(exc.IllegalInput):
-                await problem.edit_problem.__wrapped__(problem_id=self.problem_id, data=data)
+                await mock.unwrap(problem.edit_problem)(problem_id=self.problem_id, data=data)
 
     async def test_illegal_input_wrong_reviser_language(self):
         data = copy.deepcopy(self.data)
@@ -507,7 +507,7 @@ class TestEditProblem(unittest.IsolatedAsyncioTestCase):
             ).returns(self.setting_id)
 
             with self.assertRaises(exc.IllegalInput):
-                await problem.edit_problem.__wrapped__(problem_id=self.problem_id, data=data)
+                await mock.unwrap(problem.edit_problem)(problem_id=self.problem_id, data=data)
 
     async def test_illegal_input_customized_with_no_judge_source(self):
         data = copy.deepcopy(self.data)
@@ -525,7 +525,7 @@ class TestEditProblem(unittest.IsolatedAsyncioTestCase):
                 context.account.id, enum.RoleType.manager, problem_id=self.problem_id,
             ).returns(True)
             with self.assertRaises(exc.IllegalInput):
-                await problem.edit_problem.__wrapped__(problem_id=self.problem_id, data=data)
+                await mock.unwrap(problem.edit_problem)(problem_id=self.problem_id, data=data)
 
     async def test_disable_reviser(self):
         with (
@@ -551,7 +551,7 @@ class TestEditProblem(unittest.IsolatedAsyncioTestCase):
                 reviser_settings=[], is_lazy_judge=self.disable_reviser_data.is_lazy_judge,
             ).returns(None)
 
-            result = await problem.edit_problem.__wrapped__(problem_id=self.problem_id, data=self.disable_reviser_data)
+            result = await mock.unwrap(problem.edit_problem)(problem_id=self.problem_id, data=self.disable_reviser_data)
 
         self.assertIsNone(result)
 
@@ -579,7 +579,7 @@ class TestEditProblem(unittest.IsolatedAsyncioTestCase):
                 reviser_settings=..., is_lazy_judge=self.no_update_data.is_lazy_judge,
             ).returns(None)
 
-            result = await problem.edit_problem.__wrapped__(problem_id=self.problem_id, data=self.no_update_data)
+            result = await mock.unwrap(problem.edit_problem)(problem_id=self.problem_id, data=self.no_update_data)
 
         self.assertIsNone(result)
 
@@ -605,7 +605,7 @@ class TestDeleteProblem(unittest.IsolatedAsyncioTestCase):
                 problem_id=self.problem_id,
             ).returns(None)
 
-            result = await problem.delete_problem.__wrapped__(problem_id=self.problem_id)
+            result = await mock.unwrap(problem.delete_problem)(problem_id=self.problem_id)
 
         self.assertIsNone(result)
 
@@ -622,7 +622,7 @@ class TestDeleteProblem(unittest.IsolatedAsyncioTestCase):
             ).returns(False)
 
             with self.assertRaises(exc.NoPermission):
-                await problem.delete_problem.__wrapped__(problem_id=self.problem_id)
+                await mock.unwrap(problem.delete_problem)(problem_id=self.problem_id)
 
 
 class TestAddTestCaseUnderProblem(unittest.IsolatedAsyncioTestCase):
@@ -662,7 +662,7 @@ class TestAddTestCaseUnderProblem(unittest.IsolatedAsyncioTestCase):
                 is_disabled=self.data.is_disabled, note=self.data.note,
             ).returns(self.testcase_id)
 
-            result = await problem.add_testcase_under_problem.__wrapped__(problem_id=self.problem_id, data=self.data)
+            result = await mock.unwrap(problem.add_testcase_under_problem)(problem_id=self.problem_id, data=self.data)
 
         self.assertEqual(result, self.expected_output)
 
@@ -680,7 +680,7 @@ class TestAddTestCaseUnderProblem(unittest.IsolatedAsyncioTestCase):
             ).returns(False)
 
             with self.assertRaises(exc.NoPermission):
-                await problem.add_testcase_under_problem.__wrapped__(problem_id=self.problem_id, data=self.data)  # noqa
+                await mock.unwrap(problem.add_testcase_under_problem)(problem_id=self.problem_id, data=self.data)  # noqa
 
 
 class BrowseAllTestcaseUnderProblem(unittest.IsolatedAsyncioTestCase):
@@ -751,7 +751,7 @@ class BrowseAllTestcaseUnderProblem(unittest.IsolatedAsyncioTestCase):
                 problem_id=self.problem_id, include_disabled=True,
             ).returns(self.testcases)
 
-            result = await problem.browse_all_testcase_under_problem.__wrapped__(problem_id=self.problem_id)
+            result = await mock.unwrap(problem.browse_all_testcase_under_problem)(problem_id=self.problem_id)
 
         self.assertEqual(result, self.expected_output)
 
@@ -776,7 +776,7 @@ class BrowseAllTestcaseUnderProblem(unittest.IsolatedAsyncioTestCase):
                 problem_id=self.problem_id, include_disabled=True,
             ).returns(self.testcases)
 
-            result = await problem.browse_all_testcase_under_problem.__wrapped__(problem_id=self.problem_id)
+            result = await mock.unwrap(problem.browse_all_testcase_under_problem)(problem_id=self.problem_id)
 
         self.assertEqual(result, self.expected_output_without_file_uuid)
 
@@ -794,7 +794,7 @@ class BrowseAllTestcaseUnderProblem(unittest.IsolatedAsyncioTestCase):
             ).returns(False)
 
             with self.assertRaises(exc.NoPermission):
-                await problem.browse_all_testcase_under_problem.__wrapped__(problem_id=self.problem_id)
+                await mock.unwrap(problem.browse_all_testcase_under_problem)(problem_id=self.problem_id)
 
 
 class TestBrowseAllAssistingDataUnderProblem(unittest.IsolatedAsyncioTestCase):
@@ -844,7 +844,7 @@ class TestBrowseAllAssistingDataUnderProblem(unittest.IsolatedAsyncioTestCase):
                 problem_id=self.problem_id,
             ).returns(self.assisting_data)
 
-            result = await problem.browse_all_assisting_data_under_problem.__wrapped__(problem_id=self.problem_id)
+            result = await mock.unwrap(problem.browse_all_assisting_data_under_problem)(problem_id=self.problem_id)
 
         self.assertEqual(result, self.expected_output)
 
@@ -862,7 +862,7 @@ class TestBrowseAllAssistingDataUnderProblem(unittest.IsolatedAsyncioTestCase):
             ).returns(False)
 
             with self.assertRaises(exc.NoPermission):
-                await problem.browse_all_assisting_data_under_problem.__wrapped__(problem_id=self.problem_id)
+                await mock.unwrap(problem.browse_all_assisting_data_under_problem)(problem_id=self.problem_id)
 
 
 class TestAddAssistingDataUnderProblem(unittest.IsolatedAsyncioTestCase):
@@ -907,7 +907,7 @@ class TestAddAssistingDataUnderProblem(unittest.IsolatedAsyncioTestCase):
                 filename=self.assisting_data.filename,
             ).returns(self.assisting_data_id)
 
-            result = await problem.add_assisting_data_under_problem.__wrapped__(problem_id=self.problem_id, assisting_data=self.assisting_data)  # noqa
+            result = await mock.unwrap(problem.add_assisting_data_under_problem)(problem_id=self.problem_id, assisting_data=self.assisting_data)  # noqa
 
         self.assertEqual(result, self.expected_output)
 
@@ -925,7 +925,7 @@ class TestAddAssistingDataUnderProblem(unittest.IsolatedAsyncioTestCase):
             ).returns(False)
 
             with self.assertRaises(exc.NoPermission):
-                result = await problem.add_assisting_data_under_problem.__wrapped__(problem_id=self.problem_id, assisting_data=self.assisting_data)  # noqa
+                result = await mock.unwrap(problem.add_assisting_data_under_problem)(problem_id=self.problem_id, assisting_data=self.assisting_data)  # noqa
 
 
 class TestDownloadAllAssistingData(unittest.IsolatedAsyncioTestCase):
@@ -985,9 +985,9 @@ class TestDownloadAllAssistingData(unittest.IsolatedAsyncioTestCase):
                 self.background_tasks, mock.AnyInstanceOf(object),
             ).executes(_set_task)
 
-            result = await problem.download_all_assisting_data.__wrapped__(problem_id=self.problem_id,
-                                                                           as_attachment=True,
-                                                                           background_tasks=self.background_tasks)
+            result = await mock.unwrap(problem.download_all_assisting_data)(problem_id=self.problem_id,
+                                                                            as_attachment=True,
+                                                                            background_tasks=self.background_tasks)
             service_downloader.async_func('all_assisting_data').call_with(
                 problem_id=self.problem_id,
             ).returns(self.s3_file)
@@ -1025,9 +1025,9 @@ class TestDownloadAllAssistingData(unittest.IsolatedAsyncioTestCase):
             ).returns(False)
 
             with self.assertRaises(exc.NoPermission):
-                await problem.download_all_assisting_data.__wrapped__(problem_id=self.problem_id,
-                                                                      as_attachment=True,
-                                                                      background_tasks=self.background_tasks)
+                await mock.unwrap(problem.download_all_assisting_data)(problem_id=self.problem_id,
+                                                                       as_attachment=True,
+                                                                       background_tasks=self.background_tasks)
 
 
 class TestDownloadAllSampleTestcase(unittest.IsolatedAsyncioTestCase):
@@ -1087,9 +1087,9 @@ class TestDownloadAllSampleTestcase(unittest.IsolatedAsyncioTestCase):
                 self.background_tasks, mock.AnyInstanceOf(object),
             ).executes(_set_task)
 
-            result = await problem.download_all_sample_testcase.__wrapped__(problem_id=self.problem_id,
-                                                                            as_attachment=True,
-                                                                            background_tasks=self.background_tasks)
+            result = await mock.unwrap(problem.download_all_sample_testcase)(problem_id=self.problem_id,
+                                                                             as_attachment=True,
+                                                                             background_tasks=self.background_tasks)
 
             service_downloader.async_func('all_testcase').call_with(
                 problem_id=self.problem_id, is_sample=True,
@@ -1127,9 +1127,9 @@ class TestDownloadAllSampleTestcase(unittest.IsolatedAsyncioTestCase):
             ).returns(False)
 
             with self.assertRaises(exc.NoPermission):
-                await problem.download_all_sample_testcase.__wrapped__(problem_id=self.problem_id,
-                                                                       as_attachment=True,
-                                                                       background_tasks=self.background_tasks)
+                await mock.unwrap(problem.download_all_sample_testcase)(problem_id=self.problem_id,
+                                                                        as_attachment=True,
+                                                                        background_tasks=self.background_tasks)
 
 
 class TestDownloadAllNonSampleTestcase(unittest.IsolatedAsyncioTestCase):
@@ -1189,9 +1189,9 @@ class TestDownloadAllNonSampleTestcase(unittest.IsolatedAsyncioTestCase):
                 self.background_tasks, mock.AnyInstanceOf(object),
             ).executes(_set_task)
 
-            result = await problem.download_all_non_sample_testcase.__wrapped__(problem_id=self.problem_id,
-                                                                                as_attachment=True,
-                                                                                background_tasks=self.background_tasks)
+            result = await mock.unwrap(problem.download_all_non_sample_testcase)(problem_id=self.problem_id,
+                                                                                 as_attachment=True,
+                                                                                 background_tasks=self.background_tasks)
 
             service_downloader.async_func('all_testcase').call_with(
                 problem_id=self.problem_id, is_sample=False,
@@ -1229,9 +1229,9 @@ class TestDownloadAllNonSampleTestcase(unittest.IsolatedAsyncioTestCase):
             ).returns(False)
 
             with self.assertRaises(exc.NoPermission):
-                await problem.download_all_non_sample_testcase.__wrapped__(problem_id=self.problem_id,
-                                                                           as_attachment=True,
-                                                                           background_tasks=self.background_tasks)
+                await mock.unwrap(problem.download_all_non_sample_testcase)(problem_id=self.problem_id,
+                                                                            as_attachment=True,
+                                                                            background_tasks=self.background_tasks)
 
 
 class TestGetScoreByChallengeTypeUnderProblem(unittest.IsolatedAsyncioTestCase):
@@ -1305,7 +1305,7 @@ class TestGetScoreByChallengeTypeUnderProblem(unittest.IsolatedAsyncioTestCase):
                 challenge_end_time=self.challenge.end_time,
             ).returns(self.submission_judgment)
 
-            result = await problem.get_score_by_challenge_type_under_problem.__wrapped__(problem_id=self.problem.id)
+            result = await mock.unwrap(problem.get_score_by_challenge_type_under_problem)(problem_id=self.problem.id)
 
         self.assertEqual(result, self.expected_output)
 
@@ -1363,7 +1363,7 @@ class TestGetScoreByBestUnderProblem(unittest.IsolatedAsyncioTestCase):
                 account_id=context.account.id,
             ).returns(self.submission_judgment)
 
-            result = await problem.get_score_by_best_under_problem.__wrapped__(problem_id=self.problem.id)
+            result = await mock.unwrap(problem.get_score_by_best_under_problem)(problem_id=self.problem.id)
 
         self.assertEqual(result, self.expected_output)
 
@@ -1414,7 +1414,7 @@ class TestRejudgeProblem(unittest.IsolatedAsyncioTestCase):
                 self.problem_id,
             ).returns(self.rejudged_submissions)
 
-            result = await problem.rejudge_problem.__wrapped__(problem_id=self.problem_id)
+            result = await mock.unwrap(problem.rejudge_problem)(problem_id=self.problem_id)
 
         self.assertEqual(result, self.expected_output)
 
@@ -1432,7 +1432,7 @@ class TestRejudgeProblem(unittest.IsolatedAsyncioTestCase):
             ).returns(False)
 
             with self.assertRaises(exc.NoPermission):
-                await problem.rejudge_problem.__wrapped__(problem_id=self.problem_id)
+                await mock.unwrap(problem.rejudge_problem)(problem_id=self.problem_id)
 
 
 class TestGetProblemStatistics(unittest.IsolatedAsyncioTestCase):
@@ -1464,7 +1464,7 @@ class TestGetProblemStatistics(unittest.IsolatedAsyncioTestCase):
                 problem_id=self.problem_id,
             ).returns(self.statistics)
 
-            result = await problem.get_problem_statistics.__wrapped__(problem_id=self.problem_id)
+            result = await mock.unwrap(problem.get_problem_statistics)(problem_id=self.problem_id)
 
         self.assertEqual(result, self.expected_output)
 
@@ -1482,4 +1482,4 @@ class TestGetProblemStatistics(unittest.IsolatedAsyncioTestCase):
             ).returns(False)
 
             with self.assertRaises(exc.NoPermission):
-                await problem.get_problem_statistics.__wrapped__(problem_id=self.problem_id)
+                await mock.unwrap(problem.get_problem_statistics)(problem_id=self.problem_id)
