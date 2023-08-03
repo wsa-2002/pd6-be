@@ -51,7 +51,7 @@ class TestAddAnnouncement(unittest.IsolatedAsyncioTestCase):
                 expire_time=self.input_data.expire_time
             ).returns(1)
 
-            result = await announcement.add_announcement.__wrapped__(data=self.input_data)
+            result = await mock.unwrap(announcement.add_announcement)(data=self.input_data)
 
         self.assertEqual(result, self.add_result)
 
@@ -68,7 +68,7 @@ class TestAddAnnouncement(unittest.IsolatedAsyncioTestCase):
             ).returns(False)
 
             with self.assertRaises(exc.NoPermission):
-                await announcement.add_announcement.__wrapped__(data=self.input_data)
+                await mock.unwrap(announcement.add_announcement)(data=self.input_data)
 
 
 class TestBrowseAnnouncement(unittest.IsolatedAsyncioTestCase):
@@ -139,7 +139,7 @@ class TestBrowseAnnouncement(unittest.IsolatedAsyncioTestCase):
                 ref_time=self.time
             ).returns((self.expected_output_data, self.expected_output_total_count))
 
-            result = await announcement.browse_announcement.__wrapped__(
+            result = await mock.unwrap(announcement.browse_announcement)(
                 limit=self.limit,
                 offset=self.offset,
                 filter=self.filter,
@@ -171,7 +171,7 @@ class TestBrowseAnnouncement(unittest.IsolatedAsyncioTestCase):
                 ref_time=self.time
             ).returns((self.expected_output_data, self.expected_output_total_count))
 
-            result = await announcement.browse_announcement.__wrapped__(
+            result = await mock.unwrap(announcement.browse_announcement)(
                 limit=self.limit,
                 offset=self.offset,
                 filter=self.filter,
@@ -194,7 +194,7 @@ class TestBrowseAnnouncement(unittest.IsolatedAsyncioTestCase):
             ).returns(None)
 
             with self.assertRaises(exc.NoPermission):
-                await announcement.browse_announcement.__wrapped__(
+                await mock.unwrap(announcement.browse_announcement)(
                     limit=self.limit,
                     offset=self.offset,
                     filter=self.filter,
@@ -241,7 +241,7 @@ class TestReadAnnouncement(unittest.IsolatedAsyncioTestCase):
                 ref_time=self.time,
             ).returns(self.expected_output_data)
 
-            result = await announcement.read_announcement.__wrapped__(
+            result = await mock.unwrap(announcement.read_announcement)(
                 announcement_id=self.announcement_id,
             )
 
@@ -267,7 +267,7 @@ class TestReadAnnouncement(unittest.IsolatedAsyncioTestCase):
                 ref_time=self.time,
             ).returns(self.expected_output_data)
 
-            result = await announcement.read_announcement.__wrapped__(
+            result = await mock.unwrap(announcement.read_announcement)(
                 announcement_id=self.announcement_id,
             )
 
@@ -287,7 +287,7 @@ class TestReadAnnouncement(unittest.IsolatedAsyncioTestCase):
             ).returns(None)
 
             with self.assertRaises(exc.NoPermission):
-                await announcement.read_announcement.__wrapped__(
+                await mock.unwrap(announcement.read_announcement)(
                     announcement_id=self.announcement_id,
                 )
 
@@ -329,7 +329,7 @@ class TestEditAnnouncement(unittest.IsolatedAsyncioTestCase):
                 expire_time=self.input_data.expire_time,
             ).returns(None)
 
-            result = await announcement.edit_announcement.__wrapped__(
+            result = await mock.unwrap(announcement.edit_announcement)(
                 announcement_id=self.announcement_id,
                 data=self.input_data,
             )
@@ -350,7 +350,7 @@ class TestEditAnnouncement(unittest.IsolatedAsyncioTestCase):
             ).returns(False)
 
             with self.assertRaises(exc.NoPermission):
-                await announcement.edit_announcement.__wrapped__(
+                await mock.unwrap(announcement.edit_announcement)(
                     announcement_id=self.announcement_id,
                     data=self.input_data,
                 )
@@ -382,7 +382,7 @@ class TestDeleteAnnouncement(unittest.IsolatedAsyncioTestCase):
                 announcement_id=self.announcement_id,
             ).returns(None)
 
-            result = await announcement.delete_announcement.__wrapped__(
+            result = await mock.unwrap(announcement.delete_announcement)(
                 announcement_id=self.announcement_id,
             )
 
@@ -402,6 +402,6 @@ class TestDeleteAnnouncement(unittest.IsolatedAsyncioTestCase):
             ).returns(False)
 
             with self.assertRaises(exc.NoPermission):
-                await announcement.delete_announcement.__wrapped__(
+                await mock.unwrap(announcement.delete_announcement)(
                     announcement_id=self.announcement_id,
                 )
