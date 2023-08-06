@@ -145,7 +145,10 @@ class TestBatchGetAccountWithDefaultStudentId(unittest.IsolatedAsyncioTestCase):
 
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
 
+        self.account_ids_json = "[1, 2]"
         self.account_ids = [1, 2]
+        self.empty_account_ids_json = "[]"
+        self.empty_account_ids = []
 
         self.expected_output_data = [
             (do.Account(
@@ -184,6 +187,7 @@ class TestBatchGetAccountWithDefaultStudentId(unittest.IsolatedAsyncioTestCase):
                 id=acc.id, username=acc.username, real_name=acc.real_name,
                 student_id=student_card.student_id)
             for acc, student_card in self.expected_output_data]
+        self.empty_result = []
 
     async def test_happy_flow(self):
         with (
@@ -194,7 +198,11 @@ class TestBatchGetAccountWithDefaultStudentId(unittest.IsolatedAsyncioTestCase):
 
             service_rbac = controller.mock_module('service.rbac')
             db_account_vo = controller.mock_module('persistence.database.account_vo')
+            pydantic_ = controller.mock_module('processor.http_api.account.pydantic')
 
+            pydantic_.func('parse_obj_as').call_with(list[int], self.account_ids_json).returns(
+                self.account_ids
+            )
             service_rbac.async_func('validate_system').call_with(
                 self.login_account.id, enum.RoleType.normal,
             ).returns(True)
@@ -204,7 +212,7 @@ class TestBatchGetAccountWithDefaultStudentId(unittest.IsolatedAsyncioTestCase):
             ).returns(self.expected_output_data)
 
             result = await mock.unwrap(account.batch_get_account_with_default_student_id)(
-                account_ids=self.account_ids
+                account_ids=self.account_ids_json
             )
 
         self.assertEqual(result, self.browse_result)
@@ -217,6 +225,11 @@ class TestBatchGetAccountWithDefaultStudentId(unittest.IsolatedAsyncioTestCase):
             context.set_account(self.login_account)
 
             service_rbac = controller.mock_module('service.rbac')
+            pydantic_ = controller.mock_module('processor.http_api.account.pydantic')
+
+            pydantic_.func('parse_obj_as').call_with(list[int], self.account_ids_json).returns(
+                self.account_ids
+            )
 
             service_rbac.async_func('validate_system').call_with(
                 self.login_account.id, enum.RoleType.normal,
@@ -224,8 +237,26 @@ class TestBatchGetAccountWithDefaultStudentId(unittest.IsolatedAsyncioTestCase):
 
             with self.assertRaises(exc.NoPermission):
                 await mock.unwrap(account.batch_get_account_with_default_student_id)(
-                    account_ids=self.account_ids
+                    account_ids=self.account_ids_json
                 )
+
+    async def test_not_account_ids(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+        ):
+            context.set_account(self.login_account)
+
+            pydantic_ = controller.mock_module('processor.http_api.account.pydantic')
+
+            pydantic_.func('parse_obj_as').call_with(list[int], self.empty_account_ids_json).returns(
+                self.empty_account_ids
+            )
+            result = await mock.unwrap(account.batch_get_account_with_default_student_id)(
+                account_ids=self.empty_account_ids_json
+            )
+
+        self.assertEqual(result, self.empty_result)
 
 
 class TestBatchGetAccountByAccountReferrals(unittest.IsolatedAsyncioTestCase):
@@ -233,7 +264,10 @@ class TestBatchGetAccountByAccountReferrals(unittest.IsolatedAsyncioTestCase):
 
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
 
+        self.account_referrals_json = "['referral1', 'referral2']"
         self.account_referrals = ['referral1', 'referral2']
+        self.empty_account_referrals_json = "[]"
+        self.empty_account_referrals = []
 
         self.expected_output_data = [
             (do.Account(
@@ -272,6 +306,7 @@ class TestBatchGetAccountByAccountReferrals(unittest.IsolatedAsyncioTestCase):
                 id=acc.id, username=acc.username, real_name=acc.real_name,
                 student_id=student_card.student_id)
             for acc, student_card in self.expected_output_data]
+        self.empty_result = []
 
     async def test_happy_flow(self):
         with (
@@ -282,7 +317,11 @@ class TestBatchGetAccountByAccountReferrals(unittest.IsolatedAsyncioTestCase):
 
             service_rbac = controller.mock_module('service.rbac')
             db_account_vo = controller.mock_module('persistence.database.account_vo')
+            pydantic_ = controller.mock_module('processor.http_api.account.pydantic')
 
+            pydantic_.func('parse_obj_as').call_with(list[str], self.account_referrals_json).returns(
+                self.account_referrals
+            )
             service_rbac.async_func('validate_system').call_with(
                 self.login_account.id, enum.RoleType.normal,
             ).returns(True)
@@ -292,7 +331,7 @@ class TestBatchGetAccountByAccountReferrals(unittest.IsolatedAsyncioTestCase):
             ).returns(self.expected_output_data)
 
             result = await mock.unwrap(account.batch_get_account_by_account_referrals)(
-                account_referrals=self.account_referrals
+                account_referrals=self.account_referrals_json
             )
 
         self.assertEqual(result, self.browse_result)
@@ -305,6 +344,11 @@ class TestBatchGetAccountByAccountReferrals(unittest.IsolatedAsyncioTestCase):
             context.set_account(self.login_account)
 
             service_rbac = controller.mock_module('service.rbac')
+            pydantic_ = controller.mock_module('processor.http_api.account.pydantic')
+
+            pydantic_.func('parse_obj_as').call_with(list[str], self.account_referrals_json).returns(
+                self.account_referrals
+            )
 
             service_rbac.async_func('validate_system').call_with(
                 self.login_account.id, enum.RoleType.normal,
@@ -312,8 +356,26 @@ class TestBatchGetAccountByAccountReferrals(unittest.IsolatedAsyncioTestCase):
 
             with self.assertRaises(exc.NoPermission):
                 await mock.unwrap(account.batch_get_account_by_account_referrals)(
-                    account_referrals=self.account_referrals
+                    account_referrals=self.account_referrals_json
                 )
+
+    async def test_not_account_referrals(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+        ):
+            context.set_account(self.login_account)
+
+            pydantic_ = controller.mock_module('processor.http_api.account.pydantic')
+
+            pydantic_.func('parse_obj_as').call_with(list[int], self.empty_account_referrals_json).returns(
+                self.empty_account_referrals
+            )
+            result = await mock.unwrap(account.batch_get_account_with_default_student_id)(
+                account_ids=self.empty_account_referrals_json
+            )
+
+        self.assertEqual(result, self.empty_result)
 
 
 class TestBrowseAllAccountWithClassRole(unittest.IsolatedAsyncioTestCase):
@@ -383,7 +445,6 @@ class TestBrowseAllAccountWithClassRole(unittest.IsolatedAsyncioTestCase):
 
     async def test_no_permission(self):
         with (
-            mock.Controller() as controller,
             mock.Context() as context,
         ):
             context.set_account(self.other_account)
@@ -755,7 +816,6 @@ class TestDeleteAccount(unittest.IsolatedAsyncioTestCase):
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
         self.other_account = security.AuthedAccount(id=2, cached_username='other')
 
-
     async def test_happy_flow_manager(self):
         with (
             mock.Controller() as controller,
@@ -962,6 +1022,7 @@ class TestBrowseAllAccountPendingEmailVerification(unittest.IsolatedAsyncioTestC
                 student_id='id2',
                 is_consumed=True,
             )]
+
     async def test_happy_flow_manager(self):
         with (
             mock.Controller() as controller,
@@ -1026,4 +1087,3 @@ class TestBrowseAllAccountPendingEmailVerification(unittest.IsolatedAsyncioTestC
                 await mock.unwrap(account.browse_all_account_pending_email_verification)(
                     account_id=self.login_account.id
                 )
-
