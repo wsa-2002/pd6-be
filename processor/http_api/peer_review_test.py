@@ -4,7 +4,6 @@ import unittest
 
 import base.popo
 from base import enum, do
-from base.enum import CourseType
 from util import model
 from util import mock, security
 
@@ -192,7 +191,7 @@ class TestBrowsePeerReviewRecord(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
         self.peer_review_id = 1
-        self.filter =None
+        self.filter = None
         self.filters_default = []
         self.filters_self = copy.deepcopy(self.filters_default)
         self.filters_self.append(
@@ -226,20 +225,8 @@ class TestBrowsePeerReviewRecord(unittest.IsolatedAsyncioTestCase):
                 submit_time=None, ),
         ]
         self.total_count = len(self.peer_review_records)
-        self.browse_peer_review_record_data = [
-            peer_review.BrowsePeerReviewRecordData(
-                id=record.id,
-                peer_review_id=record.peer_review_id,
-                grader_id=record.grader_id,
-                submission_id=record.submission_id,
-                receiver_id=record.receiver_id,
-                score=record.score,
-                comment=record.comment,
-                submit_time=record.submit_time,
-            ) for record in self.peer_review_records
-        ]
         self.browse_peer_review_record_data_normal = [
-            peer_review.BrowsePeerReviewRecordData(
+            peer_review.BrowsePeerReviewRecordOutput(
                 id=record.id,
                 peer_review_id=record.peer_review_id,
                 grader_id=None,
@@ -251,7 +238,7 @@ class TestBrowsePeerReviewRecord(unittest.IsolatedAsyncioTestCase):
             ) for record in self.peer_review_records
         ]
         self.browse_peer_review_record_data_manager = [
-            peer_review.BrowsePeerReviewRecordData(
+            peer_review.BrowsePeerReviewRecordOutput(
                 id=record.id,
                 peer_review_id=record.peer_review_id,
                 grader_id=record.grader_id,
@@ -262,10 +249,10 @@ class TestBrowsePeerReviewRecord(unittest.IsolatedAsyncioTestCase):
                 submit_time=record.submit_time,
             ) for record in self.peer_review_records
         ]
-        self.result_manager = peer_review.BrowsePeerReviewRecordOutput(self.browse_peer_review_record_data_manager,
-                                                                       self.total_count)
-        self.result_normal = peer_review.BrowsePeerReviewRecordOutput(self.browse_peer_review_record_data_normal,
-                                                                      self.total_count)
+        self.result_manager = model.BrowseOutputBase(self.browse_peer_review_record_data_manager,
+                                                     self.total_count)
+        self.result_normal = model.BrowseOutputBase(self.browse_peer_review_record_data_normal,
+                                                    self.total_count)
 
     async def test_happy_flow_normal(self):
         with (
@@ -294,6 +281,10 @@ class TestBrowsePeerReviewRecord(unittest.IsolatedAsyncioTestCase):
             ).returns(
                 (self.peer_review_records, self.total_count)
             )
+
+            model_.func('BrowseOutputBase').call_with(
+                self.browse_peer_review_record_data_normal, total_count=self.total_count,
+            ).returns(self.result_normal)
 
             result = await mock.unwrap(peer_review.browse_peer_review_record)(
                 self.peer_review_id,
@@ -330,6 +321,10 @@ class TestBrowsePeerReviewRecord(unittest.IsolatedAsyncioTestCase):
             ).returns(
                 (self.peer_review_records, self.total_count)
             )
+
+            model_.func('BrowseOutputBase').call_with(
+                self.browse_peer_review_record_data_manager, total_count=self.total_count,
+            ).returns(self.result_manager)
 
             result = await mock.unwrap(peer_review.browse_peer_review_record)(
                 self.peer_review_id,
