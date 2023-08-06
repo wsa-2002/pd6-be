@@ -214,4 +214,3 @@ class TestDeleteScoreboard(unittest.IsolatedAsyncioTestCase):
                 await mock.unwrap(scoreboard.delete_scoreboard)(
                     scoreboard_id=self.scoreboard_id
                 )
-
