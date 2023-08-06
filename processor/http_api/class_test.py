@@ -41,7 +41,7 @@ class TestBrowseClass(unittest.IsolatedAsyncioTestCase):
                 is_deleted=False),
         ]
         self.total_count = len(self.classes)
-        self.result = class_.BrowseClassOutput(data=self.classes, total_count=self.total_count)
+        self.result = model.BrowseOutputBase(data=self.classes, total_count=self.total_count)
 
     async def test_happy_flow(self):
         with (
@@ -71,8 +71,10 @@ class TestBrowseClass(unittest.IsolatedAsyncioTestCase):
                 (self.classes, self.total_count)
             )
 
-            result = await class_.browse_class.__wrapped__(limit=self.limit, offset=self.offset, filter=self.filter,
-                                                           sort=self.sorter)
+            model_.func('BrowseOutputBase').call_with(self.classes, total_count=self.total_count).returns(self.result)
+
+            result = await mock.unwrap(class_.browse_class)(limit=self.limit, offset=self.offset, filter=self.filter,
+                                                            sort=self.sorter)
 
         self.assertEqual(result, self.result)
 
@@ -106,7 +108,7 @@ class TestReadClass(unittest.IsolatedAsyncioTestCase):
                 self.class_
             )
 
-            result = await class_.read_class.__wrapped__(class_id=self.class_id)
+            result = await mock.unwrap(class_.read_class)(class_id=self.class_id)
 
         self.assertEqual(result, self.result)
 
@@ -164,7 +166,7 @@ class TestDeleteClass(unittest.IsolatedAsyncioTestCase):
             ).returns(True)
             db_class.async_func('delete').call_with(self.class_id).returns(None)
 
-            result = await class_.delete_class.__wrapped__(class_id=self.class_id)
+            result = await mock.unwrap(class_.delete_class)(class_id=self.class_id)
 
         self.assertIsNone(result)
 
@@ -250,19 +252,19 @@ class TestBrowseClassMember(unittest.IsolatedAsyncioTestCase):
         self.data_result = []
         for i in range(self.total_count):
             self.data_result.append((self.members[i], self.accounts[i], self.student_cards[i], self.institutes[i]))
-        self.result = class_.BrowseClassMemberOutput(
-            data=[class_.ClassMemberData(member_id=1,
-                                         role=enum.RoleType.normal,
-                                         username='test1',
-                                         real_name='test1',
-                                         student_id='id1',
-                                         institute_abbreviated_name='test'),
-                  class_.ClassMemberData(member_id=2,
-                                         role=enum.RoleType.normal,
-                                         username='test2',
-                                         real_name='test2',
-                                         student_id='id2',
-                                         institute_abbreviated_name='test')], total_count=2)
+        self.result = model.BrowseOutputBase(
+            data=[class_.BrowseClassMemberOutput(member_id=1,
+                                                 role=enum.RoleType.normal,
+                                                 username='test1',
+                                                 real_name='test1',
+                                                 student_id='id1',
+                                                 institute_abbreviated_name='test'),
+                  class_.BrowseClassMemberOutput(member_id=2,
+                                                 role=enum.RoleType.normal,
+                                                 username='test2',
+                                                 real_name='test2',
+                                                 student_id='id2',
+                                                 institute_abbreviated_name='test')], total_count=2)
 
     async def test_happy_flow_normal(self):
         with (
@@ -290,7 +292,10 @@ class TestBrowseClassMember(unittest.IsolatedAsyncioTestCase):
                 (self.data_result, self.total_count)
             )
 
-            result = await class_.browse_class_member.__wrapped__(
+            model_.func('BrowseOutputBase').call_with(self.result.data, total_count=self.total_count).returns(
+                self.result)
+
+            result = await mock.unwrap(class_.browse_class_member)(
                 class_id=self.class_id,
                 limit=self.limit, offset=self.offset,
                 filter=self.filter, sort=self.sorter)
@@ -326,7 +331,10 @@ class TestBrowseClassMember(unittest.IsolatedAsyncioTestCase):
                 (self.data_result, self.total_count)
             )
 
-            result = await class_.browse_class_member.__wrapped__(
+            model_.func('BrowseOutputBase').call_with(self.result.data, total_count=self.total_count).returns(
+                self.result)
+
+            result = await mock.unwrap(class_.browse_class_member)(
                 class_id=self.class_id,
                 limit=self.limit, offset=self.offset,
                 filter=self.filter, sort=self.sorter)
@@ -392,7 +400,7 @@ class TestBrowseAllClassMemberWithAccountReferral(unittest.IsolatedAsyncioTestCa
                 self.members,
             )
 
-            result = await class_.browse_all_class_member_with_account_referral.__wrapped__(self.class_id)
+            result = await mock.unwrap(class_.browse_all_class_member_with_account_referral)(self.class_id)
 
         self.assertCountEqual(result, self.result)
 
@@ -418,7 +426,7 @@ class TestBrowseAllClassMemberWithAccountReferral(unittest.IsolatedAsyncioTestCa
                 self.members,
             )
 
-            result = await class_.browse_all_class_member_with_account_referral.__wrapped__(self.class_id)
+            result = await mock.unwrap(class_.browse_all_class_member_with_account_referral)(self.class_id)
 
         self.assertCountEqual(result, self.result)
 
@@ -599,7 +607,7 @@ class TestDeleteClassMember(unittest.IsolatedAsyncioTestCase):
             db_class.async_func('delete_member').call_with(class_id=self.class_id, member_id=self.member_id).returns(
                 None)
 
-            result = await class_.delete_class_member.__wrapped__(class_id=self.class_id, member_id=self.member_id)
+            result = await mock.unwrap(class_.delete_class_member)(class_id=self.class_id, member_id=self.member_id)
 
         self.assertIsNone(result)
 
@@ -638,7 +646,7 @@ class TestAddTeamUnderClass(unittest.IsolatedAsyncioTestCase):
                 self.team_id
             )
 
-            result = await class_.add_team_under_class.__wrapped__(class_id=self.class_id, data=self.data)
+            result = await mock.unwrap(class_.add_team_under_class)(class_id=self.class_id, data=self.data)
 
         self.assertEqual(result, self.result)
 
@@ -682,7 +690,7 @@ class TestBrowseTeamUnderClass(unittest.IsolatedAsyncioTestCase):
                 is_deleted=False),
         ]
         self.total_count = len(self.teams)
-        self.result = class_.BrowseTeamUnderClassOutput(data=self.teams, total_count=self.total_count)
+        self.result = model.BrowseOutputBase(data=self.teams, total_count=self.total_count)
 
     async def test_happy_flow(self):
         with (
@@ -712,9 +720,11 @@ class TestBrowseTeamUnderClass(unittest.IsolatedAsyncioTestCase):
                 (self.teams, self.total_count)
             )
 
-            result = await class_.browse_team_under_class.__wrapped__(class_id=self.class_id,
-                                                                      limit=self.limit, offset=self.offset,
-                                                                      filter=self.filter, sort=self.sorter)
+            model_.func('BrowseOutputBase').call_with(self.teams, total_count=self.total_count).returns(self.result)
+
+            result = await mock.unwrap(class_.browse_team_under_class)(class_id=self.class_id,
+                                                                       limit=self.limit, offset=self.offset,
+                                                                       filter=self.filter, sort=self.sorter)
 
         self.assertEqual(result, self.result)
 
@@ -767,7 +777,7 @@ class TestBrowseSubmissionUnderClass(unittest.IsolatedAsyncioTestCase):
                 submit_time=datetime.datetime.today()),
         ]
         self.total_count = len(self.submissions)
-        self.result = class_.BrowseSubmissionUnderClassOutput(data=self.submissions, total_count=self.total_count)
+        self.result = model.BrowseOutputBase(data=self.submissions, total_count=self.total_count)
 
     async def test_happy_flow(self):
         with (
@@ -800,9 +810,12 @@ class TestBrowseSubmissionUnderClass(unittest.IsolatedAsyncioTestCase):
                 (self.submissions, self.total_count)
             )
 
-            result = await class_.browse_submission_under_class.__wrapped__(class_id=self.class_id,
-                                                                            limit=self.limit, offset=self.offset,
-                                                                            filter=self.filter,
-                                                                            sort=self.sorter)
+            model_.func('BrowseOutputBase').call_with(self.submissions, total_count=self.total_count).returns(
+                self.result)
+
+            result = await mock.unwrap(class_.browse_submission_under_class)(class_id=self.class_id,
+                                                                             limit=self.limit, offset=self.offset,
+                                                                             filter=self.filter,
+                                                                             sort=self.sorter)
 
         self.assertEqual(result, self.result)
