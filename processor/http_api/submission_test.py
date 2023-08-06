@@ -518,7 +518,7 @@ class TestBrowseSubmission(unittest.IsolatedAsyncioTestCase):
             context.set_account(self.account)
 
             db_submission = controller.mock_module('persistence.database.submission')
-            model = controller.mock_module('processor.http_api.submission.model')
+            model = controller.mock_module('util.model')
 
             model.func('parse_filter').call_with(
                 self.filter, self.BROWSE_SUBMISSION_COLUMNS,
@@ -594,7 +594,7 @@ class TestBatchGetSubmissionJudgment(unittest.IsolatedAsyncioTestCase):
         ):
             context.set_account(self.account)
 
-            pydantic = controller.mock_module('processor.http_api.submission.pydantic')
+            pydantic = controller.mock_module('pydantic.tools')
             db_judgment = controller.mock_module('persistence.database.judgment')
             service_rbac = controller.mock_module('service.rbac')
 
@@ -619,7 +619,7 @@ class TestBatchGetSubmissionJudgment(unittest.IsolatedAsyncioTestCase):
         ):
             context.set_account(self.account)
 
-            pydantic = controller.mock_module('processor.http_api.submission.pydantic')
+            pydantic = controller.mock_module('pydantic.tools')
             service_rbac = controller.mock_module('service.rbac')
 
             pydantic.func('parse_obj_as').call_with(
@@ -639,7 +639,7 @@ class TestBatchGetSubmissionJudgment(unittest.IsolatedAsyncioTestCase):
         ):
             context.set_account(self.account)
 
-            pydantic = controller.mock_module('processor.http_api.submission.pydantic')
+            pydantic = controller.mock_module('pydantic.tools')
 
             pydantic.func('parse_obj_as').call_with(
                 list[int], self.submission_ids_json,

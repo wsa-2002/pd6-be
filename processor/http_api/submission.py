@@ -144,8 +144,8 @@ async def browse_submission(account_id: int, limit: model.Limit = 50, offset: mo
     if account_id != context.account.id:
         raise exc.NoPermission
 
-    filters = model.parse_filter(filter, BROWSE_SUBMISSION_COLUMNS)
-    sorters = model.parse_sorter(sort, BROWSE_SUBMISSION_COLUMNS)
+    filters = util.model.parse_filter(filter, BROWSE_SUBMISSION_COLUMNS)
+    sorters = util.model.parse_sorter(sort, BROWSE_SUBMISSION_COLUMNS)
 
     # 只能看自己的
     filters.append(popo.Filter(col_name='account_id',
@@ -155,7 +155,7 @@ async def browse_submission(account_id: int, limit: model.Limit = 50, offset: mo
     submissions, total_count = await db.submission.browse(limit=limit, offset=offset,
                                                           filters=filters, sorters=sorters)
 
-    return model.BrowseOutputBase(submissions, total_count=total_count)
+    return util.model.BrowseOutputBase(submissions, total_count=total_count)
 
 
 @router.get('/submission/judgment/batch')
@@ -168,7 +168,7 @@ async def batch_get_submission_judgment(submission_ids: pydantic.Json) -> Sequen
     ### Notes
     - `submission_ids`: list of int
     """
-    submission_ids = pydantic.parse_obj_as(list[int], submission_ids)
+    submission_ids = pydantic.tools.parse_obj_as(list[int], submission_ids)
     if not submission_ids:
         return []
 
