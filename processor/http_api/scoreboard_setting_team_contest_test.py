@@ -65,40 +65,43 @@ class TestViewTeamContestScoreboard(unittest.IsolatedAsyncioTestCase):
             label='label2',
             is_deleted=False,
         )]
-        self.team_problem_datas = {1: [scoreboard_setting_team_contest.ViewTeamContestScoreboardProblemScoreOutput(
-            problem_id=3,
-            submit_count=1,
-            is_solved=True,
-            solve_time=5,
-            is_first=True,
-            penalty=5,
-            submission_id=1,
-        ), scoreboard_setting_team_contest.ViewTeamContestScoreboardProblemScoreOutput(
-            problem_id=4,
-            submit_count=1,
-            is_solved=True,
-            solve_time=5,
-            is_first=True,
-            penalty=5,
-            submission_id=1,
-        )], 2: [scoreboard_setting_team_contest.ViewTeamContestScoreboardProblemScoreOutput(
-            problem_id=3,
-            submit_count=1,
-            is_solved=False,
-            solve_time=0,
-            is_first=False,
-            penalty=0,
-            submission_id=2,
-        ), scoreboard_setting_team_contest.ViewTeamContestScoreboardProblemScoreOutput(
-            problem_id=4,
-            submit_count=1,
-            is_solved=False,
-            solve_time=0,
-            is_first=False,
-            penalty=0,
-            submission_id=2,
-        )]
-                                   }
+        self.team_problem_datas = {
+            1: [
+                scoreboard_setting_team_contest.ViewTeamContestScoreboardProblemScoreOutput(
+                    problem_id=3,
+                    submit_count=1,
+                    is_solved=True,
+                    solve_time=5,
+                    is_first=True,
+                    penalty=5,
+                    submission_id=1,
+                ), scoreboard_setting_team_contest.ViewTeamContestScoreboardProblemScoreOutput(
+                    problem_id=4,
+                    submit_count=1,
+                    is_solved=True,
+                    solve_time=5,
+                    is_first=True,
+                    penalty=5,
+                    submission_id=1,
+                )],
+            2: [
+                scoreboard_setting_team_contest.ViewTeamContestScoreboardProblemScoreOutput(
+                    problem_id=3,
+                    submit_count=1,
+                    is_solved=False,
+                    solve_time=0,
+                    is_first=False,
+                    penalty=0,
+                    submission_id=2,
+                ), scoreboard_setting_team_contest.ViewTeamContestScoreboardProblemScoreOutput(
+                    problem_id=4,
+                    submit_count=1,
+                    is_solved=False,
+                    solve_time=0,
+                    is_first=False,
+                    penalty=0,
+                    submission_id=2,
+                )]}
         self.verdict = [
             (1, 1, self.time+timedelta(minutes=5), enum.VerdictType.accepted),
             (2, 2, self.time+timedelta(minutes=10), enum.VerdictType.wrong_answer)
@@ -118,6 +121,20 @@ class TestViewTeamContestScoreboard(unittest.IsolatedAsyncioTestCase):
                                          for team_problem_data in self.team_problem_datas[team.id]),
                 ) for team in self.teams
         ]
+        self.output = [
+            scoreboard_setting_team_contest.ViewTeamContestScoreboardOutput(
+                team_id=1,
+                team_name='name',
+                target_problem_data=self.team_problem_datas[1],
+                total_penalty=10,
+                solved_problem_count=2,
+            ), scoreboard_setting_team_contest.ViewTeamContestScoreboardOutput(
+                team_id=2,
+                team_name='name2',
+                target_problem_data=self.team_problem_datas[2],
+                total_penalty=0,
+                solved_problem_count=0,
+            )]
 
     async def test_happy_flow(self):
         with (
@@ -281,7 +298,7 @@ class TestEditTeamContestScoreboard(unittest.IsolatedAsyncioTestCase):
             ).returns(True)
 
             service_scoreboard.func('validate_penalty_formula').call_with(
-                formula=self.input.penalty_formula
+                formula=self.input.penalty_formula,
             ).returns(False)
 
             with self.assertRaises(exc.InvalidFormula):
