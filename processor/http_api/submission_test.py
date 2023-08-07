@@ -1,15 +1,15 @@
 import copy
 from datetime import datetime
 import unittest
+from uuid import UUID
 
+from fastapi import UploadFile
+
+import exceptions as exc
 from base import enum, do, popo
-from util import mock, security
+from util import mock, model, security
 
 from . import submission
-from util import model
-from fastapi import UploadFile
-import exceptions as exc
-from uuid import UUID
 
 
 class TestBrowseAllSubmissionLanguage(unittest.IsolatedAsyncioTestCase):
