@@ -84,7 +84,7 @@ class TestReadScoreboard(unittest.IsolatedAsyncioTestCase):
             service_rbac = controller.mock_module('service.rbac')
             db_scoreboard = controller.mock_module('persistence.database.scoreboard')
             db_scoreboard_setting_team_project = controller.mock_module(
-                'persistence.database.scoreboard_setting_team_project'
+                'persistence.database.scoreboard_setting_team_project',
             )
 
             service_rbac.async_func('validate_class').call_with(
@@ -115,7 +115,7 @@ class TestReadScoreboard(unittest.IsolatedAsyncioTestCase):
             )
 
             service_rbac.async_func('validate_class').call_with(
-                self.login_account.id, enum.RoleType.normal, scoreboard_id=self.scoreboard_id
+                self.login_account.id, enum.RoleType.normal, scoreboard_id=self.scoreboard_id,
             ).returns(True)
             db_scoreboard.async_func('read').call_with(scoreboard_id=self.scoreboard_id).returns(
                 self.scoreboard_contest,
@@ -138,12 +138,12 @@ class TestReadScoreboard(unittest.IsolatedAsyncioTestCase):
             service_rbac = controller.mock_module('service.rbac')
 
             service_rbac.async_func('validate_class').call_with(
-                self.login_account.id, enum.RoleType.normal, scoreboard_id=self.scoreboard_id
+                self.login_account.id, enum.RoleType.normal, scoreboard_id=self.scoreboard_id,
             ).returns(False)
 
             with self.assertRaises(exc.NoPermission):
                 await mock.unwrap(scoreboard.read_scoreboard)(
-                    scoreboard_id=self.scoreboard_id
+                    scoreboard_id=self.scoreboard_id,
                 )
 
     async def test_system_exception(self):
@@ -157,7 +157,7 @@ class TestReadScoreboard(unittest.IsolatedAsyncioTestCase):
             db_scoreboard = controller.mock_module('persistence.database.scoreboard')
 
             service_rbac.async_func('validate_class').call_with(
-                self.login_account.id, enum.RoleType.normal, scoreboard_id=self.scoreboard_id
+                self.login_account.id, enum.RoleType.normal, scoreboard_id=self.scoreboard_id,
             ).returns(True)
             db_scoreboard.async_func('read').call_with(scoreboard_id=self.scoreboard_id).returns(
                 self.scoreboard_system_exception,
@@ -165,7 +165,7 @@ class TestReadScoreboard(unittest.IsolatedAsyncioTestCase):
 
             with self.assertRaises(exc.SystemException):
                 await mock.unwrap(scoreboard.read_scoreboard)(
-                    scoreboard_id=self.scoreboard_id
+                    scoreboard_id=self.scoreboard_id,
                 )
 
 
@@ -186,12 +186,10 @@ class TestDeleteScoreboard(unittest.IsolatedAsyncioTestCase):
             db_scoreboard = controller.mock_module('persistence.database.scoreboard')
 
             service_rbac.async_func('validate_class').call_with(
-                self.login_account.id, enum.RoleType.manager, scoreboard_id=self.scoreboard_id
+                self.login_account.id, enum.RoleType.manager, scoreboard_id=self.scoreboard_id,
             ).returns(True)
 
-            db_scoreboard.async_func('delete').call_with(scoreboard_id=self.scoreboard_id).returns(
-                None
-            )
+            db_scoreboard.async_func('delete').call_with(scoreboard_id=self.scoreboard_id).returns(None)
 
             result = await mock.unwrap(scoreboard.delete_scoreboard)(scoreboard_id=self.scoreboard_id)
 
@@ -207,10 +205,10 @@ class TestDeleteScoreboard(unittest.IsolatedAsyncioTestCase):
             service_rbac = controller.mock_module('service.rbac')
 
             service_rbac.async_func('validate_class').call_with(
-                self.login_account.id, enum.RoleType.manager, scoreboard_id=self.scoreboard_id
+                self.login_account.id, enum.RoleType.manager, scoreboard_id=self.scoreboard_id,
             ).returns(False)
 
             with self.assertRaises(exc.NoPermission):
                 await mock.unwrap(scoreboard.delete_scoreboard)(
-                    scoreboard_id=self.scoreboard_id
+                    scoreboard_id=self.scoreboard_id,
                 )
