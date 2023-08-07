@@ -22,7 +22,8 @@ class AnyInstanceOf:
 
 class AnySetOfValues:
     """
-    A helper object that compares equal to any instance of a specific class.
+    A helper object that compares equality based on if the set of values are the same.
+    Note that since it's set, the order and count does not affect, as long as set(a) == set(b), it will return True.
     Implemented with reference of unittest.mock.ANY.
     """
 
