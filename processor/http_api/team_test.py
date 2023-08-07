@@ -27,7 +27,7 @@ class TestImportTeam(unittest.IsolatedAsyncioTestCase):
             service_csv = controller.mock_module('service.csv')
 
             service_rbac.async_func('validate_class').call_with(
-                context.account.id, enum.RoleType.manager, class_id=self.class_id
+                context.account.id, enum.RoleType.manager, class_id=self.class_id,
             ).returns(True)
             service_csv.async_func('import_team').call_with(
                 self.team_file.file, class_id=self.class_id, label=self.label,
@@ -59,10 +59,10 @@ class TestEditTeam(unittest.IsolatedAsyncioTestCase):
             db_team = controller.mock_module('persistence.database.team')
 
             service_rbac.async_func('validate_class').call_with(
-                context.account.id, enum.RoleType.manager, team_id=self.team_id
+                context.account.id, enum.RoleType.manager, team_id=self.team_id,
             ).returns(True)
             service_rbac.async_func('validate_team').call_with(
-                context.account.id, enum.RoleType.manager, team_id=self.team_id
+                context.account.id, enum.RoleType.manager, team_id=self.team_id,
             ).returns(False)
             db_team.async_func('edit').call_with(
                 team_id=self.team_id,
@@ -86,10 +86,10 @@ class TestEditTeam(unittest.IsolatedAsyncioTestCase):
             db_team = controller.mock_module('persistence.database.team')
 
             service_rbac.async_func('validate_class').call_with(
-                context.account.id, enum.RoleType.manager, team_id=self.team_id
+                context.account.id, enum.RoleType.manager, team_id=self.team_id,
             ).returns(False)
             service_rbac.async_func('validate_team').call_with(
-                context.account.id, enum.RoleType.manager, team_id=self.team_id
+                context.account.id, enum.RoleType.manager, team_id=self.team_id,
             ).returns(True)
             db_team.async_func('edit').call_with(
                 team_id=self.team_id,
@@ -119,7 +119,7 @@ class TestDeleteTeam(unittest.IsolatedAsyncioTestCase):
             db_team = controller.mock_module('persistence.database.team')
 
             service_rbac.async_func('validate_class').call_with(
-                context.account.id, enum.RoleType.manager, team_id=self.team_id
+                context.account.id, enum.RoleType.manager, team_id=self.team_id,
             ).returns(True)
 
             db_team.async_func('delete').call_with(self.team_id).returns(None)
@@ -158,7 +158,7 @@ class TestBrowseTeamAllMember(unittest.IsolatedAsyncioTestCase):
             db_team = controller.mock_module('persistence.database.team')
 
             service_rbac.async_func('validate_class').call_with(
-                context.account.id, enum.RoleType.normal, team_id=self.team_id
+                context.account.id, enum.RoleType.normal, team_id=self.team_id,
             ).returns(True)
 
             db_team.async_func('browse_members').call_with(team_id=self.team_id).returns(self.team_members)
@@ -195,7 +195,7 @@ class TestAddTeamMember(unittest.IsolatedAsyncioTestCase):
             db_team = controller.mock_module('persistence.database.team')
 
             service_rbac.async_func('validate_class').call_with(
-                context.account.id, enum.RoleType.manager, team_id=self.team_id
+                context.account.id, enum.RoleType.manager, team_id=self.team_id,
             ).returns(True)
 
             db_team.async_func('add_members').call_with(
@@ -235,7 +235,7 @@ class TestEditTeamMember(unittest.IsolatedAsyncioTestCase):
             db_team = controller.mock_module('persistence.database.team')
 
             service_rbac.async_func('validate_class').call_with(
-                context.account.id, enum.RoleType.manager, team_id=self.team_id
+                context.account.id, enum.RoleType.manager, team_id=self.team_id,
             ).returns(True)
 
             for member in self.data:
@@ -267,7 +267,7 @@ class TestDeleteTeamMember(unittest.IsolatedAsyncioTestCase):
             db_team = controller.mock_module('persistence.database.team')
 
             service_rbac.async_func('validate_class').call_with(
-                context.account.id, enum.RoleType.manager, team_id=self.team_id
+                context.account.id, enum.RoleType.manager, team_id=self.team_id,
             ).returns(True)
 
             db_team.async_func('delete_member').call_with(team_id=self.team_id, member_id=self.member_id).returns(None)
