@@ -47,7 +47,7 @@ class TestReadAssistingData(unittest.IsolatedAsyncioTestCase):
             ).returns(self.s3_file)
             s3_tools.async_func('sign_url').call_with(
                 bucket=self.s3_file.bucket, key=self.s3_file.key,
-                filename=self.filename, as_attachment=self.as_attachment
+                filename=self.filename, as_attachment=self.as_attachment,
             ).returns(self.url)
 
             result = await mock.unwrap(s3_file.get_s3_file_url)(self.s3_file_uuid, self.filename, self.as_attachment)
@@ -74,7 +74,7 @@ class TestReadAssistingData(unittest.IsolatedAsyncioTestCase):
             ).raises(exc.persistence.NotFound)
             s3_tools.async_func('sign_url').call_with(
                 bucket='temp', key=str(self.s3_file_uuid),
-                filename=self.filename, as_attachment=self.as_attachment
+                filename=self.filename, as_attachment=self.as_attachment,
             ).returns(self.url)
 
             result = await mock.unwrap(s3_file.get_s3_file_url)(self.s3_file_uuid, self.filename, self.as_attachment)
