@@ -35,8 +35,8 @@ class TestReadPeerReview(unittest.IsolatedAsyncioTestCase):
             title='test',
             setter_id=1,
             description=None,
-            start_time=do.datetime.today(),
-            end_time=do.datetime.today(),
+            start_time=datetime.datetime.today(),
+            end_time=datetime.datetime.today(),
             is_deleted=False,
         )
         self.result = copy.deepcopy(self.peer_review)
@@ -47,7 +47,7 @@ class TestReadPeerReview(unittest.IsolatedAsyncioTestCase):
             mock.Context() as context,
         ):
             context.set_account(self.login_account)
-            context.set_request_time(do.datetime.today() + datetime.timedelta(days=5))
+            context.set_request_time(datetime.datetime.today() + datetime.timedelta(days=5))
 
             service_rbac = controller.mock_module('service.rbac')
             db_peer_review = controller.mock_module('persistence.database.peer_review')
@@ -57,10 +57,10 @@ class TestReadPeerReview(unittest.IsolatedAsyncioTestCase):
                 context.account.id, peer_review_id=self.peer_review_id,
             ).returns(enum.RoleType.normal)
             db_peer_review.async_func('read').call_with(self.peer_review_id).returns(
-                self.peer_review
+                self.peer_review,
             )
             db_challenge.async_func('read').call_with(self.peer_review_id).returns(
-                self.challenge
+                self.challenge,
             )
 
             result = await mock.unwrap(peer_review.read_peer_review)(self.peer_review_id)
@@ -73,7 +73,7 @@ class TestReadPeerReview(unittest.IsolatedAsyncioTestCase):
             mock.Context() as context,
         ):
             context.set_account(self.login_account)
-            context.set_request_time(do.datetime.today() - datetime.timedelta(days=5))
+            context.set_request_time(datetime.datetime.today() - datetime.timedelta(days=5))
 
             service_rbac = controller.mock_module('service.rbac')
             db_peer_review = controller.mock_module('persistence.database.peer_review')
@@ -83,10 +83,10 @@ class TestReadPeerReview(unittest.IsolatedAsyncioTestCase):
                 context.account.id, peer_review_id=self.peer_review_id,
             ).returns(enum.RoleType.manager)
             db_peer_review.async_func('read').call_with(self.peer_review_id).returns(
-                self.peer_review
+                self.peer_review,
             )
             db_challenge.async_func('read').call_with(self.peer_review_id).returns(
-                self.challenge
+                self.challenge,
             )
 
             result = await mock.unwrap(peer_review.read_peer_review)(self.peer_review_id)
@@ -99,7 +99,7 @@ class TestReadPeerReview(unittest.IsolatedAsyncioTestCase):
             mock.Context() as context,
         ):
             context.set_account(self.login_account)
-            context.set_request_time(do.datetime.today() + datetime.timedelta(days=5))
+            context.set_request_time(datetime.datetime.today() + datetime.timedelta(days=5))
 
             service_rbac = controller.mock_module('service.rbac')
             db_peer_review = controller.mock_module('persistence.database.peer_review')
@@ -109,10 +109,10 @@ class TestReadPeerReview(unittest.IsolatedAsyncioTestCase):
                 context.account.id, peer_review_id=self.peer_review_id,
             ).returns(enum.RoleType.manager)
             db_peer_review.async_func('read').call_with(self.peer_review_id).returns(
-                self.peer_review
+                self.peer_review,
             )
             db_challenge.async_func('read').call_with(self.peer_review_id).returns(
-                self.challenge
+                self.challenge,
             )
 
             result = await mock.unwrap(peer_review.read_peer_review)(self.peer_review_id)
@@ -152,10 +152,8 @@ class TestEditPeerReview(unittest.IsolatedAsyncioTestCase):
                 title=self.data.title,
                 description=self.data.description,
                 min_score=self.data.min_score, max_score=self.data.max_score,
-                max_review_count=self.data.max_review_count
-            ).returns(
-                None
-            )
+                max_review_count=self.data.max_review_count,
+            ).returns(None)
 
             result = await mock.unwrap(peer_review.edit_peer_review)(self.peer_review_id, self.data)
 
@@ -277,7 +275,7 @@ class TestBrowsePeerReviewRecord(unittest.IsolatedAsyncioTestCase):
             db_peer_review_record.async_func('browse').call_with(
                 peer_review_id=self.peer_review_id,
                 limit=self.limit, offset=self.offset,
-                filters=self.filters_self, sorters=self.sorters
+                filters=self.filters_self, sorters=self.sorters,
             ).returns(
                 (self.peer_review_records, self.total_count)
             )
@@ -317,7 +315,7 @@ class TestBrowsePeerReviewRecord(unittest.IsolatedAsyncioTestCase):
             db_peer_review_record.async_func('browse').call_with(
                 peer_review_id=self.peer_review_id,
                 limit=self.limit, offset=self.offset,
-                filters=self.filters_default, sorters=self.sorters
+                filters=self.filters_default, sorters=self.sorters,
             ).returns(
                 (self.peer_review_records, self.total_count)
             )
@@ -360,8 +358,8 @@ class TestAssignPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
             title='test',
             setter_id=1,
             description=None,
-            start_time=do.datetime.today() - datetime.timedelta(days=5),
-            end_time=do.datetime.today() + datetime.timedelta(days=5),
+            start_time=datetime.datetime.today() - datetime.timedelta(days=5),
+            end_time=datetime.datetime.today() + datetime.timedelta(days=5),
             is_deleted=False,
         )
         self.peer_review_records = [
@@ -373,7 +371,7 @@ class TestAssignPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
                 submission_id=1,
                 score=5,
                 comment='soso',
-                submit_time=None, ),
+                submit_time=None),
             do.PeerReviewRecord(
                 id=2,
                 peer_review_id=2,
@@ -382,7 +380,7 @@ class TestAssignPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
                 submission_id=2,
                 score=10,
                 comment='great',
-                submit_time=None, ),
+                submit_time=None),
         ]
         self.peer_review_record_ids = [self.peer_review_records[i].peer_review_id if
                                        i < len(self.peer_review_records) else i + 1 for i in
@@ -395,7 +393,7 @@ class TestAssignPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
             mock.Context() as context,
         ):
             context.set_account(self.login_account)
-            context.set_request_time(do.datetime.today())
+            context.set_request_time(datetime.datetime.today())
 
             service_rbac = controller.mock_module('service.rbac')
             db_peer_review = controller.mock_module('persistence.database.peer_review')
@@ -406,24 +404,24 @@ class TestAssignPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
                 context.account.id, peer_review_id=self.peer_review_id,
             ).returns(enum.RoleType.normal)
             db_peer_review.async_func('read').call_with(self.peer_review_id).returns(
-                self.peer_review
+                self.peer_review,
             )
             db_challenge.async_func('read').call_with(challenge_id=self.peer_review.challenge_id).returns(
-                self.challenge
+                self.challenge,
             )
             db_peer_review_record.async_func('read_by_peer_review_id').call_with(
                 peer_review_id=self.peer_review.id,
                 account_id=context.account.id,
-                is_receiver=False
+                is_receiver=False,
             ).returns(
-                self.peer_review_records
+                self.peer_review_records,
             )
             for _ in range(self.peer_review.max_review_count):
                 db_peer_review_record.async_func('add_auto').call_with(
                     peer_review_id=self.peer_review.id,
-                    grader_id=context.account.id
+                    grader_id=context.account.id,
                 ).returns(
-                    self.peer_review_record_ids[_]
+                    self.peer_review_record_ids[_],
                 )
 
             result = await mock.unwrap(peer_review.assign_peer_review_record)(self.peer_review_id)
@@ -459,8 +457,8 @@ class TestReadPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
             title='test',
             setter_id=1,
             description=None,
-            start_time=do.datetime.today(),
-            end_time=do.datetime.today(),
+            start_time=datetime.datetime.today(),
+            end_time=datetime.datetime.today(),
             is_deleted=False,
         )
         self.peer_review_record = do.PeerReviewRecord(
@@ -471,7 +469,7 @@ class TestReadPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
             submission_id=1,
             score=5,
             comment='soso',
-            submit_time=None
+            submit_time=None,
         )
         self.submission = do.Submission(
             id=1,
@@ -526,7 +524,7 @@ class TestReadPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
             mock.Context() as context,
         ):
             context.set_account(self.grader)
-            context.set_request_time(do.datetime.today())
+            context.set_request_time(datetime.datetime.today())
 
             service_rbac = controller.mock_module('service.rbac')
             db_peer_review_record = controller.mock_module('persistence.database.peer_review_record')
@@ -538,16 +536,16 @@ class TestReadPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
                 context.account.id, peer_review_record_id=self.peer_review_record_id,
             ).returns(enum.RoleType.normal)
             db_peer_review_record.async_func('read').call_with(self.peer_review_record_id).returns(
-                self.peer_review_record
+                self.peer_review_record,
             )
             db_peer_review.async_func('read').call_with(peer_review_id=self.peer_review_id).returns(
-                self.peer_review
+                self.peer_review,
             )
             db_challenge.async_func('read').call_with(challenge_id=self.peer_review_id).returns(
-                self.challenge
+                self.challenge,
             )
             db_submission.async_func('read').call_with(submission_id=self.peer_review_record.submission_id).returns(
-                self.submission
+                self.submission,
             )
 
             result = await mock.unwrap(peer_review.read_peer_review_record)(self.peer_review_record_id)
@@ -560,7 +558,7 @@ class TestReadPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
             mock.Context() as context,
         ):
             context.set_account(self.receiver)
-            context.set_request_time(do.datetime.today())
+            context.set_request_time(datetime.datetime.today())
 
             service_rbac = controller.mock_module('service.rbac')
             db_peer_review_record = controller.mock_module('persistence.database.peer_review_record')
@@ -572,16 +570,16 @@ class TestReadPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
                 context.account.id, peer_review_record_id=self.peer_review_record_id,
             ).returns(enum.RoleType.normal)
             db_peer_review_record.async_func('read').call_with(self.peer_review_record_id).returns(
-                self.peer_review_record
+                self.peer_review_record,
             )
             db_peer_review.async_func('read').call_with(peer_review_id=self.peer_review_id).returns(
-                self.peer_review
+                self.peer_review,
             )
             db_challenge.async_func('read').call_with(challenge_id=self.peer_review_id).returns(
-                self.challenge
+                self.challenge,
             )
             db_submission.async_func('read').call_with(submission_id=self.peer_review_record.submission_id).returns(
-                self.submission
+                self.submission,
             )
 
             result = await mock.unwrap(peer_review.read_peer_review_record)(self.peer_review_record_id)
@@ -594,7 +592,7 @@ class TestReadPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
             mock.Context() as context,
         ):
             context.set_account(self.manager)
-            context.set_request_time(do.datetime.today())
+            context.set_request_time(datetime.datetime.today())
 
             service_rbac = controller.mock_module('service.rbac')
             db_peer_review_record = controller.mock_module('persistence.database.peer_review_record')
@@ -606,16 +604,16 @@ class TestReadPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
                 context.account.id, peer_review_record_id=self.peer_review_record_id,
             ).returns(enum.RoleType.manager)
             db_peer_review_record.async_func('read').call_with(self.peer_review_record_id).returns(
-                self.peer_review_record
+                self.peer_review_record,
             )
             db_peer_review.async_func('read').call_with(peer_review_id=self.peer_review_id).returns(
-                self.peer_review
+                self.peer_review,
             )
             db_challenge.async_func('read').call_with(challenge_id=self.peer_review_id).returns(
-                self.challenge
+                self.challenge,
             )
             db_submission.async_func('read').call_with(submission_id=self.peer_review_record.submission_id).returns(
-                self.submission
+                self.submission,
             )
 
             result = await mock.unwrap(peer_review.read_peer_review_record)(self.peer_review_record_id)
@@ -654,7 +652,7 @@ class TestSubmitPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
             setter_id=1,
             description=None,
             start_time=datetime.datetime.today() - datetime.timedelta(days=5),
-            end_time=do.datetime.today() + datetime.timedelta(days=5),
+            end_time=datetime.datetime.today() + datetime.timedelta(days=5),
             is_deleted=False,
         )
         self.peer_review_record = do.PeerReviewRecord(
@@ -665,7 +663,7 @@ class TestSubmitPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
             submission_id=1,
             score=None,
             comment=None,
-            submit_time=None
+            submit_time=None,
         )
 
     async def test_happy_flow(self):
@@ -685,19 +683,19 @@ class TestSubmitPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
                 context.account.id, peer_review_record_id=self.peer_review_record_id,
             ).returns(enum.RoleType.normal)
             db_peer_review_record.async_func('read').call_with(self.peer_review_record_id).returns(
-                self.peer_review_record
+                self.peer_review_record,
             )
             db_peer_review.async_func('read').call_with(peer_review_id=self.peer_review_id).returns(
-                self.peer_review
+                self.peer_review,
             )
             db_challenge.async_func('read').call_with(challenge_id=self.peer_review_id).returns(
-                self.challenge
+                self.challenge,
             )
             db_peer_review_record.async_func('edit_score').call_with(
                 self.peer_review_record.id, score=self.data.score,
-                comment=self.data.comment, submit_time=context.request_time
+                comment=self.data.comment, submit_time=context.request_time,
             ).returns(
-                self.peer_review_record
+                self.peer_review_record,
             )
 
             result = await mock.unwrap(peer_review.submit_peer_review_record)(self.peer_review_record_id, self.data)
@@ -732,7 +730,7 @@ class TestBrowseAccountReceivedPeerReviewRecord(unittest.IsolatedAsyncioTestCase
             setter_id=1,
             description=None,
             start_time=datetime.datetime.today(),
-            end_time=do.datetime.today(),
+            end_time=datetime.datetime.today(),
             is_deleted=False,
         )
         self.peer_review_records = [
@@ -744,7 +742,7 @@ class TestBrowseAccountReceivedPeerReviewRecord(unittest.IsolatedAsyncioTestCase
                 submission_id=1,
                 score=5,
                 comment='soso',
-                submit_time=None, ),
+                submit_time=None),
             do.PeerReviewRecord(
                 id=2,
                 peer_review_id=1,
@@ -753,7 +751,7 @@ class TestBrowseAccountReceivedPeerReviewRecord(unittest.IsolatedAsyncioTestCase
                 submission_id=2,
                 score=10,
                 comment='great',
-                submit_time=None, ),
+                submit_time=None),
         ]
         self.result = [record.id for record in self.peer_review_records]
 
@@ -774,17 +772,17 @@ class TestBrowseAccountReceivedPeerReviewRecord(unittest.IsolatedAsyncioTestCase
                 context.account.id, peer_review_id=self.peer_review_id,
             ).returns(enum.RoleType.normal)
             db_peer_review.async_func('read').call_with(self.peer_review_id).returns(
-                self.peer_review
+                self.peer_review,
             )
             db_challenge.async_func('read').call_with(challenge_id=self.peer_review_id).returns(
-                self.challenge
+                self.challenge,
             )
             db_peer_review_record.async_func('read_by_peer_review_id').call_with(
                 self.peer_review_id,
                 account_id=self.login_account.id,
                 is_receiver=True,
             ).returns(
-                self.peer_review_records
+                self.peer_review_records,
             )
 
             result = await mock.unwrap(peer_review.browse_account_received_peer_review_record)(self.peer_review_id,
@@ -809,17 +807,17 @@ class TestBrowseAccountReceivedPeerReviewRecord(unittest.IsolatedAsyncioTestCase
                 context.account.id, peer_review_id=self.peer_review_id,
             ).returns(enum.RoleType.manager)
             db_peer_review.async_func('read').call_with(self.peer_review_id).returns(
-                self.peer_review
+                self.peer_review,
             )
             db_challenge.async_func('read').call_with(challenge_id=self.peer_review_id).returns(
-                self.challenge
+                self.challenge,
             )
             db_peer_review_record.async_func('read_by_peer_review_id').call_with(
                 self.peer_review_id,
                 account_id=self.other_account.id,
                 is_receiver=True,
             ).returns(
-                self.peer_review_records
+                self.peer_review_records,
             )
 
             result = await mock.unwrap(peer_review.browse_account_received_peer_review_record)(self.peer_review_id,
@@ -855,7 +853,7 @@ class TestBrowseAccountReviewedPeerReviewRecord(unittest.IsolatedAsyncioTestCase
             setter_id=1,
             description=None,
             start_time=datetime.datetime.today(),
-            end_time=do.datetime.today(),
+            end_time=datetime.datetime.today(),
             is_deleted=False,
         )
         self.peer_review_records = [
@@ -867,7 +865,7 @@ class TestBrowseAccountReviewedPeerReviewRecord(unittest.IsolatedAsyncioTestCase
                 submission_id=1,
                 score=5,
                 comment='soso',
-                submit_time=None, ),
+                submit_time=None),
             do.PeerReviewRecord(
                 id=2,
                 peer_review_id=1,
@@ -876,7 +874,7 @@ class TestBrowseAccountReviewedPeerReviewRecord(unittest.IsolatedAsyncioTestCase
                 submission_id=2,
                 score=10,
                 comment='great',
-                submit_time=None, ),
+                submit_time=None),
         ]
         self.result = [record.id for record in self.peer_review_records]
 
@@ -897,17 +895,17 @@ class TestBrowseAccountReviewedPeerReviewRecord(unittest.IsolatedAsyncioTestCase
                 context.account.id, peer_review_id=self.peer_review_id,
             ).returns(enum.RoleType.normal)
             db_peer_review.async_func('read').call_with(self.peer_review_id).returns(
-                self.peer_review
+                self.peer_review,
             )
             db_challenge.async_func('read').call_with(challenge_id=self.peer_review_id).returns(
-                self.challenge
+                self.challenge,
             )
             db_peer_review_record.async_func('read_by_peer_review_id').call_with(
                 self.peer_review_id,
                 account_id=self.login_account.id,
                 is_receiver=False,
             ).returns(
-                self.peer_review_records
+                self.peer_review_records,
             )
 
             result = await mock.unwrap(peer_review.browse_account_reviewed_peer_review_record)(self.peer_review_id,
@@ -932,17 +930,17 @@ class TestBrowseAccountReviewedPeerReviewRecord(unittest.IsolatedAsyncioTestCase
                 context.account.id, peer_review_id=self.peer_review_id,
             ).returns(enum.RoleType.manager)
             db_peer_review.async_func('read').call_with(self.peer_review_id).returns(
-                self.peer_review
+                self.peer_review,
             )
             db_challenge.async_func('read').call_with(challenge_id=self.peer_review_id).returns(
-                self.challenge
+                self.challenge,
             )
             db_peer_review_record.async_func('read_by_peer_review_id').call_with(
                 self.peer_review_id,
                 account_id=self.other_account.id,
                 is_receiver=False,
             ).returns(
-                self.peer_review_records
+                self.peer_review_records,
             )
 
             result = await mock.unwrap(peer_review.browse_account_reviewed_peer_review_record)(self.peer_review_id,
