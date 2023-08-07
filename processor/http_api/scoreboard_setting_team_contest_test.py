@@ -118,16 +118,6 @@ class TestViewTeamContestScoreboard(unittest.IsolatedAsyncioTestCase):
                                          for team_problem_data in self.team_problem_datas[team.id]),
                 ) for team in self.teams
         ]
-        self.scoreboard_system_exception = do.Scoreboard(
-            id=2,
-            challenge_id=2,
-            challenge_label='label2',
-            title='title2',
-            target_problem_ids=[3, 4],
-            is_deleted=False,
-            type=None,
-            setting_id=2,
-        )
 
     async def test_happy_flow(self):
         with (
@@ -140,14 +130,14 @@ class TestViewTeamContestScoreboard(unittest.IsolatedAsyncioTestCase):
             service_scoreboard = controller.mock_module('service.scoreboard')
             db_scoreboard = controller.mock_module('persistence.database.scoreboard')
             db_scoreboard_setting_team_contest = controller.mock_module(
-                'persistence.database.scoreboard_setting_team_contest'
+                'persistence.database.scoreboard_setting_team_contest',
             )
             db_challenge = controller.mock_module('persistence.database.challenge')
             db_team = controller.mock_module('persistence.database.team')
             db_judgment = controller.mock_module('persistence.database.judgment')
 
             service_rbac.async_func('validate_class').call_with(
-                self.login_account.id, enum.RoleType.normal, scoreboard_id=self.scoreboard_id
+                self.login_account.id, enum.RoleType.normal, scoreboard_id=self.scoreboard_id,
             ).returns(True)
             db_scoreboard.async_func('read').call_with(self.scoreboard_id).returns(
                 self.scoreboard_contest,
@@ -162,7 +152,7 @@ class TestViewTeamContestScoreboard(unittest.IsolatedAsyncioTestCase):
             )
             db_team.async_func('browse_with_team_label_filter').call_with(
                 class_id=self.challenge.class_id,
-                team_label_filter=self.setting_data.team_label_filter
+                team_label_filter=self.setting_data.team_label_filter,
             ).returns(self.teams)
 
             db_challenge.async_func('read').call_with(self.scoreboard_contest.challenge_id).returns(
@@ -172,7 +162,7 @@ class TestViewTeamContestScoreboard(unittest.IsolatedAsyncioTestCase):
             for problem_id in self.scoreboard_contest.target_problem_ids:
 
                 db_judgment.async_func('get_class_all_team_all_submission_verdict').call_with(
-                    problem_id=problem_id, class_id=self.challenge.class_id, team_ids=[team.id for team in self.teams]
+                    problem_id=problem_id, class_id=self.challenge.class_id, team_ids=[team.id for team in self.teams],
                 ).returns(self.verdict)
 
                 for team_id in self.team_problem_datas:
@@ -184,7 +174,7 @@ class TestViewTeamContestScoreboard(unittest.IsolatedAsyncioTestCase):
                         ).returns(5)
 
             result = await mock.unwrap(scoreboard_setting_team_contest.view_team_contest_scoreboard)(
-                scoreboard_id=self.scoreboard_id
+                scoreboard_id=self.scoreboard_id,
             )
 
         self.assertEqual(result, self.output)
@@ -200,7 +190,7 @@ class TestViewTeamContestScoreboard(unittest.IsolatedAsyncioTestCase):
             db_scoreboard = controller.mock_module('persistence.database.scoreboard')
 
             service_rbac.async_func('validate_class').call_with(
-                self.login_account.id, enum.RoleType.normal, scoreboard_id=self.scoreboard_id
+                self.login_account.id, enum.RoleType.normal, scoreboard_id=self.scoreboard_id,
             ).returns(True)
             db_scoreboard.async_func('read').call_with(self.scoreboard_id).returns(
                 self.scoreboard_project,
@@ -208,7 +198,7 @@ class TestViewTeamContestScoreboard(unittest.IsolatedAsyncioTestCase):
 
             with self.assertRaises(exc.IllegalInput):
                 await mock.unwrap(scoreboard_setting_team_contest.view_team_contest_scoreboard)(
-                    scoreboard_id=self.scoreboard_id
+                    scoreboard_id=self.scoreboard_id,
                 )
 
     async def test_no_permission(self):
@@ -221,12 +211,12 @@ class TestViewTeamContestScoreboard(unittest.IsolatedAsyncioTestCase):
             service_rbac = controller.mock_module('service.rbac')
 
             service_rbac.async_func('validate_class').call_with(
-                self.login_account.id, enum.RoleType.normal, scoreboard_id=self.scoreboard_id
+                self.login_account.id, enum.RoleType.normal, scoreboard_id=self.scoreboard_id,
             ).returns(False)
 
             with self.assertRaises(exc.NoPermission):
                 await mock.unwrap(scoreboard_setting_team_contest.view_team_contest_scoreboard)(
-                    scoreboard_id=self.scoreboard_id
+                    scoreboard_id=self.scoreboard_id,
                 )
 
 
@@ -240,7 +230,7 @@ class TestEditTeamContestScoreboard(unittest.IsolatedAsyncioTestCase):
             title='title',
             target_problem_ids=[1, 2],
             penalty_formula='formula',
-            team_label_filter='filter'
+            team_label_filter='filter',
         )
 
     async def test_happy_flow(self):
@@ -253,14 +243,14 @@ class TestEditTeamContestScoreboard(unittest.IsolatedAsyncioTestCase):
             service_rbac = controller.mock_module('service.rbac')
             service_scoreboard = controller.mock_module('service.scoreboard')
             db_scoreboard_setting_team_contest = controller.mock_module(
-                'persistence.database.scoreboard_setting_team_contest'
+                'persistence.database.scoreboard_setting_team_contest',
             )
             service_rbac.async_func('validate_class').call_with(
-                self.login_account.id, enum.RoleType.manager, scoreboard_id=self.scoreboard_id
+                self.login_account.id, enum.RoleType.manager, scoreboard_id=self.scoreboard_id,
             ).returns(True)
 
             service_scoreboard.func('validate_penalty_formula').call_with(
-                formula=self.input.penalty_formula
+                formula=self.input.penalty_formula,
             ).returns(True)
 
             db_scoreboard_setting_team_contest.async_func('edit_with_scoreboard').call_with(
@@ -287,7 +277,7 @@ class TestEditTeamContestScoreboard(unittest.IsolatedAsyncioTestCase):
             service_scoreboard = controller.mock_module('service.scoreboard')
 
             service_rbac.async_func('validate_class').call_with(
-                self.login_account.id, enum.RoleType.manager, scoreboard_id=self.scoreboard_id
+                self.login_account.id, enum.RoleType.manager, scoreboard_id=self.scoreboard_id,
             ).returns(True)
 
             service_scoreboard.func('validate_penalty_formula').call_with(
@@ -310,7 +300,7 @@ class TestEditTeamContestScoreboard(unittest.IsolatedAsyncioTestCase):
             service_rbac = controller.mock_module('service.rbac')
 
             service_rbac.async_func('validate_class').call_with(
-                self.login_account.id, enum.RoleType.manager, scoreboard_id=self.scoreboard_id
+                self.login_account.id, enum.RoleType.manager, scoreboard_id=self.scoreboard_id,
             ).returns(False)
 
             with self.assertRaises(exc.NoPermission):
