@@ -1,5 +1,4 @@
-from datetime import datetime
-
+from datetime import datetime, timedelta
 import unittest
 
 from base import enum, do
@@ -14,34 +13,8 @@ class TestViewTeamContestScoreboard(unittest.IsolatedAsyncioTestCase):
 
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
         self.scoreboard_id = 1
-        self.time = datetime.now()
+        self.time = datetime(2023, 7, 29, 12, 0, 0)
 
-        self.scoreboard_project = do.Scoreboard(
-            id=1,
-            challenge_id=1,
-            challenge_label='label',
-            title='title',
-            target_problem_ids=[1, 2],
-            is_deleted=False,
-            type=enum.ScoreboardType.team_project,
-            setting_id=1,
-        )
-        self.output_project = scoreboard.ReadScoreboardOutput(
-            id=self.scoreboard_project.id,
-            challenge_id=self.scoreboard_project.challenge_id,
-            challenge_label=self.scoreboard_project.challenge_label,
-            title=self.scoreboard_project.title,
-            target_problem_ids=self.scoreboard_project.target_problem_ids,
-            is_deleted=self.scoreboard_project.is_deleted,
-            type=self.scoreboard_project.type,
-            data=do.ScoreboardSettingTeamProject(
-                id=1,
-                scoring_formula='formula',
-                baseline_team_id=1,
-                rank_by_total_score=True,
-                team_label_filter='filter',
-            ),
-        )
         self.scoreboard_contest = do.Scoreboard(
             id=2,
             challenge_id=2,
@@ -52,19 +25,20 @@ class TestViewTeamContestScoreboard(unittest.IsolatedAsyncioTestCase):
             type=enum.ScoreboardType.team_contest,
             setting_id=2,
         )
-        self.output_contest = scoreboard.ReadScoreboardOutput(
-            id=self.scoreboard_contest.id,
-            challenge_id=self.scoreboard_contest.challenge_id,
-            challenge_label=self.scoreboard_contest.challenge_label,
-            title=self.scoreboard_contest.title,
-            target_problem_ids=self.scoreboard_contest.target_problem_ids,
-            is_deleted=self.scoreboard_contest.is_deleted,
-            type=self.scoreboard_contest.type,
-            data=do.ScoreboardSettingTeamContest(
-                id=1,
-                penalty_formula='formula',
-                team_label_filter='filter',
-            ),
+        self.scoreboard_project = do.Scoreboard(
+            id=2,
+            challenge_id=2,
+            challenge_label='label2',
+            title='title2',
+            target_problem_ids=[3, 4],
+            is_deleted=False,
+            type=enum.ScoreboardType.team_project,
+            setting_id=2,
+        )
+        self.setting_data = do.ScoreboardSettingTeamContest(
+            id=1,
+            penalty_formula='solved_time_mins + wrong_submissions',
+            team_label_filter='filter',
         )
         self.challenge = do.Challenge(
             id=1,
@@ -91,6 +65,59 @@ class TestViewTeamContestScoreboard(unittest.IsolatedAsyncioTestCase):
             label='label2',
             is_deleted=False,
         )]
+        self.team_problem_datas = {1: [scoreboard_setting_team_contest.ViewTeamContestScoreboardProblemScoreOutput(
+            problem_id=3,
+            submit_count=1,
+            is_solved=True,
+            solve_time=5,
+            is_first=True,
+            penalty=5,
+            submission_id=1,
+        ), scoreboard_setting_team_contest.ViewTeamContestScoreboardProblemScoreOutput(
+            problem_id=4,
+            submit_count=1,
+            is_solved=True,
+            solve_time=5,
+            is_first=True,
+            penalty=5,
+            submission_id=1,
+        )], 2: [scoreboard_setting_team_contest.ViewTeamContestScoreboardProblemScoreOutput(
+            problem_id=3,
+            submit_count=1,
+            is_solved=False,
+            solve_time=0,
+            is_first=False,
+            penalty=0,
+            submission_id=2,
+        ), scoreboard_setting_team_contest.ViewTeamContestScoreboardProblemScoreOutput(
+            problem_id=4,
+            submit_count=1,
+            is_solved=False,
+            solve_time=0,
+            is_first=False,
+            penalty=0,
+            submission_id=2,
+        )]
+                                   }
+        self.verdict = [
+            (1, 1, self.time+timedelta(minutes=5), enum.VerdictType.accepted),
+            (2, 2, self.time+timedelta(minutes=10), enum.VerdictType.wrong_answer)
+        ]
+        self.first_solve_team_id = 1
+        self.team_solve_mins = {1: 5}
+        self.team_wa_count = {2: 1},
+        self.team_submit_count = {1: 1, 2: 1}
+        self.team_submission_id = {1: 1, 2: 2}
+        self.output = [
+            scoreboard_setting_team_contest.ViewTeamContestScoreboardOutput(
+                team_id=team.id,
+                team_name=team.name,
+                target_problem_data=self.team_problem_datas[team.id],
+                total_penalty=sum(problem_penalty.penalty for problem_penalty in self.team_problem_datas[team.id]),
+                solved_problem_count=sum(team_problem_data.is_solved
+                                         for team_problem_data in self.team_problem_datas[team.id]),
+                ) for team in self.teams
+        ]
         self.scoreboard_system_exception = do.Scoreboard(
             id=2,
             challenge_id=2,
@@ -110,22 +137,24 @@ class TestViewTeamContestScoreboard(unittest.IsolatedAsyncioTestCase):
             context.set_account(self.login_account)
 
             service_rbac = controller.mock_module('service.rbac')
+            service_scoreboard = controller.mock_module('service.scoreboard')
             db_scoreboard = controller.mock_module('persistence.database.scoreboard')
             db_scoreboard_setting_team_contest = controller.mock_module(
                 'persistence.database.scoreboard_setting_team_contest'
             )
             db_challenge = controller.mock_module('persistence.database.challenge')
             db_team = controller.mock_module('persistence.database.team')
+            db_judgment = controller.mock_module('persistence.database.judgment')
 
             service_rbac.async_func('validate_class').call_with(
                 self.login_account.id, enum.RoleType.normal, scoreboard_id=self.scoreboard_id
             ).returns(True)
-            db_scoreboard.async_func('read').call_with(scoreboard_id=self.scoreboard_id).returns(
+            db_scoreboard.async_func('read').call_with(self.scoreboard_id).returns(
                 self.scoreboard_contest,
             )
 
             db_scoreboard_setting_team_contest.async_func('read').call_with(self.scoreboard_contest.setting_id).returns(
-                self.output_contest.data,
+                self.setting_data,
             )
 
             db_challenge.async_func('read').call_with(challenge_id=self.scoreboard_contest.challenge_id).returns(
@@ -133,18 +162,34 @@ class TestViewTeamContestScoreboard(unittest.IsolatedAsyncioTestCase):
             )
             db_team.async_func('browse_with_team_label_filter').call_with(
                 class_id=self.challenge.class_id,
-                team_label_filter=self.output_contest.data.team_label_filter
+                team_label_filter=self.setting_data.team_label_filter
             ).returns(self.teams)
 
-            db_challenge.async_func('read').call_with(challenge_id=self.scoreboard_contest.challenge_id).returns(
+            db_challenge.async_func('read').call_with(self.scoreboard_contest.challenge_id).returns(
                 self.challenge,
             )
 
-            result = await mock.unwrap(scoreboard.read_scoreboard)(scoreboard_id=self.scoreboard_id)
+            for problem_id in self.scoreboard_contest.target_problem_ids:
 
-        self.assertEqual(result, self.output_project)
+                db_judgment.async_func('get_class_all_team_all_submission_verdict').call_with(
+                    problem_id=problem_id, class_id=self.challenge.class_id, team_ids=[team.id for team in self.teams]
+                ).returns(self.verdict)
 
-    async def test_happy_flow_contest(self):
+                for team_id in self.team_problem_datas:
+                    if team_id in self.team_solve_mins:
+                        service_scoreboard.func('calculate_penalty').call_with(
+                            formula=self.setting_data.penalty_formula,
+                            solved_time_mins=self.team_solve_mins[team_id],
+                            wrong_submissions=0,
+                        ).returns(5)
+
+            result = await mock.unwrap(scoreboard_setting_team_contest.view_team_contest_scoreboard)(
+                scoreboard_id=self.scoreboard_id
+            )
+
+        self.assertEqual(result, self.output)
+
+    async def test_illegal_input(self):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
@@ -153,23 +198,18 @@ class TestViewTeamContestScoreboard(unittest.IsolatedAsyncioTestCase):
 
             service_rbac = controller.mock_module('service.rbac')
             db_scoreboard = controller.mock_module('persistence.database.scoreboard')
-            db_scoreboard_setting_team_contest = controller.mock_module(
-                'persistence.database.scoreboard_setting_team_contest'
-            )
 
             service_rbac.async_func('validate_class').call_with(
                 self.login_account.id, enum.RoleType.normal, scoreboard_id=self.scoreboard_id
             ).returns(True)
-            db_scoreboard.async_func('read').call_with(scoreboard_id=self.scoreboard_id).returns(
-                self.scoreboard_contest,
-            )
-            db_scoreboard_setting_team_contest.async_func('read').call_with(self.scoreboard_contest.setting_id).returns(
-                self.output_contest.data,
+            db_scoreboard.async_func('read').call_with(self.scoreboard_id).returns(
+                self.scoreboard_project,
             )
 
-            result = await mock.unwrap(scoreboard.read_scoreboard)(scoreboard_id=self.scoreboard_id)
-
-        self.assertEqual(result, self.output_contest)
+            with self.assertRaises(exc.IllegalInput):
+                await mock.unwrap(scoreboard_setting_team_contest.view_team_contest_scoreboard)(
+                    scoreboard_id=self.scoreboard_id
+                )
 
     async def test_no_permission(self):
         with (
@@ -185,29 +225,7 @@ class TestViewTeamContestScoreboard(unittest.IsolatedAsyncioTestCase):
             ).returns(False)
 
             with self.assertRaises(exc.NoPermission):
-                await mock.unwrap(scoreboard.read_scoreboard)(
-                    scoreboard_id=self.scoreboard_id
-                )
-
-    async def test_system_exception(self):
-        with (
-            mock.Controller() as controller,
-            mock.Context() as context,
-        ):
-            context.set_account(self.login_account)
-
-            service_rbac = controller.mock_module('service.rbac')
-            db_scoreboard = controller.mock_module('persistence.database.scoreboard')
-
-            service_rbac.async_func('validate_class').call_with(
-                self.login_account.id, enum.RoleType.normal, scoreboard_id=self.scoreboard_id
-            ).returns(True)
-            db_scoreboard.async_func('read').call_with(scoreboard_id=self.scoreboard_id).returns(
-                self.scoreboard_system_exception,
-            )
-
-            with self.assertRaises(exc.SystemException):
-                await mock.unwrap(scoreboard.read_scoreboard)(
+                await mock.unwrap(scoreboard_setting_team_contest.view_team_contest_scoreboard)(
                     scoreboard_id=self.scoreboard_id
                 )
 
