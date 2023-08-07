@@ -1,7 +1,5 @@
-from datetime import datetime
-
-import copy
 import unittest
+from datetime import datetime
 
 from base import enum, do
 from util import mock, security, model
@@ -15,7 +13,7 @@ class TestAddAnnouncement(unittest.IsolatedAsyncioTestCase):
 
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
         self.other_login_account = security.AuthedAccount(id=2, cached_username='other')
-        self.time = datetime.now()
+        self.time = datetime(2023, 8, 1, 1, 1, 1)
 
         self.input_data = announcement.AddAnnouncementInput(
             title='test',
@@ -25,10 +23,6 @@ class TestAddAnnouncement(unittest.IsolatedAsyncioTestCase):
             expire_time=self.time,
         )
         self.add_result = model.AddOutput(id=1)
-        self.no_permission_result = {
-            'data': None,
-            'error': exc.NoPermission,
-        }
 
     async def test_happy_flow(self):
         with (
@@ -48,7 +42,7 @@ class TestAddAnnouncement(unittest.IsolatedAsyncioTestCase):
                 content=self.input_data.content,
                 author_id=self.input_data.author_id,
                 post_time=self.input_data.post_time,
-                expire_time=self.input_data.expire_time
+                expire_time=self.input_data.expire_time,
             ).returns(1)
 
             result = await mock.unwrap(announcement.add_announcement)(data=self.input_data)
@@ -75,7 +69,7 @@ class TestBrowseAnnouncement(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
 
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
-        self.time = datetime.now()
+        self.time = datetime(2023, 8, 1, 1, 1, 1)
 
         self.browse_announcement_columns = {
             'id': int,
@@ -84,7 +78,7 @@ class TestBrowseAnnouncement(unittest.IsolatedAsyncioTestCase):
             'author_id': int,
             'post_time': model.ServerTZDatetime,
             'expire_time': model.ServerTZDatetime,
-            'is_deleted': bool
+            'is_deleted': bool,
         }
         self.limit = 50
         self.offset = 0
@@ -113,7 +107,7 @@ class TestBrowseAnnouncement(unittest.IsolatedAsyncioTestCase):
         self.expected_output_total_count = 2
         self.browse_result = model.BrowseOutputBase(
             data=self.expected_output_data,
-            total_count=self.expected_output_total_count
+            total_count=self.expected_output_total_count,
         )
 
     async def test_happy_flow_manager(self):
@@ -136,7 +130,7 @@ class TestBrowseAnnouncement(unittest.IsolatedAsyncioTestCase):
                 filters=model.parse_filter(self.filter, self.browse_announcement_columns),
                 sorters=model.parse_sorter(self.sort, self.browse_announcement_columns),
                 exclude_scheduled=False,
-                ref_time=self.time
+                ref_time=self.time,
             ).returns((self.expected_output_data, self.expected_output_total_count))
 
             result = await mock.unwrap(announcement.browse_announcement)(
@@ -168,7 +162,7 @@ class TestBrowseAnnouncement(unittest.IsolatedAsyncioTestCase):
                 filters=model.parse_filter(self.filter, self.browse_announcement_columns),
                 sorters=model.parse_sorter(self.sort, self.browse_announcement_columns),
                 exclude_scheduled=True,
-                ref_time=self.time
+                ref_time=self.time,
             ).returns((self.expected_output_data, self.expected_output_total_count))
 
             result = await mock.unwrap(announcement.browse_announcement)(
@@ -207,7 +201,7 @@ class TestReadAnnouncement(unittest.IsolatedAsyncioTestCase):
 
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
 
-        self.time = datetime.now()
+        self.time = datetime(2023, 8, 1, 1, 1, 1)
 
         self.announcement_id = 1
 
@@ -297,7 +291,7 @@ class TestEditAnnouncement(unittest.IsolatedAsyncioTestCase):
 
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
 
-        self.time = datetime.now()
+        self.time = datetime(2023, 8, 1, 1, 1, 1)
 
         self.announcement_id = 1
 
@@ -361,7 +355,7 @@ class TestDeleteAnnouncement(unittest.IsolatedAsyncioTestCase):
 
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
 
-        self.time = datetime.now()
+        self.time = datetime(2023, 8, 1, 1, 1, 1)
 
         self.announcement_id = 1
 
