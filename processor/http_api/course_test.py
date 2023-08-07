@@ -30,7 +30,7 @@ class TestAddCourse(unittest.IsolatedAsyncioTestCase):
                 context.account.id, enum.RoleType.manager,
             ).returns(True)
             db_course.async_func('add').call_with(name=self.data.name, course_type=self.data.type).returns(
-                self.course_id
+                self.course_id,
             )
 
             result = await mock.unwrap(course.add_course)(data=self.data)
@@ -61,10 +61,10 @@ class TestReadCourse(unittest.IsolatedAsyncioTestCase):
             db_course = controller.mock_module('persistence.database.course')
 
             service_rbac.async_func('get_system_role').call_with(
-                context.account.id
+                context.account.id,
             ).returns(enum.RoleType.normal)
             db_course.async_func('read').call_with(self.course_id).returns(
-                self.course
+                self.course,
             )
 
             result = await mock.unwrap(course.read_course)(course_id=self.course_id)
@@ -82,10 +82,10 @@ class TestReadCourse(unittest.IsolatedAsyncioTestCase):
             db_course = controller.mock_module('persistence.database.course')
 
             service_rbac.async_func('get_system_role').call_with(
-                context.account.id
+                context.account.id,
             ).returns(enum.RoleType.manager)
             db_course.async_func('read').call_with(self.course_id).returns(
-                self.course
+                self.course,
             )
 
             result = await mock.unwrap(course.read_course)(course_id=self.course_id)
@@ -126,10 +126,10 @@ class TestBrowseAllCourse(unittest.IsolatedAsyncioTestCase):
             db_course = controller.mock_module('persistence.database.course')
 
             service_rbac.async_func('get_system_role').call_with(
-                context.account.id
+                context.account.id,
             ).returns(enum.RoleType.normal)
             db_course.async_func('browse').call_with().returns(
-                self.courses
+                self.courses,
             )
 
             result = await mock.unwrap(course.browse_all_course)()
@@ -147,10 +147,10 @@ class TestBrowseAllCourse(unittest.IsolatedAsyncioTestCase):
             db_course = controller.mock_module('persistence.database.course')
 
             service_rbac.async_func('get_system_role').call_with(
-                context.account.id
+                context.account.id,
             ).returns(enum.RoleType.manager)
             db_course.async_func('browse').call_with().returns(
-                self.courses
+                self.courses,
             )
 
             result = await mock.unwrap(course.browse_all_course)()
@@ -240,7 +240,7 @@ class TestAddClassUnderCourse(unittest.IsolatedAsyncioTestCase):
                 name=self.data.name,
                 course_id=self.course_id,
             ).returns(
-                self.class_id
+                self.class_id,
             )
 
             result = await mock.unwrap(course.add_class_under_course)(course_id=self.course_id, data=self.data)
