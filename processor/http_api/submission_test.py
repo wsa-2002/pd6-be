@@ -247,7 +247,7 @@ class TestSubmit(unittest.IsolatedAsyncioTestCase):
             content_file_uuid=UUID('d8ec7a6a-27e1-4cee-8229-4304ef933544'),
             content_length=0,
             filename="filename",
-            submit_time=self.request_time
+            submit_time=self.request_time,
         )
 
         self.content_file = UploadFile(filename="filename")
@@ -471,18 +471,18 @@ class TestBrowseSubmission(unittest.IsolatedAsyncioTestCase):
         self.account = security.AuthedAccount(id=1, cached_username='self')
         self.account_other = security.AuthedAccount(id=2, cached_username='other')
 
-        self.limit = 20
-        self.offset = 0
-        self.filter = {}
-        self.sort = {}
+        self.limit = model.Limit(20)
+        self.offset = model.Offset(0)
+        self.filter = model.FilterStr
+        self.sort = model.SorterStr
 
         self.BROWSE_SUBMISSION_COLUMNS = submission.BROWSE_SUBMISSION_COLUMNS
-        self.filters = model.parse_filter(self.filter, self.BROWSE_SUBMISSION_COLUMNS)
+        self.filters = []
         self.filters_before_append = self.filters
         self.filters.append(popo.Filter(col_name='account_id',
                                         op=enum.FilterOperator.eq,
                                         value=self.account.id))
-        self.sorters = model.parse_sorter(self.sort, self.BROWSE_SUBMISSION_COLUMNS)
+        self.sorters = []
 
         self.submissions = [
             do.Submission(
@@ -493,7 +493,7 @@ class TestBrowseSubmission(unittest.IsolatedAsyncioTestCase):
                 content_file_uuid=UUID('d8ec7a6a-27e1-4cee-8229-4304ef933544'),
                 content_length=0,
                 filename="filename",
-                submit_time=datetime(2023, 7, 29, 12)
+                submit_time=datetime(2023, 7, 29, 12),
             ),
             do.Submission(
                 id=2,
@@ -503,7 +503,7 @@ class TestBrowseSubmission(unittest.IsolatedAsyncioTestCase):
                 content_file_uuid=UUID('d8ec7a6a-27e1-4cee-8229-4304ef933544'),
                 content_length=0,
                 filename="filename",
-                submit_time=datetime(2023, 7, 29, 12)
+                submit_time=datetime(2023, 7, 29, 12),
             ),
         ]
         self.total_count = len(self.submissions)
@@ -518,12 +518,12 @@ class TestBrowseSubmission(unittest.IsolatedAsyncioTestCase):
             context.set_account(self.account)
 
             db_submission = controller.mock_module('persistence.database.submission')
-            model = controller.mock_module('util.model')
+            util_model = controller.mock_module('util.model')
 
-            model.func('parse_filter').call_with(
+            util_model.func('parse_filter').call_with(
                 self.filter, self.BROWSE_SUBMISSION_COLUMNS,
             ).returns(self.filters_before_append)
-            model.func('parse_sorter').call_with(
+            util_model.func('parse_sorter').call_with(
                 self.sort, self.BROWSE_SUBMISSION_COLUMNS,
             ).returns(self.sorters)
 
@@ -533,7 +533,7 @@ class TestBrowseSubmission(unittest.IsolatedAsyncioTestCase):
             ).returns(
                 (self.submissions, self.total_count),
             )
-            model.func('BrowseOutputBase').call_with(
+            util_model.func('BrowseOutputBase').call_with(
                 self.submissions, total_count=self.total_count,
             ).returns(self.expected_happy_flow_result)
 
@@ -557,7 +557,7 @@ class TestBatchGetSubmissionJudgment(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         self.account = security.AuthedAccount(id=1, cached_username='self')
 
-        self.submission_ids_json = {"submission_ids": [1, 2, ]}
+        self.submission_ids_json = None
         self.submission_ids = [1, 2, ]
         self.submission_ids_empty = []
 
@@ -594,11 +594,11 @@ class TestBatchGetSubmissionJudgment(unittest.IsolatedAsyncioTestCase):
         ):
             context.set_account(self.account)
 
-            pydantic = controller.mock_module('pydantic.tools')
+            pydantic_tools = controller.mock_module('pydantic.tools')
             db_judgment = controller.mock_module('persistence.database.judgment')
             service_rbac = controller.mock_module('service.rbac')
 
-            pydantic.func('parse_obj_as').call_with(
+            pydantic_tools.func('parse_obj_as').call_with(
                 list[int], self.submission_ids_json,
             ).returns(self.submission_ids)
             service_rbac.async_func('validate_system').call_with(
@@ -619,10 +619,10 @@ class TestBatchGetSubmissionJudgment(unittest.IsolatedAsyncioTestCase):
         ):
             context.set_account(self.account)
 
-            pydantic = controller.mock_module('pydantic.tools')
+            pydantic_tools = controller.mock_module('pydantic.tools')
             service_rbac = controller.mock_module('service.rbac')
 
-            pydantic.func('parse_obj_as').call_with(
+            pydantic_tools.func('parse_obj_as').call_with(
                 list[int], self.submission_ids_json,
             ).returns(self.submission_ids)
             service_rbac.async_func('validate_system').call_with(
@@ -639,9 +639,9 @@ class TestBatchGetSubmissionJudgment(unittest.IsolatedAsyncioTestCase):
         ):
             context.set_account(self.account)
 
-            pydantic = controller.mock_module('pydantic.tools')
+            pydantic_tools = controller.mock_module('pydantic.tools')
 
-            pydantic.func('parse_obj_as').call_with(
+            pydantic_tools.func('parse_obj_as').call_with(
                 list[int], self.submission_ids_json,
             ).returns(self.submission_ids_empty)
 
@@ -663,7 +663,7 @@ class TestReadSubmission(unittest.IsolatedAsyncioTestCase):
             content_file_uuid=UUID('d8ec7a6a-27e1-4cee-8229-4304ef933544'),
             content_length=0,
             filename="filename",
-            submit_time=datetime(2023, 7, 29, 12)
+            submit_time=datetime(2023, 7, 29, 12),
         )
 
         self.expected_happy_flow_result = self.submission
@@ -741,7 +741,7 @@ class TestBrowseAllSubmissionJudgment(unittest.IsolatedAsyncioTestCase):
             content_file_uuid=UUID('d8ec7a6a-27e1-4cee-8229-4304ef933544'),
             content_length=0,
             filename="filename",
-            submit_time=datetime(2023, 7, 29, 12)
+            submit_time=datetime(2023, 7, 29, 12),
         )
         self.judgments = [
             do.Judgment(
@@ -821,7 +821,7 @@ class TestReadSubmissionLatestJudgment(unittest.IsolatedAsyncioTestCase):
             content_file_uuid=UUID('d8ec7a6a-27e1-4cee-8229-4304ef933544'),
             content_length=0,
             filename="filename",
-            submit_time=datetime(2023, 7, 29, 12)
+            submit_time=datetime(2023, 7, 29, 12),
         )
         self.judgment = do.Judgment(
             id=1,
@@ -915,7 +915,7 @@ class TestRejudgeSubmission(unittest.IsolatedAsyncioTestCase):
             content_file_uuid=UUID('d8ec7a6a-27e1-4cee-8229-4304ef933544'),
             content_length=0,
             filename="filename",
-            submit_time=datetime(2023, 7, 29, 12)
+            submit_time=datetime(2023, 7, 29, 12),
         )
 
     async def test_happy_flow_self(self):
