@@ -197,7 +197,6 @@ class TestEditTestcase(unittest.IsolatedAsyncioTestCase):
             label='test',
         )
 
-
     async def test_happy_flow(self):
         with (
             mock.Controller() as controller,
@@ -209,12 +208,12 @@ class TestEditTestcase(unittest.IsolatedAsyncioTestCase):
             db_testcase = controller.mock_module('persistence.database.testcase')
 
             service_rbac.async_func('validate_class').call_with(
-                context.account.id, enum.RoleType.manager, testcase_id=self.testcase_id
+                context.account.id, enum.RoleType.manager, testcase_id=self.testcase_id,
             ).returns(True)
             db_testcase.async_func('edit').call_with(
                 testcase_id=self.testcase_id, is_sample=self.data.is_sample, score=self.data.score,
                 label=self.data.label, time_limit=self.data.time_limit, memory_limit=self.data.memory_limit,
-                is_disabled=self.data.is_disabled, note=self.data.note
+                is_disabled=self.data.is_disabled, note=self.data.note,
             ).returns(None)
 
             result = await mock.unwrap(testcase.edit_testcase)(self.testcase_id, self.data)
@@ -249,13 +248,13 @@ class TestUploadTestcaseInputData(unittest.IsolatedAsyncioTestCase):
             db_testcase = controller.mock_module('persistence.database.testcase')
 
             service_rbac.async_func('validate_class').call_with(
-                context.account.id, enum.RoleType.manager, testcase_id=self.testcase_id
+                context.account.id, enum.RoleType.manager, testcase_id=self.testcase_id,
             ).returns(True)
             util_file.func('replace_cr').call_with(self.input_file.file).returns(self.no_cr_file)
             s3_testdata.async_func('upload').call_with(self.no_cr_file).returns(self.s3_file)
             db_s3_file.async_func('add_with_do').call_with(s3_file=self.s3_file).returns(self.file_id)
             db_testcase.async_func('edit').call_with(
-                testcase_id=self.testcase_id, input_file_uuid=self.file_id, input_filename=self.input_file.filename
+                testcase_id=self.testcase_id, input_file_uuid=self.file_id, input_filename=self.input_file.filename,
             ).returns(None)
 
             result = await mock.unwrap(testcase.upload_testcase_input_data)(self.testcase_id, self.input_file)
@@ -290,13 +289,13 @@ class TestUploadTestcaseOutputData(unittest.IsolatedAsyncioTestCase):
             db_testcase = controller.mock_module('persistence.database.testcase')
 
             service_rbac.async_func('validate_class').call_with(
-                context.account.id, enum.RoleType.manager, testcase_id=self.testcase_id
+                context.account.id, enum.RoleType.manager, testcase_id=self.testcase_id,
             ).returns(True)
             util_file.func('replace_cr').call_with(self.output_file.file).returns(self.no_cr_file)
             s3_testdata.async_func('upload').call_with(self.no_cr_file).returns(self.s3_file)
             db_s3_file.async_func('add_with_do').call_with(s3_file=self.s3_file).returns(self.file_id)
             db_testcase.async_func('edit').call_with(
-                testcase_id=self.testcase_id, output_file_uuid=self.file_id, output_filename=self.output_file.filename
+                testcase_id=self.testcase_id, output_file_uuid=self.file_id, output_filename=self.output_file.filename,
             ).returns(None)
 
             result = await mock.unwrap(testcase.upload_testcase_output_data)(self.testcase_id, self.output_file)
@@ -320,7 +319,7 @@ class TestDeleteTestcase(unittest.IsolatedAsyncioTestCase):
             db_testcase = controller.mock_module('persistence.database.testcase')
 
             service_rbac.async_func('validate_class').call_with(
-                context.account.id, enum.RoleType.manager, testcase_id=self.testcase_id
+                context.account.id, enum.RoleType.manager, testcase_id=self.testcase_id,
             ).returns(True)
             db_testcase.async_func('delete').call_with(testcase_id=self.testcase_id).returns(None)
 
@@ -345,7 +344,7 @@ class TestDeleteTestcaseInputData(unittest.IsolatedAsyncioTestCase):
             db_testcase = controller.mock_module('persistence.database.testcase')
 
             service_rbac.async_func('validate_class').call_with(
-                context.account.id, enum.RoleType.manager, testcase_id=self.testcase_id
+                context.account.id, enum.RoleType.manager, testcase_id=self.testcase_id,
             ).returns(True)
             db_testcase.async_func('delete_input_data').call_with(testcase_id=self.testcase_id).returns(None)
 
@@ -370,7 +369,7 @@ class TestDeleteTestcaseOutputData(unittest.IsolatedAsyncioTestCase):
             db_testcase = controller.mock_module('persistence.database.testcase')
 
             service_rbac.async_func('validate_class').call_with(
-                context.account.id, enum.RoleType.manager, testcase_id=self.testcase_id
+                context.account.id, enum.RoleType.manager, testcase_id=self.testcase_id,
             ).returns(True)
             db_testcase.async_func('delete_output_data').call_with(testcase_id=self.testcase_id).returns(None)
 
