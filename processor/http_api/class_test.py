@@ -59,10 +59,10 @@ class TestBrowseClass(unittest.IsolatedAsyncioTestCase):
             ).returns(True)
 
             model_.func('parse_filter').call_with(self.filter, class_.BROWSE_CLASS_COLUMNS).returns(
-                self.filters
+                self.filters,
             )
             model_.func('parse_sorter').call_with(self.sorter, class_.BROWSE_CLASS_COLUMNS).returns(
-                self.sorters
+                self.sorters,
             )
             db_class.async_func('browse_with_filter').call_with(
                 limit=self.limit, offset=self.offset,
@@ -105,7 +105,7 @@ class TestReadClass(unittest.IsolatedAsyncioTestCase):
                 context.account.id, enum.RoleType.normal,
             ).returns(True)
             db_class.async_func('read').call_with(class_id=self.class_id).returns(
-                self.class_
+                self.class_,
             )
 
             result = await mock.unwrap(class_.read_class)(class_id=self.class_id)
@@ -133,7 +133,7 @@ class TestEditClass(unittest.IsolatedAsyncioTestCase):
             db_class = controller.mock_module('persistence.database.class_')
 
             service_rbac.async_func('validate_inherit').call_with(
-                context.account.id, enum.RoleType.manager, class_id=self.class_id
+                context.account.id, enum.RoleType.manager, class_id=self.class_id,
             ).returns(True)
             db_class.async_func('edit').call_with(
                 class_id=self.class_id,
@@ -162,7 +162,7 @@ class TestDeleteClass(unittest.IsolatedAsyncioTestCase):
             db_class = controller.mock_module('persistence.database.class_')
 
             service_rbac.async_func('validate_system').call_with(
-                context.account.id, enum.RoleType.manager
+                context.account.id, enum.RoleType.manager,
             ).returns(True)
             db_class.async_func('delete').call_with(self.class_id).returns(None)
 
@@ -278,13 +278,13 @@ class TestBrowseClassMember(unittest.IsolatedAsyncioTestCase):
             db_class_vo = controller.mock_module('persistence.database.class_vo')
 
             service_rbac.async_func('validate_class').call_with(
-                context.account.id, enum.RoleType.normal, class_id=self.class_id
+                context.account.id, enum.RoleType.normal, class_id=self.class_id,
             ).returns(True)
             model_.func('parse_filter').call_with(self.filter, class_.BROWSE_CLASS_MEMBER_COLUMNS).returns(
-                self.filters_default
+                self.filters_default,
             )
             model_.func('parse_sorter').call_with(self.sorter, class_.BROWSE_CLASS_MEMBER_COLUMNS).returns(
-                self.sorters
+                self.sorters,
             )
             db_class_vo.async_func('browse_member_account_with_student_card_and_institute').call_with(
                 limit=self.limit, offset=self.offset, filters=self.filters_self, sorters=self.sorters
@@ -320,15 +320,15 @@ class TestBrowseClassMember(unittest.IsolatedAsyncioTestCase):
                 context.account.id, enum.RoleType.manager, class_id=self.class_id
             ).returns(True)
             model_.func('parse_filter').call_with(self.filter, class_.BROWSE_CLASS_MEMBER_COLUMNS).returns(
-                self.filters_default
+                self.filters_default,
             )
             model_.func('parse_sorter').call_with(self.sorter, class_.BROWSE_CLASS_MEMBER_COLUMNS).returns(
-                self.sorters
+                self.sorters,
             )
             db_class_vo.async_func('browse_member_account_with_student_card_and_institute').call_with(
-                limit=self.limit, offset=self.offset, filters=self.filters_self, sorters=self.sorters
+                limit=self.limit, offset=self.offset, filters=self.filters_self, sorters=self.sorters,
             ).returns(
-                (self.data_result, self.total_count)
+                (self.data_result, self.total_count),
             )
 
             model_.func('BrowseOutputBase').call_with(self.result.data, total_count=self.total_count).returns(
@@ -392,7 +392,7 @@ class TestBrowseAllClassMemberWithAccountReferral(unittest.IsolatedAsyncioTestCa
             db_class_vo = controller.mock_module('persistence.database.class_vo')
 
             service_rbac.async_func('validate_class').call_with(
-                context.account.id, enum.RoleType.normal, class_id=self.class_id
+                context.account.id, enum.RoleType.normal, class_id=self.class_id,
             ).returns(True)
             db_class_vo.async_func('browse_class_member_with_account_referral').call_with(
                 class_id=self.class_id,
@@ -415,10 +415,10 @@ class TestBrowseAllClassMemberWithAccountReferral(unittest.IsolatedAsyncioTestCa
             db_class_vo = controller.mock_module('persistence.database.class_vo')
 
             service_rbac.async_func('validate_class').call_with(
-                context.account.id, enum.RoleType.normal, class_id=self.class_id
+                context.account.id, enum.RoleType.normal, class_id=self.class_id,
             ).returns(False)
             service_rbac.async_func('validate_inherit').call_with(
-                context.account.id, enum.RoleType.manager, class_id=self.class_id
+                context.account.id, enum.RoleType.manager, class_id=self.class_id,
             ).returns(True)
             db_class_vo.async_func('browse_class_member_with_account_referral').call_with(
                 class_id=self.class_id,
@@ -490,32 +490,32 @@ class TestReplaceClassMembers(unittest.IsolatedAsyncioTestCase):
             db_class = controller.mock_module('persistence.database.class_')
 
             service_rbac.async_func('validate_inherit').call_with(
-                context.account.id, enum.RoleType.manager, class_id=self.class_id
+                context.account.id, enum.RoleType.manager, class_id=self.class_id,
             ).returns(True)
             db_class.async_func('browse_member_referrals').call_with(
-                class_id=self.class_id, role=enum.RoleType.manager
+                class_id=self.class_id, role=enum.RoleType.manager,
             ).returns(
                 self.cm_before_same,
             )
             db_class.async_func('browse_member_emails').call_with(
-                class_id=self.class_id, role=enum.RoleType.manager
+                class_id=self.class_id, role=enum.RoleType.manager,
             ).returns(
                 self.email_before_same,
             )
 
             db_class.async_func('replace_members').call_with(
-                class_id=self.class_id, member_roles=self.member_roles
+                class_id=self.class_id, member_roles=self.member_roles,
             ).returns(
                 self.result,
             )
 
             db_class.async_func('browse_member_referrals').call_with(
-                class_id=self.class_id, role=enum.RoleType.manager
+                class_id=self.class_id, role=enum.RoleType.manager,
             ).returns(
                 self.cm_after,
             )
             db_class.async_func('browse_member_emails').call_with(
-                class_id=self.class_id, role=enum.RoleType.manager
+                class_id=self.class_id, role=enum.RoleType.manager,
             ).returns(
                 self.email_after,
             )
@@ -538,32 +538,32 @@ class TestReplaceClassMembers(unittest.IsolatedAsyncioTestCase):
             email_notification = controller.mock_module('processor.http_api.class_.email.notification')
 
             service_rbac.async_func('validate_inherit').call_with(
-                context.account.id, enum.RoleType.manager, class_id=self.class_id
+                context.account.id, enum.RoleType.manager, class_id=self.class_id,
             ).returns(True)
             db_class.async_func('browse_member_referrals').call_with(
-                class_id=self.class_id, role=enum.RoleType.manager
+                class_id=self.class_id, role=enum.RoleType.manager,
             ).returns(
                 self.cm_before_diff,
             )
             db_class.async_func('browse_member_emails').call_with(
-                class_id=self.class_id, role=enum.RoleType.manager
+                class_id=self.class_id, role=enum.RoleType.manager,
             ).returns(
                 self.email_before_diff,
             )
 
             db_class.async_func('replace_members').call_with(
-                class_id=self.class_id, member_roles=self.member_roles
+                class_id=self.class_id, member_roles=self.member_roles,
             ).returns(
                 self.result,
             )
 
             db_class.async_func('browse_member_referrals').call_with(
-                class_id=self.class_id, role=enum.RoleType.manager
+                class_id=self.class_id, role=enum.RoleType.manager,
             ).returns(
                 self.cm_after,
             )
             db_class.async_func('browse_member_emails').call_with(
-                class_id=self.class_id, role=enum.RoleType.manager
+                class_id=self.class_id, role=enum.RoleType.manager,
             ).returns(
                 self.email_after,
             )
@@ -602,7 +602,7 @@ class TestDeleteClassMember(unittest.IsolatedAsyncioTestCase):
             db_class = controller.mock_module('persistence.database.class_')
 
             service_rbac.async_func('validate_class').call_with(
-                context.account.id, enum.RoleType.manager, class_id=self.class_id
+                context.account.id, enum.RoleType.manager, class_id=self.class_id,
             ).returns(True)
             db_class.async_func('delete_member').call_with(class_id=self.class_id, member_id=self.member_id).returns(
                 None)
@@ -618,11 +618,11 @@ class TestAddTeamUnderClass(unittest.IsolatedAsyncioTestCase):
         self.class_id = 1
         self.data = class_.AddTeamInput(
             name='team',
-            label='test'
+            label='test',
         )
         self.team_id = 1
         self.result = model.AddOutput(
-            id=self.team_id
+            id=self.team_id,
         )
 
     async def test_happy_flow(self):
@@ -636,14 +636,14 @@ class TestAddTeamUnderClass(unittest.IsolatedAsyncioTestCase):
             db_team = controller.mock_module('persistence.database.team')
 
             service_rbac.async_func('validate_class').call_with(
-                context.account.id, enum.RoleType.manager, class_id=self.class_id
+                context.account.id, enum.RoleType.manager, class_id=self.class_id,
             ).returns(True)
             db_team.async_func('add').call_with(
                 name=self.data.name,
                 class_id=self.class_id,
-                label=self.data.label
+                label=self.data.label,
             ).returns(
-                self.team_id
+                self.team_id,
             )
 
             result = await mock.unwrap(class_.add_team_under_class)(class_id=self.class_id, data=self.data)
@@ -708,10 +708,10 @@ class TestBrowseTeamUnderClass(unittest.IsolatedAsyncioTestCase):
             ).returns(True)
 
             model_.func('parse_filter').call_with(self.filter, class_.BROWSE_TEAM_UNDER_CLASS_COLUMNS).returns(
-                self.filters
+                self.filters,
             )
             model_.func('parse_sorter').call_with(self.sorter, class_.BROWSE_TEAM_UNDER_CLASS_COLUMNS).returns(
-                self.sorters
+                self.sorters,
             )
             db_team.async_func('browse').call_with(
                 limit=self.limit, offset=self.offset,
@@ -796,11 +796,11 @@ class TestBrowseSubmissionUnderClass(unittest.IsolatedAsyncioTestCase):
 
             model_.func('parse_filter').call_with(self.filter,
                                                   class_.BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS).returns(
-                self.filters
+                self.filters,
             )
             model_.func('parse_sorter').call_with(self.sorter,
                                                   class_.BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS).returns(
-                self.sorters
+                self.sorters,
             )
             db_submission.async_func('browse_under_class').call_with(
                 class_id=self.class_id,
