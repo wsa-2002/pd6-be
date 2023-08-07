@@ -594,11 +594,10 @@ class TestBatchGetSubmissionJudgment(unittest.IsolatedAsyncioTestCase):
         ):
             context.set_account(self.account)
 
-            pydantic_tools = controller.mock_module('pydantic.tools')
             db_judgment = controller.mock_module('persistence.database.judgment')
             service_rbac = controller.mock_module('service.rbac')
 
-            pydantic_tools.func('parse_obj_as').call_with(
+            controller.mock_global_func('pydantic.parse_obj_as').call_with(
                 list[int], self.submission_ids_json,
             ).returns(self.submission_ids)
             service_rbac.async_func('validate_system').call_with(
@@ -619,10 +618,9 @@ class TestBatchGetSubmissionJudgment(unittest.IsolatedAsyncioTestCase):
         ):
             context.set_account(self.account)
 
-            pydantic_tools = controller.mock_module('pydantic.tools')
             service_rbac = controller.mock_module('service.rbac')
 
-            pydantic_tools.func('parse_obj_as').call_with(
+            controller.mock_global_func('pydantic.parse_obj_as').call_with(
                 list[int], self.submission_ids_json,
             ).returns(self.submission_ids)
             service_rbac.async_func('validate_system').call_with(
@@ -639,9 +637,7 @@ class TestBatchGetSubmissionJudgment(unittest.IsolatedAsyncioTestCase):
         ):
             context.set_account(self.account)
 
-            pydantic_tools = controller.mock_module('pydantic.tools')
-
-            pydantic_tools.func('parse_obj_as').call_with(
+            controller.mock_global_func('pydantic.parse_obj_as').call_with(
                 list[int], self.submission_ids_json,
             ).returns(self.submission_ids_empty)
 
