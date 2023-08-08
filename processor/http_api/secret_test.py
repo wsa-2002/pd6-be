@@ -418,7 +418,7 @@ class TestResetPassword(unittest.IsolatedAsyncioTestCase):
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
         self.data = secret.ResetPasswordInput(
             code=str(do.UUID('{12345678-1234-5678-1234-567812345678}')),
-            password='123'
+            password='123',
         )
 
         self.pass_hash = 'hash'
