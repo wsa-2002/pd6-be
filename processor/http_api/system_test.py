@@ -7,7 +7,7 @@ from util import mock, security, model
 from . import system
 
 
-class TestReadAccountWithDefaultStudentId(unittest.IsolatedAsyncioTestCase):
+class TestBrowseAccessLog(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
         self.filter = None
