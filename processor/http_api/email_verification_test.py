@@ -9,7 +9,7 @@ from . import email_verification
 class TestResendEmailVerification(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
-        self.other_account = security.AuthedAccount(id=2, cached_username='other')
+        self.other_login_account = security.AuthedAccount(id=2, cached_username='other')
         self.account = do.Account(
             id=self.login_account.id,
             username="user",
@@ -29,13 +29,14 @@ class TestResendEmailVerification(unittest.IsolatedAsyncioTestCase):
             student_id=self.student_card.student_id,
             is_consumed=False,
         )
+        self.code = 'TEST'
 
     async def test_happy_flow_manager(self):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
         ):
-            context.set_account(self.other_account)
+            context.set_account(self.other_login_account)
 
             service_rbac = controller.mock_module('service.rbac')
             db_account = controller.mock_module('persistence.database.account')
@@ -46,32 +47,27 @@ class TestResendEmailVerification(unittest.IsolatedAsyncioTestCase):
                 email_verification_id=self.account.id
             ).returns(self.EmailVerificationResult)
             service_rbac.async_func('validate_system').call_with(
-                self.other_account.id, enum.RoleType.manager,
+                self.other_login_account.id, enum.RoleType.manager,
             ).returns(True)
 
-            db_account.async_func('read').call_with(account_id=self.account.id).returns(self.account)
+            db_account.async_func('read').call_with(self.account.id).returns(self.account)
 
-            code = ''
-            db_email_verification.async_func('read').call_with(
-                email_verification_id=self.account.id
-            ).returns(self.EmailVerificationResult)
-            db_email_verification.async_func('read_verification_code').call_with(
-                mail_verification_id=self.account.id
-            ).returns(code)
+            db_email_verification.async_func('read').call_with(self.account.id).returns(self.EmailVerificationResult)
+            db_email_verification.async_func('read_verification_code').call_with(self.account.id).returns(self.code)
             email_send.async_func('send').call_with(
-                to=self.EmailVerificationResult.email, code=code, username=self.account.username
-            )
+                to=self.EmailVerificationResult.email, code=self.code, username=self.account.username
+            ).returns(None)
 
-            await email_verification.resend_email_verification.__warapped__(
-                email_verification_id=self.account.id
-            )
+            result = await mock.unwrap(email_verification.resend_email_verification)(
+                email_verification_id=self.account.id)
+            self.assertIsNone(result)
 
     async def test_happy_flow_not_manager(self):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
         ):
-            context.set_account(self.other_account)
+            context.set_account(self.login_account)
 
             service_rbac = controller.mock_module('service.rbac')
             db_account = controller.mock_module('persistence.database.account')
@@ -82,31 +78,26 @@ class TestResendEmailVerification(unittest.IsolatedAsyncioTestCase):
                 email_verification_id=self.account.id
             ).returns(self.EmailVerificationResult)
             service_rbac.async_func('validate_system').call_with(
-                self.other_account.id, enum.RoleType.manager,
+                self.login_account.id, enum.RoleType.manager,
             ).returns(False)
 
-            db_account.async_func('read').call_with(account_id=self.account.id).returns(self.account)
+            db_account.async_func('read').call_with(self.account.id).returns(self.account)
 
-            code = ''
-            db_email_verification.async_func('read').call_with(
-                email_verification_id=self.account.id
-            ).returns(self.EmailVerificationResult)
-            db_email_verification.async_func('read_verification_code').call_with(
-                mail_verification_id=self.account.id
-            ).returns(code)
+            db_email_verification.async_func('read').call_with(self.account.id).returns(self.EmailVerificationResult)
+            db_email_verification.async_func('read_verification_code').call_with(self.account.id).returns(self.code)
             email_send.async_func('send').call_with(
-                to=self.EmailVerificationResult.email, code=code, username=self.account.username
-            )
+                to=self.EmailVerificationResult.email, code=self.code, username=self.account.username
+            ).returns(None)
 
-            await email_verification.resend_email_verification.__warapped__(
-                email_verification_id=self.account.id
-            )
+            result = await mock.unwrap(email_verification.resend_email_verification)(
+                email_verification_id=self.account.id)
+            self.assertIsNone(result)
 
 
 class TestDeletePendingEmailVerification(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
-        self.other_account = security.AuthedAccount(id=2, cached_username='other')
+        self.other_login_account = security.AuthedAccount(id=2, cached_username='other')
         self.account = do.Account(
             id=self.login_account.id,
             username="user",
@@ -132,45 +123,37 @@ class TestDeletePendingEmailVerification(unittest.IsolatedAsyncioTestCase):
             mock.Controller() as controller,
             mock.Context() as context,
         ):
-            context.set_account(self.other_account)
+            context.set_account(self.other_login_account)
 
             service_rbac = controller.mock_module('service.rbac')
             db_email_verification_read = controller.mock_module('persistence.database.email_verification')
 
-            db_email_verification_read.async_func('read').call_with(
-                email_verification_id=self.account.id
-            ).returns(self.EmailVerificationResult)
+            db_email_verification_read.async_func('read').call_with(self.account.id).returns(
+                self.EmailVerificationResult)
             service_rbac.async_func('validate_system').call_with(
-                self.other_account.id, enum.RoleType.manager,
+                self.other_login_account.id, enum.RoleType.manager,
             ).returns(True)
-            db_email_verification_read.async_func('delete').call_with(
-                email_verification_id=self.account.id
-            )
+            db_email_verification_read.async_func('delete').call_with(self.account.id).returns(None)
 
-            await email_verification.delete_pending_email_verification.__warapped__(
-                email_verification_id=self.account.id
-            )
+            result = await mock.unwrap(email_verification.delete_pending_email_verification)(self.account.id)
+            self.assertIsNone(result)
 
     async def test_happy_flow_not_manager(self):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
         ):
-            context.set_account(self.other_account)
+            context.set_account(self.login_account)
 
             service_rbac = controller.mock_module('service.rbac')
             db_email_verification_read = controller.mock_module('persistence.database.email_verification')
 
-            db_email_verification_read.async_func('read').call_with(
-                email_verification_id=self.account.id
-            ).returns(self.EmailVerificationResult)
+            db_email_verification_read.async_func('read').call_with(self.account.id).returns(
+                self.EmailVerificationResult)
             service_rbac.async_func('validate_system').call_with(
-                self.other_account.id, enum.RoleType.manager,
+                self.login_account.id, enum.RoleType.manager,
             ).returns(False)
-            db_email_verification_read.async_func('delete').call_with(
-                email_verification_id=self.account.id
-            )
+            db_email_verification_read.async_func('delete').call_with(self.account.id).returns(None)
 
-            await email_verification.delete_pending_email_verification.__warapped__(
-                email_verification_id=self.account.id
-            )
+            result = await mock.unwrap(email_verification.delete_pending_email_verification)(self.account.id)
+            self.assertIsNone(result)
