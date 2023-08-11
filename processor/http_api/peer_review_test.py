@@ -13,6 +13,7 @@ from . import peer_review
 class TestReadPeerReview(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
+        self.today = datetime.datetime(2023, 4, 9)
         self.peer_review_id = 1
         self.peer_review = do.PeerReview(
             id=1,
@@ -35,8 +36,8 @@ class TestReadPeerReview(unittest.IsolatedAsyncioTestCase):
             title='test',
             setter_id=1,
             description=None,
-            start_time=datetime.datetime.today(),
-            end_time=datetime.datetime.today(),
+            start_time=self.today,
+            end_time=self.today,
             is_deleted=False,
         )
         self.result = copy.deepcopy(self.peer_review)
@@ -47,7 +48,7 @@ class TestReadPeerReview(unittest.IsolatedAsyncioTestCase):
             mock.Context() as context,
         ):
             context.set_account(self.login_account)
-            context.set_request_time(datetime.datetime.today() + datetime.timedelta(days=5))
+            context.set_request_time(self.today + datetime.timedelta(days=5))
 
             service_rbac = controller.mock_module('service.rbac')
             db_peer_review = controller.mock_module('persistence.database.peer_review')
@@ -73,7 +74,7 @@ class TestReadPeerReview(unittest.IsolatedAsyncioTestCase):
             mock.Context() as context,
         ):
             context.set_account(self.login_account)
-            context.set_request_time(datetime.datetime.today() - datetime.timedelta(days=5))
+            context.set_request_time(self.today - datetime.timedelta(days=5))
 
             service_rbac = controller.mock_module('service.rbac')
             db_peer_review = controller.mock_module('persistence.database.peer_review')
@@ -99,7 +100,7 @@ class TestReadPeerReview(unittest.IsolatedAsyncioTestCase):
             mock.Context() as context,
         ):
             context.set_account(self.login_account)
-            context.set_request_time(datetime.datetime.today() + datetime.timedelta(days=5))
+            context.set_request_time(self.today + datetime.timedelta(days=5))
 
             service_rbac = controller.mock_module('service.rbac')
             db_peer_review = controller.mock_module('persistence.database.peer_review')
@@ -336,6 +337,7 @@ class TestBrowsePeerReviewRecord(unittest.IsolatedAsyncioTestCase):
 class TestAssignPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
+        self.today = datetime.datetime(2023, 4, 9)
         self.peer_review_id = 1
         self.peer_review = do.PeerReview(
             id=1,
@@ -358,8 +360,8 @@ class TestAssignPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
             title='test',
             setter_id=1,
             description=None,
-            start_time=datetime.datetime.today() - datetime.timedelta(days=5),
-            end_time=datetime.datetime.today() + datetime.timedelta(days=5),
+            start_time=self.today - datetime.timedelta(days=5),
+            end_time=self.today + datetime.timedelta(days=5),
             is_deleted=False,
         )
         self.peer_review_records = [
@@ -393,7 +395,7 @@ class TestAssignPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
             mock.Context() as context,
         ):
             context.set_account(self.login_account)
-            context.set_request_time(datetime.datetime.today())
+            context.set_request_time(self.today)
 
             service_rbac = controller.mock_module('service.rbac')
             db_peer_review = controller.mock_module('persistence.database.peer_review')
@@ -434,6 +436,7 @@ class TestReadPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
         self.manager = security.AuthedAccount(id=1, cached_username='manager')
         self.receiver = security.AuthedAccount(id=2, cached_username='receiver')
         self.grader = security.AuthedAccount(id=3, cached_username='grader')
+        self.today = datetime.datetime(2023, 4, 9)
         self.peer_review_record_id = 1
         self.peer_review_id = 1
         self.peer_review = do.PeerReview(
@@ -457,8 +460,8 @@ class TestReadPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
             title='test',
             setter_id=1,
             description=None,
-            start_time=datetime.datetime.today(),
-            end_time=datetime.datetime.today(),
+            start_time=self.today,
+            end_time=self.today,
             is_deleted=False,
         )
         self.peer_review_record = do.PeerReviewRecord(
@@ -479,7 +482,7 @@ class TestReadPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
             content_file_uuid=do.UUID('{12345678-1234-5678-1234-567812345678}'),
             content_length=1,
             filename='test',
-            submit_time=datetime.datetime.today(),
+            submit_time=self.today,
         )
         self.result_grader = peer_review.ReadPeerReviewRecordOutput(
             id=self.peer_review_record.id,
@@ -524,7 +527,7 @@ class TestReadPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
             mock.Context() as context,
         ):
             context.set_account(self.grader)
-            context.set_request_time(datetime.datetime.today())
+            context.set_request_time(self.today)
 
             service_rbac = controller.mock_module('service.rbac')
             db_peer_review_record = controller.mock_module('persistence.database.peer_review_record')
@@ -558,7 +561,7 @@ class TestReadPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
             mock.Context() as context,
         ):
             context.set_account(self.receiver)
-            context.set_request_time(datetime.datetime.today())
+            context.set_request_time(self.today)
 
             service_rbac = controller.mock_module('service.rbac')
             db_peer_review_record = controller.mock_module('persistence.database.peer_review_record')
@@ -592,7 +595,7 @@ class TestReadPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
             mock.Context() as context,
         ):
             context.set_account(self.manager)
-            context.set_request_time(datetime.datetime.today())
+            context.set_request_time(self.today)
 
             service_rbac = controller.mock_module('service.rbac')
             db_peer_review_record = controller.mock_module('persistence.database.peer_review_record')
@@ -624,6 +627,7 @@ class TestReadPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
 class TestSubmitPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
+        self.today = datetime.datetime(2023, 4, 9)
         self.peer_review_record_id = 1
         self.peer_review_id = 1
         self.data = peer_review.SubmitPeerReviewInput(
@@ -651,8 +655,8 @@ class TestSubmitPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
             title='test',
             setter_id=1,
             description=None,
-            start_time=datetime.datetime.today() - datetime.timedelta(days=5),
-            end_time=datetime.datetime.today() + datetime.timedelta(days=5),
+            start_time=self.today - datetime.timedelta(days=5),
+            end_time=self.today + datetime.timedelta(days=5),
             is_deleted=False,
         )
         self.peer_review_record = do.PeerReviewRecord(
@@ -672,7 +676,7 @@ class TestSubmitPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
             mock.Context() as context,
         ):
             context.set_account(self.login_account)
-            context.set_request_time(datetime.datetime.today())
+            context.set_request_time(self.today)
 
             service_rbac = controller.mock_module('service.rbac')
             db_peer_review_record = controller.mock_module('persistence.database.peer_review_record')
@@ -707,6 +711,7 @@ class TestBrowseAccountReceivedPeerReviewRecord(unittest.IsolatedAsyncioTestCase
     def setUp(self) -> None:
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
         self.other_account = security.AuthedAccount(id=2, cached_username='other')
+        self.today = datetime.datetime(2023, 4, 9)
         self.peer_review_id = 1
         self.peer_review = do.PeerReview(
             id=1,
@@ -729,8 +734,8 @@ class TestBrowseAccountReceivedPeerReviewRecord(unittest.IsolatedAsyncioTestCase
             title='test',
             setter_id=1,
             description=None,
-            start_time=datetime.datetime.today(),
-            end_time=datetime.datetime.today(),
+            start_time=self.today,
+            end_time=self.today,
             is_deleted=False,
         )
         self.peer_review_records = [
@@ -761,7 +766,7 @@ class TestBrowseAccountReceivedPeerReviewRecord(unittest.IsolatedAsyncioTestCase
             mock.Context() as context,
         ):
             context.set_account(self.login_account)
-            context.set_request_time(datetime.datetime.today())
+            context.set_request_time(self.today)
 
             service_rbac = controller.mock_module('service.rbac')
             db_peer_review_record = controller.mock_module('persistence.database.peer_review_record')
@@ -796,7 +801,7 @@ class TestBrowseAccountReceivedPeerReviewRecord(unittest.IsolatedAsyncioTestCase
             mock.Context() as context,
         ):
             context.set_account(self.login_account)
-            context.set_request_time(datetime.datetime.today())
+            context.set_request_time(self.today)
 
             service_rbac = controller.mock_module('service.rbac')
             db_peer_review_record = controller.mock_module('persistence.database.peer_review_record')
@@ -830,6 +835,7 @@ class TestBrowseAccountReviewedPeerReviewRecord(unittest.IsolatedAsyncioTestCase
     def setUp(self) -> None:
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
         self.other_account = security.AuthedAccount(id=2, cached_username='other')
+        self.today = datetime.datetime(2023, 4, 9)
         self.peer_review_id = 1
         self.peer_review = do.PeerReview(
             id=1,
@@ -852,8 +858,8 @@ class TestBrowseAccountReviewedPeerReviewRecord(unittest.IsolatedAsyncioTestCase
             title='test',
             setter_id=1,
             description=None,
-            start_time=datetime.datetime.today(),
-            end_time=datetime.datetime.today(),
+            start_time=self.today,
+            end_time=self.today,
             is_deleted=False,
         )
         self.peer_review_records = [
@@ -884,7 +890,7 @@ class TestBrowseAccountReviewedPeerReviewRecord(unittest.IsolatedAsyncioTestCase
             mock.Context() as context,
         ):
             context.set_account(self.login_account)
-            context.set_request_time(datetime.datetime.today())
+            context.set_request_time(self.today)
 
             service_rbac = controller.mock_module('service.rbac')
             db_peer_review_record = controller.mock_module('persistence.database.peer_review_record')
@@ -919,7 +925,7 @@ class TestBrowseAccountReviewedPeerReviewRecord(unittest.IsolatedAsyncioTestCase
             mock.Context() as context,
         ):
             context.set_account(self.login_account)
-            context.set_request_time(datetime.datetime.today())
+            context.set_request_time(self.today)
 
             service_rbac = controller.mock_module('service.rbac')
             db_peer_review_record = controller.mock_module('persistence.database.peer_review_record')
