@@ -13,6 +13,7 @@ from . import essay_submission
 class TestUploadEssay(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
+        self.today = datetime.datetime(2023, 4, 9)
         self.essay_id = 1
         self.essay_file = UploadFile(...)
         self.essay = do.Essay(
@@ -32,8 +33,8 @@ class TestUploadEssay(unittest.IsolatedAsyncioTestCase):
             title='test',
             setter_id=1,
             description=None,
-            start_time=datetime.datetime.today() - datetime.timedelta(days=5),
-            end_time=datetime.datetime.today() + datetime.timedelta(days=5),
+            start_time=self.today - datetime.timedelta(days=5),
+            end_time=self.today + datetime.timedelta(days=5),
             is_deleted=False,
         )
         self.essay_submission_id = 1
@@ -45,7 +46,7 @@ class TestUploadEssay(unittest.IsolatedAsyncioTestCase):
             mock.Context() as context,
         ):
             context.set_account(self.login_account)
-            context.set_request_time(datetime.datetime.today())
+            context.set_request_time(self.today)
 
             service_rbac = controller.mock_module('service.rbac')
             db_essay = controller.mock_module('persistence.database.essay')
@@ -73,6 +74,7 @@ class TestUploadEssay(unittest.IsolatedAsyncioTestCase):
 class TestBrowseEssaySubmissionByEssayId(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
+        self.today = datetime.datetime(2023, 4, 9)
         self.essay_id = 1
         self.limit = model.Limit(50)
         self.offset = model.Offset(0)
@@ -94,7 +96,7 @@ class TestBrowseEssaySubmissionByEssayId(unittest.IsolatedAsyncioTestCase):
                 essay_id=1,
                 content_file_uuid=do.UUID('{12345678-1234-5678-1234-567812345678}'),
                 filename='test1',
-                submit_time=datetime.datetime.today(),
+                submit_time=self.today,
             ),
             do.EssaySubmission(
                 id=2,
@@ -102,7 +104,7 @@ class TestBrowseEssaySubmissionByEssayId(unittest.IsolatedAsyncioTestCase):
                 essay_id=1,
                 content_file_uuid=do.UUID('{12345678-1234-5678-1234-567812345679}'),
                 filename='test2',
-                submit_time=datetime.datetime.today(),
+                submit_time=self.today,
             ),
         ]
         self.total_count = len(self.essay_submissions)
@@ -114,7 +116,7 @@ class TestBrowseEssaySubmissionByEssayId(unittest.IsolatedAsyncioTestCase):
             mock.Context() as context,
         ):
             context.set_account(self.login_account)
-            context.set_request_time(datetime.datetime.today())
+            context.set_request_time(self.today)
 
             service_rbac = controller.mock_module('service.rbac')
             model_ = controller.mock_module('processor.http_api.essay_submission.model')
@@ -147,6 +149,7 @@ class TestReadEssaySubmission(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
         self.other_account = security.AuthedAccount(id=2, cached_username='manager')
+        self.today = datetime.datetime(2023, 4, 9)
         self.essay_submission_id = 1
         self.essay_submission = do.EssaySubmission(
             id=1,
@@ -154,7 +157,7 @@ class TestReadEssaySubmission(unittest.IsolatedAsyncioTestCase):
             essay_id=1,
             content_file_uuid=do.UUID('{12345678-1234-5678-1234-567812345678}'),
             filename='test1',
-            submit_time=datetime.datetime.today(),
+            submit_time=self.today,
         )
         self.result = copy.deepcopy(self.essay_submission)
 
@@ -164,7 +167,7 @@ class TestReadEssaySubmission(unittest.IsolatedAsyncioTestCase):
             mock.Context() as context,
         ):
             context.set_account(self.login_account)
-            context.set_request_time(datetime.datetime.today())
+            context.set_request_time(self.today)
 
             service_rbac = controller.mock_module('service.rbac')
             db_essay_submission = controller.mock_module('persistence.database.essay_submission')
@@ -186,7 +189,7 @@ class TestReadEssaySubmission(unittest.IsolatedAsyncioTestCase):
             mock.Context() as context,
         ):
             context.set_account(self.other_account)
-            context.set_request_time(datetime.datetime.today())
+            context.set_request_time(self.today)
 
             service_rbac = controller.mock_module('service.rbac')
             db_essay_submission = controller.mock_module('persistence.database.essay_submission')
@@ -206,6 +209,7 @@ class TestReadEssaySubmission(unittest.IsolatedAsyncioTestCase):
 class TestReuploadEssay(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
+        self.today = datetime.datetime(2023, 4, 9)
         self.essay_submission_id = 1
         self.essay_file = UploadFile(...)
         self.essay_submission = do.EssaySubmission(
@@ -214,7 +218,7 @@ class TestReuploadEssay(unittest.IsolatedAsyncioTestCase):
             essay_id=1,
             content_file_uuid=do.UUID('{12345678-1234-5678-1234-567812345678}'),
             filename='test',
-            submit_time=datetime.datetime.today(),
+            submit_time=self.today,
         )
         self.essay = do.Essay(
             id=self.essay_submission.essay_id,
@@ -233,8 +237,8 @@ class TestReuploadEssay(unittest.IsolatedAsyncioTestCase):
             title='test',
             setter_id=1,
             description=None,
-            start_time=datetime.datetime.today() - datetime.timedelta(days=5),
-            end_time=datetime.datetime.today() + datetime.timedelta(days=5),
+            start_time=self.today - datetime.timedelta(days=5),
+            end_time=self.today + datetime.timedelta(days=5),
             is_deleted=False,
         )
         self.result = self.essay_submission_id
@@ -245,7 +249,7 @@ class TestReuploadEssay(unittest.IsolatedAsyncioTestCase):
             mock.Context() as context,
         ):
             context.set_account(self.login_account)
-            context.set_request_time(datetime.datetime.today())
+            context.set_request_time(self.today)
 
             service_rbac = controller.mock_module('service.rbac')
             db_essay_submission = controller.mock_module('persistence.database.essay_submission')
