@@ -23,6 +23,7 @@ class TestReadJudgment(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
         self.other_account = security.AuthedAccount(id=2, cached_username='manager')
+        self.today = datetime.datetime(2023, 4, 9)
         self.judgment_id = 1
         self.judgment = do.Judgment(
             id=1,
@@ -32,7 +33,7 @@ class TestReadJudgment(unittest.IsolatedAsyncioTestCase):
             max_memory=100,
             score=10,
             error_message=None,
-            judge_time=datetime.datetime.today(),
+            judge_time=self.today,
         )
         self.submission = do.Submission(
             id=self.judgment.submission_id,
@@ -42,7 +43,7 @@ class TestReadJudgment(unittest.IsolatedAsyncioTestCase):
             content_file_uuid=do.UUID('{12345678-1234-5678-1234-567812345678}'),
             content_length=100,
             filename='test',
-            submit_time=datetime.datetime.today(),
+            submit_time=self.today,
         )
         self.result = copy.deepcopy(self.judgment)
 
@@ -97,6 +98,7 @@ class TestBrowseAllJudgmentJudgeCase(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
         self.other_account = security.AuthedAccount(id=2, cached_username='manager')
+        self.today = datetime.datetime(2023, 4, 9)
         self.judgment_id = 1
         self.judgment = do.Judgment(
             id=1,
@@ -106,7 +108,7 @@ class TestBrowseAllJudgmentJudgeCase(unittest.IsolatedAsyncioTestCase):
             max_memory=100,
             score=10,
             error_message=None,
-            judge_time=datetime.datetime.today(),
+            judge_time=self.today,
         )
         self.submission = do.Submission(
             id=self.judgment.submission_id,
@@ -116,7 +118,7 @@ class TestBrowseAllJudgmentJudgeCase(unittest.IsolatedAsyncioTestCase):
             content_file_uuid=do.UUID('{12345678-1234-5678-1234-567812345678}'),
             content_length=100,
             filename='test',
-            submit_time=datetime.datetime.today(),
+            submit_time=self.today,
         )
         self.judge_case = [
             do.JudgeCase(
