@@ -54,6 +54,7 @@ class TestAddCourse(unittest.IsolatedAsyncioTestCase):
 
             await mock.unwrap(course.add_course)(data=self.data)
 
+
 class TestReadCourse(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
@@ -123,6 +124,7 @@ class TestReadCourse(unittest.IsolatedAsyncioTestCase):
             ).returns(enum.RoleType.guest)
 
             await mock.unwrap(course.read_course)(course_id=self.course_id)
+
 
 class TestBrowseAllCourse(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
@@ -204,6 +206,7 @@ class TestBrowseAllCourse(unittest.IsolatedAsyncioTestCase):
 
             await mock.unwrap(course.browse_all_course)()
 
+
 class TestEditCourse(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
@@ -248,6 +251,7 @@ class TestEditCourse(unittest.IsolatedAsyncioTestCase):
             ).returns(False)
 
             await mock.unwrap(course.edit_course)(course_id=self.course_id, data=self.data)
+
 
 class TestDeleteCourse(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
@@ -339,6 +343,7 @@ class TestAddClassUnderCourse(unittest.IsolatedAsyncioTestCase):
             ).returns(False)
 
             await mock.unwrap(course.add_class_under_course)(course_id=self.course_id, data=self.data)
+
 
 class TestBrowseAllClassUnderCourse(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
