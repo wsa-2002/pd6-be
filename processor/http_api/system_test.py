@@ -2,6 +2,7 @@ import datetime
 import unittest
 
 from base import enum, do
+import exceptions as exc
 from util import mock, security, model
 
 from . import system
@@ -72,3 +73,22 @@ class TestBrowseAccessLog(unittest.IsolatedAsyncioTestCase):
             )
 
         self.assertEqual(result, self.result)
+
+    async def test_no_permission(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission),
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('validate_system').call_with(
+                context.account.id, enum.RoleType.manager,
+            ).returns(False)
+
+            await mock.unwrap(system.browse_access_log)(
+                self.limit, self.offset,
+                self.filter, self.sorter,
+            )
