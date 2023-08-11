@@ -24,10 +24,10 @@ class TestBrowseAccountWithDefaultStudentId(unittest.IsolatedAsyncioTestCase):
             is_deleted=False,
             alternative_email="alternative",
         )
-        self.limit = 50
-        self.offset = 0
-        self.filter_str = {}
-        self.sorter_str = {}
+        self.limit = model.Limit(50)
+        self.offset = model.Offset(0)
+        self.filter_str = model.FilterStr
+        self.sorter_str = model.SorterStr
         self.filters = []
         self.sorters = []
         self.browse_account_columns = {
@@ -89,7 +89,7 @@ class TestBrowseAccountWithDefaultStudentId(unittest.IsolatedAsyncioTestCase):
 
             service_rbac = controller.mock_module('service.rbac')
             db_account_vo = controller.mock_module('persistence.database.account_vo')
-            model_ = controller.mock_module('processor.http_api.account.model')
+            model_ = controller.mock_module('util.model')
 
             service_rbac.async_func('validate_system').call_with(
                 self.login_account.id, enum.RoleType.manager,
@@ -108,6 +108,10 @@ class TestBrowseAccountWithDefaultStudentId(unittest.IsolatedAsyncioTestCase):
                 filters=self.filters,
                 sorters=self.sorters,
             ).returns((self.expected_output_data, self.expected_output_total_count))
+
+            model_.func('BrowseOutputBase').call_with(
+                self.browse_result.data, total_count=self.expected_output_total_count,
+            ).returns(self.browse_result)
 
             result = await mock.unwrap(account.browse_account_with_default_student_id)(
                 limit=self.limit,
@@ -198,7 +202,7 @@ class TestBatchGetAccountWithDefaultStudentId(unittest.IsolatedAsyncioTestCase):
 
             service_rbac = controller.mock_module('service.rbac')
             db_account_vo = controller.mock_module('persistence.database.account_vo')
-            pydantic_ = controller.mock_module('processor.http_api.account.pydantic')
+            pydantic_ = controller.mock_module('processor.http_api.account.pydantic.tools')
 
             pydantic_.func('parse_obj_as').call_with(list[int], self.account_ids_json).returns(
                 self.account_ids
@@ -225,7 +229,7 @@ class TestBatchGetAccountWithDefaultStudentId(unittest.IsolatedAsyncioTestCase):
             context.set_account(self.login_account)
 
             service_rbac = controller.mock_module('service.rbac')
-            pydantic_ = controller.mock_module('processor.http_api.account.pydantic')
+            pydantic_ = controller.mock_module('processor.http_api.account.pydantic.tools')
 
             pydantic_.func('parse_obj_as').call_with(list[int], self.account_ids_json).returns(
                 self.account_ids
@@ -247,7 +251,7 @@ class TestBatchGetAccountWithDefaultStudentId(unittest.IsolatedAsyncioTestCase):
         ):
             context.set_account(self.login_account)
 
-            pydantic_ = controller.mock_module('processor.http_api.account.pydantic')
+            pydantic_ = controller.mock_module('processor.http_api.account.pydantic.tools')
 
             pydantic_.func('parse_obj_as').call_with(list[int], self.empty_account_ids_json).returns(
                 self.empty_account_ids
@@ -317,7 +321,7 @@ class TestBatchGetAccountByAccountReferrals(unittest.IsolatedAsyncioTestCase):
 
             service_rbac = controller.mock_module('service.rbac')
             db_account_vo = controller.mock_module('persistence.database.account_vo')
-            pydantic_ = controller.mock_module('processor.http_api.account.pydantic')
+            pydantic_ = controller.mock_module('processor.http_api.account.pydantic.tools')
 
             pydantic_.func('parse_obj_as').call_with(list[str], self.account_referrals_json).returns(
                 self.account_referrals
@@ -344,7 +348,7 @@ class TestBatchGetAccountByAccountReferrals(unittest.IsolatedAsyncioTestCase):
             context.set_account(self.login_account)
 
             service_rbac = controller.mock_module('service.rbac')
-            pydantic_ = controller.mock_module('processor.http_api.account.pydantic')
+            pydantic_ = controller.mock_module('processor.http_api.account.pydantic.tools')
 
             pydantic_.func('parse_obj_as').call_with(list[str], self.account_referrals_json).returns(
                 self.account_referrals
@@ -366,7 +370,7 @@ class TestBatchGetAccountByAccountReferrals(unittest.IsolatedAsyncioTestCase):
         ):
             context.set_account(self.login_account)
 
-            pydantic_ = controller.mock_module('processor.http_api.account.pydantic')
+            pydantic_ = controller.mock_module('processor.http_api.account.pydantic.tools')
 
             pydantic_.func('parse_obj_as').call_with(list[int], self.empty_account_referrals_json).returns(
                 self.empty_account_referrals
