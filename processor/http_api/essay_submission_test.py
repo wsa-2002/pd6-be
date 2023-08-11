@@ -5,6 +5,7 @@ import unittest
 from fastapi import UploadFile
 
 from base import enum, do, popo
+import exceptions as exc
 from util import mock, security, model
 
 from . import essay_submission
@@ -70,6 +71,46 @@ class TestUploadEssay(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(result, self.result)
 
+    async def test_no_permission_unauthorized_user(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission),
+        ):
+            context.set_account(self.login_account)
+            context.set_request_time(self.today)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('validate_class').call_with(
+                context.account.id, enum.RoleType.normal, essay_id=self.essay_id,
+            ).returns(False)
+
+            await mock.unwrap(essay_submission.upload_essay)(self.essay_id, self.essay_file)
+
+    async def test_no_permission_overdue(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission),
+        ):
+            context.set_account(self.login_account)
+            context.set_request_time(self.challenge.end_time)
+
+            service_rbac = controller.mock_module('service.rbac')
+            db_essay = controller.mock_module('persistence.database.essay')
+            db_challenge = controller.mock_module('persistence.database.challenge')
+
+            service_rbac.async_func('validate_class').call_with(
+                context.account.id, enum.RoleType.normal, essay_id=self.essay_id,
+            ).returns(True)
+            db_essay.async_func('read').call_with(essay_id=self.essay_id).returns(self.essay)
+            db_challenge.async_func('read').call_with(
+                self.essay.challenge_id, ref_time=context.request_time,
+            ).returns(self.challenge)
+
+            await mock.unwrap(essay_submission.upload_essay)(self.essay_id, self.essay_file)
+
 
 class TestBrowseEssaySubmissionByEssayId(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
@@ -116,7 +157,6 @@ class TestBrowseEssaySubmissionByEssayId(unittest.IsolatedAsyncioTestCase):
             mock.Context() as context,
         ):
             context.set_account(self.login_account)
-            context.set_request_time(self.today)
 
             service_rbac = controller.mock_module('service.rbac')
             model_ = controller.mock_module('processor.http_api.essay_submission.model')
@@ -143,6 +183,26 @@ class TestBrowseEssaySubmissionByEssayId(unittest.IsolatedAsyncioTestCase):
             )
 
         self.assertEqual(result, self.result)
+
+    async def test_no_permission(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission),
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('get_class_role').call_with(
+                context.account.id, essay_id=self.essay_id,
+            ).returns(enum.RoleType.guest)
+
+            await mock.unwrap(essay_submission.browse_essay_submission_by_essay_id)(
+                essay_id=self.essay_id,
+                limit=self.limit, offset=self.offset,
+                filter=self.filter, sort=self.sorter,
+            )
 
 
 class TestReadEssaySubmission(unittest.IsolatedAsyncioTestCase):
@@ -205,10 +265,27 @@ class TestReadEssaySubmission(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(result, self.result)
 
+    async def test_no_permission(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission),
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('get_class_role').call_with(
+                context.account.id, essay_submission_id=self.essay_submission_id,
+            ).returns(enum.RoleType.guest)
+
+            await mock.unwrap(essay_submission.read_essay_submission)(self.essay_submission_id)
+
 
 class TestReuploadEssay(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
+        self.other_account = security.AuthedAccount(id=2, cached_username='other')
         self.today = datetime.datetime(2023, 4, 9)
         self.essay_submission_id = 1
         self.essay_file = UploadFile(...)
@@ -275,3 +352,98 @@ class TestReuploadEssay(unittest.IsolatedAsyncioTestCase):
             result = await mock.unwrap(essay_submission.reupload_essay)(self.essay_submission_id, self.essay_file)
 
         self.assertIsNone(result)
+
+    async def test_no_permission_unauthorized_user(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission),
+        ):
+            context.set_account(self.login_account)
+            context.set_request_time(self.today)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('validate_class').call_with(
+                context.account.id, enum.RoleType.normal, essay_submission_id=self.essay_submission_id,
+            ).returns(False)
+
+            await mock.unwrap(essay_submission.reupload_essay)(self.essay_submission_id, self.essay_file)
+
+    async def test_no_permission_not_self(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission),
+        ):
+            context.set_account(self.other_account)
+            context.set_request_time(self.today)
+
+            service_rbac = controller.mock_module('service.rbac')
+            db_essay_submission = controller.mock_module('persistence.database.essay_submission')
+            db_essay = controller.mock_module('persistence.database.essay')
+            db_challenge = controller.mock_module('persistence.database.challenge')
+
+            service_rbac.async_func('validate_class').call_with(
+                context.account.id, enum.RoleType.normal, essay_submission_id=self.essay_submission_id,
+            ).returns(True)
+            db_essay_submission.async_func('read').call_with(essay_submission_id=self.essay_submission_id).returns(
+                self.essay_submission)
+            db_essay.async_func('read').call_with(essay_id=self.essay_submission.essay_id).returns(self.essay)
+            db_challenge.async_func('read').call_with(
+                challenge_id=self.essay.challenge_id,
+            ).returns(self.challenge)
+
+            await mock.unwrap(essay_submission.reupload_essay)(self.essay_submission_id, self.essay_file)
+
+    async def test_no_permission_overdue(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission),
+        ):
+            context.set_account(self.login_account)
+            context.set_request_time(self.challenge.end_time + datetime.timedelta(days=1))
+
+            service_rbac = controller.mock_module('service.rbac')
+            db_essay_submission = controller.mock_module('persistence.database.essay_submission')
+            db_essay = controller.mock_module('persistence.database.essay')
+            db_challenge = controller.mock_module('persistence.database.challenge')
+
+            service_rbac.async_func('validate_class').call_with(
+                context.account.id, enum.RoleType.normal, essay_submission_id=self.essay_submission_id,
+            ).returns(True)
+            db_essay_submission.async_func('read').call_with(essay_submission_id=self.essay_submission_id).returns(
+                self.essay_submission)
+            db_essay.async_func('read').call_with(essay_id=self.essay_submission.essay_id).returns(self.essay)
+            db_challenge.async_func('read').call_with(
+                challenge_id=self.essay.challenge_id,
+            ).returns(self.challenge)
+
+            await mock.unwrap(essay_submission.reupload_essay)(self.essay_submission_id, self.essay_file)
+
+    async def test_no_permission_not_self_overdue(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission),
+        ):
+            context.set_account(self.other_account)
+            context.set_request_time(self.challenge.end_time + datetime.timedelta(days=1))
+
+            service_rbac = controller.mock_module('service.rbac')
+            db_essay_submission = controller.mock_module('persistence.database.essay_submission')
+            db_essay = controller.mock_module('persistence.database.essay')
+            db_challenge = controller.mock_module('persistence.database.challenge')
+
+            service_rbac.async_func('validate_class').call_with(
+                context.account.id, enum.RoleType.normal, essay_submission_id=self.essay_submission_id,
+            ).returns(True)
+            db_essay_submission.async_func('read').call_with(essay_submission_id=self.essay_submission_id).returns(
+                self.essay_submission)
+            db_essay.async_func('read').call_with(essay_id=self.essay_submission.essay_id).returns(self.essay)
+            db_challenge.async_func('read').call_with(
+                challenge_id=self.essay.challenge_id,
+            ).returns(self.challenge)
+
+            await mock.unwrap(essay_submission.reupload_essay)(self.essay_submission_id, self.essay_file)
