@@ -83,7 +83,7 @@ class TestBrowseClass(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission)
+            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
 
@@ -134,7 +134,7 @@ class TestReadClass(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission)
+            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
 
@@ -183,7 +183,7 @@ class TestEditClass(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission)
+            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
 
@@ -224,7 +224,7 @@ class TestDeleteClass(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission)
+            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
 
@@ -411,7 +411,7 @@ class TestBrowseClassMember(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission)
+            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
 
@@ -522,7 +522,7 @@ class TestBrowseAllClassMemberWithAccountReferral(unittest.IsolatedAsyncioTestCa
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission)
+            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
 
@@ -695,7 +695,7 @@ class TestReplaceClassMembers(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission)
+            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
 
@@ -738,7 +738,7 @@ class TestDeleteClassMember(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission)
+            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
 
@@ -793,7 +793,7 @@ class TestAddTeamUnderClass(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission)
+            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
 
@@ -887,7 +887,7 @@ class TestBrowseTeamUnderClass(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission)
+            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
 
@@ -998,7 +998,7 @@ class TestBrowseSubmissionUnderClass(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission)
+            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
 
