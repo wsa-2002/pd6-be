@@ -732,6 +732,7 @@ class TestBrowseTeamUnderClass(unittest.IsolatedAsyncioTestCase):
 class TestBrowseSubmissionUnderClass(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
+        self.today = datetime.datetime(2023, 4, 9)
         self.class_id = 1
 
         self.filter = None
@@ -756,7 +757,7 @@ class TestBrowseSubmissionUnderClass(unittest.IsolatedAsyncioTestCase):
                 content_file_uuid=do.UUID('{12345678-1234-5678-1234-567812345678}'),
                 content_length=1,
                 filename='test',
-                submit_time=datetime.datetime.today()),
+                submit_time=self.today),
             do.Submission(
                 id=1,
                 account_id=1,
@@ -765,7 +766,7 @@ class TestBrowseSubmissionUnderClass(unittest.IsolatedAsyncioTestCase):
                 content_file_uuid=do.UUID('{12345678-1234-5678-1234-567812345678}'),
                 content_length=1,
                 filename='test',
-                submit_time=datetime.datetime.today()),
+                submit_time=self.today),
             do.Submission(
                 id=1,
                 account_id=1,
@@ -774,7 +775,7 @@ class TestBrowseSubmissionUnderClass(unittest.IsolatedAsyncioTestCase):
                 content_file_uuid=do.UUID('{12345678-1234-5678-1234-567812345678}'),
                 content_length=1,
                 filename='test',
-                submit_time=datetime.datetime.today()),
+                submit_time=self.today),
         ]
         self.total_count = len(self.submissions)
         self.result = model.BrowseOutputBase(data=self.submissions, total_count=self.total_count)
