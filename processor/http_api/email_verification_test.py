@@ -44,7 +44,7 @@ class TestResendEmailVerification(unittest.IsolatedAsyncioTestCase):
             email_send = controller.mock_module('persistence.email.verification')
 
             db_email_verification.async_func('read').call_with(
-                email_verification_id=self.account.id
+                email_verification_id=self.account.id,
             ).returns(self.EmailVerificationResult)
             service_rbac.async_func('validate_system').call_with(
                 self.other_login_account.id, enum.RoleType.manager,
@@ -55,7 +55,7 @@ class TestResendEmailVerification(unittest.IsolatedAsyncioTestCase):
             db_email_verification.async_func('read').call_with(self.account.id).returns(self.EmailVerificationResult)
             db_email_verification.async_func('read_verification_code').call_with(self.account.id).returns(self.code)
             email_send.async_func('send').call_with(
-                to=self.EmailVerificationResult.email, code=self.code, username=self.account.username
+                to=self.EmailVerificationResult.email, code=self.code, username=self.account.username,
             ).returns(None)
 
             result = await mock.unwrap(email_verification.resend_email_verification)(
@@ -75,7 +75,7 @@ class TestResendEmailVerification(unittest.IsolatedAsyncioTestCase):
             email_send = controller.mock_module('persistence.email.verification')
 
             db_email_verification.async_func('read').call_with(
-                email_verification_id=self.account.id
+                email_verification_id=self.account.id,
             ).returns(self.EmailVerificationResult)
             service_rbac.async_func('validate_system').call_with(
                 self.login_account.id, enum.RoleType.manager,
@@ -86,7 +86,7 @@ class TestResendEmailVerification(unittest.IsolatedAsyncioTestCase):
             db_email_verification.async_func('read').call_with(self.account.id).returns(self.EmailVerificationResult)
             db_email_verification.async_func('read_verification_code').call_with(self.account.id).returns(self.code)
             email_send.async_func('send').call_with(
-                to=self.EmailVerificationResult.email, code=self.code, username=self.account.username
+                to=self.EmailVerificationResult.email, code=self.code, username=self.account.username,
             ).returns(None)
 
             result = await mock.unwrap(email_verification.resend_email_verification)(
