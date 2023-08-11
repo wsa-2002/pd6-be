@@ -4,6 +4,7 @@ import unittest
 
 import base.popo
 from base import enum, do
+import exceptions as exc
 from util import model
 from util import mock, security
 
@@ -120,6 +121,48 @@ class TestReadPeerReview(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(result, self.result)
 
+    async def test_no_permission_unauthorized_user(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission),
+        ):
+            context.set_account(self.login_account)
+            context.set_request_time(self.today + datetime.timedelta(days=5))
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('get_class_role').call_with(
+                context.account.id, peer_review_id=self.peer_review_id,
+            ).returns(enum.RoleType.guest)
+
+            await mock.unwrap(peer_review.read_peer_review)(self.peer_review_id)
+
+    async def test_no_permission_hidden(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission),
+        ):
+            context.set_account(self.login_account)
+            context.set_request_time(self.today - datetime.timedelta(days=5))
+
+            service_rbac = controller.mock_module('service.rbac')
+            db_peer_review = controller.mock_module('persistence.database.peer_review')
+            db_challenge = controller.mock_module('persistence.database.challenge')
+
+            service_rbac.async_func('get_class_role').call_with(
+                context.account.id, peer_review_id=self.peer_review_id,
+            ).returns(enum.RoleType.normal)
+            db_peer_review.async_func('read').call_with(self.peer_review_id).returns(
+                self.peer_review,
+            )
+            db_challenge.async_func('read').call_with(self.peer_review_id).returns(
+                self.challenge,
+            )
+
+            await mock.unwrap(peer_review.read_peer_review)(self.peer_review_id)
+
 
 class TestEditPeerReview(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
@@ -160,6 +203,22 @@ class TestEditPeerReview(unittest.IsolatedAsyncioTestCase):
 
         self.assertIsNone(result)
 
+    async def test_no_permission(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission),
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('validate_class').call_with(
+                context.account.id, enum.RoleType.manager, peer_review_id=self.peer_review_id,
+            ).returns(False)
+
+            await mock.unwrap(peer_review.edit_peer_review)(self.peer_review_id, self.data)
+
 
 class TestDeletePeerReview(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
@@ -184,6 +243,22 @@ class TestDeletePeerReview(unittest.IsolatedAsyncioTestCase):
             result = await mock.unwrap(peer_review.delete_peer_review)(self.peer_review_id)
 
         self.assertIsNone(result)
+
+    async def test_no_permission(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission),
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('validate_class').call_with(
+                context.account.id, enum.RoleType.manager, peer_review_id=self.peer_review_id,
+            ).returns(False)
+
+            await mock.unwrap(peer_review.delete_peer_review)(self.peer_review_id)
 
 
 class TestBrowsePeerReviewRecord(unittest.IsolatedAsyncioTestCase):
@@ -352,6 +427,19 @@ class TestAssignPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
             max_review_count=3,
             is_deleted=False,
         )
+        self.peer_review_max_limited = do.PeerReview(
+            id=1,
+            challenge_id=1,
+            challenge_label='test',
+            title='test',
+            target_problem_id=1,
+            setter_id=1,
+            description='test_only',
+            min_score=1,
+            max_score=10,
+            max_review_count=1,
+            is_deleted=False,
+        )
         self.challenge = do.Challenge(
             id=1,
             class_id=1,
@@ -430,12 +518,88 @@ class TestAssignPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(result, self.result)
 
+    async def test_no_permission_unauthorized_user(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission),
+        ):
+            context.set_account(self.login_account)
+            context.set_request_time(self.today)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('get_class_role').call_with(
+                context.account.id, peer_review_id=self.peer_review_id,
+            ).returns(enum.RoleType.manager)
+
+            await mock.unwrap(peer_review.assign_peer_review_record)(self.peer_review_id)
+
+    async def test_no_permission_overdue(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission),
+        ):
+            context.set_account(self.login_account)
+            context.set_request_time(self.challenge.end_time + datetime.timedelta(days=1))
+
+            service_rbac = controller.mock_module('service.rbac')
+            db_peer_review = controller.mock_module('persistence.database.peer_review')
+            db_challenge = controller.mock_module('persistence.database.challenge')
+
+            service_rbac.async_func('get_class_role').call_with(
+                context.account.id, peer_review_id=self.peer_review_id,
+            ).returns(enum.RoleType.normal)
+            db_peer_review.async_func('read').call_with(self.peer_review_id).returns(
+                self.peer_review,
+            )
+            db_challenge.async_func('read').call_with(challenge_id=self.peer_review.challenge_id).returns(
+                self.challenge,
+            )
+
+            await mock.unwrap(peer_review.assign_peer_review_record)(self.peer_review_id)
+
+    async def test_max_peer_reviewCount(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.MaxPeerReviewCount)
+        ):
+            context.set_account(self.login_account)
+            context.set_request_time(self.today)
+
+            service_rbac = controller.mock_module('service.rbac')
+            db_peer_review = controller.mock_module('persistence.database.peer_review')
+            db_challenge = controller.mock_module('persistence.database.challenge')
+            db_peer_review_record = controller.mock_module('persistence.database.peer_review_record')
+
+            service_rbac.async_func('get_class_role').call_with(
+                context.account.id, peer_review_id=self.peer_review_id,
+            ).returns(enum.RoleType.normal)
+            db_peer_review.async_func('read').call_with(self.peer_review_id).returns(
+                self.peer_review_max_limited,
+            )
+            db_challenge.async_func('read').call_with(challenge_id=self.peer_review.challenge_id).returns(
+                self.challenge,
+            )
+            db_peer_review_record.async_func('read_by_peer_review_id').call_with(
+                peer_review_id=self.peer_review_max_limited.id,
+                account_id=context.account.id,
+                is_receiver=False,
+            ).returns(
+                self.peer_review_records,
+            )
+
+            await mock.unwrap(peer_review.assign_peer_review_record)(self.peer_review_id)
+
 
 class TestReadPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         self.manager = security.AuthedAccount(id=1, cached_username='manager')
         self.receiver = security.AuthedAccount(id=2, cached_username='receiver')
         self.grader = security.AuthedAccount(id=3, cached_username='grader')
+        self.other_account = security.AuthedAccount(id=4, cached_username='other')
         self.today = datetime.datetime(2023, 4, 9)
         self.peer_review_record_id = 1
         self.peer_review_id = 1
@@ -623,6 +787,81 @@ class TestReadPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(result, self.result_manager)
 
+    async def test_no_permission_unauthorized_user(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission),
+        ):
+            context.set_account(self.grader)
+            context.set_request_time(self.today)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('get_class_role').call_with(
+                context.account.id, peer_review_record_id=self.peer_review_record_id,
+            ).returns(enum.RoleType.guest)
+
+            await mock.unwrap(peer_review.read_peer_review_record)(self.peer_review_record_id)
+
+    async def test_no_permission_other_account(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission),
+        ):
+            context.set_account(self.other_account)
+            context.set_request_time(self.today)
+
+            service_rbac = controller.mock_module('service.rbac')
+            db_peer_review_record = controller.mock_module('persistence.database.peer_review_record')
+            db_peer_review = controller.mock_module('persistence.database.peer_review')
+            db_challenge = controller.mock_module('persistence.database.challenge')
+
+            service_rbac.async_func('get_class_role').call_with(
+                context.account.id, peer_review_record_id=self.peer_review_record_id,
+            ).returns(enum.RoleType.normal)
+            db_peer_review_record.async_func('read').call_with(self.peer_review_record_id).returns(
+                self.peer_review_record,
+            )
+            db_peer_review.async_func('read').call_with(peer_review_id=self.peer_review_id).returns(
+                self.peer_review,
+            )
+            db_challenge.async_func('read').call_with(challenge_id=self.peer_review_id).returns(
+                self.challenge,
+            )
+
+            await mock.unwrap(peer_review.read_peer_review_record)(self.peer_review_record_id)
+
+    async def test_no_permission_early(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission),
+        ):
+            context.set_account(self.receiver)
+            context.set_request_time(self.challenge.end_time - datetime.timedelta(days=1))
+
+            service_rbac = controller.mock_module('service.rbac')
+            db_peer_review_record = controller.mock_module('persistence.database.peer_review_record')
+            db_peer_review = controller.mock_module('persistence.database.peer_review')
+            db_challenge = controller.mock_module('persistence.database.challenge')
+
+            service_rbac.async_func('get_class_role').call_with(
+                context.account.id, peer_review_record_id=self.peer_review_record_id,
+            ).returns(enum.RoleType.normal)
+            db_peer_review_record.async_func('read').call_with(self.peer_review_record_id).returns(
+                self.peer_review_record,
+            )
+            db_peer_review.async_func('read').call_with(peer_review_id=self.peer_review_id).returns(
+                self.peer_review,
+            )
+            db_challenge.async_func('read').call_with(challenge_id=self.peer_review_id).returns(
+                self.challenge,
+            )
+
+            await mock.unwrap(peer_review.read_peer_review_record)(self.peer_review_record_id)
+
 
 class TestSubmitPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
@@ -632,6 +871,10 @@ class TestSubmitPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
         self.peer_review_id = 1
         self.data = peer_review.SubmitPeerReviewInput(
             score=5,
+            comment='soso',
+        )
+        self.data_illegal = peer_review.SubmitPeerReviewInput(
+            score=100,
             comment='soso',
         )
         self.peer_review = do.PeerReview(
@@ -705,6 +948,81 @@ class TestSubmitPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
             result = await mock.unwrap(peer_review.submit_peer_review_record)(self.peer_review_record_id, self.data)
 
         self.assertIsNone(result)
+
+    async def test_no_permission_unauthorized_user(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission),
+        ):
+            context.set_account(self.login_account)
+            context.set_request_time(self.today)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('get_class_role').call_with(
+                context.account.id, peer_review_record_id=self.peer_review_record_id,
+            ).returns(enum.RoleType.guest)
+
+            await mock.unwrap(peer_review.submit_peer_review_record)(self.peer_review_record_id, self.data)
+
+    async def test_no_permission_overdue(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission),
+        ):
+            context.set_account(self.login_account)
+            context.set_request_time(self.challenge.end_time + datetime.timedelta(days=1))
+
+            service_rbac = controller.mock_module('service.rbac')
+            db_peer_review_record = controller.mock_module('persistence.database.peer_review_record')
+            db_peer_review = controller.mock_module('persistence.database.peer_review')
+            db_challenge = controller.mock_module('persistence.database.challenge')
+
+            service_rbac.async_func('get_class_role').call_with(
+                context.account.id, peer_review_record_id=self.peer_review_record_id,
+            ).returns(enum.RoleType.normal)
+            db_peer_review_record.async_func('read').call_with(self.peer_review_record_id).returns(
+                self.peer_review_record,
+            )
+            db_peer_review.async_func('read').call_with(peer_review_id=self.peer_review_id).returns(
+                self.peer_review,
+            )
+            db_challenge.async_func('read').call_with(challenge_id=self.peer_review_id).returns(
+                self.challenge,
+            )
+
+            await mock.unwrap(peer_review.submit_peer_review_record)(self.peer_review_record_id, self.data)
+
+    async def test_illegal_input(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.IllegalInput)
+        ):
+            context.set_account(self.login_account)
+            context.set_request_time(self.today)
+
+            service_rbac = controller.mock_module('service.rbac')
+            db_peer_review_record = controller.mock_module('persistence.database.peer_review_record')
+            db_peer_review = controller.mock_module('persistence.database.peer_review')
+            db_challenge = controller.mock_module('persistence.database.challenge')
+
+            service_rbac.async_func('get_class_role').call_with(
+                context.account.id, peer_review_record_id=self.peer_review_record_id,
+            ).returns(enum.RoleType.normal)
+            db_peer_review_record.async_func('read').call_with(self.peer_review_record_id).returns(
+                self.peer_review_record,
+            )
+            db_peer_review.async_func('read').call_with(peer_review_id=self.peer_review_id).returns(
+                self.peer_review,
+            )
+            db_challenge.async_func('read').call_with(challenge_id=self.peer_review_id).returns(
+                self.challenge,
+            )
+
+            await mock.unwrap(peer_review.submit_peer_review_record)(self.peer_review_record_id, self.data_illegal)
 
 
 class TestBrowseAccountReceivedPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
@@ -830,6 +1148,76 @@ class TestBrowseAccountReceivedPeerReviewRecord(unittest.IsolatedAsyncioTestCase
 
         self.assertListEqual(result, self.result)
 
+    async def test_no_permission_unauthorized_user(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission),
+        ):
+            context.set_account(self.login_account)
+            context.set_request_time(self.today)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('get_class_role').call_with(
+                context.account.id, peer_review_id=self.peer_review_id,
+            ).returns(enum.RoleType.guest)
+
+            await mock.unwrap(peer_review.browse_account_received_peer_review_record)(self.peer_review_id,
+                                                                                      self.other_account.id)
+
+    async def test_no_permission_other_account(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission),
+        ):
+            context.set_account(self.login_account)
+            context.set_request_time(self.challenge.end_time)
+
+            service_rbac = controller.mock_module('service.rbac')
+            db_peer_review = controller.mock_module('persistence.database.peer_review')
+            db_challenge = controller.mock_module('persistence.database.challenge')
+
+            service_rbac.async_func('get_class_role').call_with(
+                context.account.id, peer_review_id=self.peer_review_id,
+            ).returns(enum.RoleType.normal)
+            db_peer_review.async_func('read').call_with(self.peer_review_id).returns(
+                self.peer_review,
+            )
+            db_challenge.async_func('read').call_with(challenge_id=self.peer_review_id).returns(
+                self.challenge,
+            )
+
+            await mock.unwrap(peer_review.browse_account_received_peer_review_record)(self.peer_review_id,
+                                                                                      self.other_account.id)
+
+    async def test_no_permission_early(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission),
+        ):
+            context.set_account(self.login_account)
+            context.set_request_time(self.challenge.end_time - datetime.timedelta(days=1))
+
+            service_rbac = controller.mock_module('service.rbac')
+            db_peer_review = controller.mock_module('persistence.database.peer_review')
+            db_challenge = controller.mock_module('persistence.database.challenge')
+
+            service_rbac.async_func('get_class_role').call_with(
+                context.account.id, peer_review_id=self.peer_review_id,
+            ).returns(enum.RoleType.normal)
+            db_peer_review.async_func('read').call_with(self.peer_review_id).returns(
+                self.peer_review,
+            )
+            db_challenge.async_func('read').call_with(challenge_id=self.peer_review_id).returns(
+                self.challenge,
+            )
+
+            await mock.unwrap(peer_review.browse_account_received_peer_review_record)(self.peer_review_id,
+                                                                                      self.login_account.id)
+
 
 class TestBrowseAccountReviewedPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
@@ -953,3 +1341,73 @@ class TestBrowseAccountReviewedPeerReviewRecord(unittest.IsolatedAsyncioTestCase
                                                                                                self.other_account.id)
 
         self.assertListEqual(result, self.result)
+
+    async def test_no_permission_unauthorized_user(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission),
+        ):
+            context.set_account(self.login_account)
+            context.set_request_time(self.today)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('get_class_role').call_with(
+                context.account.id, peer_review_id=self.peer_review_id,
+            ).returns(enum.RoleType.guest)
+
+            await mock.unwrap(peer_review.browse_account_reviewed_peer_review_record)(self.peer_review_id,
+                                                                                      self.login_account.id)
+
+    async def test_no_permission_other_account(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission),
+        ):
+            context.set_account(self.login_account)
+            context.set_request_time(self.today)
+
+            service_rbac = controller.mock_module('service.rbac')
+            db_peer_review = controller.mock_module('persistence.database.peer_review')
+            db_challenge = controller.mock_module('persistence.database.challenge')
+
+            service_rbac.async_func('get_class_role').call_with(
+                context.account.id, peer_review_id=self.peer_review_id,
+            ).returns(enum.RoleType.normal)
+            db_peer_review.async_func('read').call_with(self.peer_review_id).returns(
+                self.peer_review,
+            )
+            db_challenge.async_func('read').call_with(challenge_id=self.peer_review_id).returns(
+                self.challenge,
+            )
+
+            await mock.unwrap(peer_review.browse_account_reviewed_peer_review_record)(self.peer_review_id,
+                                                                                      self.other_account.id)
+
+    async def test_no_permission_early(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission),
+        ):
+            context.set_account(self.login_account)
+            context.set_request_time(self.challenge.start_time - datetime.timedelta(days=1))
+
+            service_rbac = controller.mock_module('service.rbac')
+            db_peer_review = controller.mock_module('persistence.database.peer_review')
+            db_challenge = controller.mock_module('persistence.database.challenge')
+
+            service_rbac.async_func('get_class_role').call_with(
+                context.account.id, peer_review_id=self.peer_review_id,
+            ).returns(enum.RoleType.normal)
+            db_peer_review.async_func('read').call_with(self.peer_review_id).returns(
+                self.peer_review,
+            )
+            db_challenge.async_func('read').call_with(challenge_id=self.peer_review_id).returns(
+                self.challenge,
+            )
+
+            await mock.unwrap(peer_review.browse_account_reviewed_peer_review_record)(self.peer_review_id,
+                                                                                      self.login_account.id)
