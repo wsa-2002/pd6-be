@@ -4,6 +4,7 @@ import unittest
 
 import base.popo
 from base import enum, do
+import exceptions as exc
 from util import model
 from util import mock, security
 
@@ -78,6 +79,23 @@ class TestBrowseClass(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(result, self.result)
 
+    async def test_no_permission(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission)
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('validate_system').call_with(
+                context.account.id, enum.RoleType.normal,
+            ).returns(False)
+
+            await mock.unwrap(class_.browse_class)(limit=self.limit, offset=self.offset, filter=self.filter,
+                                                   sort=self.sorter)
+
 
 class TestReadClass(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
@@ -112,6 +130,22 @@ class TestReadClass(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(result, self.result)
 
+    async def test_no_permission(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission)
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('validate_system').call_with(
+                context.account.id, enum.RoleType.normal,
+            ).returns(False)
+
+            await mock.unwrap(class_.read_class)(class_id=self.class_id)
+
 
 class TestEditClass(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
@@ -145,6 +179,22 @@ class TestEditClass(unittest.IsolatedAsyncioTestCase):
 
         self.assertIsNone(result)
 
+    async def test_no_permission(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission)
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('validate_inherit').call_with(
+                context.account.id, enum.RoleType.manager, class_id=self.class_id,
+            ).returns(False)
+
+            await mock.unwrap(class_.edit_class)(class_id=self.class_id, data=self.data)
+
 
 class TestDeleteClass(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
@@ -169,6 +219,22 @@ class TestDeleteClass(unittest.IsolatedAsyncioTestCase):
             result = await mock.unwrap(class_.delete_class)(class_id=self.class_id)
 
         self.assertIsNone(result)
+
+    async def test_no_permission(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission)
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('validate_system').call_with(
+                context.account.id, enum.RoleType.manager,
+            ).returns(False)
+
+            await mock.unwrap(class_.delete_class)(class_id=self.class_id)
 
 
 class TestBrowseClassMember(unittest.IsolatedAsyncioTestCase):
@@ -341,6 +407,28 @@ class TestBrowseClassMember(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(result, self.result)
 
+    async def test_no_permission(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission)
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('validate_class').call_with(
+                context.account.id, enum.RoleType.normal, class_id=self.class_id,
+            ).returns(False)
+            service_rbac.async_func('validate_inherit').call_with(
+                context.account.id, enum.RoleType.manager, class_id=self.class_id
+            ).returns(False)
+
+            await mock.unwrap(class_.browse_class_member)(
+                class_id=self.class_id,
+                limit=self.limit, offset=self.offset,
+                filter=self.filter, sort=self.sorter)
+
 
 class TestBrowseAllClassMemberWithAccountReferral(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
@@ -429,6 +517,25 @@ class TestBrowseAllClassMemberWithAccountReferral(unittest.IsolatedAsyncioTestCa
             result = await mock.unwrap(class_.browse_all_class_member_with_account_referral)(self.class_id)
 
         self.assertCountEqual(result, self.result)
+
+    async def test_no_permission(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission)
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('validate_class').call_with(
+                context.account.id, enum.RoleType.normal, class_id=self.class_id,
+            ).returns(False)
+            service_rbac.async_func('validate_inherit').call_with(
+                context.account.id, enum.RoleType.manager, class_id=self.class_id,
+            ).returns(False)
+
+            await mock.unwrap(class_.browse_all_class_member_with_account_referral)(self.class_id)
 
 
 class TestReplaceClassMembers(unittest.IsolatedAsyncioTestCase):
@@ -584,6 +691,22 @@ class TestReplaceClassMembers(unittest.IsolatedAsyncioTestCase):
 
         self.assertCountEqual(result, self.result)
 
+    async def test_no_permission(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission)
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('validate_inherit').call_with(
+                context.account.id, enum.RoleType.manager, class_id=self.class_id,
+            ).returns(False)
+
+            await mock.unwrap(class_.replace_class_members)(self.class_id, self.data)
+
 
 class TestDeleteClassMember(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
@@ -610,6 +733,22 @@ class TestDeleteClassMember(unittest.IsolatedAsyncioTestCase):
             result = await mock.unwrap(class_.delete_class_member)(class_id=self.class_id, member_id=self.member_id)
 
         self.assertIsNone(result)
+
+    async def test_no_permission(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission)
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('validate_class').call_with(
+                context.account.id, enum.RoleType.manager, class_id=self.class_id,
+            ).returns(False)
+
+            await mock.unwrap(class_.delete_class_member)(class_id=self.class_id, member_id=self.member_id)
 
 
 class TestAddTeamUnderClass(unittest.IsolatedAsyncioTestCase):
@@ -649,6 +788,22 @@ class TestAddTeamUnderClass(unittest.IsolatedAsyncioTestCase):
             result = await mock.unwrap(class_.add_team_under_class)(class_id=self.class_id, data=self.data)
 
         self.assertEqual(result, self.result)
+
+    async def test_no_permission(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission)
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('validate_class').call_with(
+                context.account.id, enum.RoleType.manager, class_id=self.class_id,
+            ).returns(False)
+
+            await mock.unwrap(class_.add_team_under_class)(class_id=self.class_id, data=self.data)
 
 
 class TestBrowseTeamUnderClass(unittest.IsolatedAsyncioTestCase):
@@ -727,6 +882,24 @@ class TestBrowseTeamUnderClass(unittest.IsolatedAsyncioTestCase):
                                                                        filter=self.filter, sort=self.sorter)
 
         self.assertEqual(result, self.result)
+
+    async def test_no_permission(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission)
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('validate_class').call_with(
+                context.account.id, enum.RoleType.normal, class_id=self.class_id,
+            ).returns(False)
+
+            await mock.unwrap(class_.browse_team_under_class)(class_id=self.class_id,
+                                                              limit=self.limit, offset=self.offset,
+                                                              filter=self.filter, sort=self.sorter)
 
 
 class TestBrowseSubmissionUnderClass(unittest.IsolatedAsyncioTestCase):
@@ -820,3 +993,22 @@ class TestBrowseSubmissionUnderClass(unittest.IsolatedAsyncioTestCase):
                                                                              sort=self.sorter)
 
         self.assertEqual(result, self.result)
+
+    async def test_no_permission(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission)
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('validate_class').call_with(
+                context.account.id, enum.RoleType.manager, class_id=self.class_id,
+            ).returns(True)
+
+            await mock.unwrap(class_.browse_submission_under_class)(class_id=self.class_id,
+                                                                    limit=self.limit, offset=self.offset,
+                                                                    filter=self.filter,
+                                                                    sort=self.sorter)
