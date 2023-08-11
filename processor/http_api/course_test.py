@@ -3,6 +3,7 @@ import unittest
 
 from base import enum, do
 from base.enum import CourseType
+import exceptions as exc
 from util import model
 from util import mock, security
 
@@ -37,6 +38,21 @@ class TestAddCourse(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(result, self.result)
 
+    async def test_no_permission(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission),
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('validate_system').call_with(
+                context.account.id, enum.RoleType.manager,
+            ).returns(False)
+
+            await mock.unwrap(course.add_course)(data=self.data)
 
 class TestReadCourse(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
@@ -92,6 +108,21 @@ class TestReadCourse(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(result, self.result)
 
+    async def test_no_permission(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission),
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('get_system_role').call_with(
+                context.account.id,
+            ).returns(enum.RoleType.guest)
+
+            await mock.unwrap(course.read_course)(course_id=self.course_id)
 
 class TestBrowseAllCourse(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
@@ -157,6 +188,21 @@ class TestBrowseAllCourse(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(result, self.result)
 
+    async def test_no_permission(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission),
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('get_system_role').call_with(
+                context.account.id,
+            ).returns(enum.RoleType.guest)
+
+            await mock.unwrap(course.browse_all_course)()
 
 class TestEditCourse(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
@@ -187,6 +233,21 @@ class TestEditCourse(unittest.IsolatedAsyncioTestCase):
 
         self.assertIsNone(result)
 
+    async def test_no_permission(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission),
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('validate_system').call_with(
+                self.login_account.id, enum.RoleType.manager,
+            ).returns(False)
+
+            await mock.unwrap(course.edit_course)(course_id=self.course_id, data=self.data)
 
 class TestDeleteCourse(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
@@ -213,6 +274,22 @@ class TestDeleteCourse(unittest.IsolatedAsyncioTestCase):
             result = await mock.unwrap(course.delete_course)(course_id=self.course_id)
 
         self.assertIsNone(result)
+
+    async def test_no_permission(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission),
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('validate_system').call_with(
+                self.login_account.id, enum.RoleType.manager,
+            ).returns(False)
+
+            await mock.unwrap(course.delete_course)(course_id=self.course_id)
 
 
 class TestAddClassUnderCourse(unittest.IsolatedAsyncioTestCase):
@@ -247,6 +324,21 @@ class TestAddClassUnderCourse(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(result, self.result)
 
+    async def test_no_permission(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission),
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('validate_system').call_with(
+                self.login_account.id, enum.RoleType.manager,
+            ).returns(False)
+
+            await mock.unwrap(course.add_class_under_course)(course_id=self.course_id, data=self.data)
 
 class TestBrowseAllClassUnderCourse(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
@@ -291,3 +383,19 @@ class TestBrowseAllClassUnderCourse(unittest.IsolatedAsyncioTestCase):
             result = await mock.unwrap(course.browse_all_class_under_course)(course_id=self.course_id)
 
         self.assertEqual(result, self.result)
+
+    async def test_no_permission(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission),
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('validate_system').call_with(
+                self.login_account.id, enum.RoleType.normal,
+            ).returns(False)
+
+            await mock.unwrap(course.browse_all_class_under_course)(course_id=self.course_id)
