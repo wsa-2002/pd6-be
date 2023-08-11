@@ -10,6 +10,7 @@ from . import system
 class TestBrowseAccessLog(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
+        self.today = datetime.datetime(2023, 4, 9)
         self.filter = None
         self.filters = []
         self.sorter = None
@@ -19,7 +20,7 @@ class TestBrowseAccessLog(unittest.IsolatedAsyncioTestCase):
         self.access_logs = [
             do.AccessLog(
                 id=1,
-                access_time=datetime.datetime.today()-datetime.timedelta(days=1),
+                access_time=self.today-datetime.timedelta(days=1),
                 request_method='get',
                 resource_path='/login',
                 ip='123.123.123.123',
@@ -27,7 +28,7 @@ class TestBrowseAccessLog(unittest.IsolatedAsyncioTestCase):
             ),
             do.AccessLog(
                 id=2,
-                access_time=datetime.datetime.today(),
+                access_time=self.today,
                 request_method='post',
                 resource_path='/login',
                 ip='123.456.789.012',
