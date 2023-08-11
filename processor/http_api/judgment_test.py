@@ -3,6 +3,7 @@ import datetime
 import unittest
 
 from base import enum, do
+import exceptions as exc
 from util import mock, security
 
 from . import judgment
@@ -92,6 +93,30 @@ class TestReadJudgment(unittest.IsolatedAsyncioTestCase):
             result = await mock.unwrap(judgment.read_judgment)(self.judgment_id)
 
         self.assertEqual(result, self.result)
+
+    async def test_no_permission(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission),
+        ):
+            context.set_account(self.other_account)
+
+            db_judgment = controller.mock_module('persistence.database.judgment')
+            db_submission = controller.mock_module('persistence.database.submission')
+            service_rbac = controller.mock_module('service.rbac')
+
+            db_judgment.async_func('read').call_with(
+                judgment_id=self.judgment_id,
+            ).returns(self.judgment)
+            db_submission.async_func('read').call_with(
+                submission_id=self.judgment.submission_id,
+            ).returns(self.submission)
+            service_rbac.async_func('validate_class').call_with(
+                context.account.id, enum.RoleType.manager, submission_id=self.submission.id,
+            ).returns(False)
+
+            await mock.unwrap(judgment.read_judgment)(self.judgment_id)
 
 
 class TestBrowseAllJudgmentJudgeCase(unittest.IsolatedAsyncioTestCase):
@@ -187,3 +212,27 @@ class TestBrowseAllJudgmentJudgeCase(unittest.IsolatedAsyncioTestCase):
             result = await mock.unwrap(judgment.browse_all_judgment_judge_case)(self.judgment_id)
 
         self.assertEqual(result, self.result)
+
+    async def test_no_permission(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission),
+        ):
+            context.set_account(self.other_account)
+
+            db_judgment = controller.mock_module('persistence.database.judgment')
+            db_submission = controller.mock_module('persistence.database.submission')
+            service_rbac = controller.mock_module('service.rbac')
+
+            db_judgment.async_func('read').call_with(
+                judgment_id=self.judgment_id,
+            ).returns(self.judgment)
+            db_submission.async_func('read').call_with(
+                submission_id=self.judgment.submission_id,
+            ).returns(self.submission)
+            service_rbac.async_func('validate_class').call_with(
+                context.account.id, enum.RoleType.manager, submission_id=self.submission.id,
+            ).returns(False)
+
+            await mock.unwrap(judgment.browse_all_judgment_judge_case)(self.judgment_id)
