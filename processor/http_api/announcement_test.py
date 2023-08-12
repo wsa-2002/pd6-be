@@ -80,10 +80,13 @@ class TestBrowseAnnouncement(unittest.IsolatedAsyncioTestCase):
             'expire_time': model.ServerTZDatetime,
             'is_deleted': bool,
         }
-        self.limit = 50
-        self.offset = 0
-        self.filter = None
-        self.sort = None
+        self.limit = model.Limit(10)
+        self.offset = model.Offset(0)
+        self.filter_str = model.FilterStr
+        self.sorter_str = model.SorterStr
+        self.filters = []
+        self.sorters = []
+
         self.expected_output_data = [
             do.Announcement(
                 id=1,
@@ -120,15 +123,24 @@ class TestBrowseAnnouncement(unittest.IsolatedAsyncioTestCase):
 
             service_rbac = controller.mock_module('service.rbac')
             db_announcement = controller.mock_module('persistence.database.announcement')
+            model_ = controller.mock_module('util.model')
 
             service_rbac.async_func('get_system_role').call_with(
                 self.login_account.id,
             ).returns(enum.RoleType.manager)
+
+            model_.func('parse_filter').call_with(
+                self.filter_str, self.browse_announcement_columns
+            ).returns(self.filters)
+            model_.func('parse_sorter').call_with(
+                self.sorter_str, self.browse_announcement_columns
+            ).returns(self.sorters)
+
             db_announcement.async_func('browse').call_with(
                 limit=self.limit,
                 offset=self.offset,
-                filters=model.parse_filter(self.filter, self.browse_announcement_columns),
-                sorters=model.parse_sorter(self.sort, self.browse_announcement_columns),
+                filters=self.filters,
+                sorters=self.sorters,
                 exclude_scheduled=False,
                 ref_time=self.time,
             ).returns((self.expected_output_data, self.expected_output_total_count))
@@ -136,8 +148,8 @@ class TestBrowseAnnouncement(unittest.IsolatedAsyncioTestCase):
             result = await mock.unwrap(announcement.browse_announcement)(
                 limit=self.limit,
                 offset=self.offset,
-                filter=self.filter,
-                sort=self.sort,
+                filter=self.filter_str,
+                sort=self.sorter_str,
             )
 
         self.assertEqual(result, self.browse_result)
@@ -152,15 +164,24 @@ class TestBrowseAnnouncement(unittest.IsolatedAsyncioTestCase):
 
             service_rbac = controller.mock_module('service.rbac')
             db_announcement = controller.mock_module('persistence.database.announcement')
+            model_ = controller.mock_module('util.model')
 
             service_rbac.async_func('get_system_role').call_with(
                 self.login_account.id,
             ).returns(enum.RoleType.guest)
+
+            model_.func('parse_filter').call_with(
+                self.filter_str, self.browse_announcement_columns
+            ).returns(self.filters)
+            model_.func('parse_sorter').call_with(
+                self.sorter_str, self.browse_announcement_columns
+            ).returns(self.sorters)
+
             db_announcement.async_func('browse').call_with(
                 limit=self.limit,
                 offset=self.offset,
-                filters=model.parse_filter(self.filter, self.browse_announcement_columns),
-                sorters=model.parse_sorter(self.sort, self.browse_announcement_columns),
+                filters=self.filters,
+                sorters=self.sorters,
                 exclude_scheduled=True,
                 ref_time=self.time,
             ).returns((self.expected_output_data, self.expected_output_total_count))
@@ -168,8 +189,8 @@ class TestBrowseAnnouncement(unittest.IsolatedAsyncioTestCase):
             result = await mock.unwrap(announcement.browse_announcement)(
                 limit=self.limit,
                 offset=self.offset,
-                filter=self.filter,
-                sort=self.sort,
+                filter=self.filter_str,
+                sort=self.sorter_str,
             )
 
         self.assertEqual(result, self.browse_result)
@@ -191,8 +212,8 @@ class TestBrowseAnnouncement(unittest.IsolatedAsyncioTestCase):
                 await mock.unwrap(announcement.browse_announcement)(
                     limit=self.limit,
                     offset=self.offset,
-                    filter=self.filter,
-                    sort=self.sort,
+                    filter=self.filter_str,
+                    sort=self.sorter_str,
                 )
 
 
