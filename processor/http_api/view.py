@@ -47,8 +47,8 @@ async def browse_account_with_default_student_id(
     if not is_system_manager:
         raise exc.NoPermission
 
-    filters = model.parse_filter(filter, BROWSE_ACCOUNT_COLUMNS)
-    sorters = model.parse_sorter(sort, BROWSE_ACCOUNT_COLUMNS)
+    filters = util.model.parse_filter(filter, BROWSE_ACCOUNT_COLUMNS)
+    sorters = util.model.parse_sorter(sort, BROWSE_ACCOUNT_COLUMNS)
 
     result, total_count = await db.view.account(limit=limit, offset=offset, filters=filters, sorters=sorters)
 
@@ -90,8 +90,8 @@ async def browse_class_member(
             and not await service.rbac.validate_inherit(context.account.id, RoleType.manager, class_id=class_id)):
         raise exc.NoPermission
 
-    filters = model.parse_filter(filter, BROWSE_CLASS_MEMBER_COLUMNS)
-    sorters = model.parse_sorter(sort, BROWSE_CLASS_MEMBER_COLUMNS)
+    filters = util.model.parse_filter(filter, BROWSE_CLASS_MEMBER_COLUMNS)
+    sorters = util.model.parse_sorter(sort, BROWSE_CLASS_MEMBER_COLUMNS)
 
     filters.append(popo.Filter(col_name='class_id',
                                op=FilterOperator.eq,
@@ -140,8 +140,8 @@ async def browse_submission_under_class(
     if not await service.rbac.validate_class(context.account.id, RoleType.manager, class_id=class_id):
         raise exc.NoPermission
 
-    filters = model.parse_filter(filter, BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS)
-    sorters = model.parse_sorter(sort, BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS)
+    filters = util.model.parse_filter(filter, BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS)
+    sorters = util.model.parse_sorter(sort, BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS)
 
     submissions, total_count = await db.view.class_submission(class_id=class_id,
                                                               limit=limit, offset=offset,
@@ -185,8 +185,8 @@ async def browse_submission(account_id: int, limit: model.Limit = 50, offset: mo
     if account_id != context.account.id:
         raise exc.NoPermission
 
-    filters = model.parse_filter(filter, BROWSE_SUBMISSION_COLUMNS)
-    sorters = model.parse_sorter(sort, BROWSE_SUBMISSION_COLUMNS)
+    filters = util.model.parse_filter(filter, BROWSE_SUBMISSION_COLUMNS)
+    sorters = util.model.parse_sorter(sort, BROWSE_SUBMISSION_COLUMNS)
 
     # 只能看自己的
     filters.append(popo.Filter(col_name='account_id',
@@ -234,8 +234,8 @@ async def browse_my_submission_under_problem(account_id: int,
     if account_id != context.account.id:
         raise exc.NoPermission
 
-    filters = model.parse_filter(filter, BROWSE_MY_SUBMISSION_UNDER_PROBLEM_COLUMNS)
-    sorters = model.parse_sorter(sort, BROWSE_MY_SUBMISSION_UNDER_PROBLEM_COLUMNS)
+    filters = util.model.parse_filter(filter, BROWSE_MY_SUBMISSION_UNDER_PROBLEM_COLUMNS)
+    sorters = util.model.parse_sorter(sort, BROWSE_MY_SUBMISSION_UNDER_PROBLEM_COLUMNS)
 
     # 只能看自己的
     filters.append(popo.Filter(col_name='account_id',
@@ -285,8 +285,8 @@ async def browse_problem_set_under_class(
     if not system_role >= RoleType.normal:
         raise exc.NoPermission
 
-    filters = model.parse_filter(filter, BROWSE_PROBLEM_SET_COLUMNS)
-    sorters = model.parse_sorter(sort, BROWSE_PROBLEM_SET_COLUMNS)
+    filters = util.model.parse_filter(filter, BROWSE_PROBLEM_SET_COLUMNS)
+    sorters = util.model.parse_sorter(sort, BROWSE_PROBLEM_SET_COLUMNS)
 
     filters.append(popo.Filter(col_name='class_id',
                                op=FilterOperator.eq,
@@ -330,8 +330,8 @@ async def browse_class_grade(class_id: int,
     ### Available columns
     """
 
-    filters = model.parse_filter(filter, BROWSE_CLASS_GRADE_COLUMNS)
-    sorters = model.parse_sorter(sort, BROWSE_CLASS_GRADE_COLUMNS)
+    filters = util.model.parse_filter(filter, BROWSE_CLASS_GRADE_COLUMNS)
+    sorters = util.model.parse_sorter(sort, BROWSE_CLASS_GRADE_COLUMNS)
     filters.append(popo.Filter(col_name='class_id',
                                op=FilterOperator.eq,
                                value=class_id))
@@ -384,8 +384,8 @@ async def browse_access_log(
     ):
         raise exc.NoPermission
 
-    filters = model.parse_filter(filter, BROWSE_ACCESS_LOG_COLUMNS)
-    sorters = model.parse_sorter(sort, BROWSE_ACCESS_LOG_COLUMNS)
+    filters = util.model.parse_filter(filter, BROWSE_ACCESS_LOG_COLUMNS)
+    sorters = util.model.parse_sorter(sort, BROWSE_ACCESS_LOG_COLUMNS)
 
     access_logs, total_count = await db.view.access_log(limit=limit, offset=offset,
                                                         filters=filters, sorters=sorters)
@@ -421,8 +421,8 @@ async def peer_review_summary_review(peer_review_id: int,
     if not await service.rbac.validate_class(context.account.id, RoleType.manager, peer_review_id=peer_review_id):
         raise exc.NoPermission
 
-    filters = model.parse_filter(filter, BROWSE_PEER_REVIEW_RECORD_COLUMNS)
-    sorters = model.parse_sorter(sort, BROWSE_PEER_REVIEW_RECORD_COLUMNS)
+    filters = util.model.parse_filter(filter, BROWSE_PEER_REVIEW_RECORD_COLUMNS)
+    sorters = util.model.parse_sorter(sort, BROWSE_PEER_REVIEW_RECORD_COLUMNS)
 
     peer_review_records, total_count = await db.view.view_peer_review_record(peer_review_id=peer_review_id,
                                                                              limit=limit, offset=offset,
@@ -447,8 +447,8 @@ async def peer_review_summary_receive(peer_review_id: int,
     if not await service.rbac.validate_class(context.account.id, RoleType.manager, peer_review_id=peer_review_id):
         raise exc.NoPermission
 
-    filters = model.parse_filter(filter, BROWSE_PEER_REVIEW_RECORD_COLUMNS)
-    sorters = model.parse_sorter(sort, BROWSE_PEER_REVIEW_RECORD_COLUMNS)
+    filters = util.model.parse_filter(filter, BROWSE_PEER_REVIEW_RECORD_COLUMNS)
+    sorters = util.model.parse_sorter(sort, BROWSE_PEER_REVIEW_RECORD_COLUMNS)
 
     peer_review_records, total_count = await db.view.view_peer_review_record(peer_review_id=peer_review_id,
                                                                              limit=limit, offset=offset,

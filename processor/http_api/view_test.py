@@ -1,0 +1,1190 @@
+import unittest
+from datetime import datetime
+
+from base import enum, vo
+from util import mock, security, model
+import exceptions as exc
+
+from . import view
+
+
+class TestBrowseAccountWithDefaultStudentId(unittest.IsolatedAsyncioTestCase):
+    def setUp(self) -> None:
+
+        self.login_account = security.AuthedAccount(id=1, cached_username='self')
+
+        self.browse_account_columns = {
+            'account_id': int,
+            'username': str,
+            'real_name': str,
+            'student_id': str,
+        }
+        self.limit = model.Limit(10)
+        self.offset = model.Offset(0)
+        self.filter_str = model.FilterStr
+        self.sorter_str = model.SorterStr
+        self.filters = []
+        self.sorters = []
+
+        self.expected_output_data = [
+            vo.ViewAccount(
+                account_id=1,
+                username='username',
+                real_name='real_name',
+                student_id='id',
+            ),
+            vo.ViewAccount(
+                account_id=2,
+                username='username2',
+                real_name='real_name2',
+                student_id='id2',
+            ),
+        ]
+        self.expected_output_total_count = 2
+        self.browse_result = view.ViewAccountOutput(
+            self.expected_output_data,
+            total_count=self.expected_output_total_count,
+        )
+
+    async def test_happy_flow(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+            db_view = controller.mock_module('persistence.database.view')
+            model_ = controller.mock_module('util.model')
+
+            service_rbac.async_func('validate_system').call_with(
+                self.login_account.id, enum.RoleType.manager,
+            ).returns(True)
+
+            model_.func('parse_filter').call_with(
+                self.filter_str, self.browse_account_columns,
+            ).returns(self.filters)
+            model_.func('parse_sorter').call_with(
+                self.sorter_str, self.browse_account_columns,
+            ).returns(self.sorters)
+
+            db_view.async_func('account').call_with(
+                limit=self.limit,
+                offset=self.offset,
+                filters=self.filters,
+                sorters=self.sorters,
+            ).returns((self.expected_output_data, self.expected_output_total_count))
+
+            result = await mock.unwrap(view.browse_account_with_default_student_id)(
+                limit=self.limit,
+                offset=self.offset,
+                filter=self.filter_str,
+                sort=self.sorter_str,
+            )
+
+        self.assertEqual(result, self.browse_result)
+
+    async def test_no_permission(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('validate_system').call_with(
+                self.login_account.id, enum.RoleType.manager,
+            ).returns(False)
+
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(view.browse_account_with_default_student_id)(
+                    limit=self.limit,
+                    offset=self.offset,
+                    filter=self.filter_str,
+                    sort=self.sorter_str,
+                )
+
+
+class TestBrowseClassMember(unittest.IsolatedAsyncioTestCase):
+    def setUp(self) -> None:
+
+        self.login_account = security.AuthedAccount(id=1, cached_username='self')
+        self.class_id = 1
+
+        self.browse_class_member_columns = {
+            'account_id': int,
+            'username': str,
+            'student_id': str,
+            'real_name': str,
+            'abbreviated_name': str,
+            'role': enum.RoleType,
+            'class_id': int,
+        }
+        self.limit = model.Limit(10)
+        self.offset = model.Offset(0)
+        self.filter_str = model.FilterStr
+        self.sorter_str = model.SorterStr
+        self.filters = []
+        self.sorters = []
+
+        self.expected_output_data = [
+            vo.ViewClassMember(
+                account_id=1,
+                username='username',
+                student_id='id',
+                real_name='real_name',
+                abbreviated_name='abbreviated_name',
+                role=enum.RoleType.normal,
+                class_id=1,
+            ),
+            vo.ViewClassMember(
+                account_id=2,
+                username='username2',
+                student_id='id2',
+                real_name='real_name2',
+                abbreviated_name='abbreviated_name2',
+                role=enum.RoleType.normal,
+                class_id=1,
+            ),
+        ]
+        self.expected_output_total_count = 2
+        self.browse_result = view.ViewClassMemberOutput(
+            self.expected_output_data,
+            total_count=self.expected_output_total_count,
+        )
+
+    async def test_happy_flow_normal(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+            db_view = controller.mock_module('persistence.database.view')
+            model_ = controller.mock_module('util.model')
+
+            service_rbac.async_func('validate_class').call_with(
+                self.login_account.id, enum.RoleType.normal, class_id=self.class_id
+            ).returns(True)
+
+            model_.func('parse_filter').call_with(
+                self.filter_str, self.browse_class_member_columns,
+            ).returns(self.filters)
+            model_.func('parse_sorter').call_with(
+                self.sorter_str, self.browse_class_member_columns,
+            ).returns(self.sorters)
+
+            db_view.async_func('class_member').call_with(
+                limit=self.limit,
+                offset=self.offset,
+                filters=self.filters,
+                sorters=self.sorters,
+            ).returns((self.expected_output_data, self.expected_output_total_count))
+
+            result = await mock.unwrap(view.browse_class_member)(
+                class_id=self.class_id,
+                limit=self.limit,
+                offset=self.offset,
+                filter=self.filter_str,
+                sort=self.sorter_str,
+            )
+
+        self.assertEqual(result, self.browse_result)
+
+    async def test_happy_flow_class_manager(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+            db_view = controller.mock_module('persistence.database.view')
+            model_ = controller.mock_module('util.model')
+
+            service_rbac.async_func('validate_class').call_with(
+                self.login_account.id, enum.RoleType.normal, class_id=self.class_id
+            ).returns(False)
+            service_rbac.async_func('validate_inherit').call_with(
+                self.login_account.id, enum.RoleType.manager, class_id=self.class_id
+            ).returns(True)
+
+            model_.func('parse_filter').call_with(
+                self.filter_str, self.browse_class_member_columns,
+            ).returns(self.filters)
+            model_.func('parse_sorter').call_with(
+                self.sorter_str, self.browse_class_member_columns,
+            ).returns(self.sorters)
+
+            db_view.async_func('class_member').call_with(
+                limit=self.limit,
+                offset=self.offset,
+                filters=self.filters,
+                sorters=self.sorters,
+            ).returns((self.expected_output_data, self.expected_output_total_count))
+
+            result = await mock.unwrap(view.browse_class_member)(
+                class_id=self.class_id,
+                limit=self.limit,
+                offset=self.offset,
+                filter=self.filter_str,
+                sort=self.sorter_str,
+            )
+
+        self.assertEqual(result, self.browse_result)
+
+    async def test_no_permission(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('validate_class').call_with(
+                self.login_account.id, enum.RoleType.normal, class_id=self.class_id
+            ).returns(False)
+            service_rbac.async_func('validate_inherit').call_with(
+                self.login_account.id, enum.RoleType.manager, class_id=self.class_id
+            ).returns(False)
+
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(view.browse_class_member)(
+                    class_id=self.class_id,
+                    limit=self.limit,
+                    offset=self.offset,
+                    filter=self.filter_str,
+                    sort=self.sorter_str,
+                )
+
+
+class TestBrowseSubmissionUnderClass(unittest.IsolatedAsyncioTestCase):
+    def setUp(self) -> None:
+
+        self.login_account = security.AuthedAccount(id=1, cached_username='self')
+        self.class_id = 1
+        self.time = datetime(2023, 8, 1, 1, 1, 1)
+
+        self.browse_class_member_columns = {
+            'submission_id': int,
+            'account_id': int,
+            'username': str,
+            'student_id': str,
+            'real_name': str,
+            'challenge_id': int,
+            'challenge_title': str,
+            'problem_id': int,
+            'challenge_label': str,
+            'verdict': enum.VerdictType,
+            'submit_time': model.ServerTZDatetime,
+            'class_id': int,
+        }
+        self.limit = model.Limit(10)
+        self.offset = model.Offset(0)
+        self.filter_str = model.FilterStr
+        self.sorter_str = model.SorterStr
+        self.filters = []
+        self.sorters = []
+
+        self.expected_output_data = [
+            vo.ViewSubmissionUnderClass(
+                submission_id=1,
+                account_id=1,
+                username='username',
+                student_id='id',
+                real_name='real_name',
+                challenge_id=1,
+                challenge_title='title',
+                problem_id=1,
+                challenge_label='label',
+                verdict=enum.VerdictType.accepted,
+                submit_time=self.time,
+                class_id=1,
+            ),
+            vo.ViewSubmissionUnderClass(
+                submission_id=2,
+                account_id=2,
+                username='username2',
+                student_id='id2',
+                real_name='real_name2',
+                challenge_id=2,
+                challenge_title='title2',
+                problem_id=2,
+                challenge_label='label2',
+                verdict=enum.VerdictType.accepted,
+                submit_time=self.time,
+                class_id=1,
+            ),
+        ]
+        self.expected_output_total_count = 2
+        self.browse_result = view.ViewSubmissionUnderClassOutput(
+            self.expected_output_data,
+            total_count=self.expected_output_total_count,
+        )
+
+    async def test_happy_flow(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+            db_view = controller.mock_module('persistence.database.view')
+            model_ = controller.mock_module('util.model')
+
+            service_rbac.async_func('validate_class').call_with(
+                self.login_account.id, enum.RoleType.manager, class_id=self.class_id
+            ).returns(True)
+
+            model_.func('parse_filter').call_with(
+                self.filter_str, self.browse_class_member_columns,
+            ).returns(self.filters)
+            model_.func('parse_sorter').call_with(
+                self.sorter_str, self.browse_class_member_columns,
+            ).returns(self.sorters)
+
+            db_view.async_func('class_submission').call_with(
+                class_id=self.class_id,
+                limit=self.limit,
+                offset=self.offset,
+                filters=self.filters,
+                sorters=self.sorters,
+            ).returns((self.expected_output_data, self.expected_output_total_count))
+
+            result = await mock.unwrap(view.browse_submission_under_class)(
+                class_id=self.class_id,
+                limit=self.limit,
+                offset=self.offset,
+                filter=self.filter_str,
+                sort=self.sorter_str,
+            )
+
+        self.assertEqual(result, self.browse_result)
+
+    async def test_no_permission(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('validate_class').call_with(
+                self.login_account.id, enum.RoleType.manager, class_id=self.class_id
+            ).returns(False)
+
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(view.browse_submission_under_class)(
+                    class_id=self.class_id,
+                    limit=self.limit,
+                    offset=self.offset,
+                    filter=self.filter_str,
+                    sort=self.sorter_str,
+                )
+
+
+class TestBrowseSubmission(unittest.IsolatedAsyncioTestCase):
+    def setUp(self) -> None:
+
+        self.login_account = security.AuthedAccount(id=1, cached_username='self')
+        self.other_account = security.AuthedAccount(id=2, cached_username='other')
+        self.time = datetime(2023, 8, 1, 1, 1, 1)
+
+        self.browse_submission_columns = {
+            'submission_id': int,
+            'course_id': int,
+            'course_name': str,
+            'class_id': int,
+            'class_name': str,
+            'challenge_id': int,
+            'challenge_title': str,
+            'problem_id': int,
+            'challenge_label': str,
+            'verdict': enum.VerdictType,
+            'submit_time': model.ServerTZDatetime,
+            'account_id': int,
+        }
+        self.limit = model.Limit(10)
+        self.offset = model.Offset(0)
+        self.filter_str = model.FilterStr
+        self.sorter_str = model.SorterStr
+        self.filters = []
+        self.sorters = []
+
+        self.expected_output_data = [
+            vo.ViewMySubmission(
+                submission_id=1,
+                course_id=1,
+                course_name='course_name',
+                class_id=1,
+                class_name='class_name',
+                challenge_id=1,
+                challenge_title='challenge_title',
+                problem_id=1,
+                challenge_label='challenge_label',
+                verdict=enum.VerdictType.accepted,
+                submit_time=self.time,
+                account_id=1,
+            ),
+            vo.ViewMySubmission(
+                submission_id=2,
+                course_id=2,
+                course_name='course_name2',
+                class_id=2,
+                class_name='class_name2',
+                challenge_id=2,
+                challenge_title='challenge_title2',
+                problem_id=2,
+                challenge_label='challenge_label2',
+                verdict=enum.VerdictType.accepted,
+                submit_time=self.time,
+                account_id=2,
+            ),
+        ]
+        self.expected_output_total_count = 2
+        self.browse_result = view.ViewMySubmissionOutput(
+            self.expected_output_data,
+            total_count=self.expected_output_total_count,
+        )
+
+    async def test_happy_flow(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+        ):
+            context.set_account(self.login_account)
+
+            db_view = controller.mock_module('persistence.database.view')
+            model_ = controller.mock_module('util.model')
+
+            model_.func('parse_filter').call_with(
+                self.filter_str, self.browse_submission_columns,
+            ).returns(self.filters)
+            model_.func('parse_sorter').call_with(
+                self.sorter_str, self.browse_submission_columns,
+            ).returns(self.sorters)
+
+            db_view.async_func('my_submission').call_with(
+                limit=self.limit,
+                offset=self.offset,
+                filters=self.filters,
+                sorters=self.sorters,
+            ).returns((self.expected_output_data, self.expected_output_total_count))
+
+            result = await mock.unwrap(view.browse_submission)(
+                account_id=self.login_account.id,
+                limit=self.limit,
+                offset=self.offset,
+                filter=self.filter_str,
+                sort=self.sorter_str,
+            )
+
+        self.assertEqual(result, self.browse_result)
+
+    async def test_no_permission(self):
+        with (
+            mock.Context() as context,
+        ):
+            context.set_account(self.other_account)
+
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(view.browse_submission)(
+                    account_id=self.login_account.id,
+                    limit=self.limit,
+                    offset=self.offset,
+                    filter=self.filter_str,
+                    sort=self.sorter_str,
+                )
+
+
+class TestBrowseMySubmissionUnderProblem(unittest.IsolatedAsyncioTestCase):
+    def setUp(self) -> None:
+
+        self.login_account = security.AuthedAccount(id=1, cached_username='self')
+        self.other_account = security.AuthedAccount(id=2, cached_username='other')
+        self.time = datetime(2023, 8, 1, 1, 1, 1)
+        self.problem_id = 1
+
+        self.browse_my_submission_under_problem_columns = {
+            'submission_id': int,
+            'judgment_id': int,
+            'verdict': enum.VerdictType,
+            'score': int,
+            'total_time': int,
+            'max_memory': int,
+            'submit_time': model.ServerTZDatetime,
+            'account_id': int,
+            'problem_id': int,
+        }
+        self.limit = model.Limit(10)
+        self.offset = model.Offset(0)
+        self.filter_str = model.FilterStr
+        self.sorter_str = model.SorterStr
+        self.filters = []
+        self.sorters = []
+
+        self.expected_output_data = [
+            vo.ViewMySubmissionUnderProblem(
+                submission_id=1,
+                judgment_id=1,
+                verdict=enum.VerdictType.accepted,
+                score=100,
+                total_time=10,
+                max_memory=10,
+                submit_time=self.time,
+                account_id=1,
+                problem_id=1,
+            ),
+            vo.ViewMySubmissionUnderProblem(
+                submission_id=2,
+                judgment_id=2,
+                verdict=enum.VerdictType.accepted,
+                score=100,
+                total_time=10,
+                max_memory=10,
+                submit_time=self.time,
+                account_id=1,
+                problem_id=1,
+            ),
+        ]
+        self.expected_output_total_count = 2
+        self.browse_result = view.ViewMySubmissionUnderProblemOutput(
+            self.expected_output_data,
+            total_count=self.expected_output_total_count,
+        )
+
+    async def test_happy_flow(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+        ):
+            context.set_account(self.login_account)
+
+            db_view = controller.mock_module('persistence.database.view')
+            model_ = controller.mock_module('util.model')
+
+            model_.func('parse_filter').call_with(
+                self.filter_str, self.browse_my_submission_under_problem_columns,
+            ).returns(self.filters)
+            model_.func('parse_sorter').call_with(
+                self.sorter_str, self.browse_my_submission_under_problem_columns,
+            ).returns(self.sorters)
+
+            db_view.async_func('my_submission_under_problem').call_with(
+                limit=self.limit,
+                offset=self.offset,
+                filters=self.filters,
+                sorters=self.sorters,
+            ).returns((self.expected_output_data, self.expected_output_total_count))
+
+            result = await mock.unwrap(view.browse_my_submission_under_problem)(
+                account_id=self.login_account.id,
+                problem_id=self.problem_id,
+                limit=self.limit,
+                offset=self.offset,
+                filter=self.filter_str,
+                sort=self.sorter_str,
+            )
+
+        self.assertEqual(result, self.browse_result)
+
+    async def test_no_permission(self):
+        with (
+            mock.Context() as context,
+        ):
+            context.set_account(self.other_account)
+
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(view.browse_my_submission_under_problem)(
+                    account_id=self.login_account.id,
+                    problem_id=self.problem_id,
+                    limit=self.limit,
+                    offset=self.offset,
+                    filter=self.filter_str,
+                    sort=self.sorter_str,
+                )
+
+
+class TestBrowseProblemSetUnderClass(unittest.IsolatedAsyncioTestCase):
+    def setUp(self) -> None:
+
+        self.login_account = security.AuthedAccount(id=1, cached_username='self')
+        self.class_id = 1
+        self.time = datetime(2023, 8, 1, 1, 1, 1)
+
+        self.browse_problem_set_columns = {
+            'challenge_id': int,
+            'challenge_title': str,
+            'problem_id': int,
+            'challenge_label': str,
+            'problem_title': str,
+            'class_id': int,
+        }
+        self.limit = model.Limit(10)
+        self.offset = model.Offset(0)
+        self.filter_str = model.FilterStr
+        self.sorter_str = model.SorterStr
+        self.filters = []
+        self.sorters = []
+
+        self.expected_output_data = [
+            vo.ViewProblemSet(
+                challenge_id=1,
+                challenge_title='challenge_title',
+                problem_id=1,
+                challenge_label='label',
+                problem_title='problem_title',
+                class_id=1,
+            ),
+            vo.ViewProblemSet(
+                challenge_id=2,
+                challenge_title='challenge_title2',
+                problem_id=2,
+                challenge_label='label2',
+                problem_title='problem_title2',
+                class_id=2,
+            ),
+        ]
+        self.expected_output_total_count = 2
+        self.browse_result = view.ViewProblemSetOutput(
+            self.expected_output_data,
+            total_count=self.expected_output_total_count,
+        )
+
+    async def test_happy_flow(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+        ):
+            context.set_account(self.login_account)
+            context.set_request_time(self.time)
+
+            service_rbac = controller.mock_module('service.rbac')
+            db_view = controller.mock_module('persistence.database.view')
+            model_ = controller.mock_module('util.model')
+
+            service_rbac.async_func('get_system_role').call_with(
+                self.login_account.id,
+            ).returns(enum.RoleType.normal)
+
+            model_.func('parse_filter').call_with(
+                self.filter_str, self.browse_problem_set_columns,
+            ).returns(self.filters)
+            model_.func('parse_sorter').call_with(
+                self.sorter_str, self.browse_problem_set_columns,
+            ).returns(self.sorters)
+
+            db_view.async_func('problem_set').call_with(
+                limit=self.limit,
+                offset=self.offset,
+                filters=self.filters,
+                sorters=self.sorters,
+                ref_time=self.time,
+            ).returns((self.expected_output_data, self.expected_output_total_count))
+
+            result = await mock.unwrap(view.browse_problem_set_under_class)(
+                class_id=self.class_id,
+                limit=self.limit,
+                offset=self.offset,
+                filter=self.filter_str,
+                sort=self.sorter_str,
+            )
+
+        self.assertEqual(result, self.browse_result)
+
+    async def test_no_permission(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('get_system_role').call_with(
+                self.login_account.id,
+            ).returns(enum.RoleType.guest)
+
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(view.browse_problem_set_under_class)(
+                    class_id=self.class_id,
+                    limit=self.limit,
+                    offset=self.offset,
+                    filter=self.filter_str,
+                    sort=self.sorter_str,
+                )
+
+
+class TestBrowseClassGrade(unittest.IsolatedAsyncioTestCase):
+    def setUp(self) -> None:
+
+        self.login_account = security.AuthedAccount(id=1, cached_username='self')
+        self.class_id = 1
+        self.time = datetime(2023, 8, 1, 1, 1, 1)
+
+        self.browse_class_grade_columns = {
+            'account_id': int,
+            'username': str,
+            'student_id': str,
+            'real_name': str,
+            'title': str,
+            'score': str,
+            'update_time': model.ServerTZDatetime,
+            'grade_id': int,
+            'class_id': int,
+        }
+        self.limit = model.Limit(10)
+        self.offset = model.Offset(0)
+        self.filter_str = model.FilterStr
+        self.sorter_str = model.SorterStr
+        self.filters = []
+        self.sorters = []
+
+        self.expected_output_data = [
+            vo.ViewGrade(
+                account_id=1,
+                username='username',
+                student_id='id',
+                real_name='real_name',
+                title='title',
+                score='100',
+                update_time=self.time,
+                grade_id=1,
+                class_id=1,
+            ),
+            vo.ViewGrade(
+                account_id=1,
+                username='username2',
+                student_id='id2',
+                real_name='real_name2',
+                title='title2',
+                score='100',
+                update_time=self.time,
+                grade_id=2,
+                class_id=1,
+            ),
+        ]
+        self.expected_output_total_count = 2
+        self.browse_result = view.ViewGradeOutput(
+            self.expected_output_data,
+            total_count=self.expected_output_total_count,
+        )
+
+    async def test_happy_flow_manager(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+            db_view = controller.mock_module('persistence.database.view')
+            model_ = controller.mock_module('util.model')
+
+            model_.func('parse_filter').call_with(
+                self.filter_str, self.browse_class_grade_columns,
+            ).returns(self.filters)
+            model_.func('parse_sorter').call_with(
+                self.sorter_str, self.browse_class_grade_columns,
+            ).returns(self.sorters)
+
+            service_rbac.async_func('validate_class').call_with(
+                self.login_account.id, enum.RoleType.manager, class_id=self.class_id,
+            ).returns(True)
+
+            db_view.async_func('grade').call_with(
+                limit=self.limit,
+                offset=self.offset,
+                filters=self.filters,
+                sorters=self.sorters,
+            ).returns((self.expected_output_data, self.expected_output_total_count))
+
+            result = await mock.unwrap(view.browse_class_grade)(
+                class_id=self.class_id,
+                limit=self.limit,
+                offset=self.offset,
+                filter=self.filter_str,
+                sort=self.sorter_str,
+            )
+
+        self.assertEqual(result, self.browse_result)
+
+    async def test_happy_flow_self(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+            db_view = controller.mock_module('persistence.database.view')
+            model_ = controller.mock_module('util.model')
+
+            model_.func('parse_filter').call_with(
+                self.filter_str, self.browse_class_grade_columns,
+            ).returns(self.filters)
+            model_.func('parse_sorter').call_with(
+                self.sorter_str, self.browse_class_grade_columns,
+            ).returns(self.sorters)
+
+            service_rbac.async_func('validate_class').call_with(
+                self.login_account.id, enum.RoleType.manager, class_id=self.class_id,
+            ).returns(False)
+
+            db_view.async_func('grade').call_with(
+                limit=self.limit,
+                offset=self.offset,
+                filters=self.filters,
+                sorters=self.sorters,
+            ).returns((self.expected_output_data, self.expected_output_total_count))
+
+            result = await mock.unwrap(view.browse_class_grade)(
+                class_id=self.class_id,
+                limit=self.limit,
+                offset=self.offset,
+                filter=self.filter_str,
+                sort=self.sorter_str,
+            )
+
+        self.assertEqual(result, self.browse_result)
+
+
+class TestBrowseAccessLog(unittest.IsolatedAsyncioTestCase):
+    def setUp(self) -> None:
+
+        self.login_account = security.AuthedAccount(id=1, cached_username='self')
+        self.time = datetime(2023, 8, 1, 1, 1, 1)
+
+        self.browse_access_log_columns = {
+            'account_id': int,
+            'username': str,
+            'student_id': str,
+            'real_name': str,
+            'ip': str,
+            'resource_path': str,
+            'request_method': str,
+            'access_time': model.ServerTZDatetime,
+            'access_log_id': int,
+        }
+        self.limit = model.Limit(10)
+        self.offset = model.Offset(0)
+        self.filter_str = model.FilterStr
+        self.sorter_str = model.SorterStr
+        self.filters = []
+        self.sorters = []
+
+        self.expected_output_data = [
+            vo.ViewAccessLog(
+                account_id=1,
+                username='username',
+                student_id='id',
+                real_name='real_name',
+                ip='ip',
+                resource_path='path',
+                request_method='method',
+                access_time=self.time,
+                access_log_id=1,
+            ),
+            vo.ViewAccessLog(
+                account_id=1,
+                username='username2',
+                student_id='id2',
+                real_name='real_name2',
+                ip='ip2',
+                resource_path='path2',
+                request_method='method2',
+                access_time=self.time,
+                access_log_id=2,
+            ),
+        ]
+        self.expected_output_total_count = 2
+        self.browse_result = view.ViewAccessLogOutput(
+            self.expected_output_data,
+            total_count=self.expected_output_total_count,
+        )
+
+    async def test_happy_flow(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+            db_view = controller.mock_module('persistence.database.view')
+            model_ = controller.mock_module('util.model')
+
+            service_rbac.async_func('validate_system').call_with(
+                self.login_account.id, enum.RoleType.manager,
+            ).returns(True)
+
+            model_.func('parse_filter').call_with(
+                self.filter_str, self.browse_access_log_columns,
+            ).returns(self.filters)
+            model_.func('parse_sorter').call_with(
+                self.sorter_str, self.browse_access_log_columns,
+            ).returns(self.sorters)
+
+            db_view.async_func('access_log').call_with(
+                limit=self.limit,
+                offset=self.offset,
+                filters=self.filters,
+                sorters=self.sorters,
+            ).returns((self.expected_output_data, self.expected_output_total_count))
+
+            result = await mock.unwrap(view.browse_access_log)(
+                limit=self.limit,
+                offset=self.offset,
+                filter=self.filter_str,
+                sort=self.sorter_str,
+            )
+
+        self.assertEqual(result, self.browse_result)
+
+    async def test_no_permission(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('validate_system').call_with(
+                self.login_account.id, enum.RoleType.manager,
+            ).returns(False)
+
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(view.browse_access_log)(
+                    limit=self.limit,
+                    offset=self.offset,
+                    filter=self.filter_str,
+                    sort=self.sorter_str,
+                )
+
+
+class TestPeerReviewSummaryReview(unittest.IsolatedAsyncioTestCase):
+    def setUp(self) -> None:
+
+        self.login_account = security.AuthedAccount(id=1, cached_username='self')
+        self.peer_review_id = 1
+
+        self.browse_peer_review_record_columns = {
+            'username': str,
+            'real_name': str,
+            'student_id': str,
+            'average_score': float,
+        }
+        self.limit = model.Limit(10)
+        self.offset = model.Offset(0)
+        self.filter_str = model.FilterStr
+        self.sorter_str = model.SorterStr
+        self.filters = []
+        self.sorters = []
+
+        self.expected_output_data = [
+            vo.ViewPeerReviewRecord(
+                account_id=1,
+                username='username',
+                student_id='id',
+                real_name='real_name',
+                peer_review_record_ids=[1, 2],
+                peer_review_record_scores=[100, 100],
+                average_score=100,
+            ),
+            vo.ViewPeerReviewRecord(
+                account_id=1,
+                username='username2',
+                student_id='id2',
+                real_name='real_name2',
+                peer_review_record_ids=[1, 2],
+                peer_review_record_scores=[100, 80],
+                average_score=90,
+            ),
+        ]
+        self.expected_output_total_count = 2
+        self.browse_result = view.ViewPeerReviewRecordOutput(
+            self.expected_output_data,
+            total_count=self.expected_output_total_count,
+        )
+
+    async def test_happy_flow(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+            db_view = controller.mock_module('persistence.database.view')
+            model_ = controller.mock_module('util.model')
+
+            service_rbac.async_func('validate_class').call_with(
+                self.login_account.id, enum.RoleType.manager,
+                peer_review_id=self.peer_review_id,
+            ).returns(True)
+
+            model_.func('parse_filter').call_with(
+                self.filter_str, self.browse_peer_review_record_columns,
+            ).returns(self.filters)
+            model_.func('parse_sorter').call_with(
+                self.sorter_str, self.browse_peer_review_record_columns,
+            ).returns(self.sorters)
+
+            db_view.async_func('view_peer_review_record').call_with(
+                peer_review_id=self.peer_review_id,
+                limit=self.limit,
+                offset=self.offset,
+                filters=self.filters,
+                sorters=self.sorters,
+                is_receiver=False,
+            ).returns((self.expected_output_data, self.expected_output_total_count))
+
+            result = await mock.unwrap(view.peer_review_summary_review)(
+                peer_review_id=1,
+                limit=self.limit,
+                offset=self.offset,
+                filter=self.filter_str,
+                sort=self.sorter_str,
+            )
+
+        self.assertEqual(result, self.browse_result)
+
+    async def test_no_permission(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('validate_class').call_with(
+                self.login_account.id, enum.RoleType.manager,
+                peer_review_id=self.peer_review_id,
+            ).returns(False)
+
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(view.peer_review_summary_review)(
+                    peer_review_id=1,
+                    limit=self.limit,
+                    offset=self.offset,
+                    filter=self.filter_str,
+                    sort=self.sorter_str,
+                )
+
+
+class TestPeerReviewSummaryReceive(unittest.IsolatedAsyncioTestCase):
+    def setUp(self) -> None:
+
+        self.login_account = security.AuthedAccount(id=1, cached_username='self')
+        self.peer_review_id = 1
+
+        self.browse_peer_review_record_columns = {
+            'username': str,
+            'real_name': str,
+            'student_id': str,
+            'average_score': float,
+        }
+        self.limit = model.Limit(10)
+        self.offset = model.Offset(0)
+        self.filter_str = model.FilterStr
+        self.sorter_str = model.SorterStr
+        self.filters = []
+        self.sorters = []
+
+        self.expected_output_data = [
+            vo.ViewPeerReviewRecord(
+                account_id=1,
+                username='username',
+                student_id='id',
+                real_name='real_name',
+                peer_review_record_ids=[1, 2],
+                peer_review_record_scores=[100, 100],
+                average_score=100,
+            ),
+            vo.ViewPeerReviewRecord(
+                account_id=1,
+                username='username2',
+                student_id='id2',
+                real_name='real_name2',
+                peer_review_record_ids=[1, 2],
+                peer_review_record_scores=[100, 80],
+                average_score=90,
+            ),
+        ]
+        self.expected_output_total_count = 2
+        self.browse_result = view.ViewPeerReviewRecordOutput(
+            self.expected_output_data,
+            total_count=self.expected_output_total_count,
+        )
+
+    async def test_happy_flow(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+            db_view = controller.mock_module('persistence.database.view')
+            model_ = controller.mock_module('util.model')
+
+            service_rbac.async_func('validate_class').call_with(
+                self.login_account.id, enum.RoleType.manager,
+                peer_review_id=self.peer_review_id,
+            ).returns(True)
+
+            model_.func('parse_filter').call_with(
+                self.filter_str, self.browse_peer_review_record_columns,
+            ).returns(self.filters)
+            model_.func('parse_sorter').call_with(
+                self.sorter_str, self.browse_peer_review_record_columns,
+            ).returns(self.sorters)
+
+            db_view.async_func('view_peer_review_record').call_with(
+                peer_review_id=self.peer_review_id,
+                limit=self.limit,
+                offset=self.offset,
+                filters=self.filters,
+                sorters=self.sorters,
+                is_receiver=True,
+            ).returns((self.expected_output_data, self.expected_output_total_count))
+
+            result = await mock.unwrap(view.peer_review_summary_receive)(
+                peer_review_id=1,
+                limit=self.limit,
+                offset=self.offset,
+                filter=self.filter_str,
+                sort=self.sorter_str,
+            )
+
+        self.assertEqual(result, self.browse_result)
+
+    async def test_no_permission(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('validate_class').call_with(
+                self.login_account.id, enum.RoleType.manager,
+                peer_review_id=self.peer_review_id,
+            ).returns(False)
+
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(view.peer_review_summary_receive)(
+                    peer_review_id=1,
+                    limit=self.limit,
+                    offset=self.offset,
+                    filter=self.filter_str,
+                    sort=self.sorter_str,
+                )
