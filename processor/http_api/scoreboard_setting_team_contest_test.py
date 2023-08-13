@@ -113,16 +113,6 @@ class TestViewTeamContestScoreboard(unittest.IsolatedAsyncioTestCase):
         self.team_submission_id = {1: 1, 2: 2}
         self.output = [
             scoreboard_setting_team_contest.ViewTeamContestScoreboardOutput(
-                team_id=team.id,
-                team_name=team.name,
-                target_problem_data=self.team_problem_datas[team.id],
-                total_penalty=sum(problem_penalty.penalty for problem_penalty in self.team_problem_datas[team.id]),
-                solved_problem_count=sum(team_problem_data.is_solved
-                                         for team_problem_data in self.team_problem_datas[team.id]),
-                ) for team in self.teams
-        ]
-        self.output = [
-            scoreboard_setting_team_contest.ViewTeamContestScoreboardOutput(
                 team_id=1,
                 team_name='name',
                 target_problem_data=self.team_problem_datas[1],
