@@ -1,6 +1,7 @@
 import copy
 import datetime
 import unittest
+import uuid
 
 import base.popo
 from base import enum, do
@@ -272,7 +273,7 @@ class TestBrowsePeerReviewRecord(unittest.IsolatedAsyncioTestCase):
             base.popo.Filter(
                 col_name='receiver_id',
                 op=enum.FilterOperator.eq,
-                value=self.login_account.id
+                value=self.login_account.id,
             ))
         self.sorter = None
         self.sorters = []
@@ -643,7 +644,7 @@ class TestReadPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
             account_id=1,
             problem_id=1,
             language_id=1,
-            content_file_uuid=do.UUID('{12345678-1234-5678-1234-567812345678}'),
+            content_file_uuid=uuid.UUID('{12345678-1234-5678-1234-567812345678}'),
             content_length=1,
             filename='test',
             submit_time=self.today,
