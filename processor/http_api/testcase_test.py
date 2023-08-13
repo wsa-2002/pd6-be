@@ -3,6 +3,7 @@ import unittest
 import uuid
 
 from fastapi import UploadFile
+import exceptions as exc
 
 from base import enum, do
 from util import mock, security
@@ -183,6 +184,22 @@ class TestReadTestcase(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(result, self.result_with_uuid)
 
+    async def test_no_permission(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission),
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('validate_system').call_with(
+                context.account.id, enum.RoleType.normal,
+            ).returns(False)
+
+            await mock.unwrap(testcase.read_testcase)(self.testcase_id)
+
 
 class TestEditTestcase(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
@@ -220,6 +237,22 @@ class TestEditTestcase(unittest.IsolatedAsyncioTestCase):
             result = await mock.unwrap(testcase.edit_testcase)(self.testcase_id, self.data)
 
         self.assertIsNone(result)
+
+    async def test_no_permission(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission),
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('validate_class').call_with(
+                context.account.id, enum.RoleType.manager, testcase_id=self.testcase_id,
+            ).returns(False)
+
+            await mock.unwrap(testcase.edit_testcase)(self.testcase_id, self.data)
 
 
 class TestUploadTestcaseInputData(unittest.IsolatedAsyncioTestCase):
@@ -262,6 +295,22 @@ class TestUploadTestcaseInputData(unittest.IsolatedAsyncioTestCase):
 
         self.assertIsNone(result)
 
+    async def test_no_permission(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission),
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('validate_class').call_with(
+                context.account.id, enum.RoleType.manager, testcase_id=self.testcase_id,
+            ).returns(False)
+
+            await mock.unwrap(testcase.upload_testcase_input_data)(self.testcase_id, self.input_file)
+
 
 class TestUploadTestcaseOutputData(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
@@ -303,6 +352,22 @@ class TestUploadTestcaseOutputData(unittest.IsolatedAsyncioTestCase):
 
         self.assertIsNone(result)
 
+    async def test_no_permission(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission),
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('validate_class').call_with(
+                context.account.id, enum.RoleType.manager, testcase_id=self.testcase_id,
+            ).returns(False)
+
+            await mock.unwrap(testcase.upload_testcase_output_data)(self.testcase_id, self.output_file)
+
 
 class TestDeleteTestcase(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
@@ -327,6 +392,22 @@ class TestDeleteTestcase(unittest.IsolatedAsyncioTestCase):
             result = await mock.unwrap(testcase.delete_testcase)(self.testcase_id)
 
         self.assertIsNone(result)
+
+    async def test_no_permission(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission),
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('validate_class').call_with(
+                context.account.id, enum.RoleType.manager, testcase_id=self.testcase_id,
+            ).returns(False)
+
+            await mock.unwrap(testcase.delete_testcase)(self.testcase_id)
 
 
 class TestDeleteTestcaseInputData(unittest.IsolatedAsyncioTestCase):
@@ -353,6 +434,22 @@ class TestDeleteTestcaseInputData(unittest.IsolatedAsyncioTestCase):
 
         self.assertIsNone(result)
 
+    async def test_no_permission(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission),
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('validate_class').call_with(
+                context.account.id, enum.RoleType.manager, testcase_id=self.testcase_id,
+            ).returns(False)
+
+            await mock.unwrap(testcase.delete_testcase_input_data)(self.testcase_id)
+
 
 class TestDeleteTestcaseOutputData(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
@@ -377,3 +474,19 @@ class TestDeleteTestcaseOutputData(unittest.IsolatedAsyncioTestCase):
             result = await mock.unwrap(testcase.delete_testcase_output_data)(self.testcase_id)
 
         self.assertIsNone(result)
+
+    async def test_no_permission(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+            self.assertRaises(exc.NoPermission),
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+
+            service_rbac.async_func('validate_class').call_with(
+                context.account.id, enum.RoleType.manager, testcase_id=self.testcase_id,
+            ).returns(False)
+
+            await mock.unwrap(testcase.delete_testcase_output_data)(self.testcase_id)
