@@ -1,9 +1,9 @@
+import pydantic
 import unittest
-from datetime import datetime
 
 from base import enum, do
-from util import mock, security, model
 import exceptions as exc
+from util import mock, security, model
 
 from . import student_card
 
@@ -53,7 +53,7 @@ class TestAddStudentCardToAccount(unittest.IsolatedAsyncioTestCase):
             context.set_account(self.login_account)
 
             service_rbac = controller.mock_module('service.rbac')
-            pydantic_ = controller.mock_module('processor.http_api.account.pydantic.tools')
+            pydantic_ = controller.mock_module('processor.http_api.student_card.pydantic.tools')
             db_institute = controller.mock_module('persistence.database.institute')
             db_student_card = controller.mock_module('persistence.database.student_card')
             db_account = controller.mock_module('persistence.database.account')
@@ -72,7 +72,7 @@ class TestAddStudentCardToAccount(unittest.IsolatedAsyncioTestCase):
             ).returns(False)
 
             pydantic_.func('parse_obj_as').call_with(
-                model.CaseInsensitiveEmailStr, self.institute_email
+                model.CaseInsensitiveEmailStr, self.institute_email,
             ).returns(self.institute_email)
 
             db_account.async_func('add_email_verification').call_with(
@@ -81,7 +81,7 @@ class TestAddStudentCardToAccount(unittest.IsolatedAsyncioTestCase):
             ).returns(self.code)
 
             db_account.async_func('read').call_with(
-                self.other_login_account.id
+                self.other_login_account.id,
             ).returns(self.account)
             email_.async_func('send').call_with(
                 to=self.institute_email, code=self.code, username=self.account.username,
@@ -102,7 +102,7 @@ class TestAddStudentCardToAccount(unittest.IsolatedAsyncioTestCase):
             context.set_account(self.login_account)
 
             service_rbac = controller.mock_module('service.rbac')
-            pydantic_ = controller.mock_module('processor.http_api.account.pydantic.tools')
+            pydantic_ = controller.mock_module('processor.http_api.student_card.pydantic.tools')
             db_institute = controller.mock_module('persistence.database.institute')
             db_student_card = controller.mock_module('persistence.database.student_card')
             db_account = controller.mock_module('persistence.database.account')
@@ -121,7 +121,7 @@ class TestAddStudentCardToAccount(unittest.IsolatedAsyncioTestCase):
             ).returns(False)
 
             pydantic_.func('parse_obj_as').call_with(
-                model.CaseInsensitiveEmailStr, self.institute_email
+                model.CaseInsensitiveEmailStr, self.institute_email,
             ).returns(self.institute_email)
 
             db_account.async_func('add_email_verification').call_with(
@@ -130,7 +130,7 @@ class TestAddStudentCardToAccount(unittest.IsolatedAsyncioTestCase):
             ).returns(self.code)
 
             db_account.async_func('read').call_with(
-                self.login_account.id
+                self.login_account.id,
             ).returns(self.account)
             email_.async_func('send').call_with(
                 to=self.institute_email, code=self.code, username=self.account.username,
@@ -151,7 +151,7 @@ class TestAddStudentCardToAccount(unittest.IsolatedAsyncioTestCase):
             context.set_account(self.login_account)
 
             service_rbac = controller.mock_module('service.rbac')
-            pydantic_ = controller.mock_module('processor.http_api.account.pydantic.tools')
+            pydantic_ = controller.mock_module('processor.http_api.student_card.pydantic.tools')
             db_institute = controller.mock_module('persistence.database.institute')
             db_student_card = controller.mock_module('persistence.database.student_card')
 
@@ -168,8 +168,8 @@ class TestAddStudentCardToAccount(unittest.IsolatedAsyncioTestCase):
             ).returns(False)
 
             pydantic_.func('parse_obj_as').call_with(
-                model.CaseInsensitiveEmailStr, self.institute_email
-            ).raises(exc.account.InvalidEmail)
+                model.CaseInsensitiveEmailStr, self.institute_email,
+            ).raises(pydantic.EmailError)
 
             with self.assertRaises(exc.account.InvalidEmail):
                 await mock.unwrap(student_card.add_student_card_to_account)(
@@ -312,7 +312,7 @@ class TestBrowseAllAccountStudentCard(unittest.IsolatedAsyncioTestCase):
             ).returns(True)
 
             db_student_card.async_func('browse').call_with(
-                account_id=self.other_login_account.id
+                account_id=self.other_login_account.id,
             ).returns(self.expected_output_data)
 
             result = await mock.unwrap(student_card.browse_all_account_student_card)(
@@ -336,7 +336,7 @@ class TestBrowseAllAccountStudentCard(unittest.IsolatedAsyncioTestCase):
             ).returns(False)
 
             db_student_card.async_func('browse').call_with(
-                account_id=self.login_account.id
+                account_id=self.login_account.id,
             ).returns(self.expected_output_data)
 
             result = await mock.unwrap(student_card.browse_all_account_student_card)(
@@ -395,11 +395,11 @@ class TestReadStudentCard(unittest.IsolatedAsyncioTestCase):
                 self.login_account.id, enum.RoleType.manager,
             ).returns(True)
             db_student_card.async_func('read_owner_id').call_with(
-                student_card_id=self.student_card_id
+                student_card_id=self.student_card_id,
             ).returns(self.owner_id)
 
             db_student_card.async_func('read').call_with(
-                student_card_id=self.student_card_id
+                student_card_id=self.student_card_id,
             ).returns(self.expected_output_data)
 
             result = await mock.unwrap(student_card.read_student_card)(
@@ -422,11 +422,11 @@ class TestReadStudentCard(unittest.IsolatedAsyncioTestCase):
                 self.other_login_account.id, enum.RoleType.manager,
             ).returns(False)
             db_student_card.async_func('read_owner_id').call_with(
-                student_card_id=self.student_card_id
+                student_card_id=self.student_card_id,
             ).returns(self.owner_id)
 
             db_student_card.async_func('read').call_with(
-                student_card_id=self.student_card_id
+                student_card_id=self.student_card_id,
             ).returns(self.expected_output_data)
 
             result = await mock.unwrap(student_card.read_student_card)(
@@ -449,7 +449,7 @@ class TestReadStudentCard(unittest.IsolatedAsyncioTestCase):
                 self.login_account.id, enum.RoleType.manager,
             ).returns(False)
             db_student_card.async_func('read_owner_id').call_with(
-                student_card_id=self.student_card_id
+                student_card_id=self.student_card_id,
             ).returns(self.owner_id)
 
             with self.assertRaises(exc.NoPermission):
