@@ -1,5 +1,6 @@
 import copy
 import unittest
+import uuid
 
 import pydantic
 from fastapi import UploadFile
@@ -77,8 +78,8 @@ class TestAddAccount(unittest.IsolatedAsyncioTestCase):
         self.institute_email = f"{self.data.institute_email_prefix}@{self.institute.email_domain}"
         self.institute_email_case_insensitive = copy.deepcopy(self.institute_email)
         self.hashed_password = '123'
-        self.code_main = do.UUID('{12345678-1234-5678-1234-567812345678}')
-        self.code_alt = do.UUID('{87654321-8765-4321-8765-432187654321}')
+        self.code_main = uuid.UUID('{12345678-1234-5678-1234-567812345678}')
+        self.code_alt = uuid.UUID('{87654321-8765-4321-8765-432187654321}')
         self.account = do.Account(
             id=self.account_id,
             username=self.data.username,
@@ -555,7 +556,7 @@ class TestAddNormalAccount(unittest.IsolatedAsyncioTestCase):
 class TestImportAccount(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
-        self.account_file = UploadFile(...)
+        self.account_file = UploadFile(filename='account')
 
     async def test_happy_flow(self):
         with (
@@ -694,7 +695,7 @@ class TestResetPassword(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
         self.data = secret.ResetPasswordInput(
-            code=str(do.UUID('{12345678-1234-5678-1234-567812345678}')),
+            code=str(uuid.UUID('{12345678-1234-5678-1234-567812345678}')),
             password='123',
         )
 
