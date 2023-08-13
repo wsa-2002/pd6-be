@@ -53,7 +53,7 @@ async def add_student_card_to_account(account_id: int, data: AddStudentCardInput
 
     institute_email = f"{data.institute_email_prefix}@{institute.email_domain}"
     try:
-        institute_email = pydantic.tools.parse_obj_as(model.CaseInsensitiveEmailStr, institute_email)
+        institute_email = pydantic.parse_obj_as(model.CaseInsensitiveEmailStr, institute_email)
     except pydantic.EmailError as e:
         raise exc.account.InvalidEmail from e
 

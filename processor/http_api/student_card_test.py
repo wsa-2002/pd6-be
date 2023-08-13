@@ -53,7 +53,6 @@ class TestAddStudentCardToAccount(unittest.IsolatedAsyncioTestCase):
             context.set_account(self.login_account)
 
             service_rbac = controller.mock_module('service.rbac')
-            pydantic_ = controller.mock_module('processor.http_api.student_card.pydantic.tools')
             db_institute = controller.mock_module('persistence.database.institute')
             db_student_card = controller.mock_module('persistence.database.student_card')
             db_account = controller.mock_module('persistence.database.account')
@@ -71,7 +70,7 @@ class TestAddStudentCardToAccount(unittest.IsolatedAsyncioTestCase):
                 self.institute.id, self.input_data.student_id,
             ).returns(False)
 
-            pydantic_.func('parse_obj_as').call_with(
+            controller.mock_global_func('pydantic.parse_obj_as').call_with(
                 model.CaseInsensitiveEmailStr, self.institute_email,
             ).returns(self.institute_email)
 
@@ -102,7 +101,6 @@ class TestAddStudentCardToAccount(unittest.IsolatedAsyncioTestCase):
             context.set_account(self.login_account)
 
             service_rbac = controller.mock_module('service.rbac')
-            pydantic_ = controller.mock_module('processor.http_api.student_card.pydantic.tools')
             db_institute = controller.mock_module('persistence.database.institute')
             db_student_card = controller.mock_module('persistence.database.student_card')
             db_account = controller.mock_module('persistence.database.account')
@@ -120,7 +118,7 @@ class TestAddStudentCardToAccount(unittest.IsolatedAsyncioTestCase):
                 self.institute.id, self.input_data.student_id,
             ).returns(False)
 
-            pydantic_.func('parse_obj_as').call_with(
+            controller.mock_global_func('pydantic.parse_obj_as').call_with(
                 model.CaseInsensitiveEmailStr, self.institute_email,
             ).returns(self.institute_email)
 
@@ -151,7 +149,6 @@ class TestAddStudentCardToAccount(unittest.IsolatedAsyncioTestCase):
             context.set_account(self.login_account)
 
             service_rbac = controller.mock_module('service.rbac')
-            pydantic_ = controller.mock_module('processor.http_api.student_card.pydantic.tools')
             db_institute = controller.mock_module('persistence.database.institute')
             db_student_card = controller.mock_module('persistence.database.student_card')
 
@@ -167,7 +164,7 @@ class TestAddStudentCardToAccount(unittest.IsolatedAsyncioTestCase):
                 self.institute.id, self.input_data.student_id,
             ).returns(False)
 
-            pydantic_.func('parse_obj_as').call_with(
+            controller.mock_global_func('pydantic.parse_obj_as').call_with(
                 model.CaseInsensitiveEmailStr, self.institute_email,
             ).raises(pydantic.EmailError)
 
