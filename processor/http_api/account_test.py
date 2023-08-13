@@ -1,5 +1,3 @@
-import pydantic
-
 import copy
 import unittest
 from uuid import UUID
@@ -77,7 +75,7 @@ class TestBrowseAccountWithDefaultStudentId(unittest.IsolatedAsyncioTestCase):
                     role=acc.role, real_name=acc.real_name,
                     alternative_email=acc.alternative_email, student_id=student_card.student_id)
                   for acc, student_card in self.expected_output_data],
-            total_count=self.expected_output_total_count
+            total_count=self.expected_output_total_count,
         )
 
     async def test_happy_flow(self):
@@ -96,10 +94,10 @@ class TestBrowseAccountWithDefaultStudentId(unittest.IsolatedAsyncioTestCase):
             ).returns(True)
 
             model_.func('parse_filter').call_with(
-                self.filter_str, self.browse_account_columns
+                self.filter_str, account.BROWSE_ACCOUNT_COLUMNS,
             ).returns(self.filters)
             model_.func('parse_sorter').call_with(
-                self.sorter_str, self.browse_account_columns
+                self.sorter_str, account.BROWSE_ACCOUNT_COLUMNS,
             ).returns(self.sorters)
 
             db_account_vo.async_func('browse_with_default_student_card').call_with(
@@ -205,18 +203,18 @@ class TestBatchGetAccountWithDefaultStudentId(unittest.IsolatedAsyncioTestCase):
             pydantic_ = controller.mock_module('processor.http_api.account.pydantic.tools')
 
             pydantic_.func('parse_obj_as').call_with(list[int], self.account_ids_json).returns(
-                self.account_ids
+                self.account_ids,
             )
             service_rbac.async_func('validate_system').call_with(
                 self.login_account.id, enum.RoleType.normal,
             ).returns(True)
 
             db_account_vo.async_func('browse_list_with_default_student_card').call_with(
-                account_ids=pydantic.parse_obj_as(list[int], self.account_ids)
+                account_ids=self.account_ids,
             ).returns(self.expected_output_data)
 
             result = await mock.unwrap(account.batch_get_account_with_default_student_id)(
-                account_ids=self.account_ids_json
+                account_ids=self.account_ids_json,
             )
 
         self.assertEqual(result, self.browse_result)
@@ -232,7 +230,7 @@ class TestBatchGetAccountWithDefaultStudentId(unittest.IsolatedAsyncioTestCase):
             pydantic_ = controller.mock_module('processor.http_api.account.pydantic.tools')
 
             pydantic_.func('parse_obj_as').call_with(list[int], self.account_ids_json).returns(
-                self.account_ids
+                self.account_ids,
             )
 
             service_rbac.async_func('validate_system').call_with(
@@ -241,7 +239,7 @@ class TestBatchGetAccountWithDefaultStudentId(unittest.IsolatedAsyncioTestCase):
 
             with self.assertRaises(exc.NoPermission):
                 await mock.unwrap(account.batch_get_account_with_default_student_id)(
-                    account_ids=self.account_ids_json
+                    account_ids=self.account_ids_json,
                 )
 
     async def test_not_account_ids(self):
@@ -254,10 +252,10 @@ class TestBatchGetAccountWithDefaultStudentId(unittest.IsolatedAsyncioTestCase):
             pydantic_ = controller.mock_module('processor.http_api.account.pydantic.tools')
 
             pydantic_.func('parse_obj_as').call_with(list[int], self.empty_account_ids_json).returns(
-                self.empty_account_ids
+                self.empty_account_ids,
             )
             result = await mock.unwrap(account.batch_get_account_with_default_student_id)(
-                account_ids=self.empty_account_ids_json
+                account_ids=self.empty_account_ids_json,
             )
 
         self.assertEqual(result, self.empty_result)
@@ -324,18 +322,18 @@ class TestBatchGetAccountByAccountReferrals(unittest.IsolatedAsyncioTestCase):
             pydantic_ = controller.mock_module('processor.http_api.account.pydantic.tools')
 
             pydantic_.func('parse_obj_as').call_with(list[str], self.account_referrals_json).returns(
-                self.account_referrals
+                self.account_referrals,
             )
             service_rbac.async_func('validate_system').call_with(
                 self.login_account.id, enum.RoleType.normal,
             ).returns(True)
 
             db_account_vo.async_func('batch_read_by_account_referral').call_with(
-                account_referrals=pydantic.parse_obj_as(list[str], self.account_referrals)
+                account_referrals=self.account_referrals,
             ).returns(self.expected_output_data)
 
             result = await mock.unwrap(account.batch_get_account_by_account_referrals)(
-                account_referrals=self.account_referrals_json
+                account_referrals=self.account_referrals_json,
             )
 
         self.assertEqual(result, self.browse_result)
@@ -351,7 +349,7 @@ class TestBatchGetAccountByAccountReferrals(unittest.IsolatedAsyncioTestCase):
             pydantic_ = controller.mock_module('processor.http_api.account.pydantic.tools')
 
             pydantic_.func('parse_obj_as').call_with(list[str], self.account_referrals_json).returns(
-                self.account_referrals
+                self.account_referrals,
             )
 
             service_rbac.async_func('validate_system').call_with(
@@ -360,7 +358,7 @@ class TestBatchGetAccountByAccountReferrals(unittest.IsolatedAsyncioTestCase):
 
             with self.assertRaises(exc.NoPermission):
                 await mock.unwrap(account.batch_get_account_by_account_referrals)(
-                    account_referrals=self.account_referrals_json
+                    account_referrals=self.account_referrals_json,
                 )
 
     async def test_not_account_referrals(self):
@@ -373,10 +371,10 @@ class TestBatchGetAccountByAccountReferrals(unittest.IsolatedAsyncioTestCase):
             pydantic_ = controller.mock_module('processor.http_api.account.pydantic.tools')
 
             pydantic_.func('parse_obj_as').call_with(list[int], self.empty_account_referrals_json).returns(
-                self.empty_account_referrals
+                self.empty_account_referrals,
             )
             result = await mock.unwrap(account.batch_get_account_with_default_student_id)(
-                account_ids=self.empty_account_referrals_json
+                account_ids=self.empty_account_referrals_json,
             )
 
         self.assertEqual(result, self.empty_result)
@@ -439,11 +437,11 @@ class TestBrowseAllAccountWithClassRole(unittest.IsolatedAsyncioTestCase):
             db_class = controller.mock_module('persistence.database.class_')
 
             db_class.async_func('browse_role_by_account_id').call_with(
-                account_id=self.login_account.id
+                account_id=self.login_account.id,
             ).returns(self.expected_output_data)
 
             result = await mock.unwrap(account.browse_all_account_with_class_role)(
-                account_id=self.login_account.id
+                account_id=self.login_account.id,
             )
         self.assertEqual(result, self.browse_result)
 
@@ -455,7 +453,7 @@ class TestBrowseAllAccountWithClassRole(unittest.IsolatedAsyncioTestCase):
 
             with self.assertRaises(exc.NoPermission):
                 await mock.unwrap(account.browse_all_account_with_class_role)(
-                    account_id=self.login_account.id
+                    account_id=self.login_account.id,
                 )
 
 
@@ -610,9 +608,8 @@ class TestReadAccountWithDefaultStudentId(unittest.IsolatedAsyncioTestCase):
                 self.login_account.id, enum.RoleType.normal,
             ).returns(False)
             db_account_vo.async_func('read_with_default_student_card').call_with(
-                account_id=self.account.id).returns(
-                (self.account, self.student_card),
-            )
+                account_id=self.account.id
+            ).returns((self.account, self.student_card))
 
             result = await mock.unwrap(account.read_account_with_default_student_id)(account_id=self.account.id)
 
@@ -636,7 +633,7 @@ class TestReadAccountWithDefaultStudentId(unittest.IsolatedAsyncioTestCase):
 
             with self.assertRaises(exc.NoPermission):
                 await mock.unwrap(account.read_account_with_default_student_id)(
-                    account_id=self.account.id
+                    account_id=self.account.id,
                 )
 
 
@@ -692,7 +689,7 @@ class TestEditAccount(unittest.IsolatedAsyncioTestCase):
 
             result = await mock.unwrap(account.edit_account)(
                 account_id=self.login_account.id,
-                data=self.input_email_default
+                data=self.input_email_default,
             )
 
         self.assertIsNone(result)
@@ -719,7 +716,7 @@ class TestEditAccount(unittest.IsolatedAsyncioTestCase):
 
             result = await mock.unwrap(account.edit_account)(
                 account_id=self.login_account.id,
-                data=self.input_email_default
+                data=self.input_email_default,
             )
 
         self.assertIsNone(result)
@@ -740,7 +737,7 @@ class TestEditAccount(unittest.IsolatedAsyncioTestCase):
             ).returns(False)
             db_account.async_func('add_email_verification').call_with(
                 email=self.input_email_add.alternative_email,
-                account_id=self.login_account.id
+                account_id=self.login_account.id,
             ).returns(self.code)
             db_account.async_func('read').call_with(self.login_account.id).returns(self.account)
             email_verification.async_func('send').call_with(
@@ -758,7 +755,7 @@ class TestEditAccount(unittest.IsolatedAsyncioTestCase):
 
             result = await mock.unwrap(account.edit_account)(
                 account_id=self.login_account.id,
-                data=self.input_email_add
+                data=self.input_email_add,
             )
 
         self.assertIsNone(result)
@@ -777,7 +774,7 @@ class TestEditAccount(unittest.IsolatedAsyncioTestCase):
                 self.login_account.id, enum.RoleType.manager,
             ).returns(False)
             db_account.async_func('delete_alternative_email_by_id').call_with(
-                account_id=self.login_account.id
+                account_id=self.login_account.id,
             ).returns(None)
 
             db_account.async_func('edit').call_with(
@@ -789,7 +786,7 @@ class TestEditAccount(unittest.IsolatedAsyncioTestCase):
 
             result = await mock.unwrap(account.edit_account)(
                 account_id=self.login_account.id,
-                data=self.input_email_delete
+                data=self.input_email_delete,
             )
 
         self.assertIsNone(result)
@@ -810,7 +807,7 @@ class TestEditAccount(unittest.IsolatedAsyncioTestCase):
             with self.assertRaises(exc.NoPermission):
                 await mock.unwrap(account.edit_account)(
                     account_id=self.login_account.id,
-                    data=self.input_email_default
+                    data=self.input_email_default,
                 )
 
 
@@ -835,11 +832,11 @@ class TestDeleteAccount(unittest.IsolatedAsyncioTestCase):
             ).returns(True)
 
             db_account.async_func('delete').call_with(
-                account_id=self.login_account.id
+                account_id=self.login_account.id,
             ).returns(None)
 
             result = await mock.unwrap(account.delete_account)(
-                account_id=self.login_account.id
+                account_id=self.login_account.id,
             )
 
         self.assertIsNone(result)
@@ -859,11 +856,11 @@ class TestDeleteAccount(unittest.IsolatedAsyncioTestCase):
             ).returns(False)
 
             db_account.async_func('delete').call_with(
-                account_id=self.login_account.id
+                account_id=self.login_account.id,
             ).returns(None)
 
             result = await mock.unwrap(account.delete_account)(
-                account_id=self.login_account.id
+                account_id=self.login_account.id,
             )
 
         self.assertIsNone(result)
@@ -882,7 +879,7 @@ class TestDeleteAccount(unittest.IsolatedAsyncioTestCase):
             ).returns(False)
             with self.assertRaises(exc.NoPermission):
                 await mock.unwrap(account.delete_account)(
-                    account_id=self.login_account.id
+                    account_id=self.login_account.id,
                 )
 
 
@@ -910,7 +907,7 @@ class TestMakeStudentCardDefault(unittest.IsolatedAsyncioTestCase):
             service_rbac = controller.mock_module('service.rbac')
 
             db_student_card.async_func('read_owner_id').call_with(
-                student_card_id=self.input.student_card_id
+                student_card_id=self.input.student_card_id,
             ).returns(self.owner_id)
 
             service_rbac.async_func('validate_system').call_with(
@@ -919,12 +916,12 @@ class TestMakeStudentCardDefault(unittest.IsolatedAsyncioTestCase):
 
             db_account.async_func('edit_default_student_card').call_with(
                 account_id=self.login_account.id,
-                student_card_id=self.input.student_card_id
+                student_card_id=self.input.student_card_id,
             ).returns(None)
 
             result = await mock.unwrap(account.make_student_card_default)(
                 account_id=self.login_account.id,
-                data=self.input
+                data=self.input,
             )
 
         self.assertIsNone(result)
@@ -941,7 +938,7 @@ class TestMakeStudentCardDefault(unittest.IsolatedAsyncioTestCase):
             service_rbac = controller.mock_module('service.rbac')
 
             db_student_card.async_func('read_owner_id').call_with(
-                student_card_id=self.input.student_card_id
+                student_card_id=self.input.student_card_id,
             ).returns(self.owner_id)
 
             service_rbac.async_func('validate_system').call_with(
@@ -950,12 +947,12 @@ class TestMakeStudentCardDefault(unittest.IsolatedAsyncioTestCase):
 
             db_account.async_func('edit_default_student_card').call_with(
                 account_id=self.login_account.id,
-                student_card_id=self.input.student_card_id
+                student_card_id=self.input.student_card_id,
             ).returns(None)
 
             result = await mock.unwrap(account.make_student_card_default)(
                 account_id=self.login_account.id,
-                data=self.input
+                data=self.input,
             )
 
         self.assertIsNone(result)
@@ -971,7 +968,7 @@ class TestMakeStudentCardDefault(unittest.IsolatedAsyncioTestCase):
             service_rbac = controller.mock_module('service.rbac')
 
             db_student_card.async_func('read_owner_id').call_with(
-                student_card_id=self.input.student_card_id
+                student_card_id=self.input.student_card_id,
             ).returns(self.owner_id)
 
             service_rbac.async_func('validate_system').call_with(
@@ -981,7 +978,7 @@ class TestMakeStudentCardDefault(unittest.IsolatedAsyncioTestCase):
             with self.assertRaises(exc.NoPermission):
                 await mock.unwrap(account.make_student_card_default)(
                     account_id=self.login_account.id,
-                    data=self.input
+                    data=self.input,
                 )
 
     async def test_student_card_does_not_belong(self):
@@ -994,13 +991,13 @@ class TestMakeStudentCardDefault(unittest.IsolatedAsyncioTestCase):
             db_student_card = controller.mock_module('persistence.database.student_card')
 
             db_student_card.async_func('read_owner_id').call_with(
-                student_card_id=self.input.student_card_id
+                student_card_id=self.input.student_card_id,
             ).returns(self.owner_id_not_belong)
 
             with self.assertRaises(exc.account.StudentCardDoesNotBelong):
                 await mock.unwrap(account.make_student_card_default)(
                     account_id=self.login_account.id,
-                    data=self.input
+                    data=self.input,
                 )
 
 
@@ -1042,11 +1039,11 @@ class TestBrowseAllAccountPendingEmailVerification(unittest.IsolatedAsyncioTestC
             ).returns(True)
 
             db_email_verification.async_func('browse').call_with(
-                account_id=self.login_account.id
+                account_id=self.login_account.id,
             ).returns(self.output)
 
             result = await mock.unwrap(account.browse_all_account_pending_email_verification)(
-                account_id=self.login_account.id
+                account_id=self.login_account.id,
             )
 
         self.assertEqual(result, self.output)
@@ -1066,11 +1063,11 @@ class TestBrowseAllAccountPendingEmailVerification(unittest.IsolatedAsyncioTestC
             ).returns(False)
 
             db_email_verification.async_func('browse').call_with(
-                account_id=self.login_account.id
+                account_id=self.login_account.id,
             ).returns(self.output)
 
             result = await mock.unwrap(account.browse_all_account_pending_email_verification)(
-                account_id=self.login_account.id
+                account_id=self.login_account.id,
             )
 
         self.assertEqual(result, self.output)
@@ -1089,5 +1086,5 @@ class TestBrowseAllAccountPendingEmailVerification(unittest.IsolatedAsyncioTestC
             ).returns(False)
             with self.assertRaises(exc.NoPermission):
                 await mock.unwrap(account.browse_all_account_pending_email_verification)(
-                    account_id=self.login_account.id
+                    account_id=self.login_account.id,
                 )
