@@ -722,7 +722,7 @@ class TestAddPeerReviewUnderChallenge(unittest.IsolatedAsyncioTestCase):
                 title=self.data.title, target_problem_id=self.data.target_problem_id,
                 setter_id=context.account.id, description=self.data.description,
                 min_score=self.data.min_score, max_score=self.data.max_score,
-                max_review_count=self.data.max_review_count
+                max_review_count=self.data.max_review_count,
             ).returns(self.peer_review_id)
 
             result = await mock.unwrap(challenge.add_peer_review_under_challenge)(self.challenge_id, self.data)
@@ -1018,7 +1018,7 @@ class TestBrowseAllTaskUnderChallenge(unittest.IsolatedAsyncioTestCase):
             db_challenge = controller.mock_module('persistence.database.challenge')
 
             db_challenge.async_func('read').call_with(
-                challenge_id=self.challenge.id, ref_time=context.request_time
+                challenge_id=self.challenge.id, ref_time=context.request_time,
             ).returns(self.challenge)
             service_rbac.async_func('get_class_role').call_with(
                 context.account.id, challenge_id=self.challenge.id,
@@ -1047,7 +1047,7 @@ class TestBrowseAllTaskUnderChallenge(unittest.IsolatedAsyncioTestCase):
             db_challenge = controller.mock_module('persistence.database.challenge')
 
             db_challenge.async_func('read').call_with(
-                challenge_id=self.challenge.id, ref_time=context.request_time
+                challenge_id=self.challenge.id, ref_time=context.request_time,
             ).returns(self.challenge)
             service_rbac.async_func('get_class_role').call_with(
                 context.account.id, challenge_id=self.challenge.id,
@@ -1072,7 +1072,7 @@ class TestBrowseAllTaskUnderChallenge(unittest.IsolatedAsyncioTestCase):
             db_challenge = controller.mock_module('persistence.database.challenge')
 
             db_challenge.async_func('read').call_with(
-                challenge_id=self.challenge.id, ref_time=context.request_time
+                challenge_id=self.challenge.id, ref_time=context.request_time,
             ).returns(self.challenge)
             service_rbac.async_func('get_class_role').call_with(
                 context.account.id, challenge_id=self.challenge.id,
@@ -1096,7 +1096,7 @@ class TestBrowseAllTaskUnderChallenge(unittest.IsolatedAsyncioTestCase):
             db_challenge = controller.mock_module('persistence.database.challenge')
 
             db_challenge.async_func('read').call_with(
-                challenge_id=self.challenge.id, ref_time=context.request_time
+                challenge_id=self.challenge.id, ref_time=context.request_time,
             ).returns(self.challenge)
             service_rbac.async_func('get_class_role').call_with(
                 context.account.id, challenge_id=self.challenge.id,
@@ -1121,7 +1121,7 @@ class TestBrowseAllTaskUnderChallenge(unittest.IsolatedAsyncioTestCase):
             db_challenge = controller.mock_module('persistence.database.challenge')
 
             db_challenge.async_func('read').call_with(
-                challenge_id=self.challenge.id, ref_time=context.request_time
+                challenge_id=self.challenge.id, ref_time=context.request_time,
             ).returns(self.challenge)
             service_rbac.async_func('get_class_role').call_with(
                 context.account.id, challenge_id=self.challenge.id,
@@ -1149,7 +1149,7 @@ class TestBrowseAllTaskUnderChallenge(unittest.IsolatedAsyncioTestCase):
             db_challenge = controller.mock_module('persistence.database.challenge')
 
             db_challenge.async_func('read').call_with(
-                challenge_id=self.challenge_unpublicized.id, ref_time=context.request_time
+                challenge_id=self.challenge_unpublicized.id, ref_time=context.request_time,
             ).returns(self.challenge_unpublicized)
             service_rbac.async_func('get_class_role').call_with(
                 context.account.id, challenge_id=self.challenge_unpublicized.id,
@@ -1173,7 +1173,7 @@ class TestBrowseAllTaskUnderChallenge(unittest.IsolatedAsyncioTestCase):
             db_challenge = controller.mock_module('persistence.database.challenge')
 
             db_challenge.async_func('read').call_with(
-                challenge_id=self.challenge.id, ref_time=context.request_time
+                challenge_id=self.challenge.id, ref_time=context.request_time,
             ).returns(self.challenge)
             service_rbac.async_func('get_class_role').call_with(
                 context.account.id, challenge_id=self.challenge.id,
@@ -1557,8 +1557,8 @@ class TestGetMemberSubmissionStatistics(unittest.IsolatedAsyncioTestCase):
                             submit_time=datetime(2023, 7, 29, 12),
                         ),
                     ],
-                )
-            ]
+                ),
+            ],
         )
 
         self.expected_happy_flow_result = model.BrowseOutputBase(
@@ -2231,7 +2231,7 @@ class TestDownloadAllPlagiarismReports(unittest.IsolatedAsyncioTestCase):
 
             result = await mock.unwrap(challenge.download_all_plagiarism_reports)(
                 challenge_id=self.challenge.id, as_attachment=True,
-                background_tasks=self.background_tasks
+                background_tasks=self.background_tasks,
             )
 
             db_account_vo.async_func('read_with_default_student_card').call_with(
@@ -2316,7 +2316,7 @@ class TestDownloadAllPlagiarismReports(unittest.IsolatedAsyncioTestCase):
 
             result = await mock.unwrap(challenge.download_all_plagiarism_reports)(
                 challenge_id=self.challenge.id, as_attachment=True,
-                background_tasks=self.background_tasks
+                background_tasks=self.background_tasks,
             )
 
             db_account_vo.async_func('read_with_default_student_card').call_with(
@@ -2392,7 +2392,7 @@ class TestDownloadAllPlagiarismReports(unittest.IsolatedAsyncioTestCase):
 
             result = await mock.unwrap(challenge.download_all_plagiarism_reports)(
                 challenge_id=self.challenge.id, as_attachment=True,
-                background_tasks=self.background_tasks
+                background_tasks=self.background_tasks,
             )
 
             db_account_vo.async_func('read_with_default_student_card').call_with(
@@ -2450,7 +2450,7 @@ class TestDownloadAllPlagiarismReports(unittest.IsolatedAsyncioTestCase):
             with self.assertRaises(exc.NoPermission):
                 await mock.unwrap(challenge.download_all_plagiarism_reports)(
                     challenge_id=self.challenge.id, as_attachment=True,
-                    background_tasks=self.background_tasks
+                    background_tasks=self.background_tasks,
                 )
 
 
