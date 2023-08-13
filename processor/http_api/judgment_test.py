@@ -1,6 +1,7 @@
 import copy
 import datetime
 import unittest
+import uuid
 
 from base import enum, do
 import exceptions as exc
@@ -41,7 +42,7 @@ class TestReadJudgment(unittest.IsolatedAsyncioTestCase):
             account_id=self.login_account.id,
             problem_id=1,
             language_id=1,
-            content_file_uuid=do.UUID('{12345678-1234-5678-1234-567812345678}'),
+            content_file_uuid=uuid.UUID('{12345678-1234-5678-1234-567812345678}'),
             content_length=100,
             filename='test',
             submit_time=self.today,
@@ -140,7 +141,7 @@ class TestBrowseAllJudgmentJudgeCase(unittest.IsolatedAsyncioTestCase):
             account_id=self.login_account.id,
             problem_id=1,
             language_id=1,
-            content_file_uuid=do.UUID('{12345678-1234-5678-1234-567812345678}'),
+            content_file_uuid=uuid.UUID('{12345678-1234-5678-1234-567812345678}'),
             content_length=100,
             filename='test',
             submit_time=self.today,
