@@ -93,7 +93,7 @@ async def batch_get_account_with_default_student_id(account_ids: pydantic.Json) 
     ### Notes
     - `account_ids`: list of int
     """
-    account_ids = pydantic.tools.parse_obj_as(list[int], account_ids)
+    account_ids = pydantic.parse_obj_as(list[int], account_ids)
     if not account_ids:
         return []
 
@@ -118,7 +118,7 @@ async def batch_get_account_by_account_referrals(account_referrals: pydantic.Jso
     ### Notes:
     account_referrals: list of string
     """
-    account_referrals = pydantic.tools.parse_obj_as(list[str], account_referrals)
+    account_referrals = pydantic.parse_obj_as(list[str], account_referrals)
     if not account_referrals:
         return []
 

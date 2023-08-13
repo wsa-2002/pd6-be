@@ -200,9 +200,8 @@ class TestBatchGetAccountWithDefaultStudentId(unittest.IsolatedAsyncioTestCase):
 
             service_rbac = controller.mock_module('service.rbac')
             db_account_vo = controller.mock_module('persistence.database.account_vo')
-            pydantic_ = controller.mock_module('processor.http_api.account.pydantic.tools')
 
-            pydantic_.func('parse_obj_as').call_with(list[int], self.account_ids_json).returns(
+            controller.mock_global_func('pydantic.parse_obj_as').call_with(list[int], self.account_ids_json).returns(
                 self.account_ids,
             )
             service_rbac.async_func('validate_system').call_with(
@@ -227,9 +226,8 @@ class TestBatchGetAccountWithDefaultStudentId(unittest.IsolatedAsyncioTestCase):
             context.set_account(self.login_account)
 
             service_rbac = controller.mock_module('service.rbac')
-            pydantic_ = controller.mock_module('processor.http_api.account.pydantic.tools')
 
-            pydantic_.func('parse_obj_as').call_with(list[int], self.account_ids_json).returns(
+            controller.mock_global_func('pydantic.parse_obj_as').call_with(list[int], self.account_ids_json).returns(
                 self.account_ids,
             )
 
@@ -249,11 +247,9 @@ class TestBatchGetAccountWithDefaultStudentId(unittest.IsolatedAsyncioTestCase):
         ):
             context.set_account(self.login_account)
 
-            pydantic_ = controller.mock_module('processor.http_api.account.pydantic.tools')
-
-            pydantic_.func('parse_obj_as').call_with(list[int], self.empty_account_ids_json).returns(
-                self.empty_account_ids,
-            )
+            controller.mock_global_func('pydantic.parse_obj_as').call_with(
+                list[int], self.empty_account_ids_json,
+            ).returns(self.empty_account_ids)
             result = await mock.unwrap(account.batch_get_account_with_default_student_id)(
                 account_ids=self.empty_account_ids_json,
             )
@@ -319,11 +315,10 @@ class TestBatchGetAccountByAccountReferrals(unittest.IsolatedAsyncioTestCase):
 
             service_rbac = controller.mock_module('service.rbac')
             db_account_vo = controller.mock_module('persistence.database.account_vo')
-            pydantic_ = controller.mock_module('processor.http_api.account.pydantic.tools')
 
-            pydantic_.func('parse_obj_as').call_with(list[str], self.account_referrals_json).returns(
-                self.account_referrals,
-            )
+            controller.mock_global_func('pydantic.parse_obj_as').call_with(
+                list[str], self.account_referrals_json,
+            ).returns(self.account_referrals)
             service_rbac.async_func('validate_system').call_with(
                 self.login_account.id, enum.RoleType.normal,
             ).returns(True)
@@ -346,11 +341,10 @@ class TestBatchGetAccountByAccountReferrals(unittest.IsolatedAsyncioTestCase):
             context.set_account(self.login_account)
 
             service_rbac = controller.mock_module('service.rbac')
-            pydantic_ = controller.mock_module('processor.http_api.account.pydantic.tools')
 
-            pydantic_.func('parse_obj_as').call_with(list[str], self.account_referrals_json).returns(
-                self.account_referrals,
-            )
+            controller.mock_global_func('pydantic.parse_obj_as').call_with(
+                list[str], self.account_referrals_json,
+            ).returns(self.account_referrals)
 
             service_rbac.async_func('validate_system').call_with(
                 self.login_account.id, enum.RoleType.normal,
@@ -368,11 +362,9 @@ class TestBatchGetAccountByAccountReferrals(unittest.IsolatedAsyncioTestCase):
         ):
             context.set_account(self.login_account)
 
-            pydantic_ = controller.mock_module('processor.http_api.account.pydantic.tools')
-
-            pydantic_.func('parse_obj_as').call_with(list[int], self.empty_account_referrals_json).returns(
-                self.empty_account_referrals,
-            )
+            controller.mock_global_func('pydantic.parse_obj_as').call_with(
+                list[int], self.empty_account_referrals_json,
+            ).returns(self.empty_account_referrals)
             result = await mock.unwrap(account.batch_get_account_with_default_student_id)(
                 account_ids=self.empty_account_referrals_json,
             )
