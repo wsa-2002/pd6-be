@@ -970,10 +970,10 @@ class TestBrowseSubmissionUnderClass(unittest.IsolatedAsyncioTestCase):
             ).returns(True)
 
             model_.func('parse_filter').call_with(
-                self.filter, class_.BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS
+                self.filter, class_.BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS,
             ).returns(self.filters)
             model_.func('parse_sorter').call_with(
-                self.sorter, class_.BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS
+                self.sorter, class_.BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS,
             ).returns(self.sorters)
             db_submission.async_func('browse_under_class').call_with(
                 class_id=self.class_id,
