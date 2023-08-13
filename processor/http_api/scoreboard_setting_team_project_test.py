@@ -148,7 +148,7 @@ class TestViewTeamProjectScoreboard(unittest.IsolatedAsyncioTestCase):
             ),
         ]
 
-    def mock_calculator(self, raw_score):
+    def mock_calculator(self, _):
         return eval(self.setting_data.scoring_formula, {
             'class_max': 100,
             'class_min': 60,
