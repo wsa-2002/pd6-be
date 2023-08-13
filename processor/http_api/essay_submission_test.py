@@ -1,8 +1,10 @@
 import copy
 import datetime
 import unittest
+import uuid
 
 from fastapi import UploadFile
+
 
 from base import enum, do, popo
 import exceptions as exc
@@ -16,7 +18,7 @@ class TestUploadEssay(unittest.IsolatedAsyncioTestCase):
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
         self.today = datetime.datetime(2023, 4, 9)
         self.essay_id = 1
-        self.essay_file = UploadFile(...)
+        self.essay_file = UploadFile(filename='essay')
         self.essay = do.Essay(
             id=self.essay_id,
             challenge_id=1,
@@ -135,7 +137,7 @@ class TestBrowseEssaySubmissionByEssayId(unittest.IsolatedAsyncioTestCase):
                 id=1,
                 account_id=self.login_account.id,
                 essay_id=1,
-                content_file_uuid=do.UUID('{12345678-1234-5678-1234-567812345678}'),
+                content_file_uuid=uuid.UUID('{12345678-1234-5678-1234-567812345678}'),
                 filename='test1',
                 submit_time=self.today,
             ),
@@ -143,7 +145,7 @@ class TestBrowseEssaySubmissionByEssayId(unittest.IsolatedAsyncioTestCase):
                 id=2,
                 account_id=self.login_account.id,
                 essay_id=1,
-                content_file_uuid=do.UUID('{12345678-1234-5678-1234-567812345679}'),
+                content_file_uuid=uuid.UUID('{12345678-1234-5678-1234-567812345679}'),
                 filename='test2',
                 submit_time=self.today,
             ),
@@ -215,7 +217,7 @@ class TestReadEssaySubmission(unittest.IsolatedAsyncioTestCase):
             id=1,
             account_id=self.login_account.id,
             essay_id=1,
-            content_file_uuid=do.UUID('{12345678-1234-5678-1234-567812345678}'),
+            content_file_uuid=uuid.UUID('{12345678-1234-5678-1234-567812345678}'),
             filename='test1',
             submit_time=self.today,
         )
@@ -288,12 +290,12 @@ class TestReuploadEssay(unittest.IsolatedAsyncioTestCase):
         self.other_account = security.AuthedAccount(id=2, cached_username='other')
         self.today = datetime.datetime(2023, 4, 9)
         self.essay_submission_id = 1
-        self.essay_file = UploadFile(...)
+        self.essay_file = UploadFile(filename='essay')
         self.essay_submission = do.EssaySubmission(
             id=1,
             account_id=self.login_account.id,
             essay_id=1,
-            content_file_uuid=do.UUID('{12345678-1234-5678-1234-567812345678}'),
+            content_file_uuid=uuid.UUID('{12345678-1234-5678-1234-567812345678}'),
             filename='test',
             submit_time=self.today,
         )
