@@ -1,6 +1,8 @@
 import unittest
 import uuid
 
+import exceptions as exc
+
 from base import enum, do
 from util import mock, model
 
@@ -60,6 +62,20 @@ class TestForgetPassword(unittest.IsolatedAsyncioTestCase):
 
         self.assertIsNone(result)
 
+    async def test_not_found(self):
+        with (
+            mock.Controller() as controller,
+        ):
+            db_account = controller.mock_module('persistence.database.account')
+
+            db_account.async_func('browse_by_email').call_with(
+                self.data.email, username=self.data.username,
+            ).raises(exc.persistence.NotFound)
+
+            result = await mock.unwrap(public.forget_password)(self.data)
+
+        self.assertIsNone(result)
+
 
 class TestForgetUsername(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
@@ -98,6 +114,20 @@ class TestForgetUsername(unittest.IsolatedAsyncioTestCase):
                 self.data.email, search_exhaustive=True,
             ).returns(self.accounts)
             email_forget_username.async_func('send').call_with(to=self.data.email, accounts=self.accounts).returns(None)
+
+            result = await mock.unwrap(public.forget_username)(self.data)
+
+        self.assertIsNone(result)
+
+    async def test_not_found(self):
+        with (
+            mock.Controller() as controller,
+        ):
+            db_account = controller.mock_module('persistence.database.account')
+
+            db_account.async_func('browse_by_email').call_with(
+                self.data.email, search_exhaustive=True,
+            ).raises(exc.persistence.NotFound)
 
             result = await mock.unwrap(public.forget_username)(self.data)
 
