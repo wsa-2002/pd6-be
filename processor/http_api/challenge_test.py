@@ -3,8 +3,7 @@ from datetime import datetime
 import unittest
 from uuid import UUID
 
-from fastapi import BackgroundTasks, UploadFile
-from pydantic import constr
+from fastapi import BackgroundTasks
 
 import const
 import exceptions as exc
