@@ -428,19 +428,6 @@ class TestAssignPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
             max_review_count=3,
             is_deleted=False,
         )
-        self.peer_review_max_limited = do.PeerReview(
-            id=1,
-            challenge_id=1,
-            challenge_label='test',
-            title='test',
-            target_problem_id=1,
-            setter_id=1,
-            description='test_only',
-            min_score=1,
-            max_score=10,
-            max_review_count=1,
-            is_deleted=False,
-        )
         self.challenge = do.Challenge(
             id=1,
             class_id=1,
@@ -453,11 +440,12 @@ class TestAssignPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
             end_time=self.today + datetime.timedelta(days=5),
             is_deleted=False,
         )
-        self.peer_review_records = [
+        self.peer_review_records = []
+        self.peer_review_records_already_assigned = [
             do.PeerReviewRecord(
                 id=1,
                 peer_review_id=1,
-                grader_id=1,
+                grader_id=self.login_account.id,
                 receiver_id=2,
                 submission_id=1,
                 score=5,
@@ -466,11 +454,20 @@ class TestAssignPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
             do.PeerReviewRecord(
                 id=2,
                 peer_review_id=2,
-                grader_id=1,
-                receiver_id=2,
+                grader_id=self.login_account.id,
+                receiver_id=3,
                 submission_id=2,
                 score=10,
                 comment='great',
+                submit_time=None),
+            do.PeerReviewRecord(
+                id=3,
+                peer_review_id=3,
+                grader_id=self.login_account.id,
+                receiver_id=4,
+                submission_id=3,
+                score=1,
+                comment='bad',
                 submit_time=None),
         ]
         self.peer_review_record_ids = [i + 1 for i in range(self.peer_review.max_review_count)]
@@ -577,17 +574,17 @@ class TestAssignPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
                 context.account.id, peer_review_id=self.peer_review_id,
             ).returns(enum.RoleType.normal)
             db_peer_review.async_func('read').call_with(self.peer_review_id).returns(
-                self.peer_review_max_limited,
+                self.peer_review,
             )
             db_challenge.async_func('read').call_with(challenge_id=self.peer_review.challenge_id).returns(
                 self.challenge,
             )
             db_peer_review_record.async_func('read_by_peer_review_id').call_with(
-                peer_review_id=self.peer_review_max_limited.id,
+                peer_review_id=self.peer_review.id,
                 account_id=context.account.id,
                 is_receiver=False,
             ).returns(
-                self.peer_review_records,
+                self.peer_review_records_already_assigned,
             )
 
             await mock.unwrap(peer_review.assign_peer_review_record)(self.peer_review_id)
