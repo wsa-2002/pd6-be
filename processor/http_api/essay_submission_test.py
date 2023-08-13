@@ -5,7 +5,6 @@ import uuid
 
 from fastapi import UploadFile
 
-
 from base import enum, do, popo
 import exceptions as exc
 from util import mock, security, model
