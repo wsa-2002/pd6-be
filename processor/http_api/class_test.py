@@ -1,6 +1,7 @@
 import copy
 import datetime
 import unittest
+import uuid
 
 import base.popo
 from base import enum, do
@@ -353,9 +354,9 @@ class TestBrowseClassMember(unittest.IsolatedAsyncioTestCase):
                 self.sorters,
             )
             db_class_vo.async_func('browse_member_account_with_student_card_and_institute').call_with(
-                limit=self.limit, offset=self.offset, filters=self.filters_self, sorters=self.sorters
+                limit=self.limit, offset=self.offset, filters=self.filters_self, sorters=self.sorters,
             ).returns(
-                (self.data_result, self.total_count)
+                (self.data_result, self.total_count),
             )
 
             model_.func('BrowseOutputBase').call_with(self.result.data, total_count=self.total_count).returns(
@@ -380,10 +381,10 @@ class TestBrowseClassMember(unittest.IsolatedAsyncioTestCase):
             db_class_vo = controller.mock_module('persistence.database.class_vo')
 
             service_rbac.async_func('validate_class').call_with(
-                context.account.id, enum.RoleType.normal, class_id=self.class_id
+                context.account.id, enum.RoleType.normal, class_id=self.class_id,
             ).returns(False)
             service_rbac.async_func('validate_inherit').call_with(
-                context.account.id, enum.RoleType.manager, class_id=self.class_id
+                context.account.id, enum.RoleType.manager, class_id=self.class_id,
             ).returns(True)
             model_.func('parse_filter').call_with(self.filter, class_.BROWSE_CLASS_MEMBER_COLUMNS).returns(
                 self.filters_default,
@@ -421,7 +422,7 @@ class TestBrowseClassMember(unittest.IsolatedAsyncioTestCase):
                 context.account.id, enum.RoleType.normal, class_id=self.class_id,
             ).returns(False)
             service_rbac.async_func('validate_inherit').call_with(
-                context.account.id, enum.RoleType.manager, class_id=self.class_id
+                context.account.id, enum.RoleType.manager, class_id=self.class_id,
             ).returns(False)
 
             await mock.unwrap(class_.browse_class_member)(
@@ -927,7 +928,7 @@ class TestBrowseSubmissionUnderClass(unittest.IsolatedAsyncioTestCase):
                 account_id=1,
                 problem_id=1,
                 language_id=1,
-                content_file_uuid=do.UUID('{12345678-1234-5678-1234-567812345678}'),
+                content_file_uuid=uuid.UUID('{12345678-1234-5678-1234-567812345678}'),
                 content_length=1,
                 filename='test',
                 submit_time=self.today),
@@ -936,7 +937,7 @@ class TestBrowseSubmissionUnderClass(unittest.IsolatedAsyncioTestCase):
                 account_id=1,
                 problem_id=1,
                 language_id=1,
-                content_file_uuid=do.UUID('{12345678-1234-5678-1234-567812345678}'),
+                content_file_uuid=uuid.UUID('{12345678-1234-5678-1234-567812345678}'),
                 content_length=1,
                 filename='test',
                 submit_time=self.today),
@@ -945,7 +946,7 @@ class TestBrowseSubmissionUnderClass(unittest.IsolatedAsyncioTestCase):
                 account_id=1,
                 problem_id=1,
                 language_id=1,
-                content_file_uuid=do.UUID('{12345678-1234-5678-1234-567812345678}'),
+                content_file_uuid=uuid.UUID('{12345678-1234-5678-1234-567812345678}'),
                 content_length=1,
                 filename='test',
                 submit_time=self.today),
@@ -968,20 +969,18 @@ class TestBrowseSubmissionUnderClass(unittest.IsolatedAsyncioTestCase):
                 context.account.id, enum.RoleType.manager, class_id=self.class_id,
             ).returns(True)
 
-            model_.func('parse_filter').call_with(self.filter,
-                                                  class_.BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS).returns(
-                self.filters,
-            )
-            model_.func('parse_sorter').call_with(self.sorter,
-                                                  class_.BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS).returns(
-                self.sorters,
-            )
+            model_.func('parse_filter').call_with(
+                self.filter, class_.BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS
+            ).returns(self.filters)
+            model_.func('parse_sorter').call_with(
+                self.sorter, class_.BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS
+            ).returns(self.sorters)
             db_submission.async_func('browse_under_class').call_with(
                 class_id=self.class_id,
                 limit=self.limit, offset=self.offset,
                 filters=self.filters, sorters=self.sorters,
             ).returns(
-                (self.submissions, self.total_count)
+                (self.submissions, self.total_count),
             )
 
             model_.func('BrowseOutputBase').call_with(self.submissions, total_count=self.total_count).returns(
