@@ -473,9 +473,7 @@ class TestAssignPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
                 comment='great',
                 submit_time=None),
         ]
-        self.peer_review_record_ids = [self.peer_review_records[i].peer_review_id if
-                                       i < len(self.peer_review_records) else i + 1 for i in
-                                       range(self.peer_review.max_review_count)]
+        self.peer_review_record_ids = [i + 1 for i in range(self.peer_review.max_review_count)]
         self.result = peer_review.AssignPeerReviewOutput(copy.deepcopy(self.peer_review_record_ids))
 
     async def test_happy_flow(self):
@@ -507,12 +505,12 @@ class TestAssignPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
             ).returns(
                 self.peer_review_records,
             )
-            for _ in range(self.peer_review.max_review_count):
+            for i in range(self.peer_review.max_review_count):
                 db_peer_review_record.async_func('add_auto').call_with(
                     peer_review_id=self.peer_review.id,
                     grader_id=context.account.id,
                 ).returns(
-                    self.peer_review_record_ids[_],
+                    self.peer_review_record_ids[i],
                 )
 
             result = await mock.unwrap(peer_review.assign_peer_review_record)(self.peer_review_id)
