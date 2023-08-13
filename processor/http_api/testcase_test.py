@@ -1,5 +1,6 @@
 import copy
 import unittest
+import uuid
 
 from fastapi import UploadFile
 
@@ -19,8 +20,8 @@ class TestReadTestcase(unittest.IsolatedAsyncioTestCase):
             is_sample=True,
             score=1,
             label='test',
-            input_file_uuid=do.UUID('{12345678-1234-5678-1234-567812345678}'),
-            output_file_uuid=do.UUID('{12345678-1234-5678-1234-567812345678}'),
+            input_file_uuid=uuid.UUID('{12345678-1234-5678-1234-567812345678}'),
+            output_file_uuid=uuid.UUID('{12345678-1234-5678-1234-567812345678}'),
             input_filename='test',
             output_filename='test',
             note='test',
@@ -35,8 +36,8 @@ class TestReadTestcase(unittest.IsolatedAsyncioTestCase):
             is_sample=False,
             score=1,
             label='test',
-            input_file_uuid=do.UUID('{12345678-1234-5678-1234-567812345678}'),
-            output_file_uuid=do.UUID('{12345678-1234-5678-1234-567812345678}'),
+            input_file_uuid=uuid.UUID('{12345678-1234-5678-1234-567812345678}'),
+            output_file_uuid=uuid.UUID('{12345678-1234-5678-1234-567812345678}'),
             input_filename='test',
             output_filename='test',
             note='test',
@@ -51,8 +52,8 @@ class TestReadTestcase(unittest.IsolatedAsyncioTestCase):
             is_sample=False,
             score=1,
             label='test',
-            input_file_uuid=do.UUID('{12345678-1234-5678-1234-567812345678}'),
-            output_file_uuid=do.UUID('{12345678-1234-5678-1234-567812345678}'),
+            input_file_uuid=uuid.UUID('{12345678-1234-5678-1234-567812345678}'),
+            output_file_uuid=uuid.UUID('{12345678-1234-5678-1234-567812345678}'),
             input_filename='test',
             output_filename='test',
             note='test',
@@ -67,8 +68,8 @@ class TestReadTestcase(unittest.IsolatedAsyncioTestCase):
             is_sample=True,
             score=1,
             label='test',
-            input_file_uuid=do.UUID('{12345678-1234-5678-1234-567812345678}'),
-            output_file_uuid=do.UUID('{12345678-1234-5678-1234-567812345678}'),
+            input_file_uuid=uuid.UUID('{12345678-1234-5678-1234-567812345678}'),
+            output_file_uuid=uuid.UUID('{12345678-1234-5678-1234-567812345678}'),
             input_filename='test',
             output_filename='test',
             note='test',
@@ -228,7 +229,7 @@ class TestUploadTestcaseInputData(unittest.IsolatedAsyncioTestCase):
         self.input_file = UploadFile(filename='test')
         self.no_cr_file = copy.deepcopy(self.input_file.file)
         self.s3_file = do.S3File(
-            uuid=do.UUID('{12345678-1234-5678-1234-567812345678}'),
+            uuid=uuid.UUID('{12345678-1234-5678-1234-567812345678}'),
             bucket='bucket',
             key='key',
         )
@@ -269,7 +270,7 @@ class TestUploadTestcaseOutputData(unittest.IsolatedAsyncioTestCase):
         self.output_file = UploadFile(filename='test')
         self.no_cr_file = copy.deepcopy(self.output_file.file)
         self.s3_file = do.S3File(
-            uuid=do.UUID('{12345678-1234-5678-1234-567812345678}'),
+            uuid=uuid.UUID('{12345678-1234-5678-1234-567812345678}'),
             bucket='bucket',
             key='key',
         )
