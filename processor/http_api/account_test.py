@@ -28,14 +28,6 @@ class TestBrowseAccountWithDefaultStudentId(unittest.IsolatedAsyncioTestCase):
         self.sorter_str = model.SorterStr
         self.filters = []
         self.sorters = []
-        self.browse_account_columns = {
-            'id': int,
-            'username': str,
-            'nickname': str,
-            'role': str,
-            'real_name': str,
-            'alternative_email': str,
-        }
         self.expected_output_data = [
             (do.Account(
                 id=1,
@@ -600,7 +592,7 @@ class TestReadAccountWithDefaultStudentId(unittest.IsolatedAsyncioTestCase):
                 self.login_account.id, enum.RoleType.normal,
             ).returns(False)
             db_account_vo.async_func('read_with_default_student_card').call_with(
-                account_id=self.account.id
+                account_id=self.account.id,
             ).returns((self.account, self.student_card))
 
             result = await mock.unwrap(account.read_account_with_default_student_id)(account_id=self.account.id)
