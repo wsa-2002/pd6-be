@@ -34,13 +34,13 @@ class TestForgetPassword(unittest.IsolatedAsyncioTestCase):
         )
         # should only be one account
         self.account = do.Account(
-                id=1,
-                username=self.data.username,
-                nickname='nick',
-                real_name='real',
-                role=enum.RoleType.normal,
-                is_deleted=False,
-                alternative_email=None)
+            id=1,
+            username=self.data.username,
+            nickname='nick',
+            real_name='real',
+            role=enum.RoleType.normal,
+            is_deleted=False,
+            alternative_email=None)
         self.code = uuid.UUID('{12345678-1234-5678-1234-567812345678}')
 
     async def test_happy_flow(self):
