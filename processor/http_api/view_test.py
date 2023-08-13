@@ -13,12 +13,6 @@ class TestBrowseAccountWithDefaultStudentId(unittest.IsolatedAsyncioTestCase):
 
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
 
-        self.browse_account_columns = {
-            'account_id': int,
-            'username': str,
-            'real_name': str,
-            'student_id': str,
-        }
         self.limit = model.Limit(10)
         self.offset = model.Offset(0)
         self.filter_str = model.FilterStr
@@ -62,10 +56,10 @@ class TestBrowseAccountWithDefaultStudentId(unittest.IsolatedAsyncioTestCase):
             ).returns(True)
 
             model_.func('parse_filter').call_with(
-                self.filter_str, self.browse_account_columns,
+                self.filter_str, view.BROWSE_ACCOUNT_COLUMNS,
             ).returns(self.filters)
             model_.func('parse_sorter').call_with(
-                self.sorter_str, self.browse_account_columns,
+                self.sorter_str, view.BROWSE_ACCOUNT_COLUMNS,
             ).returns(self.sorters)
 
             db_view.async_func('account').call_with(
@@ -112,15 +106,6 @@ class TestBrowseClassMember(unittest.IsolatedAsyncioTestCase):
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
         self.class_id = 1
 
-        self.browse_class_member_columns = {
-            'account_id': int,
-            'username': str,
-            'student_id': str,
-            'real_name': str,
-            'abbreviated_name': str,
-            'role': enum.RoleType,
-            'class_id': int,
-        }
         self.limit = model.Limit(10)
         self.offset = model.Offset(0)
         self.filter_str = model.FilterStr
@@ -166,14 +151,14 @@ class TestBrowseClassMember(unittest.IsolatedAsyncioTestCase):
             model_ = controller.mock_module('util.model')
 
             service_rbac.async_func('validate_class').call_with(
-                self.login_account.id, enum.RoleType.normal, class_id=self.class_id
+                self.login_account.id, enum.RoleType.normal, class_id=self.class_id,
             ).returns(True)
 
             model_.func('parse_filter').call_with(
-                self.filter_str, self.browse_class_member_columns,
+                self.filter_str, view.BROWSE_CLASS_MEMBER_COLUMNS,
             ).returns(self.filters)
             model_.func('parse_sorter').call_with(
-                self.sorter_str, self.browse_class_member_columns,
+                self.sorter_str, view.BROWSE_CLASS_MEMBER_COLUMNS,
             ).returns(self.sorters)
 
             db_view.async_func('class_member').call_with(
@@ -205,17 +190,17 @@ class TestBrowseClassMember(unittest.IsolatedAsyncioTestCase):
             model_ = controller.mock_module('util.model')
 
             service_rbac.async_func('validate_class').call_with(
-                self.login_account.id, enum.RoleType.normal, class_id=self.class_id
+                self.login_account.id, enum.RoleType.normal, class_id=self.class_id,
             ).returns(False)
             service_rbac.async_func('validate_inherit').call_with(
-                self.login_account.id, enum.RoleType.manager, class_id=self.class_id
+                self.login_account.id, enum.RoleType.manager, class_id=self.class_id,
             ).returns(True)
 
             model_.func('parse_filter').call_with(
-                self.filter_str, self.browse_class_member_columns,
+                self.filter_str, view.BROWSE_CLASS_MEMBER_COLUMNS,
             ).returns(self.filters)
             model_.func('parse_sorter').call_with(
-                self.sorter_str, self.browse_class_member_columns,
+                self.sorter_str, view.BROWSE_CLASS_MEMBER_COLUMNS,
             ).returns(self.sorters)
 
             db_view.async_func('class_member').call_with(
@@ -245,10 +230,10 @@ class TestBrowseClassMember(unittest.IsolatedAsyncioTestCase):
             service_rbac = controller.mock_module('service.rbac')
 
             service_rbac.async_func('validate_class').call_with(
-                self.login_account.id, enum.RoleType.normal, class_id=self.class_id
+                self.login_account.id, enum.RoleType.normal, class_id=self.class_id,
             ).returns(False)
             service_rbac.async_func('validate_inherit').call_with(
-                self.login_account.id, enum.RoleType.manager, class_id=self.class_id
+                self.login_account.id, enum.RoleType.manager, class_id=self.class_id,
             ).returns(False)
 
             with self.assertRaises(exc.NoPermission):
@@ -268,20 +253,6 @@ class TestBrowseSubmissionUnderClass(unittest.IsolatedAsyncioTestCase):
         self.class_id = 1
         self.time = datetime(2023, 8, 1, 1, 1, 1)
 
-        self.browse_class_member_columns = {
-            'submission_id': int,
-            'account_id': int,
-            'username': str,
-            'student_id': str,
-            'real_name': str,
-            'challenge_id': int,
-            'challenge_title': str,
-            'problem_id': int,
-            'challenge_label': str,
-            'verdict': enum.VerdictType,
-            'submit_time': model.ServerTZDatetime,
-            'class_id': int,
-        }
         self.limit = model.Limit(10)
         self.offset = model.Offset(0)
         self.filter_str = model.FilterStr
@@ -341,10 +312,10 @@ class TestBrowseSubmissionUnderClass(unittest.IsolatedAsyncioTestCase):
             ).returns(True)
 
             model_.func('parse_filter').call_with(
-                self.filter_str, self.browse_class_member_columns,
+                self.filter_str, view.BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS,
             ).returns(self.filters)
             model_.func('parse_sorter').call_with(
-                self.sorter_str, self.browse_class_member_columns,
+                self.sorter_str, view.BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS,
             ).returns(self.sorters)
 
             db_view.async_func('class_submission').call_with(
@@ -375,7 +346,7 @@ class TestBrowseSubmissionUnderClass(unittest.IsolatedAsyncioTestCase):
             service_rbac = controller.mock_module('service.rbac')
 
             service_rbac.async_func('validate_class').call_with(
-                self.login_account.id, enum.RoleType.manager, class_id=self.class_id
+                self.login_account.id, enum.RoleType.manager, class_id=self.class_id,
             ).returns(False)
 
             with self.assertRaises(exc.NoPermission):
@@ -395,20 +366,6 @@ class TestBrowseSubmission(unittest.IsolatedAsyncioTestCase):
         self.other_account = security.AuthedAccount(id=2, cached_username='other')
         self.time = datetime(2023, 8, 1, 1, 1, 1)
 
-        self.browse_submission_columns = {
-            'submission_id': int,
-            'course_id': int,
-            'course_name': str,
-            'class_id': int,
-            'class_name': str,
-            'challenge_id': int,
-            'challenge_title': str,
-            'problem_id': int,
-            'challenge_label': str,
-            'verdict': enum.VerdictType,
-            'submit_time': model.ServerTZDatetime,
-            'account_id': int,
-        }
         self.limit = model.Limit(10)
         self.offset = model.Offset(0)
         self.filter_str = model.FilterStr
@@ -463,10 +420,10 @@ class TestBrowseSubmission(unittest.IsolatedAsyncioTestCase):
             model_ = controller.mock_module('util.model')
 
             model_.func('parse_filter').call_with(
-                self.filter_str, self.browse_submission_columns,
+                self.filter_str, view.BROWSE_SUBMISSION_COLUMNS,
             ).returns(self.filters)
             model_.func('parse_sorter').call_with(
-                self.sorter_str, self.browse_submission_columns,
+                self.sorter_str, view.BROWSE_SUBMISSION_COLUMNS,
             ).returns(self.sorters)
 
             db_view.async_func('my_submission').call_with(
@@ -510,17 +467,6 @@ class TestBrowseMySubmissionUnderProblem(unittest.IsolatedAsyncioTestCase):
         self.time = datetime(2023, 8, 1, 1, 1, 1)
         self.problem_id = 1
 
-        self.browse_my_submission_under_problem_columns = {
-            'submission_id': int,
-            'judgment_id': int,
-            'verdict': enum.VerdictType,
-            'score': int,
-            'total_time': int,
-            'max_memory': int,
-            'submit_time': model.ServerTZDatetime,
-            'account_id': int,
-            'problem_id': int,
-        }
         self.limit = model.Limit(10)
         self.offset = model.Offset(0)
         self.filter_str = model.FilterStr
@@ -569,10 +515,10 @@ class TestBrowseMySubmissionUnderProblem(unittest.IsolatedAsyncioTestCase):
             model_ = controller.mock_module('util.model')
 
             model_.func('parse_filter').call_with(
-                self.filter_str, self.browse_my_submission_under_problem_columns,
+                self.filter_str, view.BROWSE_MY_SUBMISSION_UNDER_PROBLEM_COLUMNS,
             ).returns(self.filters)
             model_.func('parse_sorter').call_with(
-                self.sorter_str, self.browse_my_submission_under_problem_columns,
+                self.sorter_str, view.BROWSE_MY_SUBMISSION_UNDER_PROBLEM_COLUMNS,
             ).returns(self.sorters)
 
             db_view.async_func('my_submission_under_problem').call_with(
@@ -617,14 +563,6 @@ class TestBrowseProblemSetUnderClass(unittest.IsolatedAsyncioTestCase):
         self.class_id = 1
         self.time = datetime(2023, 8, 1, 1, 1, 1)
 
-        self.browse_problem_set_columns = {
-            'challenge_id': int,
-            'challenge_title': str,
-            'problem_id': int,
-            'challenge_label': str,
-            'problem_title': str,
-            'class_id': int,
-        }
         self.limit = model.Limit(10)
         self.offset = model.Offset(0)
         self.filter_str = model.FilterStr
@@ -673,10 +611,10 @@ class TestBrowseProblemSetUnderClass(unittest.IsolatedAsyncioTestCase):
             ).returns(enum.RoleType.normal)
 
             model_.func('parse_filter').call_with(
-                self.filter_str, self.browse_problem_set_columns,
+                self.filter_str, view.BROWSE_PROBLEM_SET_COLUMNS,
             ).returns(self.filters)
             model_.func('parse_sorter').call_with(
-                self.sorter_str, self.browse_problem_set_columns,
+                self.sorter_str, view.BROWSE_PROBLEM_SET_COLUMNS,
             ).returns(self.sorters)
 
             db_view.async_func('problem_set').call_with(
@@ -727,17 +665,6 @@ class TestBrowseClassGrade(unittest.IsolatedAsyncioTestCase):
         self.class_id = 1
         self.time = datetime(2023, 8, 1, 1, 1, 1)
 
-        self.browse_class_grade_columns = {
-            'account_id': int,
-            'username': str,
-            'student_id': str,
-            'real_name': str,
-            'title': str,
-            'score': str,
-            'update_time': model.ServerTZDatetime,
-            'grade_id': int,
-            'class_id': int,
-        }
         self.limit = model.Limit(10)
         self.offset = model.Offset(0)
         self.filter_str = model.FilterStr
@@ -787,10 +714,10 @@ class TestBrowseClassGrade(unittest.IsolatedAsyncioTestCase):
             model_ = controller.mock_module('util.model')
 
             model_.func('parse_filter').call_with(
-                self.filter_str, self.browse_class_grade_columns,
+                self.filter_str, view.BROWSE_CLASS_GRADE_COLUMNS,
             ).returns(self.filters)
             model_.func('parse_sorter').call_with(
-                self.sorter_str, self.browse_class_grade_columns,
+                self.sorter_str, view.BROWSE_CLASS_GRADE_COLUMNS,
             ).returns(self.sorters)
 
             service_rbac.async_func('validate_class').call_with(
@@ -826,10 +753,10 @@ class TestBrowseClassGrade(unittest.IsolatedAsyncioTestCase):
             model_ = controller.mock_module('util.model')
 
             model_.func('parse_filter').call_with(
-                self.filter_str, self.browse_class_grade_columns,
+                self.filter_str, view.BROWSE_CLASS_GRADE_COLUMNS,
             ).returns(self.filters)
             model_.func('parse_sorter').call_with(
-                self.sorter_str, self.browse_class_grade_columns,
+                self.sorter_str, view.BROWSE_CLASS_GRADE_COLUMNS,
             ).returns(self.sorters)
 
             service_rbac.async_func('validate_class').call_with(
@@ -860,17 +787,6 @@ class TestBrowseAccessLog(unittest.IsolatedAsyncioTestCase):
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
         self.time = datetime(2023, 8, 1, 1, 1, 1)
 
-        self.browse_access_log_columns = {
-            'account_id': int,
-            'username': str,
-            'student_id': str,
-            'real_name': str,
-            'ip': str,
-            'resource_path': str,
-            'request_method': str,
-            'access_time': model.ServerTZDatetime,
-            'access_log_id': int,
-        }
         self.limit = model.Limit(10)
         self.offset = model.Offset(0)
         self.filter_str = model.FilterStr
@@ -924,10 +840,10 @@ class TestBrowseAccessLog(unittest.IsolatedAsyncioTestCase):
             ).returns(True)
 
             model_.func('parse_filter').call_with(
-                self.filter_str, self.browse_access_log_columns,
+                self.filter_str, view.BROWSE_ACCESS_LOG_COLUMNS,
             ).returns(self.filters)
             model_.func('parse_sorter').call_with(
-                self.sorter_str, self.browse_access_log_columns,
+                self.sorter_str, view.BROWSE_ACCESS_LOG_COLUMNS,
             ).returns(self.sorters)
 
             db_view.async_func('access_log').call_with(
@@ -974,12 +890,6 @@ class TestPeerReviewSummaryReview(unittest.IsolatedAsyncioTestCase):
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
         self.peer_review_id = 1
 
-        self.browse_peer_review_record_columns = {
-            'username': str,
-            'real_name': str,
-            'student_id': str,
-            'average_score': float,
-        }
         self.limit = model.Limit(10)
         self.offset = model.Offset(0)
         self.filter_str = model.FilterStr
@@ -1030,10 +940,10 @@ class TestPeerReviewSummaryReview(unittest.IsolatedAsyncioTestCase):
             ).returns(True)
 
             model_.func('parse_filter').call_with(
-                self.filter_str, self.browse_peer_review_record_columns,
+                self.filter_str, view.BROWSE_PEER_REVIEW_RECORD_COLUMNS,
             ).returns(self.filters)
             model_.func('parse_sorter').call_with(
-                self.sorter_str, self.browse_peer_review_record_columns,
+                self.sorter_str, view.BROWSE_PEER_REVIEW_RECORD_COLUMNS,
             ).returns(self.sorters)
 
             db_view.async_func('view_peer_review_record').call_with(
@@ -1085,12 +995,6 @@ class TestPeerReviewSummaryReceive(unittest.IsolatedAsyncioTestCase):
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
         self.peer_review_id = 1
 
-        self.browse_peer_review_record_columns = {
-            'username': str,
-            'real_name': str,
-            'student_id': str,
-            'average_score': float,
-        }
         self.limit = model.Limit(10)
         self.offset = model.Offset(0)
         self.filter_str = model.FilterStr
@@ -1141,10 +1045,10 @@ class TestPeerReviewSummaryReceive(unittest.IsolatedAsyncioTestCase):
             ).returns(True)
 
             model_.func('parse_filter').call_with(
-                self.filter_str, self.browse_peer_review_record_columns,
+                self.filter_str, view.BROWSE_PEER_REVIEW_RECORD_COLUMNS,
             ).returns(self.filters)
             model_.func('parse_sorter').call_with(
-                self.sorter_str, self.browse_peer_review_record_columns,
+                self.sorter_str, view.BROWSE_PEER_REVIEW_RECORD_COLUMNS,
             ).returns(self.sorters)
 
             db_view.async_func('view_peer_review_record').call_with(
