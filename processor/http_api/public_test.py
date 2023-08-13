@@ -1,4 +1,5 @@
 import unittest
+import uuid
 
 from base import enum, do
 from util import mock, model
@@ -8,7 +9,7 @@ from . import public
 
 class TestEmailVerification(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
-        self.code = do.UUID('{12345678-1234-5678-1234-567812345678}')
+        self.code = uuid.UUID('{12345678-1234-5678-1234-567812345678}')
 
     async def test_happy_flow(self):
         with (
@@ -38,7 +39,7 @@ class TestForgetPassword(unittest.IsolatedAsyncioTestCase):
                 role=enum.RoleType.normal,
                 is_deleted=False,
                 alternative_email=None)
-        self.code = do.UUID('{12345678-1234-5678-1234-567812345678}')
+        self.code = uuid.UUID('{12345678-1234-5678-1234-567812345678}')
 
     async def test_happy_flow(self):
         with (
