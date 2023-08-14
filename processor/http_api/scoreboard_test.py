@@ -111,7 +111,7 @@ class TestReadScoreboard(unittest.IsolatedAsyncioTestCase):
             service_rbac = controller.mock_module('service.rbac')
             db_scoreboard = controller.mock_module('persistence.database.scoreboard')
             db_scoreboard_setting_team_contest = controller.mock_module(
-                'persistence.database.scoreboard_setting_team_contest'
+                'persistence.database.scoreboard_setting_team_contest',
             )
 
             service_rbac.async_func('validate_class').call_with(
