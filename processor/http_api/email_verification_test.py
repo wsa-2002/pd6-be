@@ -2,7 +2,6 @@ import unittest
 
 from base import enum, do
 from util import mock, security
-
 from . import email_verification
 
 
@@ -12,9 +11,9 @@ class TestResendEmailVerification(unittest.IsolatedAsyncioTestCase):
         self.other_login_account = security.AuthedAccount(id=2, cached_username='other')
         self.account = do.Account(
             id=self.login_account.id,
-            username="user",
-            nickname="nick",
-            real_name="real",
+            username="username",
+            nickname="nickname",
+            real_name="realname",
             role=enum.RoleType.guest,
             is_deleted=False,
             alternative_email="alternative",
