@@ -71,15 +71,6 @@ class TestBrowseAnnouncement(unittest.IsolatedAsyncioTestCase):
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
         self.time = datetime(2023, 8, 1, 1, 1, 1)
 
-        self.browse_announcement_columns = {
-            'id': int,
-            'title': str,
-            'content': str,
-            'author_id': int,
-            'post_time': model.ServerTZDatetime,
-            'expire_time': model.ServerTZDatetime,
-            'is_deleted': bool,
-        }
         self.limit = model.Limit(10)
         self.offset = model.Offset(0)
         self.filter_str = model.FilterStr
@@ -130,10 +121,10 @@ class TestBrowseAnnouncement(unittest.IsolatedAsyncioTestCase):
             ).returns(enum.RoleType.manager)
 
             model_.func('parse_filter').call_with(
-                self.filter_str, self.browse_announcement_columns
+                self.filter_str, announcement.BROWSE_ANNOUNCEMENT_COLUMNS,
             ).returns(self.filters)
             model_.func('parse_sorter').call_with(
-                self.sorter_str, self.browse_announcement_columns
+                self.sorter_str, announcement.BROWSE_ANNOUNCEMENT_COLUMNS,
             ).returns(self.sorters)
 
             db_announcement.async_func('browse').call_with(
@@ -171,10 +162,10 @@ class TestBrowseAnnouncement(unittest.IsolatedAsyncioTestCase):
             ).returns(enum.RoleType.guest)
 
             model_.func('parse_filter').call_with(
-                self.filter_str, self.browse_announcement_columns
+                self.filter_str, announcement.BROWSE_ANNOUNCEMENT_COLUMNS,
             ).returns(self.filters)
             model_.func('parse_sorter').call_with(
-                self.sorter_str, self.browse_announcement_columns
+                self.sorter_str, announcement.BROWSE_ANNOUNCEMENT_COLUMNS,
             ).returns(self.sorters)
 
             db_announcement.async_func('browse').call_with(
