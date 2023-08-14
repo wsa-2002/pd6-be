@@ -101,9 +101,9 @@ class BrowsePeerReviewRecordData:
     grader_id: Optional[int]
     submission_id: int
     receiver_id: int
-    score: int
-    comment: str
-    submit_time: datetime
+    score: Optional[int]
+    comment: Optional[str]
+    submit_time: Optional[datetime]
 
 
 class BrowsePeerReviewRecordOutput(model.BrowseOutputBase):
