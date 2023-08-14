@@ -45,7 +45,7 @@ class TestAddInstitute(unittest.IsolatedAsyncioTestCase):
                 self.institute.id,
             )
 
-            result = await institute.add_institute.__wrapped__(data=self.data)
+            result = await mock.unwrap(institute.add_institute)(data=self.data)
 
         self.assertEqual(result, self.result)
 
@@ -62,7 +62,7 @@ class TestAddInstitute(unittest.IsolatedAsyncioTestCase):
             ).returns(False)
 
             with self.assertRaises(exc.NoPermission):
-                await institute.add_institute.__wrapped__(data=self.data)
+                await mock.unwrap(institute.add_institute)(data=self.data)
 
 
 class TestBrowseAllInstitute(unittest.IsolatedAsyncioTestCase):
@@ -95,7 +95,7 @@ class TestBrowseAllInstitute(unittest.IsolatedAsyncioTestCase):
                 self.all_institute,
             )
 
-            result = await institute.browse_all_institute.__wrapped__()
+            result = await mock.unwrap(institute.browse_all_institute)()
 
         self.assertCountEqual(result, self.result)
 
@@ -120,7 +120,7 @@ class TestReadInstitute(unittest.IsolatedAsyncioTestCase):
                 self.institute,
             )
 
-            result = await institute.read_institute.__wrapped__(institute_id=self.institute.id)
+            result = await mock.unwrap(institute.read_institute)(institute_id=self.institute.id)
 
         self.assertEqual(result, self.result)
 
@@ -161,7 +161,7 @@ class TestEditInstitute(unittest.IsolatedAsyncioTestCase):
                 is_disabled=self.data.is_disabled,
             ).returns(None)
 
-            result = await institute.edit_institute.__wrapped__(institute_id=self.institute.id, data=self.data)
+            result = await mock.unwrap(institute.edit_institute)(institute_id=self.institute.id, data=self.data)
 
         self.assertIsNone(result)
 
@@ -178,4 +178,4 @@ class TestEditInstitute(unittest.IsolatedAsyncioTestCase):
             ).returns(False)
 
             with self.assertRaises(exc.NoPermission):
-                await institute.edit_institute.__wrapped__(institute_id=self.institute.id, data=self.data)
+                await mock.unwrap(institute.edit_institute)(institute_id=self.institute.id, data=self.data)
