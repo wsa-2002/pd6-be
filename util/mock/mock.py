@@ -37,6 +37,8 @@ class CallRecorder:
         self._called = True
 
     def returns(self, *return_values):
+        if len(return_values) > 1:
+            return_values = (return_values,)
         self._record(return_values)
 
     def raises(self, exception: typing.Type[Exception]):
