@@ -19,6 +19,9 @@ test:unittest:
       - .cache/pip
   script:
     - pip install -r requirements.txt
+    - touch .env
+    - cat $ENV > .env
+    - cp logging.yaml.example logging.yaml
     - python -m run_test
   tags:
     - test
@@ -31,6 +34,10 @@ test:coverage:
     paths:
       - .cache/pip
   script:
+    - pip install -r requirements.txt
+    - touch .env
+    - cat $ENV > .env
+    - cp logging.yaml.example logging.yaml
     - python -m coverage run -m run_test -v
     - python -m coverage xml
   artifacts:
