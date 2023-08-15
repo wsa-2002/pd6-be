@@ -1,4 +1,5 @@
 from textwrap import indent
+import typing
 
 
 def to_collapsible(content="", title="", open_=False):
@@ -74,11 +75,16 @@ def _gen_err_doc(modules, base_cls):
     return '\n'.join(item_docs)
 
 
-def add_to_docstring(doc):
+_T = typing.TypeVar('_T')
+_P = typing.ParamSpec('_P')
+_AsyncFunc = typing.Callable[_P, typing.Awaitable[_T]]
+
+
+def add_to_docstring(doc) -> typing.Callable[[_AsyncFunc], _AsyncFunc]:
     """
     Add stuff to docstring.
     """
-    def decorator(func):
+    def decorator(func: _AsyncFunc) -> _AsyncFunc:
         func.__doc__ += str(doc)
         return func
 
