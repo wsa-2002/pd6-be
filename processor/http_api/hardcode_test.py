@@ -1,8 +1,9 @@
-import unittest
 from datetime import datetime, timedelta
+import time
+import unittest
 
 from base import enum, do
-from util import mock, security, model
+from util import mock, security
 import exceptions as exc
 
 from . import hardcode
@@ -53,19 +54,21 @@ class TestViewTeamContestScoreboardRuns(unittest.IsolatedAsyncioTestCase):
             end_time=self.time + timedelta(seconds=5),
             is_deleted=False,
         )
-        self.teams = [do.Team(
-            id=1,
-            name='name',
-            class_id=1,
-            label='label',
-            is_deleted=False,
-        ), do.Team(
-            id=2,
-            name='name2',
-            class_id=2,
-            label='label2',
-            is_deleted=False,
-        )]
+        self.teams = [
+            do.Team(
+                id=1,
+                name='name',
+                class_id=1,
+                label='label',
+                is_deleted=False,
+            ), do.Team(
+                id=2,
+                name='name2',
+                class_id=2,
+                label='label2',
+                is_deleted=False,
+            ),
+        ]
         self.freeze_result = [
             (1, 1, self.time + timedelta(minutes=5), enum.VerdictType.accepted),
             (2, 2, self.time + timedelta(minutes=10), enum.VerdictType.accepted),
@@ -106,6 +109,10 @@ class TestViewTeamContestScoreboardRuns(unittest.IsolatedAsyncioTestCase):
                 ),
             ]
         )
+
+    # for cache
+    def tearDown(self):
+        time.sleep(1.1)
 
     async def test_happy_flow(self):
         with (
@@ -149,8 +156,10 @@ class TestViewTeamContestScoreboardRuns(unittest.IsolatedAsyncioTestCase):
             ).returns(self.challenge)
 
             db_judgment.async_func('get_class_all_team_submission_verdict_before_freeze').call_with(
-                problem_id=self.scoreboard.target_problem_ids[0], class_id=self.challenge.class_id,
-                team_ids=[1, 2], freeze_time=self.challenge.end_time - timedelta(hours=1)
+                problem_id=self.scoreboard.target_problem_ids[0],
+                class_id=self.challenge.class_id,
+                team_ids=[1, 2],
+                freeze_time=self.challenge.end_time - timedelta(hours=1),
             ).returns(self.freeze_result)
 
             # for noMoreUpdate in TimeInfo
