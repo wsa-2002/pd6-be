@@ -1,0 +1,44 @@
+variables:
+  # trace job execution time
+  CI_JOB_TRACE: "true"
+  # faster artifacts passing (yet, no use in this CI pipeline)
+  FF_USE_FASTZIP: "true"
+  CACHE_COMPRESSION_LEVEL: "fast"
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+stages:
+  # - build
+  - test
+
+test:unittest:
+  stage: test
+  image: python:3.10
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - .cache/pip
+  script:
+    - pip install -r requirements.txt
+    - python -m run_test
+  tags:
+    - test
+
+test:coverage:
+  stage: test
+  image: python:3.10
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - .cache/pip
+  script:
+    - python -m coverage run -m run_test -v
+    - python -m coverage xml
+  artifacts:
+    reports:
+      coverage_report:
+          coverage_format: cobertura
+          path: coverage.xml
+  needs:
+    - test:unittest
+  tags:
+    - test
