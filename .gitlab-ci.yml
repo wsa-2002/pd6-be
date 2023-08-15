@@ -1,5 +1,4 @@
 variables:
-  CACHE_COMPRESSION_LEVEL: "fast"
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
 
 stages:
@@ -14,7 +13,8 @@ test:unittest:
     paths:
       - .cache/pip
   script:
-    - pip install -r requirements.txt
+    - pip install --upgrade pip
+    - pip install -r requirements.txt --no-progress-bar
     - touch .env
     - cat $ENV > .env
     - mkdir log
@@ -31,7 +31,8 @@ test:coverage:
     paths:
       - .cache/pip
   script:
-    - pip install -r requirements.txt
+    - pip install --upgrade pip
+    - pip install -r requirements.txt --no-progress-bar
     - python -m coverage run -m run_test -v
     - python -m coverage xml
   artifacts:
