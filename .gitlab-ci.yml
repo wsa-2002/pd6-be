@@ -3,6 +3,7 @@ variables:
   PYTHONPATH: "$CI_PROJECT_DIR"
   GIT_SUBMODULE_STRATEGY: recursive
   GIT_SUBMODULE_FORCE_HTTPS: "true"
+  GIT_SUBMODULE_DEPTH: 3
 
 stages:
   # - build
