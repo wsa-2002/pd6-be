@@ -8,13 +8,12 @@ stages:
 test:unittest:
   stage: test
   image: python:3.10
-  # cache:
-  #   key: ${CI_COMMIT_REF_SLUG}
-  #   paths:
-  #     - .cache/pip
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - .cache/pip
   script:
-    - pip install --upgrade pip
-    - pip install -r requirements.txt --no-progress-bar
+    - pip install -r requirements.txt
     - touch .env
     - cat $ENV > .env
     - mkdir log
@@ -26,13 +25,13 @@ test:unittest:
 test:coverage:
   stage: test
   image: python:3.10
-  # cache:
-  #   key: ${CI_COMMIT_REF_SLUG}
-  #   paths:
-  #     - .cache/pip
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - .cache/pip
   script:
     - pip install --upgrade pip
-    - pip install -r requirements.txt --no-progress-bar
+    - pip install -r requirements.txt 
     - python -m coverage run -m run_test -v
     - python -m coverage xml
   artifacts:
