@@ -14,7 +14,8 @@ class TestViewTeamProjectScoreboard(unittest.IsolatedAsyncioTestCase):
 
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
         self.scoreboard_id = 1
-        self.time = datetime(2023, 7, 29, 12, 0, 0)
+        self.start_time = datetime(2023, 7, 20, 12, 0, 0)
+        self.end_time = datetime(2023, 7, 29, 12, 0, 0)
 
         self.scoreboard_contest = do.Scoreboard(
             id=2,
@@ -51,8 +52,8 @@ class TestViewTeamProjectScoreboard(unittest.IsolatedAsyncioTestCase):
             title='title',
             setter_id=1,
             description='description',
-            start_time=self.time,
-            end_time=self.time,
+            start_time=self.start_time,
+            end_time=self.end_time,
             is_deleted=False,
         )
         self.teams = [do.Team(
@@ -275,7 +276,7 @@ class TestEditTeamProjectScoreboard(unittest.IsolatedAsyncioTestCase):
             challenge_label='label',
             title='title',
             target_problem_ids=[1, 2],
-            scoring_formula='formula',
+            scoring_formula='class_max + class_min + baseline',
             baseline_team_id=1,
             rank_by_total_score=True,
             team_label_filter='filter',
