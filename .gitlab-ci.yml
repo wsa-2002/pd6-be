@@ -4,6 +4,9 @@ variables:
   GIT_SUBMODULE_STRATEGY: recursive
   GIT_SUBMODULE_FORCE_HTTPS: "true"
 
+before_script:
+  - git config submodule.common.url ../pd6-common.git
+  
 stages:
   # - build
   - test
