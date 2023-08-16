@@ -1,12 +1,11 @@
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
   PYTHONPATH: "$CI_PROJECT_DIR"
-  GIT_SUBMODULE_STRATEGY: recursive
-  GIT_SUBMODULE_FORCE_HTTPS: "true"
+  
 
 before_script:
   - git config submodule.common.url ../pd6-common.git
-  
+
 stages:
   # - build
   - test
@@ -14,6 +13,9 @@ stages:
 test:unittest:
   stage: test
   image: python:3.10
+  variables:
+    GIT_SUBMODULE_STRATEGY: recursive
+    GIT_SUBMODULE_FORCE_HTTPS: "true"
   cache:
     key: ${CI_COMMIT_REF_SLUG}
     paths:
@@ -37,6 +39,9 @@ test:coverage:
     key: ${CI_COMMIT_REF_SLUG}
     paths:
       - .cache/pip
+  variables:
+    GIT_SUBMODULE_STRATEGY: recursive
+    GIT_SUBMODULE_FORCE_HTTPS: "true"
   script:
     - pip install -r requirements.txt 
     - python -m coverage run -m run_test -v
