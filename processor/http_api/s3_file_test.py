@@ -8,7 +8,7 @@ from util import mock, security
 from . import s3_file
 
 
-class TestReadAssistingData(unittest.IsolatedAsyncioTestCase):
+class TestGetS3FileUrl(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         self.account = security.AuthedAccount(id=1, cached_username='self')
 
