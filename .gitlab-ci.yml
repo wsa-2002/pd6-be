@@ -18,7 +18,9 @@ test:unittest:
     - cat $ENV > .env
     - mkdir log
     - cp logging.yaml.example logging.yaml
-    - python -m run_test
+    - ls
+    - cat .env
+    - python run_test.py
   tags:
     - test
 
@@ -30,7 +32,6 @@ test:coverage:
     paths:
       - .cache/pip
   script:
-    - pip install --upgrade pip
     - pip install -r requirements.txt 
     - python -m coverage run -m run_test -v
     - python -m coverage xml
