@@ -12,15 +12,16 @@ class TestAddAnnouncement(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
 
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
-        self.other_login_account = security.AuthedAccount(id=2, cached_username='other')
-        self.time = datetime(2023, 8, 1, 1, 1, 1)
+
+        self.post_time = datetime(2023, 7, 20, 1, 1, 1)
+        self.expire_time = datetime(2023, 8, 20, 1, 1, 1)
 
         self.input_data = announcement.AddAnnouncementInput(
             title='test',
             content='test',
             author_id=1,
-            post_time=self.time,
-            expire_time=self.time,
+            post_time=self.post_time,
+            expire_time=self.expire_time,
         )
         self.add_result = model.AddOutput(id=1)
 
@@ -69,14 +70,17 @@ class TestBrowseAnnouncement(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
 
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
-        self.time = datetime(2023, 8, 1, 1, 1, 1)
+
+        self.request_time = datetime(2023, 8, 1, 1, 1, 1)
+        self.post_time = datetime(2023, 7, 20, 1, 1, 1)
+        self.expire_time = datetime(2023, 8, 20, 1, 1, 1)
 
         self.limit = model.Limit(10)
         self.offset = model.Offset(0)
         self.filter_str = model.FilterStr
         self.sorter_str = model.SorterStr
-        self.filters = []
-        self.sorters = []
+        self.filters = [["content", "LIKE", "abcd"]]
+        self.sorters = [['id']]
 
         self.expected_output_data = [
             do.Announcement(
@@ -84,8 +88,8 @@ class TestBrowseAnnouncement(unittest.IsolatedAsyncioTestCase):
                 title='title',
                 content='content',
                 author_id=1,
-                post_time=self.time,
-                expire_time=self.time,
+                post_time=self.post_time,
+                expire_time=self.expire_time,
                 is_deleted=False,
             ),
             do.Announcement(
@@ -93,8 +97,8 @@ class TestBrowseAnnouncement(unittest.IsolatedAsyncioTestCase):
                 title='title2',
                 content='content2',
                 author_id=2,
-                post_time=self.time,
-                expire_time=self.time,
+                post_time=self.post_time,
+                expire_time=self.expire_time,
                 is_deleted=False,
             ),
         ]
@@ -110,7 +114,7 @@ class TestBrowseAnnouncement(unittest.IsolatedAsyncioTestCase):
             mock.Context() as context,
         ):
             context.set_account(self.login_account)
-            context.set_request_time(self.time)
+            context.set_request_time(self.request_time)
 
             service_rbac = controller.mock_module('service.rbac')
             db_announcement = controller.mock_module('persistence.database.announcement')
@@ -133,7 +137,7 @@ class TestBrowseAnnouncement(unittest.IsolatedAsyncioTestCase):
                 filters=self.filters,
                 sorters=self.sorters,
                 exclude_scheduled=False,
-                ref_time=self.time,
+                ref_time=self.request_time,
             ).returns((self.expected_output_data, self.expected_output_total_count))
 
             result = await mock.unwrap(announcement.browse_announcement)(
@@ -151,7 +155,7 @@ class TestBrowseAnnouncement(unittest.IsolatedAsyncioTestCase):
             mock.Context() as context,
         ):
             context.set_account(self.login_account)
-            context.set_request_time(self.time)
+            context.set_request_time(self.request_time)
 
             service_rbac = controller.mock_module('service.rbac')
             db_announcement = controller.mock_module('persistence.database.announcement')
@@ -174,7 +178,7 @@ class TestBrowseAnnouncement(unittest.IsolatedAsyncioTestCase):
                 filters=self.filters,
                 sorters=self.sorters,
                 exclude_scheduled=True,
-                ref_time=self.time,
+                ref_time=self.request_time,
             ).returns((self.expected_output_data, self.expected_output_total_count))
 
             result = await mock.unwrap(announcement.browse_announcement)(
@@ -213,7 +217,9 @@ class TestReadAnnouncement(unittest.IsolatedAsyncioTestCase):
 
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
 
-        self.time = datetime(2023, 8, 1, 1, 1, 1)
+        self.request_time = datetime(2023, 8, 1, 1, 1, 1)
+        self.post_time = datetime(2023, 7, 20, 1, 1, 1)
+        self.expire_time = datetime(2023, 8, 20, 1, 1, 1)
 
         self.announcement_id = 1
 
@@ -222,8 +228,8 @@ class TestReadAnnouncement(unittest.IsolatedAsyncioTestCase):
             title='title',
             content='content',
             author_id=1,
-            post_time=self.time,
-            expire_time=self.time,
+            post_time=self.post_time,
+            expire_time=self.expire_time,
             is_deleted=False,
         )
 
@@ -233,7 +239,7 @@ class TestReadAnnouncement(unittest.IsolatedAsyncioTestCase):
             mock.Context() as context,
         ):
             context.set_account(self.login_account)
-            context.set_request_time(self.time)
+            context.set_request_time(self.request_time)
 
             service_rbac = controller.mock_module('service.rbac')
             db_announcement = controller.mock_module('persistence.database.announcement')
@@ -244,7 +250,7 @@ class TestReadAnnouncement(unittest.IsolatedAsyncioTestCase):
             db_announcement.async_func('read').call_with(
                 1,
                 exclude_scheduled=False,
-                ref_time=self.time,
+                ref_time=self.request_time,
             ).returns(self.expected_output_data)
 
             result = await mock.unwrap(announcement.read_announcement)(
@@ -259,7 +265,7 @@ class TestReadAnnouncement(unittest.IsolatedAsyncioTestCase):
             mock.Context() as context,
         ):
             context.set_account(self.login_account)
-            context.set_request_time(self.time)
+            context.set_request_time(self.request_time)
 
             service_rbac = controller.mock_module('service.rbac')
             db_announcement = controller.mock_module('persistence.database.announcement')
@@ -270,7 +276,7 @@ class TestReadAnnouncement(unittest.IsolatedAsyncioTestCase):
             db_announcement.async_func('read').call_with(
                 1,
                 exclude_scheduled=True,
-                ref_time=self.time,
+                ref_time=self.request_time,
             ).returns(self.expected_output_data)
 
             result = await mock.unwrap(announcement.read_announcement)(
@@ -303,15 +309,16 @@ class TestEditAnnouncement(unittest.IsolatedAsyncioTestCase):
 
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
 
-        self.time = datetime(2023, 8, 1, 1, 1, 1)
+        self.post_time = datetime(2023, 7, 20, 1, 1, 1)
+        self.expire_time = datetime(2023, 8, 20, 1, 1, 1)
 
         self.announcement_id = 1
 
         self.input_data = announcement.EditAnnouncementInput(
             title='test',
             content='test',
-            post_time=self.time,
-            expire_time=self.time,
+            post_time=self.post_time,
+            expire_time=self.expire_time,
         )
 
     async def test_happy_flow(self):
@@ -366,8 +373,6 @@ class TestDeleteAnnouncement(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
 
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
-
-        self.time = datetime(2023, 8, 1, 1, 1, 1)
 
         self.announcement_id = 1
 
