@@ -251,7 +251,7 @@ class TestBrowseSubmissionUnderClass(unittest.IsolatedAsyncioTestCase):
 
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
         self.class_id = 1
-        self.time = datetime(2023, 8, 1, 1, 1, 1)
+        self.submit_time = datetime(2023, 8, 1, 1, 1, 1)
 
         self.limit = model.Limit(10)
         self.offset = model.Offset(0)
@@ -272,7 +272,7 @@ class TestBrowseSubmissionUnderClass(unittest.IsolatedAsyncioTestCase):
                 problem_id=1,
                 challenge_label='label',
                 verdict=enum.VerdictType.accepted,
-                submit_time=self.time,
+                submit_time=self.submit_time,
                 class_id=1,
             ),
             vo.ViewSubmissionUnderClass(
@@ -286,7 +286,7 @@ class TestBrowseSubmissionUnderClass(unittest.IsolatedAsyncioTestCase):
                 problem_id=2,
                 challenge_label='label2',
                 verdict=enum.VerdictType.accepted,
-                submit_time=self.time,
+                submit_time=self.submit_time,
                 class_id=1,
             ),
         ]
@@ -364,7 +364,7 @@ class TestBrowseSubmission(unittest.IsolatedAsyncioTestCase):
 
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
         self.other_account = security.AuthedAccount(id=2, cached_username='other')
-        self.time = datetime(2023, 8, 1, 1, 1, 1)
+        self.submit_time = datetime(2023, 8, 1, 1, 1, 1)
 
         self.limit = model.Limit(10)
         self.offset = model.Offset(0)
@@ -385,7 +385,7 @@ class TestBrowseSubmission(unittest.IsolatedAsyncioTestCase):
                 problem_id=1,
                 challenge_label='challenge_label',
                 verdict=enum.VerdictType.accepted,
-                submit_time=self.time,
+                submit_time=self.submit_time,
                 account_id=1,
             ),
             vo.ViewMySubmission(
@@ -399,7 +399,7 @@ class TestBrowseSubmission(unittest.IsolatedAsyncioTestCase):
                 problem_id=2,
                 challenge_label='challenge_label2',
                 verdict=enum.VerdictType.accepted,
-                submit_time=self.time,
+                submit_time=self.submit_time,
                 account_id=2,
             ),
         ]
@@ -464,7 +464,7 @@ class TestBrowseMySubmissionUnderProblem(unittest.IsolatedAsyncioTestCase):
 
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
         self.other_account = security.AuthedAccount(id=2, cached_username='other')
-        self.time = datetime(2023, 8, 1, 1, 1, 1)
+        self.submit_time = datetime(2023, 8, 1, 1, 1, 1)
         self.problem_id = 1
 
         self.limit = model.Limit(10)
@@ -482,7 +482,7 @@ class TestBrowseMySubmissionUnderProblem(unittest.IsolatedAsyncioTestCase):
                 score=100,
                 total_time=10,
                 max_memory=10,
-                submit_time=self.time,
+                submit_time=self.submit_time,
                 account_id=1,
                 problem_id=1,
             ),
@@ -493,7 +493,7 @@ class TestBrowseMySubmissionUnderProblem(unittest.IsolatedAsyncioTestCase):
                 score=100,
                 total_time=10,
                 max_memory=10,
-                submit_time=self.time,
+                submit_time=self.submit_time,
                 account_id=1,
                 problem_id=1,
             ),
@@ -561,7 +561,7 @@ class TestBrowseProblemSetUnderClass(unittest.IsolatedAsyncioTestCase):
 
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
         self.class_id = 1
-        self.time = datetime(2023, 8, 1, 1, 1, 1)
+        self.request_time = datetime(2023, 8, 1, 1, 1, 1)
 
         self.limit = model.Limit(10)
         self.offset = model.Offset(0)
@@ -600,7 +600,7 @@ class TestBrowseProblemSetUnderClass(unittest.IsolatedAsyncioTestCase):
             mock.Context() as context,
         ):
             context.set_account(self.login_account)
-            context.set_request_time(self.time)
+            context.set_request_time(self.request_time)
 
             service_rbac = controller.mock_module('service.rbac')
             db_view = controller.mock_module('persistence.database.view')
@@ -622,7 +622,7 @@ class TestBrowseProblemSetUnderClass(unittest.IsolatedAsyncioTestCase):
                 offset=self.offset,
                 filters=self.filters,
                 sorters=self.sorters,
-                ref_time=self.time,
+                ref_time=self.request_time,
             ).returns((self.expected_output_data, self.expected_output_total_count))
 
             result = await mock.unwrap(view.browse_problem_set_under_class)(
@@ -663,7 +663,7 @@ class TestBrowseClassGrade(unittest.IsolatedAsyncioTestCase):
 
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
         self.class_id = 1
-        self.time = datetime(2023, 8, 1, 1, 1, 1)
+        self.update_time = datetime(2023, 8, 1, 1, 1, 1)
 
         self.limit = model.Limit(10)
         self.offset = model.Offset(0)
@@ -680,7 +680,7 @@ class TestBrowseClassGrade(unittest.IsolatedAsyncioTestCase):
                 real_name='real_name',
                 title='title',
                 score='100',
-                update_time=self.time,
+                update_time=self.update_time,
                 grade_id=1,
                 class_id=1,
             ),
@@ -691,7 +691,7 @@ class TestBrowseClassGrade(unittest.IsolatedAsyncioTestCase):
                 real_name='real_name2',
                 title='title2',
                 score='100',
-                update_time=self.time,
+                update_time=self.update_time,
                 grade_id=2,
                 class_id=1,
             ),
@@ -785,7 +785,7 @@ class TestBrowseAccessLog(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
 
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
-        self.time = datetime(2023, 8, 1, 1, 1, 1)
+        self.access_time = datetime(2023, 8, 1, 1, 1, 1)
 
         self.limit = model.Limit(10)
         self.offset = model.Offset(0)
@@ -803,7 +803,7 @@ class TestBrowseAccessLog(unittest.IsolatedAsyncioTestCase):
                 ip='ip',
                 resource_path='path',
                 request_method='method',
-                access_time=self.time,
+                access_time=self.access_time,
                 access_log_id=1,
             ),
             vo.ViewAccessLog(
@@ -814,7 +814,7 @@ class TestBrowseAccessLog(unittest.IsolatedAsyncioTestCase):
                 ip='ip2',
                 resource_path='path2',
                 request_method='method2',
-                access_time=self.time,
+                access_time=self.access_time,
                 access_log_id=2,
             ),
         ]
