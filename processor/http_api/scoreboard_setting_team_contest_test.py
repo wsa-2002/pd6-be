@@ -13,7 +13,8 @@ class TestViewTeamContestScoreboard(unittest.IsolatedAsyncioTestCase):
 
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
         self.scoreboard_id = 1
-        self.time = datetime(2023, 7, 29, 12, 0, 0)
+        self.start_time = datetime(2023, 7, 20, 12, 0, 0)
+        self.end_time = datetime(2023, 7, 29, 12, 0, 0)
 
         self.scoreboard_contest = do.Scoreboard(
             id=2,
@@ -48,8 +49,8 @@ class TestViewTeamContestScoreboard(unittest.IsolatedAsyncioTestCase):
             title='title',
             setter_id=1,
             description='description',
-            start_time=self.time,
-            end_time=self.time,
+            start_time=self.start_time,
+            end_time=self.end_time,
             is_deleted=False,
         )
         self.teams = [do.Team(
@@ -103,8 +104,8 @@ class TestViewTeamContestScoreboard(unittest.IsolatedAsyncioTestCase):
                     submission_id=2,
                 )]}
         self.verdict = [
-            (1, 1, self.time+timedelta(minutes=5), enum.VerdictType.accepted),
-            (2, 2, self.time+timedelta(minutes=10), enum.VerdictType.wrong_answer)
+            (1, 1, self.start_time+timedelta(minutes=5), enum.VerdictType.accepted),
+            (2, 2, self.start_time+timedelta(minutes=10), enum.VerdictType.wrong_answer)
         ]
         self.first_solve_team_id = 1
         self.team_solve_mins = {1: 5}
@@ -236,7 +237,7 @@ class TestEditTeamContestScoreboard(unittest.IsolatedAsyncioTestCase):
             challenge_label='label',
             title='title',
             target_problem_ids=[1, 2],
-            penalty_formula='formula',
+            penalty_formula='solved_time_mins',
             team_label_filter='filter',
         )
 
