@@ -1,6 +1,8 @@
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
   PYTHONPATH: "$CI_PROJECT_DIR"
+  GIT_SUBMODULE_STRATEGY: recursive
+
 
 stages:
   # - build
