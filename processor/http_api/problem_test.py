@@ -999,9 +999,7 @@ class TestDownloadAllAssistingData(unittest.IsolatedAsyncioTestCase):
 
             db_account_vo.async_func('read_with_default_student_card').call_with(
                 account_id=context.account.id,
-            ).returns(
-                (self.account, self.student_card),
-            )
+            ).returns(self.account, self.student_card)
 
             email_notification.async_func('send_file_download_url').call_with(
                 to=self.student_card.email, file_url=self.file_url,
@@ -1102,9 +1100,7 @@ class TestDownloadAllSampleTestcase(unittest.IsolatedAsyncioTestCase):
 
             db_account_vo.async_func('read_with_default_student_card').call_with(
                 account_id=context.account.id,
-            ).returns(
-                (self.account, self.student_card),
-            )
+            ).returns(self.account, self.student_card)
 
             email_notification.async_func('send_file_download_url').call_with(
                 to=self.student_card.email, file_url=self.file_url,
@@ -1204,9 +1200,7 @@ class TestDownloadAllNonSampleTestcase(unittest.IsolatedAsyncioTestCase):
 
             db_account_vo.async_func('read_with_default_student_card').call_with(
                 account_id=context.account.id,
-            ).returns(
-                (self.account, self.student_card),
-            )
+            ).returns(self.account, self.student_card)
 
             email_notification.async_func('send_file_download_url').call_with(
                 to=self.student_card.email, file_url=self.file_url,
