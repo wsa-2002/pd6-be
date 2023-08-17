@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Sequence
 from uuid import UUID
 
 from fastapi import UploadFile, File
@@ -24,7 +24,7 @@ router = APIRouter(
 
 @router.post('/class/{class_id}/grade-import', tags=['Class'])
 @enveloped
-async def import_class_grade(class_id: int, title: str, grade_file: UploadFile = File(...)):
+async def import_class_grade(class_id: int, title: str, grade_file: UploadFile = File(...)) -> None:
     """
     ### 權限
     - Class manager
@@ -72,13 +72,17 @@ BROWSE_CLASS_GRADE_COLUMNS = {
 }
 
 
+class BrowseClassGradeOutput(model.BrowseOutputBase):
+    data: Sequence[do.Grade]
+
+
 @router.get('/class/{class_id}/grade', tags=['Class'])
 @enveloped
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_CLASS_GRADE_COLUMNS.items()})
 async def browse_class_grade(class_id: int,
                              limit: int = 50, offset: int = 0,
                              filter: model.FilterStr = None, sort: model.SorterStr = None) \
-        -> model.BrowseOutputBase:
+        -> BrowseClassGradeOutput:
     """
     ### 權限
     - Class manager (all)
@@ -98,13 +102,13 @@ async def browse_class_grade(class_id: int,
 
     if class_role >= RoleType.manager:
         grades, total_count = await db.grade.browse(limit=limit, offset=offset, filters=filters, sorters=sorters)
-        return model.BrowseOutputBase(grades, total_count=total_count)
+        return BrowseClassGradeOutput(grades, total_count=total_count)
     else:  # Self
         filters.append(popo.Filter(col_name='receiver_id',
                                    op=FilterOperator.eq,
                                    value=context.account.id))
         grades, total_count = await db.grade.browse(limit=limit, offset=offset, filters=filters, sorters=sorters)
-        return model.BrowseOutputBase(grades, total_count=total_count)
+        return BrowseClassGradeOutput(grades, total_count=total_count)
 
 
 BROWSE_ACCOUNT_GRADE_COLUMNS = {
@@ -116,13 +120,17 @@ BROWSE_ACCOUNT_GRADE_COLUMNS = {
 }
 
 
+class BrowseAccountGradeOutput(model.BrowseOutputBase):
+    data: Sequence[do.Grade]
+
+
 @router.get('/account/{account_id}/grade', tags=['Account'])
 @enveloped
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_ACCOUNT_GRADE_COLUMNS.items()})
 async def browse_account_grade(account_id: int,
                                limit: model.Limit = 50, offset: model.Offset = 0,
                                filter: model.FilterStr = None, sort: model.SorterStr = None) \
-        -> model.BrowseOutputBase:
+        -> BrowseAccountGradeOutput:
     """
     ### 權限
     - Self
@@ -139,7 +147,7 @@ async def browse_account_grade(account_id: int,
                                value=context.account.id))
     grades, total_count = await db.grade.browse(limit=limit, offset=offset, filters=filters, sorters=sorters)
 
-    return model.BrowseOutputBase(grades, total_count=total_count)
+    return BrowseAccountGradeOutput(grades, total_count=total_count)
 
 
 @dataclass

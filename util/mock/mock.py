@@ -41,7 +41,7 @@ class CallRecorder:
             return_values = (return_values,)
         self._record(return_values)
 
-    def raises(self, exception: typing.Type[Exception]):
+    def raises(self, exception: typing.Type[Exception] | Exception):
         self._record(exception)
 
     def executes(self, func):
