@@ -41,12 +41,14 @@ test:coverage:
   script:
     - pip install -r requirements.txt 
     - python -m coverage run -m run_test -v
+    - python -m coverage report --precision=2 | tail
     - python -m coverage xml
   artifacts:
     reports:
       coverage_report:
           coverage_format: cobertura
           path: coverage.xml
+  coverage: '/^TOTAL\s+\d+\s+\d+\s+(\d+\.\d+)\%$/'
   needs:
     - test:unittest
   tags:
