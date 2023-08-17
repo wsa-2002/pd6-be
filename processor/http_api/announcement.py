@@ -1,3 +1,5 @@
+from typing import Sequence
+
 from pydantic import BaseModel
 
 from base import do
@@ -52,13 +54,17 @@ BROWSE_ANNOUNCEMENT_COLUMNS = {
 }
 
 
+class BrowseAnnouncementOutput(model.BrowseOutputBase):
+    data: Sequence[do.Announcement]
+
+
 @router.get('/announcement')
 @enveloped
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_ANNOUNCEMENT_COLUMNS.items()})
 async def browse_announcement(
         limit: model.Limit = 50, offset: model.Offset = 0,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
-) -> model.BrowseOutputBase:
+) -> BrowseAnnouncementOutput:
     """
     ### 權限
     - System manager (all)
@@ -77,7 +83,7 @@ async def browse_announcement(
                                                               filters=filters, sorters=sorters,
                                                               exclude_scheduled=system_role < RoleType.manager,
                                                               ref_time=context.request_time)
-    return model.BrowseOutputBase(announcements, total_count=total_count)
+    return BrowseAnnouncementOutput(announcements, total_count=total_count)
 
 
 @router.get('/announcement/{announcement_id}')
