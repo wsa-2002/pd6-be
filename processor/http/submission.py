@@ -1,13 +1,14 @@
 from typing import Sequence
 
 import pydantic
-from fastapi import File, UploadFile, Depends
+from fastapi import BackgroundTasks, File, UploadFile, Depends
 from pydantic import BaseModel
 
 from base import do, popo
 from base.enum import RoleType, ChallengePublicizeType, FilterOperator
 import const
 import exceptions as exc
+import log
 from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
 import service
@@ -80,8 +81,8 @@ async def edit_submission_language(language_id: int, data: EditSubmissionLanguag
 @router.post('/problem/{problem_id}/submission', tags=['Problem'],
              dependencies=[Depends(util.file.valid_file_length(file_length=const.CODE_UPLOAD_LIMIT))])
 @enveloped
-async def submit(problem_id: int, language_id: int, content_file: UploadFile = File(...)) \
-        -> model.AddOutput:
+async def submit(problem_id: int, language_id: int, background_tasks: BackgroundTasks,
+                 content_file: UploadFile = File(...)) -> model.AddOutput:
     """
     ### 權限
     - System Manager (all)
@@ -117,7 +118,13 @@ async def submit(problem_id: int, language_id: int, content_file: UploadFile = F
                                                     account_id=context.account.id, problem_id=problem.id,
                                                     file_length=file_length,
                                                     language_id=language.id, submit_time=context.request_time)
-    await service.judge.judge_submission(submission_id)
+
+    async def _task() -> None:
+        log.info("Start judge submission")
+        await service.judge.judge_submission(submission_id)
+        log.info("Done")
+
+    util.background_task.launch(background_tasks, _task)
 
     return model.AddOutput(id=submission_id)
 
