@@ -1005,7 +1005,7 @@ class TestBrowseSubmissionUnderClass(unittest.IsolatedAsyncioTestCase):
 
             service_rbac.async_func('validate_class').call_with(
                 context.account.id, enum.RoleType.manager, class_id=self.class_id,
-            ).returns(True)
+            ).returns(False)
 
             await mock.unwrap(class_.browse_submission_under_class)(class_id=self.class_id,
                                                                     limit=self.limit, offset=self.offset,
