@@ -555,7 +555,8 @@ class TestJudge(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(result)
 
 
-class TestSignFileUrl(unittest.IsolatedAsyncioTestCase):
+# the A in name is to mess with test order, work as temporary fix
+class TestASignFileUrl(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         self.uuid = uuid.UUID('12345678123456781234567812345678')
         self.filename = 'test'
