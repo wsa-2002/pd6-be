@@ -544,6 +544,9 @@ class TestJudge(unittest.IsolatedAsyncioTestCase):
             db_submission.async_func('read_language').call_with(self.submission.language_id).returns(
                 self.submission_language_disabled,
             )
+            controller.mock_global_func('log.info').call_with(
+                f"Submission id {self.submission.id} is skipped judge because" 
+                f" submission language id {self.submission.language_id} is disabled").returns(None)
 
             result = await judge._judge(self.submission, self.judge_problem, self.priority,
                                         self.customized_judge_setting, self.reviser_settings,
