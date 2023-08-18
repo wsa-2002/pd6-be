@@ -1,3 +1,4 @@
+import csv as py_csv
 from datetime import datetime
 import io
 import unittest
@@ -38,15 +39,33 @@ class TestImportAccount(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         self.account_file = io.BytesIO(b'account')
         self.generator = (test for test in [1, 2, ])
-        self.rows = [
-            {'RealName': 'real', 'Username': 'user', 'Password': 'password',
-             'AlternativeEmail': 'alter', 'Nickname': 'nick'},
-            {'RealName': 'real2', 'Username': 'user2', 'Password': 'password2',
-             'AlternativeEmail': 'alter2', 'Nickname': 'nick2'},
-        ]
+        self.rows = py_csv.DictReader(io.StringIO(
+            ("RealName,Username,Password,AlternativeEmail,Nickname\n"
+             "real,user,password,alter,nick\n"
+             "real2,user2,password2,alter2,nick2")
+        ))
+        self.rows_uncompleted = py_csv.DictReader(io.StringIO(
+            ("RealName,Username,Password,AlternativeEmail,Nickname\n"
+             "real,,password,alter,nick\n"
+             "real2,user2,password2,alter2,nick2")
+        ))
+        self.rows_loss_alternative_email = py_csv.DictReader(io.StringIO(
+            ("RealName,Username,Password,AlternativeEmail,Nickname\n"
+             "real,user,password,,nick\n"
+             "real2,user2,password2,,nick2")
+        ))
+        self.rows_loss_header = py_csv.DictReader(io.StringIO(
+            ("RealName,,Password,AlternativeEmail,Nickname\n"
+             "real,,password,alter,nick\n"
+             "real2,user2,password2,alter2,nick2")
+        ))
         self.data = [
             ('real', 'user', 'password-hash', 'alter', 'nick'),
             ('real2', 'user2', 'password2-hash', 'alter2', 'nick2'),
+        ]
+        self.data_loss_alternative_email = [
+            ('real', 'user', 'password-hash', '', 'nick'),
+            ('real2', 'user2', 'password2-hash', '', 'nick2'),
         ]
 
     async def test_happy_flow(self):
@@ -54,6 +73,7 @@ class TestImportAccount(unittest.IsolatedAsyncioTestCase):
             mock.Controller() as controller,
         ):
             db_account = controller.mock_module('persistence.database.account')
+            util_security = controller.mock_module('util.security')
 
             controller.mock_global_func('codecs.iterdecode').call_with(
                 self.account_file, 'utf_8_sig',
@@ -61,10 +81,12 @@ class TestImportAccount(unittest.IsolatedAsyncioTestCase):
             controller.mock_global_func('csv.DictReader').call_with(
                 self.generator,
             ).returns(self.rows)
-            for row in self.rows:
-                controller.mock_global_func('util.security.hash_password').call_with(
-                    row['Password'],
-                ).returns(row['Password'] + '-hash')
+            util_security.func('hash_password').call_with(
+                'password',
+            ).returns('password' + '-hash')
+            util_security.func('hash_password').call_with(
+                'password2',
+            ).returns('password2' + '-hash')
 
             db_account.async_func('batch_add_normal').call_with(
                 self.data,
@@ -73,6 +95,62 @@ class TestImportAccount(unittest.IsolatedAsyncioTestCase):
             result = await csv.import_account(self.account_file)
 
         self.assertIsNone(result)
+
+    async def test_happy_flow_loss_alternative_email(self):
+        with (
+            mock.Controller() as controller,
+        ):
+            db_account = controller.mock_module('persistence.database.account')
+            util_security = controller.mock_module('util.security')
+
+            controller.mock_global_func('codecs.iterdecode').call_with(
+                self.account_file, 'utf_8_sig',
+            ).returns(self.generator)
+            controller.mock_global_func('csv.DictReader').call_with(
+                self.generator,
+            ).returns(self.rows_loss_alternative_email)
+            util_security.func('hash_password').call_with(
+                'password',
+            ).returns('password' + '-hash')
+            util_security.func('hash_password').call_with(
+                'password2',
+            ).returns('password2' + '-hash')
+
+            db_account.async_func('batch_add_normal').call_with(
+                self.data_loss_alternative_email,
+            ).returns(None)
+
+            result = await csv.import_account(self.account_file)
+
+        self.assertIsNone(result)
+
+    async def test_data_uncompleted(self):
+        with (
+            mock.Controller() as controller,
+        ):
+            controller.mock_global_func('codecs.iterdecode').call_with(
+                self.account_file, 'utf_8_sig',
+            ).returns(self.generator)
+            controller.mock_global_func('csv.DictReader').call_with(
+                self.generator,
+            ).returns(self.rows_uncompleted)
+
+            with self.assertRaises(exc.IllegalInput):
+                await csv.import_account(self.account_file)
+
+    async def test_loss_header(self):
+        with (
+            mock.Controller() as controller,
+        ):
+            controller.mock_global_func('codecs.iterdecode').call_with(
+                self.account_file, 'utf_8_sig',
+            ).returns(self.generator)
+            controller.mock_global_func('csv.DictReader').call_with(
+                self.generator,
+            ).returns(self.rows_loss_header)
+
+            with self.assertRaises(exc.IllegalInput):
+                await csv.import_account(self.account_file)
 
     async def test_unicode_decode_error(self):
         with (
@@ -117,14 +195,16 @@ class TestImportTeam(unittest.IsolatedAsyncioTestCase):
         self.label = 'label'
 
         self.generator = (test for test in [1, 2, ])
-        self.rows = [
-            {'TeamName': 'team', 'Manager': 'manager', 'Member 2': 'member2', 'Member 3': 'member3',
-             'Member 4': 'member4', 'Member 5': 'member5', 'Member 6': 'member6', 'Member 7': 'member7',
-             'Member 8': 'member8', 'Member 9': 'member9', 'Member 10': None},
-            {'TeamName': 'team2', 'Manager': 'manager2', 'Member 2': 'member2', 'Member 3': 'member3',
-             'Member 4': 'member4', 'Member 5': None, 'Member 6': 'member6', 'Member 7': 'member7',
-             'Member 8': 'member8', 'Member 9': 'member9', 'Member 10': 'member10'},
-        ]
+        self.rows = py_csv.DictReader(io.StringIO(
+            "TeamName,Manager,Member 2,Member 3,Member 4,Member 5,Member 6,Member 7,Member 8,Member 9,Member 10\n"
+            "team,manager,member2,member3,member4,member5,member6,member7,member8,member9,\n"
+            "team2,manager2,member2,member3,member4,,member6,member7,member8,member9,member10"
+        ))
+        self.rows_loss_header = py_csv.DictReader(io.StringIO(
+            "TeamName,Manager,Member 2,Member 3,Member 4,Member 5,Member 6,Member 7,,Member 9,Member 10\n"
+            "team,manager,member2,member3,member4,member5,member6,member7,member8,member9,\n"
+            "team2,manager2,member2,member3,member4,,member6,member7,member8,member9,member10"
+        ))
         self.data = [
             ('team', [
                 ('manager', enum.RoleType.manager), ('member2', enum.RoleType.normal),
@@ -163,6 +243,22 @@ class TestImportTeam(unittest.IsolatedAsyncioTestCase):
 
         self.assertIsNone(result)
 
+    async def test_loss_header(self):
+        with (
+            mock.Controller() as controller,
+        ):
+            db_team = controller.mock_module('persistence.database.team')
+
+            controller.mock_global_func('codecs.iterdecode').call_with(
+                self.team_file, 'utf_8_sig',
+            ).returns(self.generator)
+            controller.mock_global_func('csv.DictReader').call_with(
+                self.generator,
+            ).returns(self.rows_loss_header)
+
+            with self.assertRaises(exc.IllegalInput):
+                await csv.import_team(self.team_file, self.class_id, self.label)
+
     async def test_unicode_decode_error(self):
         with (
             mock.Controller() as controller,
@@ -183,10 +279,11 @@ class TestImportClassGrade(unittest.IsolatedAsyncioTestCase):
         self.update_time = datetime(2023, 7, 19, 12)
 
         self.generator = (test for test in [1, 2, ])
-        self.rows = [
-            {'Receiver': 'receiver', 'Score': '100', 'Comment': 'comment', 'Grader': 'grader'},
-            {'Receiver': 'receiver2', 'Score': '100', 'Comment': 'comment2', 'Grader': 'grader2'},
-        ]
+        self.rows = py_csv.DictReader(io.StringIO(
+            "Receiver,Score,Comment,Grader\n"
+            "receiver,100,comment,grader\n"
+            "receiver2,100,comment2,grader2"
+        ))
         self.data = [
             ('receiver', '100', 'comment', 'grader'),
             ('receiver2', '100', 'comment2', 'grader2'),
