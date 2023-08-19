@@ -247,8 +247,6 @@ class TestImportTeam(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
         ):
-            db_team = controller.mock_module('persistence.database.team')
-
             controller.mock_global_func('codecs.iterdecode').call_with(
                 self.team_file, 'utf_8_sig',
             ).returns(self.generator)
