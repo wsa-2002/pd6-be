@@ -51,6 +51,9 @@ class AddAccountInput(BaseModel):
 @enveloped
 async def add_account(data: AddAccountInput) -> None:
     # 要先檢查以免創立了帳號後才出事
+    if not data.username:
+        raise exc.IllegalInput
+
     if any(char in data.username for char in const.USERNAME_PROHIBITED_CHARS):
         raise exc.account.IllegalCharacter
 
@@ -136,6 +139,9 @@ async def add_normal_account(data: AddNormalAccountInput) -> model.AddOutput:
         raise exc.NoPermission
 
     # 要先檢查以免創立了帳號後才出事
+    if not data.username:
+        raise exc.IllegalInput
+
     if any(char in data.username for char in const.USERNAME_PROHIBITED_CHARS):
         raise exc.account.IllegalCharacter
 

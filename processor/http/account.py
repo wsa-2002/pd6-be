@@ -253,6 +253,9 @@ async def edit_account(account_id: int, data: EditAccountInput) -> None:
     if not ((is_self and not data.real_name) or is_manager):
         raise exc.NoPermission
 
+    if data.username == "":
+        raise exc.IllegalInput
+
     # 先 update email 因為如果失敗就整個失敗
     if data.alternative_email is ...:
         pass
