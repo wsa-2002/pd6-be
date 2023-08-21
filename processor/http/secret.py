@@ -36,7 +36,7 @@ class LoginOutput:
 
 class AddAccountInput(BaseModel):
     # Account
-    username: str
+    username: pydantic.constr(min_length=1)
     password: str
     nickname: str
     real_name: str
@@ -51,9 +51,6 @@ class AddAccountInput(BaseModel):
 @enveloped
 async def add_account(data: AddAccountInput) -> None:
     # 要先檢查以免創立了帳號後才出事
-    if not data.username:
-        raise exc.IllegalInput
-
     if any(char in data.username for char in const.USERNAME_PROHIBITED_CHARS):
         raise exc.account.IllegalCharacter
 
@@ -122,7 +119,7 @@ async def login(data: LoginInput) -> LoginOutput:
 
 class AddNormalAccountInput(BaseModel):
     real_name: str
-    username: str
+    username: pydantic.constr(min_length=1)
     password: str
     nickname: str = ''
     alternative_email: Optional[model.CaseInsensitiveEmailStr] = model.can_omit
@@ -139,9 +136,6 @@ async def add_normal_account(data: AddNormalAccountInput) -> model.AddOutput:
         raise exc.NoPermission
 
     # 要先檢查以免創立了帳號後才出事
-    if not data.username:
-        raise exc.IllegalInput
-
     if any(char in data.username for char in const.USERNAME_PROHIBITED_CHARS):
         raise exc.account.IllegalCharacter
 

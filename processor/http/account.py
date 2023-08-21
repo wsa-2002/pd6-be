@@ -233,7 +233,7 @@ async def read_account_with_default_student_id(account_id: int) -> ReadAccountOu
 
 
 class EditAccountInput(BaseModel):
-    username: str = None
+    username: pydantic.constr(min_length=1) = None
     nickname: str = None
     alternative_email: Optional[model.CaseInsensitiveEmailStr] = model.can_omit
     real_name: str = None
@@ -252,9 +252,6 @@ async def edit_account(account_id: int, data: EditAccountInput) -> None:
 
     if not ((is_self and not data.real_name) or is_manager):
         raise exc.NoPermission
-
-    if data.username == "":
-        raise exc.IllegalInput
 
     # 先 update email 因為如果失敗就整個失敗
     if data.alternative_email is ...:
