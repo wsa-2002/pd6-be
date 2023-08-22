@@ -36,7 +36,7 @@ class LoginOutput:
 
 class AddAccountInput(BaseModel):
     # Account
-    username: pydantic.constr(min_length=1)
+    username: constr(min_length=1)
     password: str
     nickname: str
     real_name: str
@@ -119,7 +119,7 @@ async def login(data: LoginInput) -> LoginOutput:
 
 class AddNormalAccountInput(BaseModel):
     real_name: str
-    username: pydantic.constr(min_length=1)
+    username: constr(min_length=1)
     password: str
     nickname: str = ''
     alternative_email: Optional[model.CaseInsensitiveEmailStr] = model.can_omit

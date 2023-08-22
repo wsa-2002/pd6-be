@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Sequence, Optional
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, constr
 
 from base.enum import RoleType
 from base import do
@@ -233,7 +233,7 @@ async def read_account_with_default_student_id(account_id: int) -> ReadAccountOu
 
 
 class EditAccountInput(BaseModel):
-    username: pydantic.constr(min_length=1) = None
+    username: constr(min_length=1) = None
     nickname: str = None
     alternative_email: Optional[model.CaseInsensitiveEmailStr] = model.can_omit
     real_name: str = None
