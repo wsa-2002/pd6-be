@@ -54,7 +54,7 @@ class SMTPConfig:
     port = env_values.get('SMTP_PORT')
     username = env_values.get('SMTP_USERNAME')
     password = env_values.get('SMTP_PASSWORD')
-    use_tls = strtobool(env_values.get('SMTP_USE_TLS'))
+    use_tls = strtobool(env_values.get('SMTP_USE_TLS') or 'False')
 
 
 class LoggerConfig:
@@ -74,7 +74,7 @@ class S3Config:
 
 class AmqpConfig:
     host = env_values.get('AMQP_HOST')
-    port = int(env_values.get('AMQP_PORT'))
+    port = int(env_values.get('AMQP_PORT') or '0')
     username = env_values.get('AMQP_USERNAME')
     password = env_values.get('AMQP_PASSWORD')
     report_queue_name = env_values.get('REPORT_QUEUE_NAME', 'report')
