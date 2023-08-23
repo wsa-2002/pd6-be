@@ -150,7 +150,7 @@ class TestBrowseEssaySubmissionByEssayId(unittest.IsolatedAsyncioTestCase):
             ),
         ]
         self.total_count = len(self.essay_submissions)
-        self.result = model.BrowseOutputBase(self.essay_submissions, self.total_count)
+        self.result = essay_submission.BrowseEssaySubmissionByEssayId(self.essay_submissions, self.total_count)
 
     async def test_happy_flow(self):
         with (
@@ -174,8 +174,6 @@ class TestBrowseEssaySubmissionByEssayId(unittest.IsolatedAsyncioTestCase):
                 limit=self.limit, offset=self.offset,
                 filters=self.filters_self, sorters=self.sorters,
             ).returns((self.essay_submissions, self.total_count))
-            model_.func('BrowseOutputBase').call_with(self.essay_submissions, total_count=self.total_count).returns(
-                self.result)
 
             result = await mock.unwrap(essay_submission.browse_essay_submission_by_essay_id)(
                 essay_id=self.essay_id,
