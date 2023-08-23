@@ -29,13 +29,17 @@ BROWSE_CLASS_COLUMNS = {
 }
 
 
+class BrowseClassOutput(model.BrowseOutputBase):
+    data: Sequence[do.Class]
+
+
 @router.get('/class')
 @enveloped
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_CLASS_COLUMNS.items()})
 async def browse_class(
         limit: model.Limit = 50, offset: model.Offset = 0,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
-) -> model.BrowseOutputBase:
+) -> BrowseClassOutput:
     """
     ### 權限
     - system normal: all
@@ -50,7 +54,7 @@ async def browse_class(
 
     classes, total_count = await db.class_.browse_with_filter(limit=limit, offset=offset,
                                                               filters=filters, sorters=sorters)
-    return model.BrowseOutputBase(classes, total_count=total_count)
+    return BrowseClassOutput(classes, total_count=total_count)
 
 
 @router.get('/class/{class_id}')
@@ -102,7 +106,7 @@ async def delete_class(class_id: int) -> None:
 
 
 @dataclass
-class BrowseClassMemberOutput:
+class ClassMemberData:
     member_id: int
     role: enum.RoleType
     username: str
@@ -118,6 +122,10 @@ BROWSE_CLASS_MEMBER_COLUMNS = {
 }
 
 
+class BrowseClassMemberOutput(model.BrowseOutputBase):
+    data: Sequence[ClassMemberData]
+
+
 @router.get('/class/{class_id}/member')
 @enveloped
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_CLASS_MEMBER_COLUMNS.items()})
@@ -125,7 +133,7 @@ async def browse_class_member(
         class_id: int,
         limit: model.Limit = 50, offset: model.Offset = 0,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
-) -> model.BrowseOutputBase:
+) -> BrowseClassMemberOutput:
     """
     ### 權限
     - Class normal
@@ -146,12 +154,12 @@ async def browse_class_member(
 
     result, total_count = await db.class_vo.browse_member_account_with_student_card_and_institute(
         limit=limit, offset=offset, filters=filters, sorters=sorters)
-    data = [BrowseClassMemberOutput(member_id=member.member_id, role=member.role,
-                                    username=account.username, real_name=account.real_name,
-                                    student_id=student_card.student_id,
-                                    institute_abbreviated_name=institute.abbreviated_name)
+    data = [ClassMemberData(member_id=member.member_id, role=member.role,
+                            username=account.username, real_name=account.real_name,
+                            student_id=student_card.student_id,
+                            institute_abbreviated_name=institute.abbreviated_name)
             for member, account, student_card, institute in result]
-    return model.BrowseOutputBase(data, total_count=total_count)
+    return BrowseClassMemberOutput(data, total_count=total_count)
 
 
 @dataclass
@@ -268,6 +276,10 @@ BROWSE_TEAM_UNDER_CLASS_COLUMNS = {
 }
 
 
+class BrowseTeamUnderClassOutput(model.BrowseOutputBase):
+    data: Sequence[do.Team]
+
+
 @router.get('/class/{class_id}/team', tags=['Team'])
 @enveloped
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_TEAM_UNDER_CLASS_COLUMNS.items()})
@@ -275,7 +287,7 @@ async def browse_team_under_class(
         class_id: int,
         limit: model.Limit = 50, offset: model.Offset = 0,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
-) -> model.BrowseOutputBase:
+) -> BrowseTeamUnderClassOutput:
     """
     ### 權限
     - Class normal: all
@@ -292,7 +304,7 @@ async def browse_team_under_class(
                                op=FilterOperator.eq,
                                value=class_id))
     teams, total_count = await db.team.browse(limit=limit, offset=offset, filters=filters, sorters=sorters)
-    return model.BrowseOutputBase(teams, total_count=total_count)
+    return BrowseTeamUnderClassOutput(teams, total_count=total_count)
 
 
 BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS = {
@@ -307,6 +319,10 @@ BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS = {
 }
 
 
+class BrowseSubmissionUnderClassOutput(model.BrowseOutputBase):
+    data: Sequence[do.Submission]
+
+
 @router.get('/class/{class_id}/submission', tags=['Submission'])
 @enveloped
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS.items()})
@@ -314,7 +330,7 @@ async def browse_submission_under_class(
         class_id: int,
         limit: model.Limit = 50, offset: model.Offset = 0,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
-) -> model.BrowseOutputBase:
+) -> BrowseSubmissionUnderClassOutput:
     """
     ### 權限
     - Class manager
@@ -330,4 +346,4 @@ async def browse_submission_under_class(
     submissions, total_count = await db.submission.browse_under_class(class_id=class_id,
                                                                       limit=limit, offset=offset,
                                                                       filters=filters, sorters=sorters)
-    return model.BrowseOutputBase(submissions, total_count=total_count)
+    return BrowseSubmissionUnderClassOutput(submissions, total_count=total_count)
