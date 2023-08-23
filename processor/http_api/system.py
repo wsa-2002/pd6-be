@@ -1,4 +1,7 @@
+from typing import Sequence
+
 from base.enum import RoleType
+from base import do
 import exceptions as exc
 from middleware import APIRouter, response, enveloped, auth
 from persistence import database as db
@@ -22,13 +25,17 @@ BROWSE_ACCESS_LOG_COLUMNS = {
 }
 
 
+class BrowseAccessLogOutput(model.BrowseOutputBase):
+    data: Sequence[do.AccessLog]
+
+
 @router.get('/access-log')
 @enveloped
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_ACCESS_LOG_COLUMNS.items()})
 async def browse_access_log(
         limit: model.Limit, offset: model.Offset,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
-) -> model.BrowseOutputBase:
+) -> BrowseAccessLogOutput:
     """
     ### 權限
     - Class+ manager
@@ -44,4 +51,4 @@ async def browse_access_log(
     sorters = model.parse_sorter(sort, BROWSE_ACCESS_LOG_COLUMNS)
 
     access_logs, total_count = await db.access_log.browse(limit=limit, offset=offset, filters=filters, sorters=sorters)
-    return model.BrowseOutputBase(access_logs, total_count=total_count)
+    return BrowseAccessLogOutput(access_logs, total_count=total_count)
