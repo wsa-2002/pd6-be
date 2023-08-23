@@ -43,7 +43,7 @@ class TestBrowseClass(unittest.IsolatedAsyncioTestCase):
                 is_deleted=False),
         ]
         self.total_count = len(self.classes)
-        self.result = model.BrowseOutputBase(data=self.classes, total_count=self.total_count)
+        self.result = class_.BrowseClassOutput(data=self.classes, total_count=self.total_count)
 
     async def test_happy_flow(self):
         with (
@@ -72,8 +72,6 @@ class TestBrowseClass(unittest.IsolatedAsyncioTestCase):
             ).returns(
                 (self.classes, self.total_count)
             )
-
-            model_.func('BrowseOutputBase').call_with(self.classes, total_count=self.total_count).returns(self.result)
 
             result = await mock.unwrap(class_.browse_class)(limit=self.limit, offset=self.offset, filter=self.filter,
                                                             sort=self.sorter)
@@ -319,19 +317,19 @@ class TestBrowseClassMember(unittest.IsolatedAsyncioTestCase):
         self.data_result = []
         for i in range(self.total_count):
             self.data_result.append((self.members[i], self.accounts[i], self.student_cards[i], self.institutes[i]))
-        self.result = model.BrowseOutputBase(
-            data=[class_.BrowseClassMemberOutput(member_id=1,
-                                                 role=enum.RoleType.normal,
-                                                 username='test1',
-                                                 real_name='test1',
-                                                 student_id='id1',
-                                                 institute_abbreviated_name='test'),
-                  class_.BrowseClassMemberOutput(member_id=2,
-                                                 role=enum.RoleType.normal,
-                                                 username='test2',
-                                                 real_name='test2',
-                                                 student_id='id2',
-                                                 institute_abbreviated_name='test')], total_count=2)
+        self.result = class_.BrowseClassMemberOutput(
+            data=[class_.ClassMemberData(member_id=1,
+                                         role=enum.RoleType.normal,
+                                         username='test1',
+                                         real_name='test1',
+                                         student_id='id1',
+                                         institute_abbreviated_name='test'),
+                  class_.ClassMemberData(member_id=2,
+                                         role=enum.RoleType.normal,
+                                         username='test2',
+                                         real_name='test2',
+                                         student_id='id2',
+                                         institute_abbreviated_name='test')], total_count=2)
 
     async def test_happy_flow_normal(self):
         with (
@@ -358,9 +356,6 @@ class TestBrowseClassMember(unittest.IsolatedAsyncioTestCase):
             ).returns(
                 (self.data_result, self.total_count),
             )
-
-            model_.func('BrowseOutputBase').call_with(self.result.data, total_count=self.total_count).returns(
-                self.result)
 
             result = await mock.unwrap(class_.browse_class_member)(
                 class_id=self.class_id,
@@ -397,9 +392,6 @@ class TestBrowseClassMember(unittest.IsolatedAsyncioTestCase):
             ).returns(
                 (self.data_result, self.total_count),
             )
-
-            model_.func('BrowseOutputBase').call_with(self.result.data, total_count=self.total_count).returns(
-                self.result)
 
             result = await mock.unwrap(class_.browse_class_member)(
                 class_id=self.class_id,
@@ -846,7 +838,7 @@ class TestBrowseTeamUnderClass(unittest.IsolatedAsyncioTestCase):
                 is_deleted=False),
         ]
         self.total_count = len(self.teams)
-        self.result = model.BrowseOutputBase(data=self.teams, total_count=self.total_count)
+        self.result = class_.BrowseTeamUnderClassOutput(data=self.teams, total_count=self.total_count)
 
     async def test_happy_flow(self):
         with (
@@ -875,8 +867,6 @@ class TestBrowseTeamUnderClass(unittest.IsolatedAsyncioTestCase):
             ).returns(
                 (self.teams, self.total_count)
             )
-
-            model_.func('BrowseOutputBase').call_with(self.teams, total_count=self.total_count).returns(self.result)
 
             result = await mock.unwrap(class_.browse_team_under_class)(class_id=self.class_id,
                                                                        limit=self.limit, offset=self.offset,
@@ -952,7 +942,7 @@ class TestBrowseSubmissionUnderClass(unittest.IsolatedAsyncioTestCase):
                 submit_time=self.today),
         ]
         self.total_count = len(self.submissions)
-        self.result = model.BrowseOutputBase(data=self.submissions, total_count=self.total_count)
+        self.result = class_.BrowseSubmissionUnderClassOutput(data=self.submissions, total_count=self.total_count)
 
     async def test_happy_flow(self):
         with (
@@ -982,9 +972,6 @@ class TestBrowseSubmissionUnderClass(unittest.IsolatedAsyncioTestCase):
             ).returns(
                 (self.submissions, self.total_count),
             )
-
-            model_.func('BrowseOutputBase').call_with(self.submissions, total_count=self.total_count).returns(
-                self.result)
 
             result = await mock.unwrap(class_.browse_submission_under_class)(class_id=self.class_id,
                                                                              limit=self.limit, offset=self.offset,
