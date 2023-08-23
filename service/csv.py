@@ -25,9 +25,17 @@ async def get_account_template() -> tuple[do.S3File, str]:
 
 async def import_account(account_file: typing.IO):
     try:
+        standard_headers = ACCOUNT_TEMPLATE.decode('utf_8_sig').split(',')
         rows = csv.DictReader(codecs.iterdecode(account_file, 'utf_8_sig'))
         data = []
+
+        if set(rows.fieldnames) != set(standard_headers):
+            raise exc.IllegalInput
+
         for row in rows:
+            for header in standard_headers:
+                if header != 'AlternativeEmail' and row[header] == "":
+                    raise exc.IllegalInput
             data.append((row['RealName'], row['Username'], security.hash_password(row['Password']),
                          row['AlternativeEmail'], row['Nickname']))
         await db.account.batch_add_normal(data)
@@ -50,17 +58,22 @@ async def get_team_template() -> tuple[do.S3File, str]:
 
 async def import_team(team_file: typing.IO, class_id: int, label: str):
     try:
+        standard_headers = TEAM_TEMPLATE.decode('utf_8_sig').split(',')
         rows = csv.DictReader(codecs.iterdecode(team_file, 'utf_8_sig'))
         data = []
+
+        if set(rows.fieldnames) != set(standard_headers):
+            raise exc.IllegalInput
+
         for row in rows:
             member_roles = []
-            for item in row:
-                if str(item) == 'TeamName':  # column name is 'TeamName'
+            for column_name, item in row.items():
+                if column_name == 'TeamName':  # column name is 'TeamName'
                     continue
-                if str(item) == 'Manager':  # column name is 'Manager'
-                    member_roles += [(row[str(item)], enum.RoleType.manager)]
-                elif row[str(item)]:
-                    member_roles += [(row[str(item)], enum.RoleType.normal)]
+                if column_name == 'Manager' and item:  # column name is 'Manager'
+                    member_roles += [(item, enum.RoleType.manager)]
+                elif item:
+                    member_roles += [(item, enum.RoleType.normal)]
             data.append((row['TeamName'], member_roles))
         await db.team.add_team_and_add_member(class_id=class_id, team_label=label, datas=data)
     except UnicodeDecodeError:
@@ -73,8 +86,13 @@ GRADE_TEMPLATE_FILENAME = 'grade_template.csv'
 
 async def import_class_grade(grade_file: typing.IO, title: str, class_id: int, update_time: datetime):
     try:
+        standard_headers = GRADE_TEMPLATE.decode('utf_8_sig').split('\n')[0].split(',')
         rows = csv.DictReader(codecs.iterdecode(grade_file, 'utf_8_sig'))
         data = []
+
+        if set(rows.fieldnames) != set(standard_headers):
+            raise exc.IllegalInput
+
         for row in rows:
             data.append((row['Receiver'], row['Score'], row['Comment'], row['Grader']))
         await db.grade.batch_add(class_id=class_id, title=title, grades=data, update_time=update_time)
