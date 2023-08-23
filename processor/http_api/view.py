@@ -33,7 +33,7 @@ class ViewAccountOutput(model.BrowseOutputBase):
 @router.get('/view/account')
 @enveloped
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_ACCOUNT_COLUMNS.items()})
-async def browse_account_with_default_student_id(
+async def view_browse_account_with_default_student_id(
         limit: model.Limit = 50, offset: model.Offset = 0,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
 ) -> ViewAccountOutput:
@@ -74,7 +74,7 @@ class ViewClassMemberOutput(model.BrowseOutputBase):
 @router.get('/class/{class_id}/view/member')
 @enveloped
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_CLASS_MEMBER_COLUMNS.items()})
-async def browse_class_member(
+async def view_browse_class_member(
         class_id: int,
         limit: model.Limit = 50, offset: model.Offset = 0,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
@@ -126,7 +126,7 @@ class ViewSubmissionUnderClassOutput(model.BrowseOutputBase):
 @router.get('/class/{class_id}/view/submission')
 @enveloped
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_SUBMISSION_UNDER_CLASS_COLUMNS.items()})
-async def browse_submission_under_class(
+async def view_browse_submission_under_class(
         class_id: int,
         limit: model.Limit = 50, offset: model.Offset = 0,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
@@ -173,8 +173,8 @@ class ViewMySubmissionOutput(model.BrowseOutputBase):
 @router.get('/view/my-submission')
 @enveloped
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_SUBMISSION_COLUMNS.items()})
-async def browse_submission(account_id: int, limit: model.Limit = 50, offset: model.Offset = 0,
-                            filter: model.FilterStr = None, sort: model.SorterStr = None) \
+async def view_browse_submission(account_id: int, limit: model.Limit = 50, offset: model.Offset = 0,
+                                 filter: model.FilterStr = None, sort: model.SorterStr = None) \
         -> ViewMySubmissionOutput:
     """
     ### 權限
@@ -220,10 +220,10 @@ class ViewMySubmissionUnderProblemOutput(model.BrowseOutputBase):
 @router.get('/problem/{problem_id}/view/my-submission')
 @enveloped
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_MY_SUBMISSION_UNDER_PROBLEM_COLUMNS.items()})
-async def browse_my_submission_under_problem(account_id: int,
-                                             problem_id: int,
-                                             limit: model.Limit = 50, offset: model.Offset = 0,
-                                             filter: model.FilterStr = None, sort: model.SorterStr = None) \
+async def view_browse_my_submission_under_problem(account_id: int,
+                                                  problem_id: int,
+                                                  limit: model.Limit = 50, offset: model.Offset = 0,
+                                                  filter: model.FilterStr = None, sort: model.SorterStr = None) \
         -> ViewMySubmissionUnderProblemOutput:
     """
     ### 權限
@@ -270,7 +270,7 @@ class ViewProblemSetOutput(model.BrowseOutputBase):
 @router.get('/class/{class_id}/view/problem-set')
 @enveloped
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_PROBLEM_SET_COLUMNS.items()})
-async def browse_problem_set_under_class(
+async def view_browse_problem_set_under_class(
         class_id: int,
         limit: model.Limit = 50, offset: model.Offset = 0,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
@@ -318,9 +318,9 @@ class ViewGradeOutput(model.BrowseOutputBase):
 @router.get('/class/{class_id}/view/grade')
 @enveloped
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_CLASS_GRADE_COLUMNS.items()})
-async def browse_class_grade(class_id: int,
-                             limit: int = 50, offset: int = 0,
-                             filter: model.FilterStr = None, sort: model.SorterStr = None) \
+async def view_browse_class_grade(class_id: int,
+                                  limit: int = 50, offset: int = 0,
+                                  filter: model.FilterStr = None, sort: model.SorterStr = None) \
         -> ViewGradeOutput:
     """
     ### 權限
@@ -369,7 +369,7 @@ class ViewAccessLogOutput(model.BrowseOutputBase):
 @router.get('/view/access-log')
 @enveloped
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_ACCESS_LOG_COLUMNS.items()})
-async def browse_access_log(
+async def view_browse_access_log(
         limit: model.Limit, offset: model.Offset,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
 ) -> ViewAccessLogOutput:
@@ -408,9 +408,9 @@ class ViewPeerReviewRecordOutput(model.BrowseOutputBase):
 @router.get('/peer-review/{peer_review_id}/view/reviewer-summary')
 @enveloped
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_PEER_REVIEW_RECORD_COLUMNS.items()})
-async def peer_review_summary_review(peer_review_id: int,
-                                     limit: model.Limit = 50, offset: model.Offset = 0,
-                                     filter: model.FilterStr = None, sort: model.SorterStr = None) \
+async def view_peer_review_summary_review(peer_review_id: int,
+                                          limit: model.Limit = 50, offset: model.Offset = 0,
+                                          filter: model.FilterStr = None, sort: model.SorterStr = None) \
         -> ViewPeerReviewRecordOutput:
     """
     ### 權限
@@ -434,9 +434,9 @@ async def peer_review_summary_review(peer_review_id: int,
 @router.get('/peer-review/{peer_review_id}/view/receiver-summary')
 @enveloped
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_PEER_REVIEW_RECORD_COLUMNS.items()})
-async def peer_review_summary_receive(peer_review_id: int,
-                                      limit: model.Limit = 50, offset: model.Offset = 0,
-                                      filter: model.FilterStr = None, sort: model.SorterStr = None) \
+async def view_peer_review_summary_receive(peer_review_id: int,
+                                           limit: model.Limit = 50, offset: model.Offset = 0,
+                                           filter: model.FilterStr = None, sort: model.SorterStr = None) \
         -> ViewPeerReviewRecordOutput:
     """
     ### 權限
