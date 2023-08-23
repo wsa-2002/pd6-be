@@ -3,8 +3,6 @@ from typing import Optional, Sequence
 
 from base import do
 from base.popo import Filter, Sorter
-import exceptions as exc
-import log
 
 from .base import FetchOne, FetchAll
 from .util import execute_count, compile_filters
