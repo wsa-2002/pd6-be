@@ -59,7 +59,6 @@ class TestReadAssistingData(unittest.IsolatedAsyncioTestCase):
             context.set_account(self.account)
 
             service_rbac = controller.mock_module('service.rbac')
-
             service_rbac.async_func('validate_class').call_with(
                 self.account.id, enum.RoleType.manager,
                 assisting_data_id=self.assisting_data.id,
@@ -127,7 +126,6 @@ class TestEditAssistingData(unittest.IsolatedAsyncioTestCase):
             context.set_account(self.account)
 
             service_rbac = controller.mock_module('service.rbac')
-
             service_rbac.async_func('validate_class').call_with(
                 self.account.id, enum.RoleType.manager,
                 assisting_data_id=self.assisting_data_id,
@@ -174,7 +172,6 @@ class TestDeleteAssistingData(unittest.IsolatedAsyncioTestCase):
             context.set_account(self.account)
 
             service_rbac = controller.mock_module('service.rbac')
-
             service_rbac.async_func('validate_class').call_with(
                 self.account.id, enum.RoleType.manager,
                 assisting_data_id=self.assisting_data_id,
