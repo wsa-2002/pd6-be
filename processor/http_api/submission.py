@@ -129,12 +129,16 @@ BROWSE_SUBMISSION_COLUMNS = {
 }
 
 
+class BrowseSubmissionOutput(model.BrowseOutputBase):
+    data: Sequence[do.Submission]
+
+
 @router.get('/submission')
 @enveloped
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_SUBMISSION_COLUMNS.items()})
 async def browse_submission(account_id: int, limit: model.Limit = 50, offset: model.Offset = 0,
                             filter: model.FilterStr = None, sort: model.SorterStr = None) \
-        -> model.BrowseOutputBase:
+        -> BrowseSubmissionOutput:
     """
     ### 權限
     - Self: see self
@@ -155,7 +159,7 @@ async def browse_submission(account_id: int, limit: model.Limit = 50, offset: mo
     submissions, total_count = await db.submission.browse(limit=limit, offset=offset,
                                                           filters=filters, sorters=sorters)
 
-    return model.BrowseOutputBase(submissions, total_count=total_count)
+    return BrowseSubmissionOutput(submissions, total_count=total_count)
 
 
 @router.get('/submission/judgment/batch')

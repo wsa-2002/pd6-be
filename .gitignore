@@ -1,6 +1,5 @@
 # === Start of project-specific
 
-.env
 logging.yaml
 log/*
 .version

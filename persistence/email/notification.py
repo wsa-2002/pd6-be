@@ -1,8 +1,8 @@
 from email.message import EmailMessage
 
-from config import service_config, smtp_config
+from config import smtp_config
 from persistence.email import smtp_handler
-from typing import Sequence, Collection
+from typing import Collection
 
 
 # for general msgs
