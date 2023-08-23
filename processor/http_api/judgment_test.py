@@ -99,7 +99,6 @@ class TestReadJudgment(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.other_account)
 
@@ -116,8 +115,8 @@ class TestReadJudgment(unittest.IsolatedAsyncioTestCase):
             service_rbac.async_func('validate_class').call_with(
                 context.account.id, enum.RoleType.manager, submission_id=self.submission.id,
             ).returns(False)
-
-            await mock.unwrap(judgment.read_judgment)(self.judgment_id)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(judgment.read_judgment)(self.judgment_id)
 
 
 class TestBrowseAllJudgmentJudgeCase(unittest.IsolatedAsyncioTestCase):
@@ -218,7 +217,6 @@ class TestBrowseAllJudgmentJudgeCase(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.other_account)
 
@@ -236,4 +234,5 @@ class TestBrowseAllJudgmentJudgeCase(unittest.IsolatedAsyncioTestCase):
                 context.account.id, enum.RoleType.manager, submission_id=self.submission.id,
             ).returns(False)
 
-            await mock.unwrap(judgment.browse_all_judgment_judge_case)(self.judgment_id)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(judgment.browse_all_judgment_judge_case)(self.judgment_id)
