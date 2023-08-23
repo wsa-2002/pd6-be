@@ -76,8 +76,8 @@ async def browse_announcement(
     if not system_role >= RoleType.guest:
         raise exc.NoPermission
 
-    filters = util.model.parse_filter(filter, BROWSE_ANNOUNCEMENT_COLUMNS)
-    sorters = util.model.parse_sorter(sort, BROWSE_ANNOUNCEMENT_COLUMNS)
+    filters = model.parse_filter(filter, BROWSE_ANNOUNCEMENT_COLUMNS)
+    sorters = model.parse_sorter(sort, BROWSE_ANNOUNCEMENT_COLUMNS)
 
     announcements, total_count = await db.announcement.browse(limit=limit, offset=offset,
                                                               filters=filters, sorters=sorters,
