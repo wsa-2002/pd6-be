@@ -2,9 +2,8 @@ from typing import Collection
 
 from email.message import EmailMessage
 
-import log
 from base import do
-from config import service_config, smtp_config
+from config import smtp_config
 from persistence.email import smtp_handler
 
 
