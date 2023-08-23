@@ -432,7 +432,7 @@ async def grade(limit: int, offset: int, filters: Sequence[Filter], sorters: Seq
     async with FetchAll(
             event='browse grades under class',
             sql=fr'{view_sql}'
-                fr'{f" ORDER BY {sort_sql}" if sort_sql else ""}'
+                fr'{f" ORDER BY {sort_sql}, grade_id ASC" if sort_sql else ""}'
                 fr' LIMIT %(limit)s OFFSET %(offset)s',
             **cond_params,
             limit=limit, offset=offset,
