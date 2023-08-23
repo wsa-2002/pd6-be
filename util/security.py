@@ -11,7 +11,6 @@ import jwt
 from passlib.hash import argon2
 import hashlib
 
-import log
 from config import config, pd4s_config
 import exceptions as exc
 

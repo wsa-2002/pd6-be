@@ -1,9 +1,10 @@
 import copy
 from datetime import datetime
+import typing
 import unittest
 from uuid import UUID
 
-from fastapi import UploadFile
+from fastapi import UploadFile, BackgroundTasks
 
 import exceptions as exc
 from base import enum, do, popo
@@ -183,6 +184,7 @@ class TestSubmit(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         self.account = security.AuthedAccount(id=1, cached_username='self')
 
+        self.background_tasks = BackgroundTasks()
         self.class_member_manager = do.ClassMember(
             member_id=self.account.id,
             class_id=1,
@@ -268,6 +270,7 @@ class TestSubmit(unittest.IsolatedAsyncioTestCase):
             service_rbac = controller.mock_module('service.rbac')
             service_judge = controller.mock_module('service.judge')
             service_submission = controller.mock_module('service.submission')
+            util_background_task = controller.mock_module('util.background_task')
             db_problem = controller.mock_module('persistence.database.problem')
             db_challenge = controller.mock_module('persistence.database.challenge')
             db_submission = controller.mock_module('persistence.database.submission')
@@ -293,11 +296,25 @@ class TestSubmit(unittest.IsolatedAsyncioTestCase):
                 file_length=self.file_length, language_id=self.language.id,
                 submit_time=self.request_time,
             ).returns(self.submission.id)
+
+            todo_async_task: typing.Callable[..., typing.Awaitable] = None  # noqa
+
+            def _set_task(_, async_task):
+                nonlocal todo_async_task
+                todo_async_task = async_task
+
+            util_background_task.func('launch').call_with(
+                self.background_tasks, mock.AnyInstanceOf(object),
+            ).executes(_set_task)
+
+            result = await mock.unwrap(submission.submit)(self.problem.id, self.language.id,
+                                                          self.background_tasks, self.content_file)
+
             service_judge.async_func('judge_submission').call_with(
                 self.submission.id,
             ).returns(None)
 
-            result = await mock.unwrap(submission.submit)(self.problem.id, self.language.id, self.content_file)
+            await todo_async_task()
 
         self.assertEqual(result, self.expected_happy_flow_result)
 
@@ -331,7 +348,8 @@ class TestSubmit(unittest.IsolatedAsyncioTestCase):
             )
 
             with self.assertRaises(exc.IllegalInput):
-                await mock.unwrap(submission.submit)(self.problem.id, self.language_disabled.id, self.content_file)
+                await mock.unwrap(submission.submit)(self.problem.id, self.language_disabled.id,
+                                                     self.background_tasks, self.content_file)
 
     async def test_class_normal_after_start_publicized(self):
         with (
@@ -344,6 +362,7 @@ class TestSubmit(unittest.IsolatedAsyncioTestCase):
             service_rbac = controller.mock_module('service.rbac')
             service_judge = controller.mock_module('service.judge')
             service_submission = controller.mock_module('service.submission')
+            util_background_task = controller.mock_module('util.background_task')
             db_problem = controller.mock_module('persistence.database.problem')
             db_challenge = controller.mock_module('persistence.database.challenge')
             db_submission = controller.mock_module('persistence.database.submission')
@@ -369,11 +388,25 @@ class TestSubmit(unittest.IsolatedAsyncioTestCase):
                 file_length=self.file_length, language_id=self.language.id,
                 submit_time=self.request_time,
             ).returns(self.submission.id)
+
+            todo_async_task: typing.Callable[..., typing.Awaitable] = None  # noqa
+
+            def _set_task(_, async_task):
+                nonlocal todo_async_task
+                todo_async_task = async_task
+
+            util_background_task.func('launch').call_with(
+                self.background_tasks, mock.AnyInstanceOf(object),
+            ).executes(_set_task)
+
+            result = await mock.unwrap(submission.submit)(self.problem.id, self.language.id,
+                                                          self.background_tasks, self.content_file)
+
             service_judge.async_func('judge_submission').call_with(
                 self.submission.id,
             ).returns(None)
 
-            result = await mock.unwrap(submission.submit)(self.problem.id, self.language.id, self.content_file)
+            await todo_async_task()
 
         self.assertEqual(result, self.expected_class_normal_after_start_publicized_result)
 
@@ -388,6 +421,7 @@ class TestSubmit(unittest.IsolatedAsyncioTestCase):
             service_rbac = controller.mock_module('service.rbac')
             service_judge = controller.mock_module('service.judge')
             service_submission = controller.mock_module('service.submission')
+            util_background_task = controller.mock_module('util.background_task')
             db_problem = controller.mock_module('persistence.database.problem')
             db_challenge = controller.mock_module('persistence.database.challenge')
             db_submission = controller.mock_module('persistence.database.submission')
@@ -413,12 +447,25 @@ class TestSubmit(unittest.IsolatedAsyncioTestCase):
                 file_length=self.file_length, language_id=self.language.id,
                 submit_time=self.request_time,
             ).returns(self.submission.id)
+
+            todo_async_task: typing.Callable[..., typing.Awaitable] = None  # noqa
+
+            def _set_task(_, async_task):
+                nonlocal todo_async_task
+                todo_async_task = async_task
+
+            util_background_task.func('launch').call_with(
+                self.background_tasks, mock.AnyInstanceOf(object),
+            ).executes(_set_task)
+
+            result = await mock.unwrap(submission.submit)(self.problem.id, self.language.id,
+                                                          self.background_tasks, self.content_file)
+
             service_judge.async_func('judge_submission').call_with(
                 self.submission.id,
             ).returns(None)
 
-            result = await mock.unwrap(submission.submit)(self.problem.id, self.language.id, self.content_file)
-
+            await todo_async_task()
         self.assertEqual(result, self.expected_class_normal_after_start_unpublicized_result)
 
     async def test_class_normal_before_start_unpublicized(self):
@@ -447,7 +494,8 @@ class TestSubmit(unittest.IsolatedAsyncioTestCase):
             ).returns(self.class_member_normal.role)
 
             with self.assertRaises(exc.NoPermission):
-                await mock.unwrap(submission.submit)(self.problem.id, self.language_disabled.id, self.content_file)
+                await mock.unwrap(submission.submit)(self.problem.id, self.language_disabled.id,
+                                                     self.background_tasks, self.content_file)
 
     async def test_no_system_permission(self):
         with (
@@ -463,7 +511,8 @@ class TestSubmit(unittest.IsolatedAsyncioTestCase):
             ).returns(False)
 
             with self.assertRaises(exc.NoPermission):
-                await mock.unwrap(submission.submit)(self.problem.id, self.language.id, self.content_file)
+                await mock.unwrap(submission.submit)(self.problem.id, self.language.id,
+                                                     self.background_tasks, self.content_file)
 
 
 class TestBrowseSubmission(unittest.IsolatedAsyncioTestCase):
@@ -477,12 +526,12 @@ class TestBrowseSubmission(unittest.IsolatedAsyncioTestCase):
         self.sort = model.SorterStr
 
         self.BROWSE_SUBMISSION_COLUMNS = submission.BROWSE_SUBMISSION_COLUMNS
-        self.filters = []
+        self.filters = [["content", "LIKE", "abcd"]]
         self.filters_before_append = self.filters
         self.filters.append(popo.Filter(col_name='account_id',
                                         op=enum.FilterOperator.eq,
                                         value=self.account.id))
-        self.sorters = []
+        self.sorters = [['id']]
 
         self.submissions = [
             do.Submission(
@@ -508,7 +557,7 @@ class TestBrowseSubmission(unittest.IsolatedAsyncioTestCase):
         ]
         self.total_count = len(self.submissions)
 
-        self.expected_happy_flow_result = model.BrowseOutputBase(self.submissions, total_count=self.total_count)
+        self.expected_happy_flow_result = submission.BrowseSubmissionOutput(self.submissions, total_count=self.total_count)
 
     async def test_happy_flow(self):
         with (
@@ -533,9 +582,6 @@ class TestBrowseSubmission(unittest.IsolatedAsyncioTestCase):
             ).returns(
                 (self.submissions, self.total_count),
             )
-            util_model.func('BrowseOutputBase').call_with(
-                self.submissions, total_count=self.total_count,
-            ).returns(self.expected_happy_flow_result)
 
             result = await mock.unwrap(submission.browse_submission)(self.account.id, self.limit,
                                                                      self.offset, self.filter, self.sort)
@@ -593,7 +639,6 @@ class TestBatchGetSubmissionJudgment(unittest.IsolatedAsyncioTestCase):
             mock.Context() as context,
         ):
             context.set_account(self.account)
-
             db_judgment = controller.mock_module('persistence.database.judgment')
             service_rbac = controller.mock_module('service.rbac')
 
@@ -617,7 +662,6 @@ class TestBatchGetSubmissionJudgment(unittest.IsolatedAsyncioTestCase):
             mock.Context() as context,
         ):
             context.set_account(self.account)
-
             service_rbac = controller.mock_module('service.rbac')
 
             controller.mock_global_func('pydantic.parse_obj_as').call_with(
@@ -636,7 +680,6 @@ class TestBatchGetSubmissionJudgment(unittest.IsolatedAsyncioTestCase):
             mock.Context() as context,
         ):
             context.set_account(self.account)
-
             controller.mock_global_func('pydantic.parse_obj_as').call_with(
                 list[int], self.submission_ids_json,
             ).returns(self.submission_ids_empty)
