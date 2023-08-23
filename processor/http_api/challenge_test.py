@@ -103,12 +103,12 @@ class TestBrowseChallengeUnderClass(unittest.IsolatedAsyncioTestCase):
         self.filter = model.FilterStr
         self.sort = model.SorterStr
 
-        self.filters = []
+        self.filters = [["content", "LIKE", "abcd"]]
         self.filters_before_append = self.filters
         self.filters.append(popo.Filter(col_name='class_id',
                                         op=enum.FilterOperator.eq,
                                         value=self.class_id))
-        self.sorters = []
+        self.sorters = [['id']]
 
         self.challenges = [
             do.Challenge(
@@ -138,7 +138,8 @@ class TestBrowseChallengeUnderClass(unittest.IsolatedAsyncioTestCase):
         ]
         self.total_count = 2
 
-        self.expected_happy_flow_result = model.BrowseOutputBase(self.challenges, total_count=self.total_count)
+        self.expected_happy_flow_result = challenge.BrowseChallengeUnderclassOutput(self.challenges,
+                                                                                    total_count=self.total_count)
 
     async def test_happy_flow_class_manager(self):
         with (
@@ -1562,7 +1563,7 @@ class TestGetMemberSubmissionStatistics(unittest.IsolatedAsyncioTestCase):
             ],
         )
 
-        self.expected_happy_flow_result = model.BrowseOutputBase(
+        self.expected_happy_flow_result = challenge.GetMemberSubmissionStatisticsOutput(
             data=self.member_submission_stat, total_count=self.results.__len__(),
         )
 
