@@ -37,9 +37,11 @@ class CallRecorder:
         self._called = True
 
     def returns(self, *return_values):
+        if len(return_values) > 1:
+            return_values = (return_values,)
         self._record(return_values)
 
-    def raises(self, exception: typing.Type[Exception]):
+    def raises(self, exception: typing.Type[Exception] | Exception):
         self._record(exception)
 
     def executes(self, func):
@@ -161,6 +163,7 @@ class Controller:
     def __init__(self):
         self._calls: list[CallRecord] = list()
         self._unpatch_funcs: list[typing.Callable] = list()
+        self._global_module = MockModule(self, '')
 
     def __enter__(self):
         return self
@@ -172,14 +175,25 @@ class Controller:
         if self._calls:
             raise AssertionError(f'{len(self._calls)} expected call(s) not fulfilled, next one is {self._calls[0]}')
 
-    def mock_module(self, module_name: str) -> MockModule:
-        module = MockModule(self, module_name)
-
-        patched = patch(module_name, module)
+    def _patch(self, name, mocked):
+        patched = patch(name, mocked)
         patched.__enter__()
         self._unpatch_funcs.append(patched.__exit__)
 
+    def mock_module(self, module_name: str) -> MockModule:
+        module = MockModule(self, module_name)
+        self._patch(module_name, module)
         return module
+
+    def mock_global_func(self, func_name: str) -> MockFunction:
+        mocked = self._global_module.func(func_name)
+        self._patch(func_name, mocked)
+        return mocked
+
+    def mock_global_async_func(self, func_name: str) -> MockAsyncFunction:
+        mocked = self._global_module.async_func(func_name)
+        self._patch(func_name, mocked)
+        return mocked
 
     def _register_call(self, record: CallRecord):
         self._calls.append(record)
