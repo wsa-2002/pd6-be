@@ -90,7 +90,6 @@ class TestBrowseAllInstitute(unittest.IsolatedAsyncioTestCase):
             mock.Controller() as controller,
         ):
             db_institute = controller.mock_module('persistence.database.institute')
-
             db_institute.async_func('browse').call_with().returns(
                 self.all_institute,
             )
