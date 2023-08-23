@@ -37,7 +37,7 @@ class TestBrowseAccessLog(unittest.IsolatedAsyncioTestCase):
             ),
         ]
         self.total_count = len(self.access_logs)
-        self.result = model.BrowseOutputBase(self.access_logs, self.total_count)
+        self.result = system.BrowseAccessLogOutput(self.access_logs, self.total_count)
 
     async def test_happy_flow(self):
         with (
@@ -47,16 +47,19 @@ class TestBrowseAccessLog(unittest.IsolatedAsyncioTestCase):
             context.set_account(self.login_account)
 
             service_rbac = controller.mock_module('service.rbac')
-            model_ = controller.mock_module('processor.http_api.system.model')
             db_access_log = controller.mock_module('persistence.database.access_log')
 
             service_rbac.async_func('validate_system').call_with(
                 context.account.id, enum.RoleType.manager,
             ).returns(True)
-            model_.func('parse_filter').call_with(self.filter, system.BROWSE_ACCESS_LOG_COLUMNS).returns(
+            controller.mock_global_func('util.model.parse_filter').call_with(
+                self.filter, system.BROWSE_ACCESS_LOG_COLUMNS,
+            ).returns(
                 self.filters,
             )
-            model_.func('parse_sorter').call_with(self.sorter, system.BROWSE_ACCESS_LOG_COLUMNS).returns(
+            controller.mock_global_func('util.model.parse_sorter').call_with(
+                self.sorter, system.BROWSE_ACCESS_LOG_COLUMNS,
+            ).returns(
                 self.sorters,
             )
             db_access_log.async_func('browse').call_with(
@@ -64,8 +67,6 @@ class TestBrowseAccessLog(unittest.IsolatedAsyncioTestCase):
             ).returns(
                 (self.access_logs, self.total_count),
             )
-            model_.func('BrowseOutputBase').call_with(self.access_logs,
-                                                      total_count=self.total_count).returns(self.result)
 
             result = await mock.unwrap(system.browse_access_log)(
                 self.limit, self.offset,
