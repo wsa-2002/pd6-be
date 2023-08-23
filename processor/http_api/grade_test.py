@@ -132,7 +132,7 @@ class TestBrowseClassGrade(unittest.IsolatedAsyncioTestCase):
         self.sort = model.SorterStr
 
         self.BROWSE_CLASS_GRADE_COLUMNS = grade.BROWSE_CLASS_GRADE_COLUMNS
-        self.filters = []
+        self.filters = [["content", "LIKE", "abcd"]]
         self.filters_before_append = self.filters
         self.filters.append(popo.Filter(col_name='class_id',
                                         op=enum.FilterOperator.eq,
@@ -142,7 +142,7 @@ class TestBrowseClassGrade(unittest.IsolatedAsyncioTestCase):
         self.filters_normal.append(popo.Filter(col_name='receiver_id',
                                                op=enum.FilterOperator.eq,
                                                value=self.account.id))
-        self.sorters = []
+        self.sorters = [['id']]
 
         self.grades = [
             do.Grade(
@@ -170,7 +170,7 @@ class TestBrowseClassGrade(unittest.IsolatedAsyncioTestCase):
         ]
         self.total_count = 2
 
-        self.expected_happy_flow_result = model.BrowseOutputBase(self.grades, total_count=self.total_count)
+        self.expected_happy_flow_result = grade.BrowseClassGradeOutput(self.grades, total_count=self.total_count)
 
     async def test_happy_flow_manager(self):
         with (
@@ -264,12 +264,12 @@ class TestBrowseAccountGrade(unittest.IsolatedAsyncioTestCase):
         self.sort = model.SorterStr
 
         self.BROWSE_ACCOUNT_GRADE_COLUMNS = grade.BROWSE_ACCOUNT_GRADE_COLUMNS
-        self.filters = []
+        self.filters = [["content", "LIKE", "abcd"]]
         self.filters_before_append = self.filters
         self.filters.append(popo.Filter(col_name='receiver_id',
                                         op=enum.FilterOperator.eq,
                                         value=self.account.id))
-        self.sorters = []
+        self.sorters = [['id']]
 
         self.grades = [
             do.Grade(
@@ -297,7 +297,7 @@ class TestBrowseAccountGrade(unittest.IsolatedAsyncioTestCase):
         ]
         self.total_count = 2
 
-        self.expected_happy_flow_result = model.BrowseOutputBase(self.grades, total_count=self.total_count)
+        self.expected_happy_flow_result = grade.BrowseAccountGradeOutput(self.grades, total_count=self.total_count)
 
     async def test_happy_flow_manager(self):
         with (
