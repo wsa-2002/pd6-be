@@ -13,7 +13,6 @@ import itertools
 from typing import Any, Dict, Tuple, List, Optional, Union
 
 import log
-from util import serialize
 
 
 # https://github.com/MagicStack/asyncpg/issues/9#issuecomment-600659015
