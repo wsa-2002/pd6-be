@@ -1,6 +1,5 @@
 from email.message import EmailMessage
 
-import log
 from config import service_config, smtp_config
 from persistence.email import smtp_handler
 
