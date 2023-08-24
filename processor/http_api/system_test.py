@@ -79,7 +79,6 @@ class TestBrowseAccessLog(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
 
@@ -89,7 +88,8 @@ class TestBrowseAccessLog(unittest.IsolatedAsyncioTestCase):
                 context.account.id, enum.RoleType.manager,
             ).returns(False)
 
-            await mock.unwrap(system.browse_access_log)(
-                self.limit, self.offset,
-                self.filter, self.sorter,
-            )
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(system.browse_access_log)(
+                    self.limit, self.offset,
+                    self.filter, self.sorter,
+                )
