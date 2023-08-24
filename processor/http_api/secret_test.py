@@ -210,41 +210,34 @@ class TestAddAccount(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(result)
 
     async def test_illegal_character(self):
-        with(
-            self.assertRaises(exc.account.IllegalCharacter),
-        ):
+        with self.assertRaises(exc.account.IllegalCharacter):
             await mock.unwrap(secret.add_account)(self.data_illegal_char)
 
     async def test_invalid_institute(self):
-        with (
-            mock.Controller() as controller,
-            self.assertRaises(exc.account.InvalidInstitute),
-        ):
+        with mock.Controller() as controller:
             db_institute = controller.mock_module('persistence.database.institute')
 
             db_institute.async_func('read').call_with(
                 self.data.institute_id, include_disabled=False,
             ).raises(exc.persistence.NotFound)
 
-            await mock.unwrap(secret.add_account)(self.data)
+            with self.assertRaises(exc.account.InvalidInstitute):
+                await mock.unwrap(secret.add_account)(self.data)
 
     async def test_student_id_not_match_email(self):
-        with (
-            mock.Controller() as controller,
-            self.assertRaises(exc.account.StudentIdNotMatchEmail),
-        ):
+        with mock.Controller() as controller:
             db_institute = controller.mock_module('persistence.database.institute')
 
             db_institute.async_func('read').call_with(
                 self.data.institute_id, include_disabled=False,
             ).returns(self.institute)
 
-            await mock.unwrap(secret.add_account)(self.data_mismatch)
+            with self.assertRaises(exc.account.StudentIdNotMatchEmail):
+                await mock.unwrap(secret.add_account)(self.data_mismatch)
 
     async def test_student_card_exists(self):
         with (
             mock.Controller() as controller,
-            self.assertRaises(exc.account.StudentCardExists),
         ):
             db_institute = controller.mock_module('persistence.database.institute')
             db_student_card = controller.mock_module('persistence.database.student_card')
@@ -254,12 +247,12 @@ class TestAddAccount(unittest.IsolatedAsyncioTestCase):
             ).returns(self.institute)
             db_student_card.async_func('is_duplicate').call_with(self.institute.id, self.data.student_id).returns(True)
 
-            await mock.unwrap(secret.add_account)(self.data)
+            with self.assertRaises(exc.account.StudentCardExists):
+                await mock.unwrap(secret.add_account)(self.data)
 
     async def test_username_exists(self):
         with (
             mock.Controller() as controller,
-            self.assertRaises(exc.account.UsernameExists),
         ):
             db_institute = controller.mock_module('persistence.database.institute')
             db_student_card = controller.mock_module('persistence.database.student_card')
@@ -276,12 +269,12 @@ class TestAddAccount(unittest.IsolatedAsyncioTestCase):
                 nickname=self.data.nickname, real_name=self.data.real_name, role=enum.RoleType.guest,
             ).raises(exc.persistence.UniqueViolationError)
 
-            await mock.unwrap(secret.add_account)(self.data)
+            with self.assertRaises(exc.account.UsernameExists):
+                await mock.unwrap(secret.add_account)(self.data)
 
     async def test_invalid_email(self):
         with (
             mock.Controller() as controller,
-            self.assertRaises(exc.account.InvalidEmail),
         ):
             db_institute = controller.mock_module('persistence.database.institute')
             db_student_card = controller.mock_module('persistence.database.student_card')
@@ -301,7 +294,8 @@ class TestAddAccount(unittest.IsolatedAsyncioTestCase):
                 model.CaseInsensitiveEmailStr, self.institute_email,
             ).raises(pydantic.EmailError)
 
-            await mock.unwrap(secret.add_account)(self.data)
+            with self.assertRaises(exc.account.InvalidEmail):
+                await mock.unwrap(secret.add_account)(self.data)
 
 
 class TestLogin(unittest.IsolatedAsyncioTestCase):
@@ -365,7 +359,6 @@ class TestLogin(unittest.IsolatedAsyncioTestCase):
     async def test_login_failed_account_not_found(self):
         with (
             mock.Controller() as controller,
-            self.assertRaises(exc.account.LoginFailed),
         ):
             db_account = controller.mock_module('persistence.database.account')
 
@@ -373,12 +366,12 @@ class TestLogin(unittest.IsolatedAsyncioTestCase):
                 exc.persistence.NotFound,
             )
 
-            await mock.unwrap(secret.login)(self.data)
+            with self.assertRaises(exc.account.LoginFailed):
+                await mock.unwrap(secret.login)(self.data)
 
     async def test_login_failed_not_4s_hash_verification_failed(self):
         with (
             mock.Controller() as controller,
-            self.assertRaises(exc.account.LoginFailed),
         ):
             db_account = controller.mock_module('persistence.database.account')
             security_ = controller.mock_module('processor.http_api.secret.security')
@@ -389,12 +382,12 @@ class TestLogin(unittest.IsolatedAsyncioTestCase):
             security_.func('verify_password').call_with(to_test=self.data.password,
                                                         hashed=self.pass_hash).returns(False)
 
-            await mock.unwrap(secret.login)(self.data)
+            with self.assertRaises(exc.account.LoginFailed):
+                await mock.unwrap(secret.login)(self.data)
 
     async def test_login_failed_4s_hash_verification_failed(self):
         with (
             mock.Controller() as controller,
-            self.assertRaises(exc.account.LoginFailed),
         ):
             db_account = controller.mock_module('persistence.database.account')
             security_ = controller.mock_module('processor.http_api.secret.security')
@@ -405,7 +398,8 @@ class TestLogin(unittest.IsolatedAsyncioTestCase):
             security_.func('verify_password_4s').call_with(to_test=self.data.password,
                                                            hashed=self.pass_hash).returns(False)
 
-            await mock.unwrap(secret.login)(self.data)
+            with self.assertRaises(exc.account.LoginFailed):
+                await mock.unwrap(secret.login)(self.data)
 
 
 class TestAddNormalAccount(unittest.IsolatedAsyncioTestCase):
@@ -499,7 +493,6 @@ class TestAddNormalAccount(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
 
@@ -509,13 +502,13 @@ class TestAddNormalAccount(unittest.IsolatedAsyncioTestCase):
                 context.account.id, enum.RoleType.manager,
             ).returns(False)
 
-            await mock.unwrap(secret.add_normal_account)(self.data)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(secret.add_normal_account)(self.data)
 
     async def test_illegal_character(self):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.account.IllegalCharacter),
         ):
             context.set_account(self.login_account)
 
@@ -525,13 +518,13 @@ class TestAddNormalAccount(unittest.IsolatedAsyncioTestCase):
                 context.account.id, enum.RoleType.manager,
             ).returns(True)
 
-            await mock.unwrap(secret.add_normal_account)(self.data_illegal_char)
+            with self.assertRaises(exc.account.IllegalCharacter):
+                await mock.unwrap(secret.add_normal_account)(self.data_illegal_char)
 
     async def test_username_exists(self):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.account.UsernameExists),
         ):
             context.set_account(self.login_account)
 
@@ -550,7 +543,8 @@ class TestAddNormalAccount(unittest.IsolatedAsyncioTestCase):
                 alternative_email=self.data.alternative_email,
             ).raises(exc.persistence.UniqueViolationError)
 
-            await mock.unwrap(secret.add_normal_account)(self.data)
+            with self.assertRaises(exc.account.UsernameExists):
+                await mock.unwrap(secret.add_normal_account)(self.data)
 
 
 class TestImportAccount(unittest.IsolatedAsyncioTestCase):
@@ -581,7 +575,6 @@ class TestImportAccount(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
 
@@ -591,7 +584,8 @@ class TestImportAccount(unittest.IsolatedAsyncioTestCase):
                 context.account.id, enum.RoleType.manager,
             ).returns(False)
 
-            await mock.unwrap(secret.import_account)(self.account_file)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(secret.import_account)(self.account_file)
 
 
 class TestEditPassword(unittest.IsolatedAsyncioTestCase):
@@ -658,7 +652,6 @@ class TestEditPassword(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.account.PasswordVerificationFailed),
         ):
             context.set_account(self.login_account)
 
@@ -672,13 +665,13 @@ class TestEditPassword(unittest.IsolatedAsyncioTestCase):
                 to_test=self.data.old_password, hashed=self.pass_hash_old,
             ).returns(False)
 
-            await mock.unwrap(secret.edit_password)(self.account_id, self.data)
+            with self.assertRaises(exc.account.PasswordVerificationFailed):
+                await mock.unwrap(secret.edit_password)(self.account_id, self.data)
 
     async def test_no_permission(self):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.other_account)
 
@@ -688,7 +681,8 @@ class TestEditPassword(unittest.IsolatedAsyncioTestCase):
                 context.account.id, enum.RoleType.manager,
             ).returns(False)
 
-            await mock.unwrap(secret.edit_password)(self.account_id, self.data)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(secret.edit_password)(self.account_id, self.data)
 
 
 class TestResetPassword(unittest.IsolatedAsyncioTestCase):
