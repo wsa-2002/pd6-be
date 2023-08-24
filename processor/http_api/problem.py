@@ -34,7 +34,7 @@ async def browse_problem_set() -> Sequence[do.Problem]:
     ### 權限
     - System normal (not hidden)
     """
-    if not service.rbac.validate_system(context.account.id, RoleType.normal):
+    if not await service.rbac.validate_system(context.account.id, RoleType.normal):
         raise exc.NoPermission
 
     return await db.problem.browse_problem_set(request_time=context.request_time)
@@ -360,7 +360,7 @@ async def download_all_assisting_data(problem_id: int, as_attachment: bool,
         raise exc.NoPermission
 
     async def _task() -> None:
-        log.info("Start download all essay submission")
+        log.info("Start download all assisting data")
 
         s3_file = await service.downloader.all_assisting_data(problem_id=problem_id)
         file_url = await s3.tools.sign_url(bucket=s3_file.bucket, key=s3_file.key,
@@ -373,7 +373,6 @@ async def download_all_assisting_data(problem_id: int, as_attachment: bool,
         await email.notification.send_file_download_url(to=student_card.email, file_url=file_url)
 
         log.info('Done')
-
     util.background_task.launch(background_tasks, _task)
 
 
@@ -389,7 +388,7 @@ async def download_all_sample_testcase(problem_id: int, as_attachment: bool,
         raise exc.NoPermission
 
     async def _task() -> None:
-        log.info("Start download all essay submission")
+        log.info("Start download all sample testcase")
 
         s3_file = await service.downloader.all_testcase(problem_id=problem_id, is_sample=True)
         file_url = await s3.tools.sign_url(bucket=s3_file.bucket, key=s3_file.key,
@@ -418,7 +417,7 @@ async def download_all_non_sample_testcase(problem_id: int, as_attachment: bool,
         raise exc.NoPermission
 
     async def _task() -> None:
-        log.info("Start download all essay submission")
+        log.info("Start download all non sample testcase")
 
         s3_file = await service.downloader.all_testcase(problem_id=problem_id, is_sample=False)
         file_url = await s3.tools.sign_url(bucket=s3_file.bucket, key=s3_file.key,
