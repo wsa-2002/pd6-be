@@ -1,7 +1,6 @@
 from datetime import datetime
 from typing import Sequence
 
-import log
 from base import do
 from base.enum import FilterOperator
 from base.popo import Filter, Sorter
