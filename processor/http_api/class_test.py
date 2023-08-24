@@ -82,7 +82,6 @@ class TestBrowseClass(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
 
@@ -92,8 +91,9 @@ class TestBrowseClass(unittest.IsolatedAsyncioTestCase):
                 context.account.id, enum.RoleType.normal,
             ).returns(False)
 
-            await mock.unwrap(class_.browse_class)(limit=self.limit, offset=self.offset, filter=self.filter,
-                                                   sort=self.sorter)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(class_.browse_class)(limit=self.limit, offset=self.offset, filter=self.filter,
+                                                       sort=self.sorter)
 
 
 class TestReadClass(unittest.IsolatedAsyncioTestCase):
@@ -133,7 +133,6 @@ class TestReadClass(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
 
@@ -143,7 +142,8 @@ class TestReadClass(unittest.IsolatedAsyncioTestCase):
                 context.account.id, enum.RoleType.normal,
             ).returns(False)
 
-            await mock.unwrap(class_.read_class)(class_id=self.class_id)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(class_.read_class)(class_id=self.class_id)
 
 
 class TestEditClass(unittest.IsolatedAsyncioTestCase):
@@ -182,7 +182,6 @@ class TestEditClass(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
 
@@ -192,7 +191,8 @@ class TestEditClass(unittest.IsolatedAsyncioTestCase):
                 context.account.id, enum.RoleType.manager, class_id=self.class_id,
             ).returns(False)
 
-            await mock.unwrap(class_.edit_class)(class_id=self.class_id, data=self.data)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(class_.edit_class)(class_id=self.class_id, data=self.data)
 
 
 class TestDeleteClass(unittest.IsolatedAsyncioTestCase):
@@ -223,7 +223,6 @@ class TestDeleteClass(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
 
@@ -233,7 +232,8 @@ class TestDeleteClass(unittest.IsolatedAsyncioTestCase):
                 context.account.id, enum.RoleType.manager,
             ).returns(False)
 
-            await mock.unwrap(class_.delete_class)(class_id=self.class_id)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(class_.delete_class)(class_id=self.class_id)
 
 
 class TestBrowseClassMember(unittest.IsolatedAsyncioTestCase):
@@ -404,7 +404,6 @@ class TestBrowseClassMember(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
 
@@ -417,10 +416,11 @@ class TestBrowseClassMember(unittest.IsolatedAsyncioTestCase):
                 context.account.id, enum.RoleType.manager, class_id=self.class_id,
             ).returns(False)
 
-            await mock.unwrap(class_.browse_class_member)(
-                class_id=self.class_id,
-                limit=self.limit, offset=self.offset,
-                filter=self.filter, sort=self.sorter)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(class_.browse_class_member)(
+                    class_id=self.class_id,
+                    limit=self.limit, offset=self.offset,
+                    filter=self.filter, sort=self.sorter)
 
 
 class TestBrowseAllClassMemberWithAccountReferral(unittest.IsolatedAsyncioTestCase):
@@ -515,7 +515,6 @@ class TestBrowseAllClassMemberWithAccountReferral(unittest.IsolatedAsyncioTestCa
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
 
@@ -528,7 +527,8 @@ class TestBrowseAllClassMemberWithAccountReferral(unittest.IsolatedAsyncioTestCa
                 context.account.id, enum.RoleType.manager, class_id=self.class_id,
             ).returns(False)
 
-            await mock.unwrap(class_.browse_all_class_member_with_account_referral)(self.class_id)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(class_.browse_all_class_member_with_account_referral)(self.class_id)
 
 
 class TestReplaceClassMembers(unittest.IsolatedAsyncioTestCase):
@@ -688,7 +688,6 @@ class TestReplaceClassMembers(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
 
@@ -698,7 +697,8 @@ class TestReplaceClassMembers(unittest.IsolatedAsyncioTestCase):
                 context.account.id, enum.RoleType.manager, class_id=self.class_id,
             ).returns(False)
 
-            await mock.unwrap(class_.replace_class_members)(self.class_id, self.data)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(class_.replace_class_members)(self.class_id, self.data)
 
 
 class TestDeleteClassMember(unittest.IsolatedAsyncioTestCase):
@@ -731,7 +731,6 @@ class TestDeleteClassMember(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
 
@@ -741,7 +740,8 @@ class TestDeleteClassMember(unittest.IsolatedAsyncioTestCase):
                 context.account.id, enum.RoleType.manager, class_id=self.class_id,
             ).returns(False)
 
-            await mock.unwrap(class_.delete_class_member)(class_id=self.class_id, member_id=self.member_id)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(class_.delete_class_member)(class_id=self.class_id, member_id=self.member_id)
 
 
 class TestAddTeamUnderClass(unittest.IsolatedAsyncioTestCase):
@@ -786,7 +786,6 @@ class TestAddTeamUnderClass(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
 
@@ -796,7 +795,8 @@ class TestAddTeamUnderClass(unittest.IsolatedAsyncioTestCase):
                 context.account.id, enum.RoleType.manager, class_id=self.class_id,
             ).returns(False)
 
-            await mock.unwrap(class_.add_team_under_class)(class_id=self.class_id, data=self.data)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(class_.add_team_under_class)(class_id=self.class_id, data=self.data)
 
 
 class TestBrowseTeamUnderClass(unittest.IsolatedAsyncioTestCase):
@@ -878,7 +878,6 @@ class TestBrowseTeamUnderClass(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
 
@@ -888,9 +887,10 @@ class TestBrowseTeamUnderClass(unittest.IsolatedAsyncioTestCase):
                 context.account.id, enum.RoleType.normal, class_id=self.class_id,
             ).returns(False)
 
-            await mock.unwrap(class_.browse_team_under_class)(class_id=self.class_id,
-                                                              limit=self.limit, offset=self.offset,
-                                                              filter=self.filter, sort=self.sorter)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(class_.browse_team_under_class)(class_id=self.class_id,
+                                                                  limit=self.limit, offset=self.offset,
+                                                                  filter=self.filter, sort=self.sorter)
 
 
 class TestBrowseSubmissionUnderClass(unittest.IsolatedAsyncioTestCase):
@@ -984,7 +984,6 @@ class TestBrowseSubmissionUnderClass(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
 
@@ -994,7 +993,8 @@ class TestBrowseSubmissionUnderClass(unittest.IsolatedAsyncioTestCase):
                 context.account.id, enum.RoleType.manager, class_id=self.class_id,
             ).returns(False)
 
-            await mock.unwrap(class_.browse_submission_under_class)(class_id=self.class_id,
-                                                                    limit=self.limit, offset=self.offset,
-                                                                    filter=self.filter,
-                                                                    sort=self.sorter)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(class_.browse_submission_under_class)(class_id=self.class_id,
+                                                                        limit=self.limit, offset=self.offset,
+                                                                        filter=self.filter,
+                                                                        sort=self.sorter)
