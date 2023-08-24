@@ -122,7 +122,7 @@ async def submit(problem_id: int, language_id: int, background_tasks: Background
     async def _task() -> None:
         log.info("Start judge submission")
         await service.judge.judge_submission(submission_id)
-        log.info("Done")
+        log.info("Finish judge submission")
 
     util.background_task.launch(background_tasks, _task)
 
