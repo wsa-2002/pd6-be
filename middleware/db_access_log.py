@@ -9,8 +9,6 @@ from util.context import context
 from .envelope import middleware_error_enveloped
 
 
-
-
 @middleware_error_enveloped
 async def middleware(request: fastapi.Request, call_next):
     account = starlette_context.context.get(const.CONTEXT_AUTHED_ACCOUNT_KEY, None)
