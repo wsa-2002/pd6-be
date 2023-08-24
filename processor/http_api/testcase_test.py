@@ -188,7 +188,6 @@ class TestReadTestcase(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
 
@@ -198,7 +197,8 @@ class TestReadTestcase(unittest.IsolatedAsyncioTestCase):
                 context.account.id, enum.RoleType.normal,
             ).returns(False)
 
-            await mock.unwrap(testcase.read_testcase)(self.testcase_id)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(testcase.read_testcase)(self.testcase_id)
 
 
 class TestEditTestcase(unittest.IsolatedAsyncioTestCase):
@@ -242,7 +242,6 @@ class TestEditTestcase(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
 
@@ -252,7 +251,8 @@ class TestEditTestcase(unittest.IsolatedAsyncioTestCase):
                 context.account.id, enum.RoleType.manager, testcase_id=self.testcase_id,
             ).returns(False)
 
-            await mock.unwrap(testcase.edit_testcase)(self.testcase_id, self.data)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(testcase.edit_testcase)(self.testcase_id, self.data)
 
 
 class TestUploadTestcaseInputData(unittest.IsolatedAsyncioTestCase):
@@ -299,7 +299,6 @@ class TestUploadTestcaseInputData(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
 
@@ -309,7 +308,8 @@ class TestUploadTestcaseInputData(unittest.IsolatedAsyncioTestCase):
                 context.account.id, enum.RoleType.manager, testcase_id=self.testcase_id,
             ).returns(False)
 
-            await mock.unwrap(testcase.upload_testcase_input_data)(self.testcase_id, self.input_file)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(testcase.upload_testcase_input_data)(self.testcase_id, self.input_file)
 
 
 class TestUploadTestcaseOutputData(unittest.IsolatedAsyncioTestCase):
@@ -356,7 +356,6 @@ class TestUploadTestcaseOutputData(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
 
@@ -366,7 +365,8 @@ class TestUploadTestcaseOutputData(unittest.IsolatedAsyncioTestCase):
                 context.account.id, enum.RoleType.manager, testcase_id=self.testcase_id,
             ).returns(False)
 
-            await mock.unwrap(testcase.upload_testcase_output_data)(self.testcase_id, self.output_file)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(testcase.upload_testcase_output_data)(self.testcase_id, self.output_file)
 
 
 class TestDeleteTestcase(unittest.IsolatedAsyncioTestCase):
@@ -397,7 +397,6 @@ class TestDeleteTestcase(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
 
@@ -407,7 +406,8 @@ class TestDeleteTestcase(unittest.IsolatedAsyncioTestCase):
                 context.account.id, enum.RoleType.manager, testcase_id=self.testcase_id,
             ).returns(False)
 
-            await mock.unwrap(testcase.delete_testcase)(self.testcase_id)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(testcase.delete_testcase)(self.testcase_id)
 
 
 class TestDeleteTestcaseInputData(unittest.IsolatedAsyncioTestCase):
@@ -438,7 +438,6 @@ class TestDeleteTestcaseInputData(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
 
@@ -448,7 +447,8 @@ class TestDeleteTestcaseInputData(unittest.IsolatedAsyncioTestCase):
                 context.account.id, enum.RoleType.manager, testcase_id=self.testcase_id,
             ).returns(False)
 
-            await mock.unwrap(testcase.delete_testcase_input_data)(self.testcase_id)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(testcase.delete_testcase_input_data)(self.testcase_id)
 
 
 class TestDeleteTestcaseOutputData(unittest.IsolatedAsyncioTestCase):
@@ -479,7 +479,6 @@ class TestDeleteTestcaseOutputData(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
 
@@ -489,4 +488,5 @@ class TestDeleteTestcaseOutputData(unittest.IsolatedAsyncioTestCase):
                 context.account.id, enum.RoleType.manager, testcase_id=self.testcase_id,
             ).returns(False)
 
-            await mock.unwrap(testcase.delete_testcase_output_data)(self.testcase_id)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(testcase.delete_testcase_output_data)(self.testcase_id)
