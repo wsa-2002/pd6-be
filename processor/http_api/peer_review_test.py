@@ -126,7 +126,6 @@ class TestReadPeerReview(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
             context.set_request_time(self.today + datetime.timedelta(days=5))
@@ -137,13 +136,13 @@ class TestReadPeerReview(unittest.IsolatedAsyncioTestCase):
                 context.account.id, peer_review_id=self.peer_review_id,
             ).returns(enum.RoleType.guest)
 
-            await mock.unwrap(peer_review.read_peer_review)(self.peer_review_id)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(peer_review.read_peer_review)(self.peer_review_id)
 
     async def test_no_permission_hidden(self):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
             context.set_request_time(self.today - datetime.timedelta(days=5))
@@ -162,7 +161,8 @@ class TestReadPeerReview(unittest.IsolatedAsyncioTestCase):
                 self.challenge,
             )
 
-            await mock.unwrap(peer_review.read_peer_review)(self.peer_review_id)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(peer_review.read_peer_review)(self.peer_review_id)
 
 
 class TestEditPeerReview(unittest.IsolatedAsyncioTestCase):
@@ -208,7 +208,6 @@ class TestEditPeerReview(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
 
@@ -218,7 +217,8 @@ class TestEditPeerReview(unittest.IsolatedAsyncioTestCase):
                 context.account.id, enum.RoleType.manager, peer_review_id=self.peer_review_id,
             ).returns(False)
 
-            await mock.unwrap(peer_review.edit_peer_review)(self.peer_review_id, self.data)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(peer_review.edit_peer_review)(self.peer_review_id, self.data)
 
 
 class TestDeletePeerReview(unittest.IsolatedAsyncioTestCase):
@@ -249,7 +249,6 @@ class TestDeletePeerReview(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
 
@@ -259,7 +258,8 @@ class TestDeletePeerReview(unittest.IsolatedAsyncioTestCase):
                 context.account.id, enum.RoleType.manager, peer_review_id=self.peer_review_id,
             ).returns(False)
 
-            await mock.unwrap(peer_review.delete_peer_review)(self.peer_review_id)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(peer_review.delete_peer_review)(self.peer_review_id)
 
 
 class TestBrowsePeerReviewRecord(unittest.IsolatedAsyncioTestCase):
@@ -510,7 +510,6 @@ class TestAssignPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
             context.set_request_time(self.today)
@@ -521,13 +520,13 @@ class TestAssignPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
                 context.account.id, peer_review_id=self.peer_review_id,
             ).returns(enum.RoleType.manager)
 
-            await mock.unwrap(peer_review.assign_peer_review_record)(self.peer_review_id)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(peer_review.assign_peer_review_record)(self.peer_review_id)
 
     async def test_no_permission_overdue(self):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
             context.set_request_time(self.challenge.end_time + datetime.timedelta(days=1))
@@ -546,13 +545,13 @@ class TestAssignPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
                 self.challenge,
             )
 
-            await mock.unwrap(peer_review.assign_peer_review_record)(self.peer_review_id)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(peer_review.assign_peer_review_record)(self.peer_review_id)
 
     async def test_max_peer_reviewCount(self):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.MaxPeerReviewCount)
         ):
             context.set_account(self.login_account)
             context.set_request_time(self.today)
@@ -579,7 +578,8 @@ class TestAssignPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
                 self.peer_review_records_already_assigned,
             )
 
-            await mock.unwrap(peer_review.assign_peer_review_record)(self.peer_review_id)
+            with self.assertRaises(exc.MaxPeerReviewCount):
+                await mock.unwrap(peer_review.assign_peer_review_record)(self.peer_review_id)
 
 
 class TestReadPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
@@ -779,7 +779,6 @@ class TestReadPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.grader)
             context.set_request_time(self.today)
@@ -790,13 +789,13 @@ class TestReadPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
                 context.account.id, peer_review_record_id=self.peer_review_record_id,
             ).returns(enum.RoleType.guest)
 
-            await mock.unwrap(peer_review.read_peer_review_record)(self.peer_review_record_id)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(peer_review.read_peer_review_record)(self.peer_review_record_id)
 
     async def test_no_permission_other_account(self):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.other_account)
             context.set_request_time(self.today)
@@ -819,13 +818,13 @@ class TestReadPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
                 self.challenge,
             )
 
-            await mock.unwrap(peer_review.read_peer_review_record)(self.peer_review_record_id)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(peer_review.read_peer_review_record)(self.peer_review_record_id)
 
     async def test_no_permission_early(self):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.receiver)
             context.set_request_time(self.challenge.end_time - datetime.timedelta(days=1))
@@ -848,7 +847,8 @@ class TestReadPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
                 self.challenge,
             )
 
-            await mock.unwrap(peer_review.read_peer_review_record)(self.peer_review_record_id)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(peer_review.read_peer_review_record)(self.peer_review_record_id)
 
 
 class TestSubmitPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
@@ -941,7 +941,6 @@ class TestSubmitPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
             context.set_request_time(self.today)
@@ -952,13 +951,13 @@ class TestSubmitPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
                 context.account.id, peer_review_record_id=self.peer_review_record_id,
             ).returns(enum.RoleType.guest)
 
-            await mock.unwrap(peer_review.submit_peer_review_record)(self.peer_review_record_id, self.data)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(peer_review.submit_peer_review_record)(self.peer_review_record_id, self.data)
 
     async def test_no_permission_overdue(self):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
             context.set_request_time(self.challenge.end_time + datetime.timedelta(days=1))
@@ -981,13 +980,13 @@ class TestSubmitPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
                 self.challenge,
             )
 
-            await mock.unwrap(peer_review.submit_peer_review_record)(self.peer_review_record_id, self.data)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(peer_review.submit_peer_review_record)(self.peer_review_record_id, self.data)
 
     async def test_illegal_input(self):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.IllegalInput)
         ):
             context.set_account(self.login_account)
             context.set_request_time(self.today)
@@ -1010,7 +1009,8 @@ class TestSubmitPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
                 self.challenge,
             )
 
-            await mock.unwrap(peer_review.submit_peer_review_record)(self.peer_review_record_id, self.data_illegal)
+            with self.assertRaises(exc.IllegalInput):
+                await mock.unwrap(peer_review.submit_peer_review_record)(self.peer_review_record_id, self.data_illegal)
 
 
 class TestBrowseAccountReceivedPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
@@ -1140,7 +1140,6 @@ class TestBrowseAccountReceivedPeerReviewRecord(unittest.IsolatedAsyncioTestCase
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
             context.set_request_time(self.today)
@@ -1151,14 +1150,14 @@ class TestBrowseAccountReceivedPeerReviewRecord(unittest.IsolatedAsyncioTestCase
                 context.account.id, peer_review_id=self.peer_review_id,
             ).returns(enum.RoleType.guest)
 
-            await mock.unwrap(peer_review.browse_account_received_peer_review_record)(self.peer_review_id,
-                                                                                      self.other_account.id)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(peer_review.browse_account_received_peer_review_record)(self.peer_review_id,
+                                                                                          self.other_account.id)
 
     async def test_no_permission_other_account(self):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
             context.set_request_time(self.challenge.end_time)
@@ -1177,14 +1176,14 @@ class TestBrowseAccountReceivedPeerReviewRecord(unittest.IsolatedAsyncioTestCase
                 self.challenge,
             )
 
-            await mock.unwrap(peer_review.browse_account_received_peer_review_record)(self.peer_review_id,
-                                                                                      self.other_account.id)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(peer_review.browse_account_received_peer_review_record)(self.peer_review_id,
+                                                                                          self.other_account.id)
 
     async def test_no_permission_early(self):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
             context.set_request_time(self.challenge.end_time - datetime.timedelta(days=1))
@@ -1203,8 +1202,9 @@ class TestBrowseAccountReceivedPeerReviewRecord(unittest.IsolatedAsyncioTestCase
                 self.challenge,
             )
 
-            await mock.unwrap(peer_review.browse_account_received_peer_review_record)(self.peer_review_id,
-                                                                                      self.login_account.id)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(peer_review.browse_account_received_peer_review_record)(self.peer_review_id,
+                                                                                          self.login_account.id)
 
 
 class TestBrowseAccountReviewedPeerReviewRecord(unittest.IsolatedAsyncioTestCase):
@@ -1334,7 +1334,6 @@ class TestBrowseAccountReviewedPeerReviewRecord(unittest.IsolatedAsyncioTestCase
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
             context.set_request_time(self.today)
@@ -1345,14 +1344,14 @@ class TestBrowseAccountReviewedPeerReviewRecord(unittest.IsolatedAsyncioTestCase
                 context.account.id, peer_review_id=self.peer_review_id,
             ).returns(enum.RoleType.guest)
 
-            await mock.unwrap(peer_review.browse_account_reviewed_peer_review_record)(self.peer_review_id,
-                                                                                      self.login_account.id)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(peer_review.browse_account_reviewed_peer_review_record)(self.peer_review_id,
+                                                                                          self.login_account.id)
 
     async def test_no_permission_other_account(self):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
             context.set_request_time(self.today)
@@ -1371,14 +1370,14 @@ class TestBrowseAccountReviewedPeerReviewRecord(unittest.IsolatedAsyncioTestCase
                 self.challenge,
             )
 
-            await mock.unwrap(peer_review.browse_account_reviewed_peer_review_record)(self.peer_review_id,
-                                                                                      self.other_account.id)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(peer_review.browse_account_reviewed_peer_review_record)(self.peer_review_id,
+                                                                                          self.other_account.id)
 
     async def test_no_permission_early(self):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
             context.set_request_time(self.challenge.start_time - datetime.timedelta(days=1))
@@ -1397,5 +1396,6 @@ class TestBrowseAccountReviewedPeerReviewRecord(unittest.IsolatedAsyncioTestCase
                 self.challenge,
             )
 
-            await mock.unwrap(peer_review.browse_account_reviewed_peer_review_record)(self.peer_review_id,
-                                                                                      self.login_account.id)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(peer_review.browse_account_reviewed_peer_review_record)(self.peer_review_id,
+                                                                                          self.login_account.id)
