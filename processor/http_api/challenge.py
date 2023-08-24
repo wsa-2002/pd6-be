@@ -557,6 +557,7 @@ class AddTeamContestScoreboardInput(BaseModel):
 
 
 @router.post('/challenge/{challenge_id}/team-contest-scoreboard', tags=['Team Contest Scoreboard'])
+@enveloped
 async def add_team_contest_scoreboard_under_challenge(challenge_id: int, data: AddTeamContestScoreboardInput) \
         -> model.AddOutput:
     """
