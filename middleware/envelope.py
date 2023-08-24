@@ -48,7 +48,12 @@ _WRAPPER_ASSIGNMENTS = ('__module__', '__name__', '__qualname__', '__doc__')  # 
 _WRAPPER_UPDATES = functools.WRAPPER_UPDATES
 
 
-def enveloped(func):
+_T = typing.TypeVar('_T')
+_P = typing.ParamSpec('_P')
+_AsyncFunc = typing.Callable[_P, typing.Awaitable[_T]]
+
+
+def enveloped(func: _AsyncFunc) -> _AsyncFunc:
     """
     Add envelope and handle error.
     """

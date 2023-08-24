@@ -57,6 +57,26 @@ You may also turn up the auto-reload option, or change the host & port with `--h
 uvicorn main:app --reload --host 0.0.0.0 --port 80
 ```
 
+## Unit tests
+
+### Run test
+```shell
+python -m run_test
+```
+or
+```shell
+python run_test.py
+```
+
+### Coverage
+
+```shell
+python -m coverage run -m run_test -v
+# coverage report
+python -m coverage report
+```
+
+
 ## About this project
 
 ### Main Principles
