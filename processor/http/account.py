@@ -233,7 +233,7 @@ async def read_account_with_default_student_id(account_id: int) -> ReadAccountOu
 
 
 class EditAccountInput(BaseModel):
-    username: constr(min_length=1) = None
+    username: model.NonEmptyStr = None
     nickname: str = None
     alternative_email: Optional[model.CaseInsensitiveEmailStr] = model.can_omit
     real_name: str = None
