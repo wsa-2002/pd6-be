@@ -43,7 +43,6 @@ class TestImportTeam(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
 
@@ -53,7 +52,8 @@ class TestImportTeam(unittest.IsolatedAsyncioTestCase):
                 context.account.id, enum.RoleType.manager, class_id=self.class_id,
             ).returns(False)
 
-            await mock.unwrap(team.import_team)(self.class_id, self.label, self.team_file)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(team.import_team)(self.class_id, self.label, self.team_file)
 
 
 class TestGetTeamTemplateFile(unittest.IsolatedAsyncioTestCase):
@@ -93,7 +93,6 @@ class TestGetTeamTemplateFile(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
 
@@ -103,7 +102,8 @@ class TestGetTeamTemplateFile(unittest.IsolatedAsyncioTestCase):
                 context.account.id, enum.RoleType.normal,
             ).returns(False)
 
-            await mock.unwrap(team.get_team_template_file)()
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(team.get_team_template_file)()
 
 
 class TestReadTeam(unittest.IsolatedAsyncioTestCase):
@@ -143,7 +143,6 @@ class TestReadTeam(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
 
@@ -153,7 +152,8 @@ class TestReadTeam(unittest.IsolatedAsyncioTestCase):
                 context.account.id, enum.RoleType.normal, team_id=self.team_id,
             ).returns(False)
 
-            await mock.unwrap(team.read_team)(self.team_id)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(team.read_team)(self.team_id)
 
 
 class TestEditTeam(unittest.IsolatedAsyncioTestCase):
@@ -224,7 +224,6 @@ class TestEditTeam(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
 
@@ -237,7 +236,8 @@ class TestEditTeam(unittest.IsolatedAsyncioTestCase):
                 context.account.id, enum.RoleType.manager, team_id=self.team_id,
             ).returns(False)
 
-            await mock.unwrap(team.edit_team)(self.team_id, self.data)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(team.edit_team)(self.team_id, self.data)
 
 
 class TestDeleteTeam(unittest.IsolatedAsyncioTestCase):
@@ -269,7 +269,6 @@ class TestDeleteTeam(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
 
@@ -279,7 +278,8 @@ class TestDeleteTeam(unittest.IsolatedAsyncioTestCase):
                 context.account.id, enum.RoleType.manager, team_id=self.team_id,
             ).returns(False)
 
-            await mock.unwrap(team.delete_team)(self.team_id)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(team.delete_team)(self.team_id)
 
 
 class TestBrowseTeamAllMember(unittest.IsolatedAsyncioTestCase):
@@ -324,7 +324,6 @@ class TestBrowseTeamAllMember(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
 
@@ -334,7 +333,8 @@ class TestBrowseTeamAllMember(unittest.IsolatedAsyncioTestCase):
                 context.account.id, enum.RoleType.normal, team_id=self.team_id,
             ).returns(False)
 
-            await mock.unwrap(team.browse_team_all_member)(self.team_id)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(team.browse_team_all_member)(self.team_id)
 
 
 class TestAddTeamMember(unittest.IsolatedAsyncioTestCase):
@@ -381,7 +381,6 @@ class TestAddTeamMember(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
 
@@ -391,7 +390,8 @@ class TestAddTeamMember(unittest.IsolatedAsyncioTestCase):
                 context.account.id, enum.RoleType.manager, team_id=self.team_id,
             ).returns(False)
 
-            await mock.unwrap(team.add_team_member)(self.team_id, self.data)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(team.add_team_member)(self.team_id, self.data)
 
 
 class TestEditTeamMember(unittest.IsolatedAsyncioTestCase):
@@ -438,7 +438,6 @@ class TestEditTeamMember(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
 
@@ -448,7 +447,8 @@ class TestEditTeamMember(unittest.IsolatedAsyncioTestCase):
                 context.account.id, enum.RoleType.manager, team_id=self.team_id,
             ).returns(False)
 
-            await mock.unwrap(team.edit_team_member)(self.team_id, self.data)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(team.edit_team_member)(self.team_id, self.data)
 
 
 class TestDeleteTeamMember(unittest.IsolatedAsyncioTestCase):
@@ -481,7 +481,6 @@ class TestDeleteTeamMember(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
 
@@ -491,4 +490,5 @@ class TestDeleteTeamMember(unittest.IsolatedAsyncioTestCase):
                 context.account.id, enum.RoleType.manager, team_id=self.team_id,
             ).returns(False)
 
-            await mock.unwrap(team.delete_team_member)(self.team_id, self.member_id)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(team.delete_team_member)(self.team_id, self.member_id)
