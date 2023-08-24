@@ -76,7 +76,6 @@ class TestUploadEssay(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
             context.set_request_time(self.today)
@@ -87,13 +86,13 @@ class TestUploadEssay(unittest.IsolatedAsyncioTestCase):
                 context.account.id, enum.RoleType.normal, essay_id=self.essay_id,
             ).returns(False)
 
-            await mock.unwrap(essay_submission.upload_essay)(self.essay_id, self.essay_file)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(essay_submission.upload_essay)(self.essay_id, self.essay_file)
 
     async def test_no_permission_overdue(self):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
             context.set_request_time(self.challenge.end_time)
@@ -110,7 +109,8 @@ class TestUploadEssay(unittest.IsolatedAsyncioTestCase):
                 self.essay.challenge_id, ref_time=context.request_time,
             ).returns(self.challenge)
 
-            await mock.unwrap(essay_submission.upload_essay)(self.essay_id, self.essay_file)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(essay_submission.upload_essay)(self.essay_id, self.essay_file)
 
 
 class TestBrowseEssaySubmissionByEssayId(unittest.IsolatedAsyncioTestCase):
@@ -187,7 +187,6 @@ class TestBrowseEssaySubmissionByEssayId(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
 
@@ -197,11 +196,12 @@ class TestBrowseEssaySubmissionByEssayId(unittest.IsolatedAsyncioTestCase):
                 context.account.id, essay_id=self.essay_id,
             ).returns(enum.RoleType.guest)
 
-            await mock.unwrap(essay_submission.browse_essay_submission_by_essay_id)(
-                essay_id=self.essay_id,
-                limit=self.limit, offset=self.offset,
-                filter=self.filter, sort=self.sorter,
-            )
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(essay_submission.browse_essay_submission_by_essay_id)(
+                    essay_id=self.essay_id,
+                    limit=self.limit, offset=self.offset,
+                    filter=self.filter, sort=self.sorter,
+                )
 
 
 class TestReadEssaySubmission(unittest.IsolatedAsyncioTestCase):
@@ -268,7 +268,6 @@ class TestReadEssaySubmission(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
 
@@ -278,7 +277,8 @@ class TestReadEssaySubmission(unittest.IsolatedAsyncioTestCase):
                 context.account.id, essay_submission_id=self.essay_submission_id,
             ).returns(enum.RoleType.guest)
 
-            await mock.unwrap(essay_submission.read_essay_submission)(self.essay_submission_id)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(essay_submission.read_essay_submission)(self.essay_submission_id)
 
 
 class TestReuploadEssay(unittest.IsolatedAsyncioTestCase):
@@ -356,7 +356,6 @@ class TestReuploadEssay(unittest.IsolatedAsyncioTestCase):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
             context.set_request_time(self.today)
@@ -367,13 +366,13 @@ class TestReuploadEssay(unittest.IsolatedAsyncioTestCase):
                 context.account.id, enum.RoleType.normal, essay_submission_id=self.essay_submission_id,
             ).returns(False)
 
-            await mock.unwrap(essay_submission.reupload_essay)(self.essay_submission_id, self.essay_file)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(essay_submission.reupload_essay)(self.essay_submission_id, self.essay_file)
 
     async def test_no_permission_not_self(self):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.other_account)
             context.set_request_time(self.today)
@@ -393,13 +392,13 @@ class TestReuploadEssay(unittest.IsolatedAsyncioTestCase):
                 challenge_id=self.essay.challenge_id,
             ).returns(self.challenge)
 
-            await mock.unwrap(essay_submission.reupload_essay)(self.essay_submission_id, self.essay_file)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(essay_submission.reupload_essay)(self.essay_submission_id, self.essay_file)
 
     async def test_no_permission_overdue(self):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.login_account)
             context.set_request_time(self.challenge.end_time + datetime.timedelta(days=1))
@@ -419,13 +418,13 @@ class TestReuploadEssay(unittest.IsolatedAsyncioTestCase):
                 challenge_id=self.essay.challenge_id,
             ).returns(self.challenge)
 
-            await mock.unwrap(essay_submission.reupload_essay)(self.essay_submission_id, self.essay_file)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(essay_submission.reupload_essay)(self.essay_submission_id, self.essay_file)
 
     async def test_no_permission_not_self_overdue(self):
         with (
             mock.Controller() as controller,
             mock.Context() as context,
-            self.assertRaises(exc.NoPermission),
         ):
             context.set_account(self.other_account)
             context.set_request_time(self.challenge.end_time + datetime.timedelta(days=1))
@@ -445,4 +444,5 @@ class TestReuploadEssay(unittest.IsolatedAsyncioTestCase):
                 challenge_id=self.essay.challenge_id,
             ).returns(self.challenge)
 
-            await mock.unwrap(essay_submission.reupload_essay)(self.essay_submission_id, self.essay_file)
+            with self.assertRaises(exc.NoPermission):
+                await mock.unwrap(essay_submission.reupload_essay)(self.essay_submission_id, self.essay_file)
