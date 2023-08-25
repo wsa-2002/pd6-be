@@ -36,8 +36,8 @@ class LoginOutput:
 
 class AddAccountInput(BaseModel):
     # Account
-    username: model.TrimmedNonEmptyStr
-    password: model.NonEmptyStr
+    username: str
+    password: str
     nickname: str
     real_name: str
     alternative_email: Optional[model.CaseInsensitiveEmailStr] = model.can_omit
@@ -119,8 +119,8 @@ async def login(data: LoginInput) -> LoginOutput:
 
 class AddNormalAccountInput(BaseModel):
     real_name: str
-    username: model.TrimmedNonEmptyStr
-    password: model.NonEmptyStr
+    username: str
+    password: str
     nickname: str = ''
     alternative_email: Optional[model.CaseInsensitiveEmailStr] = model.can_omit
 
@@ -166,7 +166,7 @@ async def import_account(account_file: UploadFile = File(...)):
 
 class EditPasswordInput(BaseModel):
     old_password: Optional[str]
-    new_password: model.NonEmptyStr
+    new_password: str
 
 
 @router.put('/account/{account_id}/pass_hash', tags=['Account'], response_class=JSONResponse)
@@ -197,7 +197,7 @@ async def edit_password(account_id: int, data: EditPasswordInput):
 
 class ResetPasswordInput(BaseModel):
     code: str
-    password: model.NonEmptyStr
+    password: str
 
 
 @router.post('/account/reset-password', tags=['Account'], response_class=JSONResponse)
