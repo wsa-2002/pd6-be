@@ -60,7 +60,7 @@ class TestResendEmailVerification(unittest.IsolatedAsyncioTestCase):
 
             result = await mock.unwrap(email_verification.resend_email_verification)(
                 email_verification_id=self.account.id)
-            self.assertIsNone(result)
+        self.assertIsNone(result)
 
     async def test_happy_flow_not_manager(self):
         with (
@@ -91,7 +91,7 @@ class TestResendEmailVerification(unittest.IsolatedAsyncioTestCase):
 
             result = await mock.unwrap(email_verification.resend_email_verification)(
                 email_verification_id=self.account.id)
-            self.assertIsNone(result)
+        self.assertIsNone(result)
 
 
 class TestDeletePendingEmailVerification(unittest.IsolatedAsyncioTestCase):
@@ -136,7 +136,7 @@ class TestDeletePendingEmailVerification(unittest.IsolatedAsyncioTestCase):
             db_email_verification_read.async_func('delete').call_with(self.account.id).returns(None)
 
             result = await mock.unwrap(email_verification.delete_pending_email_verification)(self.account.id)
-            self.assertIsNone(result)
+        self.assertIsNone(result)
 
     async def test_happy_flow_not_manager(self):
         with (
@@ -156,4 +156,4 @@ class TestDeletePendingEmailVerification(unittest.IsolatedAsyncioTestCase):
             db_email_verification_read.async_func('delete').call_with(self.account.id).returns(None)
 
             result = await mock.unwrap(email_verification.delete_pending_email_verification)(self.account.id)
-            self.assertIsNone(result)
+        self.assertIsNone(result)
