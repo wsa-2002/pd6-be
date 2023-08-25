@@ -13,7 +13,6 @@ import persistence.database as db
 import service
 from persistence import email
 import util
-from util import model
 from util.context import context
 
 router = APIRouter(
@@ -45,7 +44,7 @@ BROWSE_ACCOUNT_COLUMNS = {
 }
 
 
-class BrowseAccountWithDefaultStudentIdOutput(model.BrowseOutputBase):
+class BrowseAccountWithDefaultStudentIdOutput(util.model.BrowseOutputBase):
     data: Sequence[BrowseAccountOutput]
 
 
@@ -53,9 +52,10 @@ class BrowseAccountWithDefaultStudentIdOutput(model.BrowseOutputBase):
 @enveloped
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_ACCOUNT_COLUMNS.items()})
 async def browse_account_with_default_student_id(
-        limit: model.Limit = 50, offset: model.Offset = 0,
-        filter: model.FilterStr = None, sort: model.SorterStr = None,
+        limit: util.model.Limit = 50, offset: util.model.Offset = 0,
+        filter: util.model.FilterStr = None, sort: util.model.SorterStr = None,
 ) -> BrowseAccountWithDefaultStudentIdOutput:
+
     """
     ### 權限
     - System Manager
@@ -64,8 +64,8 @@ async def browse_account_with_default_student_id(
     if not is_manager:
         raise exc.NoPermission
 
-    filters = model.parse_filter(filter, BROWSE_ACCOUNT_COLUMNS)
-    sorters = model.parse_sorter(sort, BROWSE_ACCOUNT_COLUMNS)
+    filters = util.model.parse_filter(filter, BROWSE_ACCOUNT_COLUMNS)
+    sorters = util.model.parse_sorter(sort, BROWSE_ACCOUNT_COLUMNS)
 
     result, total_count = await db.account_vo.browse_with_default_student_card(limit=limit, offset=offset,
                                                                                filters=filters, sorters=sorters)
@@ -235,7 +235,7 @@ async def read_account_with_default_student_id(account_id: int) -> ReadAccountOu
 class EditAccountInput(BaseModel):
     username: str = None
     nickname: str = None
-    alternative_email: Optional[model.CaseInsensitiveEmailStr] = model.can_omit
+    alternative_email: Optional[util.model.CaseInsensitiveEmailStr] = util.model.can_omit
     real_name: str = None
 
 
