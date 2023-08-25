@@ -68,6 +68,10 @@ BROWSE_CHALLENGE_COLUMNS = {
 }
 
 
+class BrowseChallengeUnderclassOutput(model.BrowseOutputBase):
+    data: Sequence[do.Challenge]
+
+
 @router.get('/class/{class_id}/challenge', tags=['Course'])
 @enveloped
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_CHALLENGE_COLUMNS.items()})
@@ -75,7 +79,7 @@ async def browse_challenge_under_class(
         class_id: int,
         limit: model.Limit = 50, offset: model.Offset = 0,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
-) -> model.BrowseOutputBase:
+) -> BrowseChallengeUnderclassOutput:
     """
     ### 權限
     - Class manager (all)
@@ -102,7 +106,7 @@ async def browse_challenge_under_class(
                                                         ref_time=context.request_time,
                                                         by_publicize_type=True if not class_role else False)
 
-    return model.BrowseOutputBase(challenges, total_count=total_count)
+    return BrowseChallengeUnderclassOutput(challenges, total_count=total_count)
 
 
 @router.get('/challenge/{challenge_id}')
@@ -413,9 +417,13 @@ class GetMemberSubmissionStatOutput:
     member: Sequence[MemberSubmissionStatOutput]
 
 
+class GetMemberSubmissionStatisticsOutput(model.BrowseOutputBase):
+    data: GetMemberSubmissionStatOutput
+
+
 @router.get('/challenge/{challenge_id}/statistics/member-submission')
 @enveloped
-async def get_member_submission_statistics(challenge_id: int) -> model.BrowseOutputBase:
+async def get_member_submission_statistics(challenge_id: int) -> GetMemberSubmissionStatisticsOutput:
     """
     ### 權限
     - class manager
@@ -432,7 +440,7 @@ async def get_member_submission_statistics(challenge_id: int) -> model.BrowseOut
             essay_submissions=essays if essays else None)
             for member_id, problem_scores, essays in results])
 
-    return model.BrowseOutputBase(data=member_submission_stat, total_count=results.__len__())
+    return GetMemberSubmissionStatisticsOutput(data=member_submission_stat, total_count=results.__len__())
 
 
 @router.post('/challenge/{challenge_id}/all-submission')
@@ -549,6 +557,7 @@ class AddTeamContestScoreboardInput(BaseModel):
 
 
 @router.post('/challenge/{challenge_id}/team-contest-scoreboard', tags=['Team Contest Scoreboard'])
+@enveloped
 async def add_team_contest_scoreboard_under_challenge(challenge_id: int, data: AddTeamContestScoreboardInput) \
         -> model.AddOutput:
     """
