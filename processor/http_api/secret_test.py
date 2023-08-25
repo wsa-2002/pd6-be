@@ -297,6 +297,32 @@ class TestAddAccount(unittest.IsolatedAsyncioTestCase):
             with self.assertRaises(exc.account.InvalidEmail):
                 await mock.unwrap(secret.add_account)(self.data)
 
+    async def test_invalid_username(self):
+        with self.assertRaises(pydantic.ValidationError):
+            self.data_empty_username = secret.AddAccountInput(
+                username='',
+                password='123',
+                nickname='nick',
+                real_name='real',
+                # Student card
+                institute_id=1,
+                student_id='test',
+                institute_email_prefix='test',
+            )
+
+    async def test_invalid_password(self):
+        with self.assertRaises(pydantic.ValidationError):
+            self.data_empty_password = secret.AddAccountInput(
+                username='test',
+                password='',
+                nickname='nick',
+                real_name='real',
+                # Student card
+                institute_id=1,
+                student_id='test',
+                institute_email_prefix='test',
+            )
+
 
 class TestLogin(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
@@ -546,6 +572,26 @@ class TestAddNormalAccount(unittest.IsolatedAsyncioTestCase):
             with self.assertRaises(exc.account.UsernameExists):
                 await mock.unwrap(secret.add_normal_account)(self.data)
 
+    async def test_invalid_username(self):
+        with self.assertRaises(pydantic.ValidationError):
+            self.data_empty_username = secret.AddNormalAccountInput(
+                real_name='real',
+                username='',
+                password='123',
+                nickname='nick',
+                alternative_email='test@email.com',
+            )
+
+    async def test_invalid_password(self):
+        with self.assertRaises(pydantic.ValidationError):
+            self.data_empty_password = secret.AddNormalAccountInput(
+                real_name='real',
+                username='test',
+                password='',
+                nickname='nick',
+                alternative_email='test@email.com',
+            )
+
 
 class TestImportAccount(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
@@ -684,6 +730,13 @@ class TestEditPassword(unittest.IsolatedAsyncioTestCase):
             with self.assertRaises(exc.NoPermission):
                 await mock.unwrap(secret.edit_password)(self.account_id, self.data)
 
+    async def test_invalid_password(self):
+        with self.assertRaises(pydantic.ValidationError):
+            self.data_empty_password = secret.EditPasswordInput(
+                old_password='old',
+                new_password='',
+            )
+
 
 class TestResetPassword(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
@@ -710,3 +763,10 @@ class TestResetPassword(unittest.IsolatedAsyncioTestCase):
             result = await mock.unwrap(secret.reset_password)(self.data)
 
         self.assertIsNone(result)
+
+    async def test_invalid_password(self):
+        with self.assertRaises(pydantic.ValidationError):
+            self.data_empty_password = secret.ResetPasswordInput(
+                code=str(uuid.UUID('{12345678-1234-5678-1234-567812345678}')),
+                password='',
+            )

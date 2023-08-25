@@ -2,6 +2,8 @@ import copy
 import unittest
 from uuid import UUID
 
+import pydantic
+
 from base import enum, do
 from util import mock, security, model
 import exceptions as exc
@@ -789,6 +791,14 @@ class TestEditAccount(unittest.IsolatedAsyncioTestCase):
                     account_id=self.login_account.id,
                     data=self.input_email_default,
                 )
+
+    async def test_invalid_username(self):
+        with self.assertRaises(pydantic.ValidationError):
+            self.data = account.EditAccountInput(
+                username='',
+                nickname='self',
+                alternative_email='test@example.com',
+            )
 
 
 class TestDeleteAccount(unittest.IsolatedAsyncioTestCase):

@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Sequence, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, constr
+from pydantic import BaseModel
 
 from base.enum import RoleType
 from base import do
@@ -13,6 +13,7 @@ import persistence.database as db
 import service
 from persistence import email
 import util
+from util import model
 from util.context import context
 
 router = APIRouter(
