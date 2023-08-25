@@ -8,7 +8,7 @@ import exceptions as exc
 from . import view
 
 
-class TestBrowseAccountWithDefaultStudentId(unittest.IsolatedAsyncioTestCase):
+class TestViewBrowseAccountWithDefaultStudentId(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
 
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
@@ -17,8 +17,8 @@ class TestBrowseAccountWithDefaultStudentId(unittest.IsolatedAsyncioTestCase):
         self.offset = model.Offset(0)
         self.filter_str = model.FilterStr
         self.sorter_str = model.SorterStr
-        self.filters = []
-        self.sorters = []
+        self.filters = [["username", "LIKE", "abcd"]]
+        self.sorters = [['account_id', "DESC"]]
 
         self.expected_output_data = [
             vo.ViewAccount(
@@ -69,7 +69,7 @@ class TestBrowseAccountWithDefaultStudentId(unittest.IsolatedAsyncioTestCase):
                 sorters=self.sorters,
             ).returns((self.expected_output_data, self.expected_output_total_count))
 
-            result = await mock.unwrap(view.browse_account_with_default_student_id)(
+            result = await mock.unwrap(view.view_browse_account_with_default_student_id)(
                 limit=self.limit,
                 offset=self.offset,
                 filter=self.filter_str,
@@ -92,7 +92,7 @@ class TestBrowseAccountWithDefaultStudentId(unittest.IsolatedAsyncioTestCase):
             ).returns(False)
 
             with self.assertRaises(exc.NoPermission):
-                await mock.unwrap(view.browse_account_with_default_student_id)(
+                await mock.unwrap(view.view_browse_account_with_default_student_id)(
                     limit=self.limit,
                     offset=self.offset,
                     filter=self.filter_str,
@@ -100,7 +100,7 @@ class TestBrowseAccountWithDefaultStudentId(unittest.IsolatedAsyncioTestCase):
                 )
 
 
-class TestBrowseClassMember(unittest.IsolatedAsyncioTestCase):
+class TestViewBrowseClassMember(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
 
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
@@ -110,8 +110,8 @@ class TestBrowseClassMember(unittest.IsolatedAsyncioTestCase):
         self.offset = model.Offset(0)
         self.filter_str = model.FilterStr
         self.sorter_str = model.SorterStr
-        self.filters = []
-        self.sorters = []
+        self.filters = [["username", "LIKE", "abcd"]]
+        self.sorters = [['account_id', "DESC"]]
 
         self.expected_output_data = [
             vo.ViewClassMember(
@@ -168,7 +168,7 @@ class TestBrowseClassMember(unittest.IsolatedAsyncioTestCase):
                 sorters=self.sorters,
             ).returns((self.expected_output_data, self.expected_output_total_count))
 
-            result = await mock.unwrap(view.browse_class_member)(
+            result = await mock.unwrap(view.view_browse_class_member)(
                 class_id=self.class_id,
                 limit=self.limit,
                 offset=self.offset,
@@ -210,7 +210,7 @@ class TestBrowseClassMember(unittest.IsolatedAsyncioTestCase):
                 sorters=self.sorters,
             ).returns((self.expected_output_data, self.expected_output_total_count))
 
-            result = await mock.unwrap(view.browse_class_member)(
+            result = await mock.unwrap(view.view_browse_class_member)(
                 class_id=self.class_id,
                 limit=self.limit,
                 offset=self.offset,
@@ -237,7 +237,7 @@ class TestBrowseClassMember(unittest.IsolatedAsyncioTestCase):
             ).returns(False)
 
             with self.assertRaises(exc.NoPermission):
-                await mock.unwrap(view.browse_class_member)(
+                await mock.unwrap(view.view_browse_class_member)(
                     class_id=self.class_id,
                     limit=self.limit,
                     offset=self.offset,
@@ -246,7 +246,7 @@ class TestBrowseClassMember(unittest.IsolatedAsyncioTestCase):
                 )
 
 
-class TestBrowseSubmissionUnderClass(unittest.IsolatedAsyncioTestCase):
+class TestViewBrowseSubmissionUnderClass(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
 
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
@@ -257,8 +257,8 @@ class TestBrowseSubmissionUnderClass(unittest.IsolatedAsyncioTestCase):
         self.offset = model.Offset(0)
         self.filter_str = model.FilterStr
         self.sorter_str = model.SorterStr
-        self.filters = []
-        self.sorters = []
+        self.filters = [["username", "LIKE", "abcd"]]
+        self.sorters = [['account_id', "DESC"]]
 
         self.expected_output_data = [
             vo.ViewSubmissionUnderClass(
@@ -326,7 +326,7 @@ class TestBrowseSubmissionUnderClass(unittest.IsolatedAsyncioTestCase):
                 sorters=self.sorters,
             ).returns((self.expected_output_data, self.expected_output_total_count))
 
-            result = await mock.unwrap(view.browse_submission_under_class)(
+            result = await mock.unwrap(view.view_browse_submission_under_class)(
                 class_id=self.class_id,
                 limit=self.limit,
                 offset=self.offset,
@@ -350,7 +350,7 @@ class TestBrowseSubmissionUnderClass(unittest.IsolatedAsyncioTestCase):
             ).returns(False)
 
             with self.assertRaises(exc.NoPermission):
-                await mock.unwrap(view.browse_submission_under_class)(
+                await mock.unwrap(view.view_browse_submission_under_class)(
                     class_id=self.class_id,
                     limit=self.limit,
                     offset=self.offset,
@@ -359,7 +359,7 @@ class TestBrowseSubmissionUnderClass(unittest.IsolatedAsyncioTestCase):
                 )
 
 
-class TestBrowseSubmission(unittest.IsolatedAsyncioTestCase):
+class TestViewBrowseSubmission(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
 
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
@@ -370,8 +370,8 @@ class TestBrowseSubmission(unittest.IsolatedAsyncioTestCase):
         self.offset = model.Offset(0)
         self.filter_str = model.FilterStr
         self.sorter_str = model.SorterStr
-        self.filters = []
-        self.sorters = []
+        self.filters = [["course_name", "LIKE", "abcd"]]
+        self.sorters = [['class_id', "DESC"]]
 
         self.expected_output_data = [
             vo.ViewMySubmission(
@@ -433,7 +433,7 @@ class TestBrowseSubmission(unittest.IsolatedAsyncioTestCase):
                 sorters=self.sorters,
             ).returns((self.expected_output_data, self.expected_output_total_count))
 
-            result = await mock.unwrap(view.browse_submission)(
+            result = await mock.unwrap(view.view_browse_submission)(
                 account_id=self.login_account.id,
                 limit=self.limit,
                 offset=self.offset,
@@ -450,7 +450,7 @@ class TestBrowseSubmission(unittest.IsolatedAsyncioTestCase):
             context.set_account(self.other_account)
 
             with self.assertRaises(exc.NoPermission):
-                await mock.unwrap(view.browse_submission)(
+                await mock.unwrap(view.view_browse_submission)(
                     account_id=self.login_account.id,
                     limit=self.limit,
                     offset=self.offset,
@@ -459,7 +459,7 @@ class TestBrowseSubmission(unittest.IsolatedAsyncioTestCase):
                 )
 
 
-class TestBrowseMySubmissionUnderProblem(unittest.IsolatedAsyncioTestCase):
+class TestViewBrowseMySubmissionUnderProblem(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
 
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
@@ -471,8 +471,8 @@ class TestBrowseMySubmissionUnderProblem(unittest.IsolatedAsyncioTestCase):
         self.offset = model.Offset(0)
         self.filter_str = model.FilterStr
         self.sorter_str = model.SorterStr
-        self.filters = []
-        self.sorters = []
+        self.filters = [["score", ">", 80]]
+        self.sorters = [['account_id', "DESC"]]
 
         self.expected_output_data = [
             vo.ViewMySubmissionUnderProblem(
@@ -528,7 +528,7 @@ class TestBrowseMySubmissionUnderProblem(unittest.IsolatedAsyncioTestCase):
                 sorters=self.sorters,
             ).returns((self.expected_output_data, self.expected_output_total_count))
 
-            result = await mock.unwrap(view.browse_my_submission_under_problem)(
+            result = await mock.unwrap(view.view_browse_my_submission_under_problem)(
                 account_id=self.login_account.id,
                 problem_id=self.problem_id,
                 limit=self.limit,
@@ -546,7 +546,7 @@ class TestBrowseMySubmissionUnderProblem(unittest.IsolatedAsyncioTestCase):
             context.set_account(self.other_account)
 
             with self.assertRaises(exc.NoPermission):
-                await mock.unwrap(view.browse_my_submission_under_problem)(
+                await mock.unwrap(view.view_browse_my_submission_under_problem)(
                     account_id=self.login_account.id,
                     problem_id=self.problem_id,
                     limit=self.limit,
@@ -556,7 +556,7 @@ class TestBrowseMySubmissionUnderProblem(unittest.IsolatedAsyncioTestCase):
                 )
 
 
-class TestBrowseProblemSetUnderClass(unittest.IsolatedAsyncioTestCase):
+class TestViewBrowseProblemSetUnderClass(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
 
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
@@ -567,8 +567,8 @@ class TestBrowseProblemSetUnderClass(unittest.IsolatedAsyncioTestCase):
         self.offset = model.Offset(0)
         self.filter_str = model.FilterStr
         self.sorter_str = model.SorterStr
-        self.filters = []
-        self.sorters = []
+        self.filters = [["challenge_id", "=", 1]]
+        self.sorters = [['challenge_id', "DESC"]]
 
         self.expected_output_data = [
             vo.ViewProblemSet(
@@ -625,7 +625,7 @@ class TestBrowseProblemSetUnderClass(unittest.IsolatedAsyncioTestCase):
                 ref_time=self.request_time,
             ).returns((self.expected_output_data, self.expected_output_total_count))
 
-            result = await mock.unwrap(view.browse_problem_set_under_class)(
+            result = await mock.unwrap(view.view_browse_problem_set_under_class)(
                 class_id=self.class_id,
                 limit=self.limit,
                 offset=self.offset,
@@ -649,7 +649,7 @@ class TestBrowseProblemSetUnderClass(unittest.IsolatedAsyncioTestCase):
             ).returns(enum.RoleType.guest)
 
             with self.assertRaises(exc.NoPermission):
-                await mock.unwrap(view.browse_problem_set_under_class)(
+                await mock.unwrap(view.view_browse_problem_set_under_class)(
                     class_id=self.class_id,
                     limit=self.limit,
                     offset=self.offset,
@@ -658,7 +658,7 @@ class TestBrowseProblemSetUnderClass(unittest.IsolatedAsyncioTestCase):
                 )
 
 
-class TestBrowseClassGrade(unittest.IsolatedAsyncioTestCase):
+class TestViewBrowseClassGrade(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
 
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
@@ -669,8 +669,8 @@ class TestBrowseClassGrade(unittest.IsolatedAsyncioTestCase):
         self.offset = model.Offset(0)
         self.filter_str = model.FilterStr
         self.sorter_str = model.SorterStr
-        self.filters = []
-        self.sorters = []
+        self.filters = [["username", "LIKE", "abcd"]]
+        self.sorters = [['account_id', "DESC"]]
 
         self.expected_output_data = [
             vo.ViewGrade(
@@ -731,7 +731,7 @@ class TestBrowseClassGrade(unittest.IsolatedAsyncioTestCase):
                 sorters=self.sorters,
             ).returns((self.expected_output_data, self.expected_output_total_count))
 
-            result = await mock.unwrap(view.browse_class_grade)(
+            result = await mock.unwrap(view.view_browse_class_grade)(
                 class_id=self.class_id,
                 limit=self.limit,
                 offset=self.offset,
@@ -770,7 +770,7 @@ class TestBrowseClassGrade(unittest.IsolatedAsyncioTestCase):
                 sorters=self.sorters,
             ).returns((self.expected_output_data, self.expected_output_total_count))
 
-            result = await mock.unwrap(view.browse_class_grade)(
+            result = await mock.unwrap(view.view_browse_class_grade)(
                 class_id=self.class_id,
                 limit=self.limit,
                 offset=self.offset,
@@ -781,7 +781,7 @@ class TestBrowseClassGrade(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result, self.browse_result)
 
 
-class TestBrowseAccessLog(unittest.IsolatedAsyncioTestCase):
+class TestViewBrowseAccessLog(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
 
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
@@ -791,8 +791,8 @@ class TestBrowseAccessLog(unittest.IsolatedAsyncioTestCase):
         self.offset = model.Offset(0)
         self.filter_str = model.FilterStr
         self.sorter_str = model.SorterStr
-        self.filters = []
-        self.sorters = []
+        self.filters = [["username", "LIKE", "abcd"]]
+        self.sorters = [['account_id', "DESC"]]
 
         self.expected_output_data = [
             vo.ViewAccessLog(
@@ -853,7 +853,7 @@ class TestBrowseAccessLog(unittest.IsolatedAsyncioTestCase):
                 sorters=self.sorters,
             ).returns((self.expected_output_data, self.expected_output_total_count))
 
-            result = await mock.unwrap(view.browse_access_log)(
+            result = await mock.unwrap(view.view_browse_access_log)(
                 limit=self.limit,
                 offset=self.offset,
                 filter=self.filter_str,
@@ -876,7 +876,7 @@ class TestBrowseAccessLog(unittest.IsolatedAsyncioTestCase):
             ).returns(False)
 
             with self.assertRaises(exc.NoPermission):
-                await mock.unwrap(view.browse_access_log)(
+                await mock.unwrap(view.view_browse_access_log)(
                     limit=self.limit,
                     offset=self.offset,
                     filter=self.filter_str,
@@ -884,7 +884,7 @@ class TestBrowseAccessLog(unittest.IsolatedAsyncioTestCase):
                 )
 
 
-class TestPeerReviewSummaryReview(unittest.IsolatedAsyncioTestCase):
+class TestViewPeerReviewSummaryReview(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
 
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
@@ -894,8 +894,8 @@ class TestPeerReviewSummaryReview(unittest.IsolatedAsyncioTestCase):
         self.offset = model.Offset(0)
         self.filter_str = model.FilterStr
         self.sorter_str = model.SorterStr
-        self.filters = []
-        self.sorters = []
+        self.filters = [["username", "LIKE", "abcd"]]
+        self.sorters = [['student_id', "DESC"]]
 
         self.expected_output_data = [
             vo.ViewPeerReviewRecord(
@@ -955,7 +955,7 @@ class TestPeerReviewSummaryReview(unittest.IsolatedAsyncioTestCase):
                 is_receiver=False,
             ).returns((self.expected_output_data, self.expected_output_total_count))
 
-            result = await mock.unwrap(view.peer_review_summary_review)(
+            result = await mock.unwrap(view.view_peer_review_summary_review)(
                 peer_review_id=1,
                 limit=self.limit,
                 offset=self.offset,
@@ -980,7 +980,7 @@ class TestPeerReviewSummaryReview(unittest.IsolatedAsyncioTestCase):
             ).returns(False)
 
             with self.assertRaises(exc.NoPermission):
-                await mock.unwrap(view.peer_review_summary_review)(
+                await mock.unwrap(view.view_peer_review_summary_review)(
                     peer_review_id=1,
                     limit=self.limit,
                     offset=self.offset,
@@ -989,7 +989,7 @@ class TestPeerReviewSummaryReview(unittest.IsolatedAsyncioTestCase):
                 )
 
 
-class TestPeerReviewSummaryReceive(unittest.IsolatedAsyncioTestCase):
+class TestViewPeerReviewSummaryReceive(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
 
         self.login_account = security.AuthedAccount(id=1, cached_username='self')
@@ -999,8 +999,8 @@ class TestPeerReviewSummaryReceive(unittest.IsolatedAsyncioTestCase):
         self.offset = model.Offset(0)
         self.filter_str = model.FilterStr
         self.sorter_str = model.SorterStr
-        self.filters = []
-        self.sorters = []
+        self.filters = [["username", "LIKE", "abcd"]]
+        self.sorters = [['student_id', "DESC"]]
 
         self.expected_output_data = [
             vo.ViewPeerReviewRecord(
@@ -1060,7 +1060,7 @@ class TestPeerReviewSummaryReceive(unittest.IsolatedAsyncioTestCase):
                 is_receiver=True,
             ).returns((self.expected_output_data, self.expected_output_total_count))
 
-            result = await mock.unwrap(view.peer_review_summary_receive)(
+            result = await mock.unwrap(view.view_peer_review_summary_receive)(
                 peer_review_id=1,
                 limit=self.limit,
                 offset=self.offset,
@@ -1085,7 +1085,7 @@ class TestPeerReviewSummaryReceive(unittest.IsolatedAsyncioTestCase):
             ).returns(False)
 
             with self.assertRaises(exc.NoPermission):
-                await mock.unwrap(view.peer_review_summary_receive)(
+                await mock.unwrap(view.view_peer_review_summary_receive)(
                     peer_review_id=1,
                     limit=self.limit,
                     offset=self.offset,
