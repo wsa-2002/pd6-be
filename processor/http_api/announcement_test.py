@@ -80,7 +80,7 @@ class TestBrowseAnnouncement(unittest.IsolatedAsyncioTestCase):
         self.filter_str = model.FilterStr
         self.sorter_str = model.SorterStr
         self.filters = [["content", "LIKE", "abcd"]]
-        self.sorters = [['id']]
+        self.sorters = [['id', "DESC"]]
 
         self.expected_output_data = [
             do.Announcement(
