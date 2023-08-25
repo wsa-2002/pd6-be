@@ -110,7 +110,3 @@ class CaseInsensitiveEmailStr(pydantic.EmailStr):
         if '+' in validated:
             raise exc.account.InvalidEmail
         return validated
-
-
-NonEmptyStr = pydantic.constr(min_length=1)
-TrimmedNonEmptyStr = pydantic.constr(strip_whitespace=True, min_length=1)
