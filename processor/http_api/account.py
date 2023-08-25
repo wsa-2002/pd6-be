@@ -13,6 +13,7 @@ import persistence.database as db
 import service
 from persistence import email
 import util
+from util import model
 from util.context import context
 
 router = APIRouter(
@@ -44,13 +45,18 @@ BROWSE_ACCOUNT_COLUMNS = {
 }
 
 
+class BrowseAccountWithDefaultStudentIdOutput(model.BrowseOutputBase):
+    data: Sequence[BrowseAccountOutput]
+
+
 @router.get('/account')
 @enveloped
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_ACCOUNT_COLUMNS.items()})
 async def browse_account_with_default_student_id(
-        limit: util.model.Limit = 50, offset: util.model.Offset = 0,
-        filter: util.model.FilterStr = None, sort: util.model.SorterStr = None,
-) -> util.model.BrowseOutputBase:
+        limit: model.Limit = 50, offset: model.Offset = 0,
+        filter: model.FilterStr = None, sort: model.SorterStr = None,
+) -> BrowseAccountWithDefaultStudentIdOutput:
+
     """
     ### 權限
     - System Manager
@@ -69,8 +75,7 @@ async def browse_account_with_default_student_id(
                                 alternative_email=account.alternative_email, student_id=student_card.student_id)
             for account, student_card in result]
 
-    return util.\
-        model.BrowseOutputBase(data, total_count=total_count)
+    return BrowseAccountWithDefaultStudentIdOutput(data, total_count=total_count)
 
 
 @dataclass
@@ -259,7 +264,8 @@ async def edit_account(account_id: int, data: EditAccountInput) -> None:
     else:  # 刪掉 alternative email
         await db.account.delete_alternative_email_by_id(account_id=account_id)
 
-    await db.account.edit(account_id=account_id, username=data.username, nickname=data.nickname, real_name=data.real_name)
+    await db.account.edit(account_id=account_id, username=data.username,
+                          nickname=data.nickname, real_name=data.real_name)
 
 
 @router.delete('/account/{account_id}')
