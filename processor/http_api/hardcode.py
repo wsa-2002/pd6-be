@@ -9,7 +9,7 @@ import cachetools
 from base.enum import RoleType, ScoreboardType, VerdictType
 from config import config
 import exceptions as exc
-from middleware import APIRouter, response, enveloped, auth, routing
+from middleware import APIRouter, response, enveloped, auth
 import persistence.database as db
 import service
 from util.context import context
@@ -18,7 +18,6 @@ router = APIRouter(
     tags=['Hardcode'],
     default_response_class=response.JSONResponse,
     dependencies=auth.doc_dependencies,
-    route_class=routing.NoLogAPIRoute,
 )
 
 
