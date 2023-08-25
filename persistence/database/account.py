@@ -226,7 +226,7 @@ async def verify_email(code: UUID) -> None:
             raise exc.persistence.NotFound
 
         if student_id:  # student card email
-            if student_card.is_duplicate(institute_id, student_id):
+            if await student_card.is_duplicate(institute_id, student_id):
                 raise exc.account.StudentCardExists
             await conn.execute(r'UPDATE student_card'
                                r'   SET is_default = $1'
