@@ -9,7 +9,7 @@ A `python=3.10`-`asyncio`-based web backend, using web framework `fastapi`.
 ### 1. `git`
 Add `--recursive` in your command in order to clone both `pd6-be` and its submodule `common`(`pd6-common`). 
 ```shell
-git clone --recursive https://nas.pdogs.ntu.im:30443/pdogs/pdogs-6/pd6-be.git
+git clone --recursive ssh://git@git.ntu.im:30001/pdogs/pdogs-6/pd6-be.git
 ```
 
 ### 2. `python`
@@ -56,6 +56,26 @@ You may also turn up the auto-reload option, or change the host & port with `--h
 ```shell
 uvicorn main:app --reload --host 0.0.0.0 --port 80
 ```
+
+## Unit tests
+
+### Run test
+```shell
+python -m run_test
+```
+or
+```shell
+python run_test.py
+```
+
+### Coverage
+
+```shell
+python -m coverage run -m run_test -v
+# coverage report
+python -m coverage report
+```
+
 
 ## About this project
 
