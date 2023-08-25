@@ -103,7 +103,7 @@ class TestBrowseAnnouncement(unittest.IsolatedAsyncioTestCase):
             ),
         ]
         self.expected_output_total_count = 2
-        self.browse_result = model.BrowseOutputBase(
+        self.browse_result = announcement.BrowseAnnouncementOutput(
             data=self.expected_output_data,
             total_count=self.expected_output_total_count,
         )
