@@ -61,7 +61,7 @@ class TestBrowseAccountWithDefaultStudentId(unittest.IsolatedAsyncioTestCase):
             ))
         ]
         self.expected_output_total_count = 2
-        self.browse_result = model.BrowseOutputBase(
+        self.browse_result = account.BrowseAccountWithDefaultStudentIdOutput(
             data=[account.BrowseAccountOutput(
                     id=acc.id, username=acc.username, nickname=acc.nickname,
                     role=acc.role, real_name=acc.real_name,
@@ -98,10 +98,6 @@ class TestBrowseAccountWithDefaultStudentId(unittest.IsolatedAsyncioTestCase):
                 filters=self.filters,
                 sorters=self.sorters,
             ).returns((self.expected_output_data, self.expected_output_total_count))
-
-            model_.func('BrowseOutputBase').call_with(
-                self.browse_result.data, total_count=self.expected_output_total_count,
-            ).returns(self.browse_result)
 
             result = await mock.unwrap(account.browse_account_with_default_student_id)(
                 limit=self.limit,

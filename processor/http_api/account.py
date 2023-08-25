@@ -13,7 +13,6 @@ import persistence.database as db
 import service
 from persistence import email
 import util
-from util import model
 from util.context import context
 
 router = APIRouter(
@@ -45,7 +44,7 @@ BROWSE_ACCOUNT_COLUMNS = {
 }
 
 
-class BrowseAccountWithDefaultStudentIdOutput(model.BrowseOutputBase):
+class BrowseAccountWithDefaultStudentIdOutput(util.model.BrowseOutputBase):
     data: Sequence[BrowseAccountOutput]
 
 
@@ -53,8 +52,8 @@ class BrowseAccountWithDefaultStudentIdOutput(model.BrowseOutputBase):
 @enveloped
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_ACCOUNT_COLUMNS.items()})
 async def browse_account_with_default_student_id(
-        limit: model.Limit = 50, offset: model.Offset = 0,
-        filter: model.FilterStr = None, sort: model.SorterStr = None,
+        limit: util.model.Limit = 50, offset: util.model.Offset = 0,
+        filter: util.model.FilterStr = None, sort: util.model.SorterStr = None,
 ) -> BrowseAccountWithDefaultStudentIdOutput:
 
     """
