@@ -1,3 +1,4 @@
+from typing import Sequence
 from uuid import UUID
 
 from fastapi import File, UploadFile, Depends
@@ -54,6 +55,10 @@ BROWSE_ESSAY_SUBMISSION_COLUMNS = {
 }
 
 
+class BrowseEssaySubmissionByEssayId(model.BrowseOutputBase):
+    data: Sequence[do.EssaySubmission]
+
+
 @router.get('/essay/{essay_id}/essay-submission')
 @enveloped
 @util.api_doc.add_to_docstring({k: v.__name__ for k, v in BROWSE_ESSAY_SUBMISSION_COLUMNS.items()})
@@ -61,7 +66,7 @@ async def browse_essay_submission_by_essay_id(
         essay_id: int,
         limit: model.Limit = 50, offset: model.Offset = 0,
         filter: model.FilterStr = None, sort: model.SorterStr = None,
-) -> model.BrowseOutputBase:
+) -> BrowseEssaySubmissionByEssayId:
     """
     ### 權限
     - Self
@@ -79,19 +84,13 @@ async def browse_essay_submission_by_essay_id(
                                op=FilterOperator.eq,
                                value=essay_id))
 
-    # Hardcode for PBC 110-1: Only allow specific managers to download final project data
-    if essay_id in (2, 3, 4) \
-            and (await db.essay.read(essay_id)).challenge_id is 367 \
-            and context.account.id not in (14, 1760, 2646, 2648):
-        class_role = min(class_role, RoleType.normal)
-
     filters.append(popo.Filter(col_name='account_id',
-                                op=FilterOperator.eq,
-                                value=context.account.id))
+                               op=FilterOperator.eq,
+                               value=context.account.id))
 
     essay_submissions, total_count = await db.essay_submission.browse(limit=limit, offset=offset,
                                                                       filters=filters, sorters=sorters)
-    return model.BrowseOutputBase(essay_submissions, total_count=total_count)
+    return BrowseEssaySubmissionByEssayId(essay_submissions, total_count=total_count)
 
 
 @router.get('/essay-submission/{essay_submission_id}')
