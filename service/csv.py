@@ -8,7 +8,7 @@ from base import do, enum
 import exceptions as exc
 import persistence.database as db
 import persistence.s3 as s3
-from util import security
+import util
 
 ACCOUNT_TEMPLATE = b'RealName,Username,Password,AlternativeEmail,Nickname'
 ACCOUNT_TEMPLATE_FILENAME = 'account_template.csv'
@@ -36,7 +36,7 @@ async def import_account(account_file: typing.IO):
             for header in standard_headers:
                 if header != 'AlternativeEmail' and row[header] == "":
                     raise exc.IllegalInput
-            data.append((row['RealName'], row['Username'], security.hash_password(row['Password']),
+            data.append((row['RealName'], row['Username'], util.security.hash_password(row['Password']),
                          row['AlternativeEmail'], row['Nickname']))
         await db.account.batch_add_normal(data)
     except UnicodeDecodeError:

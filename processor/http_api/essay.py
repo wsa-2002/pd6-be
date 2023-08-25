@@ -90,7 +90,7 @@ async def download_all_essay_submission(essay_id: int, as_attachment: bool,
 
     # Hardcode for PBC 110-1: Only allow specific managers to download final project data
     if essay_id in (2, 3, 4) \
-            and (await db.essay.read(essay_id)).challenge_id is 367 \
+            and (await db.essay.read(essay_id)).challenge_id == 367 \
             and context.account.id not in (14, 1760, 2646, 2648):
         raise exc.NoPermission
 
