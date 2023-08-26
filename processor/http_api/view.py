@@ -277,7 +277,7 @@ async def view_browse_problem_set_under_class(
 ) -> ViewProblemSetOutput:
     """
     ### 權限
-    - System normal
+    - System normal (not hidden)
 
     ### Available columns
     """
