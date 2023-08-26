@@ -46,8 +46,7 @@ async def add_course(data: AddCourseInput) -> model.AddOutput:
 async def browse_all_course() -> Sequence[do.Course]:
     """
     ### 權限
-    - System manager (hidden)
-    - System normal (not hidden)
+    - System normal
     """
     system_role = await service.rbac.get_system_role(context.account.id)
     if system_role < RoleType.normal:
@@ -62,8 +61,7 @@ async def browse_all_course() -> Sequence[do.Course]:
 async def read_course(course_id: int) -> do.Course:
     """
     ### 權限
-    - System manager (hidden)
-    - System normal (not hidden)
+    - System normal
     """
     system_role = await service.rbac.get_system_role(context.account.id)
     if system_role < RoleType.normal:
@@ -141,8 +139,7 @@ class BrowseAllClassUnderCourseOutput:
 async def browse_all_class_under_course(course_id: int) -> Sequence[BrowseAllClassUnderCourseOutput]:
     """
     ### 權限
-    - Class+ manager (hidden)
-    - System normal (not hidden)
+    - System normal
     """
     if not await service.rbac.validate_system(context.account.id, RoleType.normal):
         raise exc.NoPermission
