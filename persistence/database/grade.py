@@ -7,7 +7,7 @@ from base import do, enum
 from base.popo import Filter, Sorter
 import exceptions as exc
 
-from .base import SafeConnection, OnlyExecute, FetchOne, FetchAll, ParamDict
+from .base import AutoTxConnection, OnlyExecute, FetchOne, FetchAll, ParamDict
 from .util import execute_count, compile_filters, compile_values
 from .account import account_referral_to_id
 
@@ -41,8 +41,7 @@ async def batch_add(class_id: int, title: str, grades: Sequence[tuple[str, str, 
 
     value_sql, value_params = compile_values(values)
 
-    async with SafeConnection(event=f'batch import grade into class {class_id}',
-                              auto_transaction=True) as conn:
+    async with AutoTxConnection(event=f'batch import grade into class {class_id}') as conn:
         try:
             await conn.execute(fr' INSERT INTO grade'
                                fr'             (receiver_id, score, comment, grader_id, class_id, title, update_time)'

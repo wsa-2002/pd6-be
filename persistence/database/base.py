@@ -44,34 +44,33 @@ from . import pool_handler
 # Context managers for safe execution
 
 
-class SafeConnection:
+class AutoTxConnection:
     """
-    This class returns the RAW connection of used database package.
+    This class returns the transaction of used database package.
     Usage should follow the database package's documentations.
 
     Note that asyncpg does not support keyword-bounded arguments; only positional arguments are allowed.
     """
 
-    def __init__(self, event: str, auto_transaction: bool):
+    def __init__(self, event: str):
         self._start_time = datetime.now()
         self._event = event
         self._conn: asyncpg.connection.Connection = None  # acquire in __aenter__
-        self._auto_transaction = auto_transaction
         self._transaction: asyncpg.transaction.Transaction = None  # acquire in __aenter__
 
     async def __aenter__(self) -> asyncpg.connection.Connection:
         self._conn: asyncpg.connection.Connection = await pool_handler.pool.acquire()
+        self._transaction = self._conn.transaction()
+        await self._transaction.__aenter__()
+
         log.info(f"Starting {self.__class__.__name__}: {self._event}")
-        if self._auto_transaction:
-            self._transaction = self._conn.transaction()
-            await self._transaction.__aenter__()
+
         return self._conn
 
     async def __aexit__(self, exc_type, exc_value, traceback):
-        if self._auto_transaction:
-            await self._transaction.__aexit__(exc_type, exc_value, traceback)
-
+        await self._transaction.__aexit__(exc_type, exc_value, traceback)
         await pool_handler.pool.release(self._conn)
+
         exec_time_ms = (datetime.now() - self._start_time).total_seconds() * 1000
         log.info(f"Ended {self.__class__.__name__}: {self._event} after {exec_time_ms} ms")
         util.metric.sql_time(self._event, exec_time_ms)

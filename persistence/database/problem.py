@@ -5,7 +5,7 @@ from base import do, enum
 from util import serialize
 
 from . import testcase
-from .base import SafeConnection, FetchOne, OnlyExecute, FetchAll, ParamDict
+from .base import AutoTxConnection, FetchOne, OnlyExecute, FetchAll, ParamDict
 
 
 async def add(challenge_id: int, challenge_label: str,
@@ -247,8 +247,7 @@ async def delete(problem_id: int) -> None:
 
 
 async def delete_cascade(problem_id: int) -> None:
-    async with SafeConnection(event=f'cascade delete from problem {problem_id}',
-                              auto_transaction=True) as conn:
+    async with AutoTxConnection(event=f'cascade delete from problem {problem_id}') as conn:
         await testcase.delete_cascade_from_problem(problem_id=problem_id, cascading_conn=conn)
 
         await conn.execute(r'UPDATE problem'
@@ -262,8 +261,7 @@ async def delete_cascade_from_challenge(challenge_id: int, cascading_conn=None) 
         await _delete_cascade_from_challenge(challenge_id, conn=cascading_conn)
         return
 
-    async with SafeConnection(event=f'cascade delete problem from challenge {challenge_id=}',
-                              auto_transaction=True) as conn:
+    async with AutoTxConnection(event=f'cascade delete problem from challenge {challenge_id=}') as conn:
         await _delete_cascade_from_challenge(challenge_id, conn=conn)
 
 

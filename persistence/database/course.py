@@ -4,7 +4,7 @@ from base import do
 from base.enum import CourseType
 
 from . import class_
-from .base import SafeConnection, FetchOne, FetchAll, OnlyExecute, ParamDict
+from .base import AutoTxConnection, FetchOne, FetchAll, OnlyExecute, ParamDict
 
 
 async def add(name: str, course_type: CourseType) -> int:
@@ -88,8 +88,7 @@ async def delete(course_id: int) -> None:
 
 
 async def delete_cascade(course_id: int) -> None:
-    async with SafeConnection(event=f'cascade delete from course {course_id=}',
-                              auto_transaction=True) as conn:
+    async with AutoTxConnection(event=f'cascade delete from course {course_id=}') as conn:
         await class_.delete_cascade_from_course(course_id=course_id, cascading_conn=conn)
 
         await conn.execute(r'UPDATE course'

@@ -2,13 +2,12 @@ from typing import Sequence
 
 from base import do
 
-from .base import SafeConnection, FetchAll, FetchOne
+from .base import AutoTxConnection, FetchAll, FetchOne
 
 
 async def add(account_id: int, institute_id: int, student_id: str, email: str) \
         -> int:
-    async with SafeConnection(event='insert student card',
-                              auto_transaction=True) as conn:
+    async with AutoTxConnection(event='insert student card') as conn:
         await conn.execute(r'UPDATE student_card'
                            r'   SET is_default = $1'
                            r' WHERE account_id = $2'
