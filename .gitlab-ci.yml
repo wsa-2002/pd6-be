@@ -34,12 +34,11 @@ test:unittest:
     - cat $ENV > .env  # Populate the .env file with the content of the ENV variable
     - mkdir log  # Create a log directory
     - cp logging.yaml.example logging.yaml  # Copy the example logging configuration
-    - python run_test.py  # Run the tests
 
-    # collect unittest coverage
-    - python -m coverage run -m run_test -v  # Run tests with coverage
-    - python -m coverage report --precision=2 | tail  # Display the coverage report with 2 decimal places, showing only the last few lines
-    - python -m coverage xml  # Generate an XML coverage report
+    # run tests and collect unittest coverage
+    - coverage run -m run_test -v  # Run tests with coverage
+    - coverage report --precision=2 | tail  # Display the coverage report with 2 decimal places, showing only the last few lines
+    - coverage xml  # Generate an XML coverage report
   artifacts:  # Save the coverage.xml file as an artifact
     reports:
       coverage_report:
