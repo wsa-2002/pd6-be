@@ -24,7 +24,9 @@ test:unittest:
   stage: test
   image: python:3.10  # Use the Python 3.10 Docker image
   cache:  # Cache the pip packages to speed up future runs
-    key: ${CI_COMMIT_REF_SLUG}
+    key:
+      files:
+        - requirements.txt
     paths:
       - .cache/pip
   script:  # Commands to run for this job
