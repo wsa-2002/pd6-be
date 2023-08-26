@@ -257,6 +257,23 @@ async def browse_members(class_id: int) -> Sequence[do.ClassMember]:
                 for id_, class_id, role_str in records]
 
 
+async def get_member_counts(class_ids: list[int]) -> list[int]:
+    to_selects, args = [
+        f'COUNT(*) FILTER (WHERE class_member.class_id = ${i}'
+        for i, class_id in enumerate(class_ids, start=1)
+    ], class_ids
+
+    async with FetchOne(
+            event='browse class members',
+            sql=fr'SELECT {", ".join(to_selects)}'
+                fr'  FROM class_member'
+                fr' WHERE class_member.class_id = %(class_id)s',
+            *args,
+            raise_not_found=False,  # Issue #134: return [] for browse
+    ) as counts:
+        return list(counts)
+
+
 async def read_member(class_id: int, member_id: int) -> do.ClassMember:
     async with FetchOne(
             event='read class member role',

@@ -361,12 +361,16 @@ class TestBrowseAllClassUnderCourse(unittest.IsolatedAsyncioTestCase):
                 course_id=1,
                 is_deleted=False),
             do.Class(
-                id=1,
+                id=4,
                 name='test3',
                 course_id=1,
                 is_deleted=False),
         ]
-        self.result = copy.deepcopy(self.classes)
+        self.class_member_counts = [5, 6, 7]
+        self.result = [
+            course.BrowseAllClassUnderCourseOutput(cls, cnt)
+            for cls, cnt in zip(self.classes, self.class_member_counts)
+        ]
 
     async def test_happy_flow(self):
         with (
@@ -384,6 +388,7 @@ class TestBrowseAllClassUnderCourse(unittest.IsolatedAsyncioTestCase):
             db_class.async_func('browse').call_with(course_id=self.course_id).returns(
                 self.classes,
             )
+            db_class.async_func('get_member_counts').call_with([1, 2, 4]).returns(self.class_member_counts)
 
             result = await mock.unwrap(course.browse_all_class_under_course)(course_id=self.course_id)
 
