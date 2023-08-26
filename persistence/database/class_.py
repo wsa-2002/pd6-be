@@ -258,18 +258,16 @@ async def browse_members(class_id: int) -> Sequence[do.ClassMember]:
 
 
 async def get_member_counts(class_ids: list[int]) -> list[int]:
-    to_selects, args = [
-        f'COUNT(*) FILTER (WHERE class_member.class_id = ${i}'
-        for i, class_id in enumerate(class_ids, start=1)
-    ], class_ids
+    kwargs = {f'%(class_id_{i})s': class_id for i, class_id in enumerate(class_ids, start=1)}
+    to_selects = [f'COUNT(*) FILTER (WHERE class_member.class_id = {kw})' for kw in kwargs]
 
     async with FetchOne(
             event='browse class members',
             sql=fr'SELECT {", ".join(to_selects)}'
                 fr'  FROM class_member'
                 fr' WHERE class_member.class_id = %(class_id)s',
-            *args,
             raise_not_found=False,  # Issue #134: return [] for browse
+            **kwargs,
     ) as counts:
         return list(counts)
 
@@ -323,10 +321,10 @@ async def replace_members(class_id: int, member_roles: Sequence[Tuple[str, RoleT
     """
     if not member_roles:
         async with OnlyExecute(
-            event=f'remove all members from class {class_id=}',
-            sql=r'DELETE FROM class_member'
-                r'      WHERE class_id = %(class_id)s',
-            class_id=class_id,
+                event=f'remove all members from class {class_id=}',
+                sql=r'DELETE FROM class_member'
+                    r'      WHERE class_id = %(class_id)s',
+                class_id=class_id,
         ):
             log.info('Removed all class members')
             return []
