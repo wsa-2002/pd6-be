@@ -19,6 +19,21 @@ stages:
   # - build  # This stage is commented out and won't be executed
   - test    # This stage will run the test jobs
 
+lint:
+  stage: test
+  image: python:3.10
+  script:  # Commands to run for this job
+    # run unittest
+    - pip install ruff
+    - ruff --format=gitlab . > ruff-report.json
+
+  artifacts:
+    reports:
+      codequality: ruff-report.json
+  tags:
+    - test  # Use runners with the 'test' tag
+
+
 # Define the unittest job
 unittest:
   stage: test
