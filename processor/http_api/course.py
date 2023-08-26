@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Sequence
 
 from pydantic import BaseModel
@@ -129,7 +130,8 @@ async def add_class_under_course(course_id: int, data: AddClassInput) -> model.A
     return model.AddOutput(id=class_id)
 
 
-class BrowseAllClassUnderCourseOutput(model.BrowseOutputBase):
+@dataclass
+class BrowseAllClassUnderCourseOutput:
     data: do.Class
     member_count: int
 
@@ -147,8 +149,5 @@ async def browse_all_class_under_course(course_id: int) -> Sequence[BrowseAllCla
 
     classes = await db.class_.browse(course_id=course_id)
     member_counts = await db.class_.get_member_counts([class_.id for class_ in classes])
-
-    import log
-    log.info(f'help me... {[BrowseAllClassUnderCourseOutput(class_, count) for class_, count in zip(classes, member_counts)]=}')
 
     return [BrowseAllClassUnderCourseOutput(class_, count) for class_, count in zip(classes, member_counts)]
