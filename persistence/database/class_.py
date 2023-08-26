@@ -262,10 +262,9 @@ async def get_member_counts(class_ids: list[int]) -> list[int]:
     to_selects = [f'COUNT(*) FILTER (WHERE class_member.class_id = %({kw})s)' for kw in kwargs]
 
     async with FetchOne(
-            event='browse class members',
+            event='get class member counts',
             sql=fr'SELECT {", ".join(to_selects)}'
-                fr'  FROM class_member'
-                fr' WHERE class_member.class_id = %(class_id)s',
+                fr'  FROM class_member',
             **kwargs,
     ) as counts:
         return list(counts)
