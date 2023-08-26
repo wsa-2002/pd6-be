@@ -150,9 +150,9 @@ async def edit(class_id: int, name: str = None, course_id: int = None):
 async def delete(class_id: int) -> None:
     async with OnlyExecute(
             event='soft delete class',
-            sql=fr'UPDATE class'
-                fr'   SET is_deleted = %(is_deleted)s'
-                fr' WHERE id = %(class_id)s',
+            sql=r'UPDATE class'
+                r'   SET is_deleted = %(is_deleted)s'
+                r' WHERE id = %(class_id)s',
             class_id=class_id,
             is_deleted=True,
     ):
@@ -165,9 +165,9 @@ async def delete_cascade(class_id: int) -> None:
         await team.delete_cascade_from_class(class_id=class_id, cascading_conn=conn)
         await challenge.delete_cascade_from_class(class_id=class_id, cascading_conn=conn)
 
-        await conn.execute(fr'UPDATE class'
-                           fr'   SET is_deleted = $1'
-                           fr' WHERE id = $2',
+        await conn.execute(r'UPDATE class'
+                           r'   SET is_deleted = $1'
+                           r' WHERE id = $2',
                            True, class_id)
 
 
@@ -220,17 +220,17 @@ async def browse_role_by_account_id(account_id: int) \
         -> Sequence[Tuple[do.ClassMember, do.Class, do.Course]]:
     async with FetchAll(
             event='browse class role by account_id',
-            sql=fr'SELECT class_member.class_id, class_member.member_id, class_member.role,'
-                fr'       class.id, class.name, class.course_id, class.is_deleted,'
-                fr'       course.id, course.name, course.type, course.is_deleted'
-                fr' FROM class_member'
-                fr' INNER JOIN class'
-                fr'         ON class.id = class_member.class_id'
-                fr'        AND class.is_deleted = %(class_is_deleted)s'
-                fr' INNER JOIN course'
-                fr'         ON course.id = class.course_id'
-                fr'        AND course.is_deleted = %(course_is_deleted)s'
-                fr' WHERE class_member.member_id = %(account_id)s',
+            sql=r'SELECT class_member.class_id, class_member.member_id, class_member.role,'
+                r'       class.id, class.name, class.course_id, class.is_deleted,'
+                r'       course.id, course.name, course.type, course.is_deleted'
+                r' FROM class_member'
+                r' INNER JOIN class'
+                r'         ON class.id = class_member.class_id'
+                r'        AND class.is_deleted = %(class_is_deleted)s'
+                r' INNER JOIN course'
+                r'         ON course.id = class.course_id'
+                r'        AND course.is_deleted = %(course_is_deleted)s'
+                r' WHERE class_member.member_id = %(account_id)s',
             account_id=account_id, class_is_deleted=False, course_is_deleted=False,
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
@@ -307,8 +307,8 @@ async def replace_members(class_id: int, member_roles: Sequence[Tuple[str, RoleT
     if not member_roles:
         async with OnlyExecute(
             event=f'remove all members from class {class_id=}',
-            sql=fr'DELETE FROM class_member'
-                fr'      WHERE class_id = %(class_id)s',
+            sql=r'DELETE FROM class_member'
+                r'      WHERE class_id = %(class_id)s',
             class_id=class_id,
         ):
             log.info('Removed all class members')
@@ -332,8 +332,8 @@ async def replace_members(class_id: int, member_roles: Sequence[Tuple[str, RoleT
         log.info(f'Fetched account ids: {account_ids}')
 
         # 2. remove the old members
-        await conn.execute(fr'DELETE FROM class_member'
-                           fr'      WHERE class_id = $1',
+        await conn.execute(r'DELETE FROM class_member'
+                           r'      WHERE class_id = $1',
                            class_id)
         log.info('Removed old class members')
 
@@ -362,10 +362,10 @@ async def replace_members(class_id: int, member_roles: Sequence[Tuple[str, RoleT
 async def browse_member_referrals(class_id: int, role: RoleType) -> Sequence[str]:
     async with FetchAll(
             event='get member account referral by role',
-            sql=fr'SELECT account_id_to_referral(member_id)'
-                fr'  FROM class_member'
-                fr' WHERE class_id = %(class_id)s'
-                fr'   AND role = %(role)s',
+            sql=r'SELECT account_id_to_referral(member_id)'
+                r'  FROM class_member'
+                r' WHERE class_id = %(class_id)s'
+                r'   AND role = %(role)s',
             class_id=class_id, role=role,
             raise_not_found=False,
     ) as records:

@@ -17,12 +17,31 @@ variables:
 # Define the stages of the CI/CD pipeline
 stages:
   # - build  # This stage is commented out and won't be executed
+  - lint
   - test    # This stage will run the test jobs
+
+lint:
+  stage: lint
+  image: python:3.10
+  allow_failure: true
+  needs: []
+  before_script:
+    - pip install ruff
+  script:  # Commands to run for this job
+    - ruff --format=gitlab . > ruff-report.json
+
+  artifacts:
+    reports:
+      codequality: ruff-report.json
+  tags:
+    - test  # Use runners with the 'test' tag
+
 
 # Define the unittest job
 unittest:
   stage: test
   image: python:3.10  # Use the Python 3.10 Docker image
+  needs: []
   cache:  # Cache the pip packages to speed up future runs
     key:
       files:

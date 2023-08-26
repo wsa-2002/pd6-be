@@ -350,8 +350,10 @@ async def my_submission_under_problem(limit: int, offset: int, filters: Sequence
     return data, total_count
 
 
-async def problem_set(limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter], ref_time: datetime) \
-        -> tuple[Sequence[vo.ViewProblemSet], int]:
+async def problem_set(
+    limit: int, offset: int,
+    filters: Sequence[Filter], sorters: Sequence[Sorter], ref_time: datetime,
+) -> tuple[Sequence[vo.ViewProblemSet], int]:
     cond_sql, cond_params = compile_filters(filters)
     sort_sql = ' ,'.join(f"{sorter.col_name} {sorter.order}" for sorter in sorters)
     if sort_sql:
@@ -527,8 +529,11 @@ async def access_log(limit: int, offset: int, filters: Sequence[Filter], sorters
     return data, total_count
 
 
-async def view_peer_review_record(peer_review_id: int, limit: int, offset: int, filters: Sequence[Filter], sorters: Sequence[Sorter],
-                                  is_receiver: bool, class_role=RoleType.normal) -> tuple[Sequence[vo.ViewPeerReviewRecord], int]:
+async def view_peer_review_record(
+        peer_review_id: int, limit: int, offset: int,
+        filters: Sequence[Filter], sorters: Sequence[Sorter],
+        is_receiver: bool, class_role=RoleType.normal,
+) -> tuple[Sequence[vo.ViewPeerReviewRecord], int]:
     column_mapper = {
         'account_id': 'account.id',
         'username': 'account.username',

@@ -119,7 +119,7 @@ async def _submit_report(opt: MossOptions) -> str:
     injected_title = f'</p><h1>{opt.subtitle}</h1><p>'
     writer.write(f'query 0 {injected_title}\n'.encode())
 
-    log.info(f'waiting response from moss...')
+    log.info('waiting response from moss...')
     response = await reader.read(1024)
     log.info(f'Response from moss: {response.decode()}')
 

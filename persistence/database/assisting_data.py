@@ -38,10 +38,10 @@ async def read(assisting_data_id: int, include_deleted=False) -> do.AssistingDat
 async def add(problem_id: int, s3_file_uuid: UUID, filename: str) -> int:
     async with FetchOne(
             event='add assisting data',
-            sql=fr'INSERT INTO assisting_data'
-                fr'            (problem_id, s3_file_uuid, filename, is_deleted)'
-                fr'     VALUES (%(problem_id)s, %(s3_file_uuid)s, %(filename)s, %(is_deleted)s)'
-                fr'  RETURNING id',
+            sql=r'INSERT INTO assisting_data'
+                r'            (problem_id, s3_file_uuid, filename, is_deleted)'
+                r'     VALUES (%(problem_id)s, %(s3_file_uuid)s, %(filename)s, %(is_deleted)s)'
+                r'  RETURNING id',
             problem_id=problem_id, s3_file_uuid=s3_file_uuid, filename=filename, is_deleted=False,
     ) as (id_,):
         return id_
@@ -50,9 +50,9 @@ async def add(problem_id: int, s3_file_uuid: UUID, filename: str) -> int:
 async def edit(assisting_data_id: int, s3_file_uuid: UUID, filename: str):
     async with OnlyExecute(
             event='update assisting data',
-            sql=fr'UPDATE assisting_data'
-                fr'   SET s3_file_uuid = %(s3_file_uuid)s, filename = %(filename)s'
-                fr' WHERE id = %(assisting_data_id)s',
+            sql=r'UPDATE assisting_data'
+                r'   SET s3_file_uuid = %(s3_file_uuid)s, filename = %(filename)s'
+                r' WHERE id = %(assisting_data_id)s',
             assisting_data_id=assisting_data_id, filename=filename,
             s3_file_uuid=s3_file_uuid,
     ):
@@ -62,9 +62,9 @@ async def edit(assisting_data_id: int, s3_file_uuid: UUID, filename: str):
 async def delete(assisting_data_id: int) -> None:
     async with OnlyExecute(
             event='soft delete assisting data',
-            sql=fr'UPDATE assisting_data'
-                fr'   SET is_deleted = %(is_deleted)s'
-                fr' WHERE id = %(assisting_data_id)s',
+            sql=r'UPDATE assisting_data'
+                r'   SET is_deleted = %(is_deleted)s'
+                r' WHERE id = %(assisting_data_id)s',
             assisting_data_id=assisting_data_id, is_deleted=True,
     ):
         pass

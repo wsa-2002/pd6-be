@@ -150,9 +150,9 @@ async def edit(challenge_id: int,
 async def delete(challenge_id: int) -> None:
     async with OnlyExecute(
             event='soft delete challenge',
-            sql=fr'UPDATE challenge'
-                fr'   SET is_deleted = %(is_deleted)s'
-                fr' WHERE id = %(challenge_id)s',
+            sql=r'UPDATE challenge'
+                r'   SET is_deleted = %(is_deleted)s'
+                r' WHERE id = %(challenge_id)s',
             challenge_id=challenge_id,
             is_deleted=True,
     ):
@@ -165,9 +165,9 @@ async def delete_cascade(challenge_id: int) -> None:
         await peer_review.delete_cascade_from_challenge(challenge_id=challenge_id, cascading_conn=conn)
         await problem.delete_cascade_from_challenge(challenge_id=challenge_id, cascading_conn=conn)
 
-        await conn.execute(fr'UPDATE challenge'
-                           fr'   SET is_deleted = $1'
-                           fr' WHERE id = $2',
+        await conn.execute(r'UPDATE challenge'
+                           r'   SET is_deleted = $1'
+                           r' WHERE id = $2',
                            True, challenge_id)
 
 

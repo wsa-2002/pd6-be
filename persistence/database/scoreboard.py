@@ -39,9 +39,9 @@ async def read(scoreboard_id: int, *, include_deleted=False) -> do.Scoreboard:
 async def delete(scoreboard_id: int) -> None:
     async with OnlyExecute(
             event='soft delete scoreboard',
-            sql=fr'UPDATE scoreboard'
-                fr'   SET is_deleted = %(is_deleted)s'
-                fr' WHERE id = %(scoreboard_id)s',
+            sql=r'UPDATE scoreboard'
+                r'   SET is_deleted = %(is_deleted)s'
+                r' WHERE id = %(scoreboard_id)s',
             is_deleted=True,
             scoreboard_id=scoreboard_id,
     ):

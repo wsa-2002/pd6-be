@@ -11,7 +11,7 @@ from .base import SafeConnection, OnlyExecute, FetchOne, ParamDict
 
 async def add_under_scoreboard(challenge_id: int, challenge_label: str, title: str, target_problem_ids: Sequence[int],
                                penalty_formula: str, team_label_filter: Optional[str]) -> int:
-    async with SafeConnection(event=f'add scoreboard_setting_team_contest under scoreboard',
+    async with SafeConnection(event='add scoreboard_setting_team_contest under scoreboard',
                               auto_transaction=True) as conn:
         try:
             (team_contest_scoreboard_id,) = await conn.fetchrow(
@@ -39,9 +39,9 @@ async def add_under_scoreboard(challenge_id: int, challenge_label: str, title: s
 async def read(scoreboard_setting_team_contest_id: int) -> do.ScoreboardSettingTeamContest:
     async with FetchOne(
             event='read scoreboard_setting_team_contest',
-            sql=fr'SELECT id, penalty_formula, team_label_filter'
-                fr'  FROM scoreboard_setting_team_contest'
-                fr' WHERE id = %(scoreboard_setting_team_contest_id)s',
+            sql=r'SELECT id, penalty_formula, team_label_filter'
+                r'  FROM scoreboard_setting_team_contest'
+                r' WHERE id = %(scoreboard_setting_team_contest_id)s',
             scoreboard_setting_team_contest_id=scoreboard_setting_team_contest_id,
     ) as (id_, penalty_formula, team_label_filter):
         return do.ScoreboardSettingTeamContest(id=id_, penalty_formula=penalty_formula,

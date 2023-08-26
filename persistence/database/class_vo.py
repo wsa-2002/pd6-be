@@ -92,7 +92,7 @@ async def browse_class_member_with_account_id(class_id: int, include_deleted: bo
                 fr'  FROM class_member'
                 fr' INNER JOIN account'
                 fr'         ON class_member.member_id = account.id'
-                fr'{f"     AND NOT account.is_deleted" if not include_deleted else ""}'
+                fr'{"     AND NOT account.is_deleted" if not include_deleted else ""}'
                 fr' WHERE class_member.class_id = %(class_id)s',
             class_id=class_id,
             raise_not_found=False,  # Issue #134: return [] for browse
@@ -111,7 +111,7 @@ async def browse_class_member_with_account_referral(class_id: int, include_delet
                 fr' INNER JOIN account'
                 fr'         ON class_member.member_id = account.id'
                 fr' WHERE class_member.class_id = %(class_id)s'
-                fr'{f" AND NOT account.is_deleted" if not include_deleted else ""}',
+                fr'{" AND NOT account.is_deleted" if not include_deleted else ""}',
             class_id=class_id,
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:

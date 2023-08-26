@@ -127,9 +127,9 @@ async def edit(peer_review_id: int, challenge_label: str = None, title: str = No
 async def delete(peer_review_id: int) -> None:
     async with OnlyExecute(
             event='soft delete peer_review',
-            sql=fr'UPDATE peer_review'
-                fr'   SET is_deleted = %(is_deleted)s'
-                fr' WHERE id = %(peer_review_id)s',
+            sql=r'UPDATE peer_review'
+                r'   SET is_deleted = %(is_deleted)s'
+                r' WHERE id = %(peer_review_id)s',
             peer_review_id=peer_review_id,
             is_deleted=True,
     ):

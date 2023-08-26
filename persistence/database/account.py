@@ -112,9 +112,9 @@ async def delete(account_id: int) -> None:
 async def delete_alternative_email_by_id(account_id: int) -> None:
     async with OnlyExecute(
             event='set account delete alternative email',
-            sql=fr'UPDATE account'
-                fr'   SET alternative_email = %(alternative_email)s'
-                fr' WHERE id = %(account_id)s',
+            sql=r'UPDATE account'
+                r'   SET alternative_email = %(alternative_email)s'
+                r' WHERE id = %(account_id)s',
             account_id=account_id,
             alternative_email=None,
     ):
@@ -250,9 +250,9 @@ async def verify_email(code: UUID) -> None:
 async def edit_pass_hash(account_id: int, pass_hash: str):
     async with OnlyExecute(
             event='change password hash',
-            sql=fr'UPDATE account'
-                fr'   SET pass_hash = %(pass_hash)s, is_4s_hash = %(is_4s_hash)s'
-                fr' WHERE id = %(account_id)s',
+            sql=r'UPDATE account'
+                r'   SET pass_hash = %(pass_hash)s, is_4s_hash = %(is_4s_hash)s'
+                r' WHERE id = %(account_id)s',
             pass_hash=pass_hash,
             is_4s_hash=False,
             account_id=account_id,
@@ -298,7 +298,7 @@ async def edit_default_student_card(account_id: int, student_card_id: int) -> No
 async def account_referral_to_id(account_referral: str) -> int:
     async with FetchOne(
             event='account referral to id',
-            sql=f"SELECT account_referral_to_id(%(account_referral)s)",
+            sql="SELECT account_referral_to_id(%(account_referral)s)",
             account_referral=account_referral,
     ) as (account_id,):
         if not account_id:
