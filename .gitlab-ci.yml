@@ -24,6 +24,7 @@ lint:
   stage: lint
   image: python:3.10
   allow_failure: true
+  needs: []
   before_script:
     - pip install ruff
   script:  # Commands to run for this job
@@ -40,6 +41,7 @@ lint:
 unittest:
   stage: test
   image: python:3.10  # Use the Python 3.10 Docker image
+  needs: []
   cache:  # Cache the pip packages to speed up future runs
     key:
       files:
