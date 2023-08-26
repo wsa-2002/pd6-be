@@ -52,10 +52,10 @@ async def read(essay_id: int, include_deleted=False) -> do.Essay:
 async def add(challenge_id: int, challenge_label: str, title: str, setter_id: int, description: str) -> int:
     async with FetchOne(
             event='create essay',
-            sql=fr'INSERT INTO essay'
-                fr'            (challenge_id, challenge_label, title, setter_id, description)'
-                fr'     VALUES (%(challenge_id)s, %(challenge_label)s, %(title)s, %(setter_id)s, %(description)s)'
-                fr'  RETURNING id',
+            sql=r'INSERT INTO essay'
+                r'            (challenge_id, challenge_label, title, setter_id, description)'
+                r'     VALUES (%(challenge_id)s, %(challenge_label)s, %(title)s, %(setter_id)s, %(description)s)'
+                r'  RETURNING id',
             challenge_id=challenge_id,
             challenge_label=challenge_label,
             title=title, setter_id=setter_id, description=description,
@@ -92,9 +92,9 @@ async def edit(essay_id: int, setter_id: int, title: str = None,  challenge_labe
 async def delete(essay_id: int):
     async with OnlyExecute(
             event='soft delete essay',
-            sql=fr'UPDATE essay'
-                fr'   SET is_deleted = %(is_deleted)s'
-                fr' WHERE id = %(essay_id)s',
+            sql=r'UPDATE essay'
+                r'   SET is_deleted = %(is_deleted)s'
+                r' WHERE id = %(essay_id)s',
             is_deleted=True,
             essay_id=essay_id,
     ):

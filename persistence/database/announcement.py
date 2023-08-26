@@ -116,9 +116,9 @@ async def edit(announcement_id: int, title: str = None, content: str = None,
 async def delete(announcement_id: int) -> None:
     async with OnlyExecute(
             event='soft delete announcement',
-            sql=fr'UPDATE announcement'
-                fr'   SET is_deleted = %(is_deleted)s'
-                fr' WHERE id = %(announcement_id)s',
+            sql=r'UPDATE announcement'
+                r'   SET is_deleted = %(is_deleted)s'
+                r' WHERE id = %(announcement_id)s',
             announcement_id=announcement_id,
             is_deleted=True,
     ):

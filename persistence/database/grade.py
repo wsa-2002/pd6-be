@@ -149,9 +149,9 @@ async def edit(grade_id: int, grader_id: int, update_time: datetime, title: str 
 async def delete(grade_id: int) -> None:
     async with OnlyExecute(
             event='soft delete team',
-            sql=fr'UPDATE grade'
-                fr'   SET is_deleted = %(is_deleted)s'
-                fr' WHERE id = %(grade_id)s',
+            sql=r'UPDATE grade'
+                r'   SET is_deleted = %(is_deleted)s'
+                r' WHERE id = %(grade_id)s',
             grade_id=grade_id,
             is_deleted=True,
     ):

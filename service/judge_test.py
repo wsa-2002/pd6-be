@@ -375,10 +375,10 @@ class TestPrepareProblem(unittest.IsolatedAsyncioTestCase):
                     self.reviser_settings[i],
                 )
             controller.mock_global_async_func('service.judge._sign_file_url').call_with(
-                self.testcases[0].input_file_uuid, filename=f'0.in',
+                self.testcases[0].input_file_uuid, filename='0.in',
             ).returns(self.judge_testcases[0].input_file_url)
             controller.mock_global_async_func('service.judge._sign_file_url').call_with(
-                self.testcases[0].output_file_uuid, filename=f'0.out',
+                self.testcases[0].output_file_uuid, filename='0.out',
             ).returns(self.judge_testcases[0].output_file_url)
             controller.mock_global_async_func('service.judge._sign_file_url').call_with(
                 self.assisting_datas[0].s3_file_uuid, filename=self.assisting_datas[0].filename,
@@ -411,10 +411,10 @@ class TestPrepareProblem(unittest.IsolatedAsyncioTestCase):
                     self.reviser_settings[i],
                 )
             controller.mock_global_async_func('service.judge._sign_file_url').call_with(
-                self.testcases[0].input_file_uuid, filename=f'0.in',
+                self.testcases[0].input_file_uuid, filename='0.in',
             ).returns(self.judge_testcases[0].input_file_url)
             controller.mock_global_async_func('service.judge._sign_file_url').call_with(
-                self.testcases[0].output_file_uuid, filename=f'0.out',
+                self.testcases[0].output_file_uuid, filename='0.out',
             ).returns(self.judge_testcases[0].output_file_url)
             controller.mock_global_async_func('service.judge._sign_file_url').call_with(
                 self.assisting_datas[0].s3_file_uuid, filename=self.assisting_datas[0].filename,

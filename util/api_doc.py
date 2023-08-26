@@ -5,7 +5,7 @@ import typing
 def to_collapsible(content="", title="", open_=False):
     content = content.strip('\n')
     content_indent = ' ' * (len(content) - len(content.lstrip(' ')))
-    return f"""<details{f" open" if open_ else ""}><summary>{title}</summary>
+    return f"""<details{" open" if open_ else ""}><summary>{title}</summary>
 {content_indent}</p>
 {content_indent}
 {content}
