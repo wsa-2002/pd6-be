@@ -16,7 +16,6 @@ variables:
 
 # Define the stages of the CI/CD pipeline
 stages:
-  # - build  # This stage is commented out and won't be executed
   - lint
   - test    # This stage will run the test jobs
 
@@ -46,6 +45,7 @@ unittest:
     key:
       files:
         - requirements.txt
+    policy: pull
     paths:
       - .cache/pip
   script:  # Commands to run for this job
