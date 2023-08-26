@@ -20,7 +20,7 @@ stages:
   - test    # This stage will run the test jobs
 
 # Define the unittest job
-test:unittest:
+unittest:
   stage: test
   image: python:3.10  # Use the Python 3.10 Docker image
   cache:  # Cache the pip packages to speed up future runs
