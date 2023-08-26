@@ -28,25 +28,15 @@ test:unittest:
     paths:
       - .cache/pip
   script:  # Commands to run for this job
+    # run unittest
     - pip install -r requirements.txt  # Install required Python packages
     - touch .env  # Create an empty .env file
     - cat $ENV > .env  # Populate the .env file with the content of the ENV variable
     - mkdir log  # Create a log directory
     - cp logging.yaml.example logging.yaml  # Copy the example logging configuration
     - python run_test.py  # Run the tests
-  tags:
-    - test  # Use runners with the 'test' tag
 
-# Define the coverage job
-test:coverage:
-  stage: test
-  image: python:3.10
-  cache:
-    key: ${CI_COMMIT_REF_SLUG}
-    paths:
-      - .cache/pip
-  script:
-    - pip install -r requirements.txt
+    # collect unittest coverage
     - python -m coverage run -m run_test -v  # Run tests with coverage
     - python -m coverage report --precision=2 | tail  # Display the coverage report with 2 decimal places, showing only the last few lines
     - python -m coverage xml  # Generate an XML coverage report
@@ -57,8 +47,5 @@ test:coverage:
           path: coverage.xml
   # Use a regex to extract the total coverage percentage from the report
   coverage: '/^TOTAL\s+\d+\s+\d+\s+(\d+\.\d+)\%$/'
-  # Ensure that the unittest job completes before this job starts
-  needs:
-    - test:unittest
   tags:
-    - test
+    - test  # Use runners with the 'test' tag
