@@ -47,7 +47,7 @@ lint:
 
 
 # Define the unittest job
-unittest:
+test-coverage:
   stage: test
   image: python:3.10  # Use the Python 3.10 Docker image
   needs: []
