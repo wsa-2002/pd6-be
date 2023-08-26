@@ -266,7 +266,6 @@ async def get_member_counts(class_ids: list[int]) -> list[int]:
             sql=fr'SELECT {", ".join(to_selects)}'
                 fr'  FROM class_member'
                 fr' WHERE class_member.class_id = %(class_id)s',
-            raise_not_found=False,  # Issue #134: return [] for browse
             **kwargs,
     ) as counts:
         return list(counts)
