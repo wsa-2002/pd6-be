@@ -13,6 +13,7 @@ import persistence.database as db
 import service
 from persistence import email
 import util
+from util import model
 from util.context import context
 
 router = APIRouter(
@@ -233,7 +234,7 @@ async def read_account_with_default_student_id(account_id: int) -> ReadAccountOu
 
 
 class EditAccountInput(BaseModel):
-    username: str = None
+    username: model.TrimmedNonEmptyStr = None
     nickname: str = None
     alternative_email: Optional[util.model.CaseInsensitiveEmailStr] = util.model.can_omit
     real_name: str = None
