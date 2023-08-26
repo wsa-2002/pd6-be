@@ -44,7 +44,7 @@ async def all_submissions(challenge_id: int) -> do.S3File:
         # return language.file_extension
         return 'py' if language.name.lower().startswith('py') else 'cpp'  # FIXME: put into db
 
-    log.info(f'Create zip...')
+    log.info('Create zip...')
 
     zip_buffer = io.BytesIO()
     with zipfile.ZipFile(zip_buffer, 'a', zipfile.ZIP_STORED, False) as zipper:
@@ -66,7 +66,7 @@ async def all_submissions(challenge_id: int) -> do.S3File:
                 zipper.writestr(f'{problem_folder_name}/{filename}',
                                 data=await s3.tools.get_file_content_from_do(s3_file))
 
-    log.info(f'Make s3 file...')
+    log.info('Make s3 file...')
 
     s3_file = await s3.temp.put_object(body=zip_buffer.getvalue())
     return s3_file

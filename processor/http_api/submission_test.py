@@ -557,7 +557,8 @@ class TestBrowseSubmission(unittest.IsolatedAsyncioTestCase):
         ]
         self.total_count = len(self.submissions)
 
-        self.expected_happy_flow_result = submission.BrowseSubmissionOutput(self.submissions, total_count=self.total_count)
+        self.expected_happy_flow_result = submission.BrowseSubmissionOutput(self.submissions,
+                                                                            total_count=self.total_count)
 
     async def test_happy_flow(self):
         with (

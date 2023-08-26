@@ -16,7 +16,7 @@ async def batch_get_with_judgment(testcase_id: int, judgment_ids: Iterable[int],
                 fr'         ON testcase.id = judge_case.testcase_id'
                 fr'      WHERE judge_case.testcase_id = %(testcase_id)s'
                 fr'{f"     AND judge_case.judgment_id IN ({cond_sql})" if cond_sql else ""}'
-                fr'{f"     AND judge_case.verdict = %(verdict)s" if verdict else ""}',
+                fr'{"     AND judge_case.verdict = %(verdict)s" if verdict else ""}',
             testcase_id=testcase_id, verdict=verdict,
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:

@@ -14,7 +14,7 @@ from . import s3_handler
 async def sign_url(bucket: str, key: str, filename: str, as_attachment: bool, expire_secs: int = const.S3_EXPIRE_SECS) \
         -> str:
     start_time = datetime.now()
-    log.info(f'Start getting S3 file sign url ...')
+    log.info('Start getting S3 file sign url ...')
 
     sign_url = await s3_handler.sign_url(
         bucket=bucket,

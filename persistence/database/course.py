@@ -78,9 +78,9 @@ async def edit(course_id: int, name: str = None, course_type: CourseType = None)
 async def delete(course_id: int) -> None:
     async with OnlyExecute(
             event='soft delete course',
-            sql=fr'UPDATE course'
-                fr'   SET is_deleted = %(is_deleted)s'
-                fr' WHERE id = %(course_id)s',
+            sql=r'UPDATE course'
+                r'   SET is_deleted = %(is_deleted)s'
+                r' WHERE id = %(course_id)s',
             course_id=course_id,
             is_deleted=True,
     ):
@@ -92,7 +92,7 @@ async def delete_cascade(course_id: int) -> None:
                               auto_transaction=True) as conn:
         await class_.delete_cascade_from_course(course_id=course_id, cascading_conn=conn)
 
-        await conn.execute(fr'UPDATE course'
-                           fr'   SET is_deleted = $1'
-                           fr' WHERE id = $2',
+        await conn.execute(r'UPDATE course'
+                           r'   SET is_deleted = $1'
+                           r' WHERE id = $2',
                            True, course_id)
