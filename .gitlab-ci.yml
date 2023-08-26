@@ -23,9 +23,9 @@ stages:
 lint:
   stage: lint
   image: python:3.10
-  script:  # Commands to run for this job
-    # run unittest
+  before_script:
     - pip install ruff
+  script:  # Commands to run for this job
     - ruff --format=gitlab . > ruff-report.json
 
   artifacts:
