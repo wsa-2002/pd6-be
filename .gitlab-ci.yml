@@ -1,0 +1,64 @@
+# Define CI/CD variables that will be available to all jobs in this pipeline
+variables:
+  # Set the directory for caching pip packages to speed up subsequent runs
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  # Set the Python path to the project directory to ensure all modules are discoverable
+  PYTHONPATH: "$CI_PROJECT_DIR"
+  # Ensure that Git submodules are initialized and updated recursively
+  GIT_SUBMODULE_STRATEGY: recursive
+  # Force the use of HTTPS when cloning submodules
+  GIT_SUBMODULE_FORCE_HTTPS: "true"
+  # Use the FastZip feature for faster zipping and unzipping of artifacts and caches
+  FF_USE_FASTZIP: "true"
+  # Set the compression level for artifacts and caches to 'fast' for quicker compression
+  ARTIFACT_COMPRESSION_LEVEL: "fast"
+  CACHE_COMPRESSION_LEVEL: "fast"
+
+# Define the stages of the CI/CD pipeline
+stages:
+  # - build  # This stage is commented out and won't be executed
+  - test    # This stage will run the test jobs
+
+# Define the unittest job
+test:unittest:
+  stage: test
+  image: python:3.10  # Use the Python 3.10 Docker image
+  cache:  # Cache the pip packages to speed up future runs
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - .cache/pip
+  script:  # Commands to run for this job
+    - pip install -r requirements.txt  # Install required Python packages
+    - touch .env  # Create an empty .env file
+    - cat $ENV > .env  # Populate the .env file with the content of the ENV variable
+    - mkdir log  # Create a log directory
+    - cp logging.yaml.example logging.yaml  # Copy the example logging configuration
+    - python run_test.py  # Run the tests
+  tags:
+    - test  # Use runners with the 'test' tag
+
+# Define the coverage job
+test:coverage:
+  stage: test
+  image: python:3.10
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - .cache/pip
+  script:
+    - pip install -r requirements.txt
+    - python -m coverage run -m run_test -v  # Run tests with coverage
+    - python -m coverage report --precision=2 | tail  # Display the coverage report with 2 decimal places, showing only the last few lines
+    - python -m coverage xml  # Generate an XML coverage report
+  artifacts:  # Save the coverage.xml file as an artifact
+    reports:
+      coverage_report:
+          coverage_format: cobertura
+          path: coverage.xml
+  # Use a regex to extract the total coverage percentage from the report
+  coverage: '/^TOTAL\s+\d+\s+\d+\s+(\d+\.\d+)\%$/'
+  # Ensure that the unittest job completes before this job starts
+  needs:
+    - test:unittest
+  tags:
+    - test

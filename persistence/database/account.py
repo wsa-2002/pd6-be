@@ -1,7 +1,5 @@
-from typing import Tuple, Sequence, Optional, Iterable, Any
+from typing import Tuple, Sequence, Optional, Iterable
 from uuid import UUID
-
-import asyncpg
 
 from base import do
 from base.enum import RoleType

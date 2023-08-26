@@ -23,7 +23,7 @@ async def save_report(body: bytes) -> None:
         total_time=report.judgment.total_time,
         max_memory=report.judgment.max_memory,
         score=report.judgment.score,
-        error_message=None,  # FIXME
+        error_message=report.judgment.error_message,
         judge_time=datetime.now(),
     )
     for judge_case in report.judge_cases:
