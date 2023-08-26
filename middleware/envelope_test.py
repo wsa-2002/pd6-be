@@ -22,7 +22,7 @@ class TestEnveloped(unittest.IsolatedAsyncioTestCase):
     async def test_happy_flow_exception(self):
         @envelope.enveloped
         async def dummy():
-            raise Exception('oh no')
+            raise Exception('expected exception for testing')
 
         result = await dummy()
         self.assertEqual(result, {
