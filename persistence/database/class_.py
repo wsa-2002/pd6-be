@@ -258,8 +258,8 @@ async def browse_members(class_id: int) -> Sequence[do.ClassMember]:
 
 
 async def get_member_counts(class_ids: list[int]) -> list[int]:
-    kwargs = {f'%(class_id_{i})s': class_id for i, class_id in enumerate(class_ids, start=1)}
-    to_selects = [f'COUNT(*) FILTER (WHERE class_member.class_id = {kw})' for kw in kwargs]
+    kwargs = {f'class_id_{i}': class_id for i, class_id in enumerate(class_ids, start=1)}
+    to_selects = [f'COUNT(*) FILTER (WHERE class_member.class_id = %({kw})s)' for kw in kwargs]
 
     async with FetchOne(
             event='browse class members',
