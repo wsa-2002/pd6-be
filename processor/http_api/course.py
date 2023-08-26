@@ -148,4 +148,7 @@ async def browse_all_class_under_course(course_id: int) -> Sequence[BrowseAllCla
     classes = await db.class_.browse(course_id=course_id)
     member_counts = await db.class_.get_member_counts([class_.id for class_ in classes])
 
+    import log
+    log.info(f'help me... {[BrowseAllClassUnderCourseOutput(class_, count) for class_, count in zip(classes, member_counts)]=}')
+
     return [BrowseAllClassUnderCourseOutput(class_, count) for class_, count in zip(classes, member_counts)]

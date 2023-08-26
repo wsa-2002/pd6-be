@@ -267,7 +267,6 @@ async def get_member_counts(class_ids: list[int]) -> list[int]:
                 fr'  FROM class_member',
             **kwargs,
     ) as counts:
-        log.info(f'I really cannot write code... {list(counts)=} | {counts=}')
         return list(counts)
 
 
