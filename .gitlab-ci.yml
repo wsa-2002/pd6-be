@@ -17,10 +17,11 @@ variables:
 # Define the stages of the CI/CD pipeline
 stages:
   # - build  # This stage is commented out and won't be executed
+  - lint
   - test    # This stage will run the test jobs
 
 lint:
-  stage: test
+  stage: lint
   image: python:3.10
   script:  # Commands to run for this job
     # run unittest
