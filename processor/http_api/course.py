@@ -130,7 +130,7 @@ async def add_class_under_course(course_id: int, data: AddClassInput) -> model.A
 
 @dataclass
 class BrowseAllClassUnderCourseOutput:
-    data: do.Class
+    class_info: do.Class
     member_count: int
 
 
