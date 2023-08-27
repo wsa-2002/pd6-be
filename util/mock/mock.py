@@ -187,10 +187,8 @@ class Controller:
 
     def mock_global_class(self, class_name: str, new_class: typing.Type):
         def _new(*args, **kwargs):
-            cls, args = args[0], args[1:]
+            _, args = args[0], args[1:]  # first item is the original class itself
             return new_class(*args, **kwargs)
-
-        # with patch('persistence.database.account.FetchOne.__new__', wraps=create) as aa:
 
         self._patch(f'{class_name}.__new__', _new)
 
