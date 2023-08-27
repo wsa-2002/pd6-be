@@ -22,7 +22,6 @@ stages:
 lint:
   stage: lint
   image: python:3.10
-  allow_failure: true
   needs: []
   cache:  # Cache the pip packages to speed up future runs
     key:
@@ -37,6 +36,7 @@ lint:
     - source venv/bin/activate
     - pip install ruff
   script:  # Commands to run for this job
+    - ruff . 2>&1 || NO_CONTAINER=1  # for human to read
     - ruff --format=gitlab . > ruff-report.json
 
   artifacts:
@@ -56,6 +56,7 @@ test-coverage:
       prefix: $CI_JOB_NAME
       files:
         - requirements.txt
+        - requirements_unittest.txt
     paths:
       - .cache/pip
       - venv/
@@ -64,6 +65,7 @@ test-coverage:
     - python -m venv --copies venv
     - source venv/bin/activate
     - pip install -r requirements.txt  # Install required Python packages
+    - pip install -r requirements_unittest.txt  # Install required Python packages
 
   script:  # Commands to run for this job
     - touch .env  # Create an empty .env file
@@ -72,7 +74,7 @@ test-coverage:
     - cp logging.yaml.example logging.yaml  # Copy the example logging configuration
 
     # run tests and collect unittest coverage
-    - coverage run -m run_test -v  # Run tests with coverage
+    - coverage run -m run_test  # Run tests with coverage
     - coverage report --precision=2 | tail  # Display the coverage report with 2 decimal places, showing only the last few lines
     - coverage xml  # Generate an XML coverage report
   artifacts:  # Save the coverage.xml file as an artifact
