@@ -8,7 +8,7 @@ from base.enum import RoleType, FilterOperator
 from base.popo import Filter, Sorter
 
 from . import team, challenge
-from .base import SafeConnection, FetchAll, FetchOne, OnlyExecute, ParamDict
+from .base import AutoTxConnection, FetchAll, FetchOne, OnlyExecute, ParamDict
 from .util import execute_count, compile_filters, compile_values
 
 
@@ -160,8 +160,7 @@ async def delete(class_id: int) -> None:
 
 
 async def delete_cascade(class_id: int) -> None:
-    async with SafeConnection(event=f'cascade delete from class {class_id=}',
-                              auto_transaction=True) as conn:
+    async with AutoTxConnection(event=f'cascade delete from class {class_id=}') as conn:
         await team.delete_cascade_from_class(class_id=class_id, cascading_conn=conn)
         await challenge.delete_cascade_from_class(class_id=class_id, cascading_conn=conn)
 
@@ -176,8 +175,7 @@ async def delete_cascade_from_course(course_id: int, cascading_conn=None) -> Non
         await _delete_cascade_from_course(course_id, conn=cascading_conn)
         return
 
-    async with SafeConnection(event=f'cascade delete class from course {course_id=}',
-                              auto_transaction=True) as conn:
+    async with AutoTxConnection(event=f'cascade delete class from course {course_id=}') as conn:
         await _delete_cascade_from_course(course_id, conn=conn)
 
 
@@ -205,8 +203,7 @@ async def add_member(class_id: int, member_id: int, role: RoleType):
 
 
 async def add_members(class_id: int, member_roles: Collection[Tuple[int, RoleType]]):
-    async with SafeConnection(event='add members to class',
-                              auto_transaction=True) as conn:
+    async with AutoTxConnection(event='add members to class') as conn:
         await conn.executemany(
             command=r'INSERT INTO class_member'
                     r'            (class_id, member_id, role)'
@@ -327,8 +324,7 @@ async def replace_members(class_id: int, member_roles: Sequence[Tuple[str, RoleT
             log.info('Removed all class members')
             return []
 
-    async with SafeConnection(event=f'replace members from class {class_id=}',
-                              auto_transaction=True) as conn:
+    async with AutoTxConnection(event=f'replace members from class {class_id=}') as conn:
         # 1. get the referrals
         value_sql, value_params = compile_values([
             (account_referral,)

@@ -10,7 +10,7 @@ from base import do
 from base.enum import RoleType, FilterOperator
 from base.popo import Filter, Sorter
 
-from .base import SafeConnection, FetchOne, FetchAll, OnlyExecute, ParamDict
+from .base import AutoTxConnection, FetchOne, FetchAll, OnlyExecute, ParamDict
 from .util import execute_count, compile_filters, compile_values
 from .account import account_referral_to_id
 
@@ -144,8 +144,7 @@ async def delete_cascade_from_class(class_id: int, cascading_conn=None) -> None:
         await _delete_cascade_from_class(class_id, conn=cascading_conn)
         return
 
-    async with SafeConnection(event=f'cascade delete team from class {class_id=}',
-                              auto_transaction=True) as conn:
+    async with AutoTxConnection(event=f'cascade delete team from class {class_id=}') as conn:
         await _delete_cascade_from_class(class_id, conn=conn)
 
 
@@ -203,8 +202,7 @@ async def add_members(team_id: int, member_roles: Sequence[Tuple[str, RoleType]]
     if not member_roles:
         return []
 
-    async with SafeConnection(event=f'add members to team {team_id=}',
-                              auto_transaction=True) as conn:
+    async with AutoTxConnection(event=f'add members to team {team_id=}') as conn:
         # 1. get the referrals
         value_sql, value_params = compile_values([
             (account_referral,)
@@ -248,8 +246,7 @@ async def add_members(team_id: int, member_roles: Sequence[Tuple[str, RoleType]]
 
 async def add_team_and_add_member(class_id: int, team_label: str,
                                   datas: Sequence[tuple[str, Sequence[tuple[str, RoleType]]]]):
-    async with SafeConnection(event='add member with team name',
-                              auto_transaction=True) as conn:
+    async with AutoTxConnection(event='add member with team name') as conn:
         try:
             for team_name, member_roles in datas:
                 (team_id,) = await conn.fetchrow(

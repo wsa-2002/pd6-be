@@ -6,13 +6,12 @@ from base import do, enum
 import exceptions as exc
 
 from . import scoreboard
-from .base import SafeConnection, OnlyExecute, FetchOne, ParamDict
+from .base import AutoTxConnection, OnlyExecute, FetchOne, ParamDict
 
 
 async def add_under_scoreboard(challenge_id: int, challenge_label: str, title: str, target_problem_ids: Sequence[int],
                                penalty_formula: str, team_label_filter: Optional[str]) -> int:
-    async with SafeConnection(event='add scoreboard_setting_team_contest under scoreboard',
-                              auto_transaction=True) as conn:
+    async with AutoTxConnection(event='add scoreboard_setting_team_contest under scoreboard') as conn:
         try:
             (team_contest_scoreboard_id,) = await conn.fetchrow(
                 "INSERT INTO scoreboard_setting_team_contest"

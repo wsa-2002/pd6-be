@@ -4,7 +4,7 @@ from typing import Sequence
 from base import do, enum
 from base.popo import Filter, Sorter
 
-from .base import SafeConnection, FetchAll, FetchOne, OnlyExecute
+from .base import AutoTxConnection, FetchAll, FetchOne, OnlyExecute
 from .util import execute_count, compile_filters
 
 
@@ -90,8 +90,7 @@ async def read_by_peer_review_id(peer_review_id: int, account_id: int, is_receiv
 
 
 async def add_auto(peer_review_id: int, grader_id: int) -> int:
-    async with SafeConnection(event='add auto peer review record',
-                              auto_transaction=True) as conn:
+    async with AutoTxConnection(event='add auto peer review record') as conn:
         (target_problem_id, challenge_end_time, raw_selection_type, class_id) = await conn.fetchrow(
             r'SELECT peer_review.target_problem_id,'
             r'       challenge.end_time, challenge.selection_type, challenge.class_id'

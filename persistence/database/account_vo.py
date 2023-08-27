@@ -4,7 +4,7 @@ from base import do
 from base import enum
 from base.popo import Filter, Sorter
 
-from .base import SafeConnection, FetchOne, FetchAll
+from .base import AutoTxConnection, FetchOne, FetchAll
 from .util import execute_count, compile_filters, compile_values
 
 
@@ -111,8 +111,7 @@ async def read_with_default_student_card(account_id: int, include_deleted: bool 
 
 async def batch_read_by_account_referral(account_referrals: Sequence[str]) \
         -> Sequence[tuple[do.Account, do.StudentCard]]:
-    async with SafeConnection(event='batch read account by account referrals',
-                              auto_transaction=True) as conn:
+    async with AutoTxConnection(event='batch read account by account referrals') as conn:
         value_sql, value_params = compile_values([
             (account_referral,)
             for account_referral in account_referrals

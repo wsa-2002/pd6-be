@@ -6,7 +6,7 @@ from base.enum import RoleType
 import exceptions as exc
 
 from . import student_card
-from .base import SafeConnection, FetchOne, OnlyExecute, FetchAll, ParamDict
+from .base import AutoTxConnection, FetchOne, OnlyExecute, FetchAll, ParamDict
 from .util import compile_values
 
 
@@ -93,8 +93,7 @@ async def edit(account_id: int, username: str = None, real_name: str = None, nic
 
 
 async def delete(account_id: int) -> None:
-    async with SafeConnection(event='soft delete account and HARD delete student card',
-                              auto_transaction=True) as conn:
+    async with AutoTxConnection(event='soft delete account and HARD delete student card') as conn:
         await conn.execute(
             r'DELETE FROM student_card'
             r' WHERE account_id = $1',
@@ -210,8 +209,7 @@ async def add_email_verification(email: str, account_id: int, institute_id: int 
 
 
 async def verify_email(code: UUID) -> None:
-    async with SafeConnection(event='Verify email',
-                              auto_transaction=True) as conn:
+    async with AutoTxConnection(event='Verify email') as conn:
         try:
             email, account_id, institute_id, student_id = await conn.fetchrow(
                 r'UPDATE email_verification'
@@ -261,8 +259,7 @@ async def edit_pass_hash(account_id: int, pass_hash: str):
 
 
 async def reset_password(code: str, password_hash: str) -> None:
-    async with SafeConnection(event='reset password',
-                              auto_transaction=True) as conn:
+    async with AutoTxConnection(event='reset password') as conn:
         try:
             email, account_id, institute_id, student_id = await conn.fetchrow(
                 r'UPDATE email_verification'

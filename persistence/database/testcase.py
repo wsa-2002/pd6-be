@@ -3,7 +3,7 @@ from uuid import UUID
 
 from base import do
 
-from .base import SafeConnection, OnlyExecute, FetchAll, FetchOne, ParamDict
+from .base import AutoTxConnection, OnlyExecute, FetchAll, FetchOne, ParamDict
 
 
 async def add(problem_id: int, is_sample: bool, score: int, label: Optional[str], input_file_uuid: Optional[UUID],
@@ -175,8 +175,7 @@ async def delete_cascade_from_problem(problem_id: int, cascading_conn=None) -> N
         await _delete_cascade_from_problem(problem_id, conn=cascading_conn)
         return
 
-    async with SafeConnection(event=f'cascade delete testcase from problem {problem_id=}',
-                              auto_transaction=True) as conn:
+    async with AutoTxConnection(event=f'cascade delete testcase from problem {problem_id=}') as conn:
         await _delete_cascade_from_problem(problem_id, conn=conn)
 
 
