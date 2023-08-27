@@ -37,7 +37,7 @@ lint:
     - source venv/bin/activate
     - pip install ruff
   script:  # Commands to run for this job
-    - ruff .  # for human to read
+    - ruff . 2>&1  # for human to read
     - ruff --format=gitlab . > ruff-report.json
 
   artifacts:
