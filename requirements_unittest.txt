@@ -1,2 +1,2 @@
-aiosqlite3
+aiosqlite
 coverage
