@@ -56,6 +56,7 @@ unittest:
       prefix: $CI_JOB_NAME
       files:
         - requirements.txt
+        - requirements_unittest.txt
     paths:
       - .cache/pip
       - venv/
@@ -64,6 +65,7 @@ unittest:
     - python -m venv --copies venv
     - source venv/bin/activate
     - pip install -r requirements.txt  # Install required Python packages
+    - pip install -r requirements_unittest.txt  # Install required Python packages
 
   script:  # Commands to run for this job
     - touch .env  # Create an empty .env file
