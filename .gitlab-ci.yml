@@ -22,7 +22,6 @@ stages:
 lint:
   stage: lint
   image: python:3.10
-  allow_failure: true
   needs: []
   cache:  # Cache the pip packages to speed up future runs
     key:
