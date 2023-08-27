@@ -1,8 +1,7 @@
 import unittest
 
-from util import mock
-
 from base import do, enum
+from util import mock
 
 from . import account, base_mock
 

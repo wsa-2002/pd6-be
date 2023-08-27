@@ -2,14 +2,11 @@
 Wrapped context managers for aiosqlite3.
 """
 
-from abc import abstractmethod
-from datetime import datetime
 import sqlite3
 
 import aiosqlite
 
 import exceptions as exc
-import log
 
 from . import base
 
