@@ -2,6 +2,8 @@ import unittest
 
 from util import mock
 
+from base import do, enum
+
 from . import account, base_mock
 
 
@@ -44,5 +46,4 @@ INSERT INTO account VALUES (1, 'admin', '$argon2id$v=19$m=102400,t=2,p=8$gbA2Ziy
 
             result = await account.read(1)
 
-        from base import do, enum
         self.assertEqual(result, do.Account(1, 'admin', 'admin', 'admin', enum.RoleType.manager, False, alternative_email='test@gmail.com'))
