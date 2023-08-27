@@ -40,13 +40,6 @@ async def close():
 _db: aiosqlite.Connection = None
 
 
-def parse_param(param):
-    from base.enum import StrEnum
-    if isinstance(param, StrEnum):
-        return str(param)
-    return param
-
-
 class _SafeExecutor(base._SafeExecutor):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

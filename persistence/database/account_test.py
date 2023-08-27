@@ -2,8 +2,7 @@ import unittest
 
 from util import mock
 
-from . import account
-from . import base_mock
+from . import account, base_mock
 
 
 class TestBase(unittest.IsolatedAsyncioTestCase):
