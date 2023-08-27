@@ -1,8 +1,5 @@
 """
 Wrapped context managers for aiosqlite3.
-
-Note that pg default enables auto-commit.
-If you don't want auto-commit, use `async with Connection.transaction(): ...`.
 """
 
 from abc import abstractmethod
@@ -41,12 +38,6 @@ _db: aiosqlite.Connection = None
 
 
 class _SafeExecutor(base._SafeExecutor):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        # import re
-        # self._sql = re.sub(r'\$\d+', r'?', self._sql)
-
     async def __aenter__(self) -> None | sqlite3.Row | list[sqlite3.Row]:
         """
         If fetch
@@ -58,9 +49,7 @@ class _SafeExecutor(base._SafeExecutor):
 
         Will raise NotFound if requested to fetch but unable to fetch anything.
         """
-        start_time = datetime.now()
-
-        log.info(f"Starting {self.__class__.__name__}: {self._event}, sql: {self._sql}, params: {self._parameters}")
+        # log.info(f"Starting {self.__class__.__name__}: {self._event}, sql: {self._sql}, params: {self._parameters}")
 
         global _db
         try:
@@ -68,22 +57,10 @@ class _SafeExecutor(base._SafeExecutor):
         except tuple(self._exception_mapping) as e:
             raise self._exception_mapping[type(e)] from e
 
-        exec_time_ms = (datetime.now() - start_time).total_seconds() * 1000
-        log.info(f"Ended {self.__class__.__name__}: {self._event} after {exec_time_ms} ms")
-        # util.metric.sql_time(self._event, exec_time_ms)
-
         if self._raise_not_found and not results:
             raise exc.persistence.NotFound
 
         return results
-
-    @abstractmethod
-    async def _exec(self, conn: aiosqlite.Connection):
-        raise NotImplementedError
-
-    async def __aexit__(self, exc_type, exc_value, traceback):
-        if self._fetch == 'one' or self._fetch == 1 and exc_type is TypeError:  # Handles TypeError: value unpack
-            raise exc.persistence.NotFound
 
 
 class OnlyExecute(_SafeExecutor):
@@ -94,9 +71,6 @@ class OnlyExecute(_SafeExecutor):
 
     async def _exec(self, conn: aiosqlite.Connection):
         await conn.execute(self._sql, self._parameters)
-
-    async def __aenter__(self) -> None:
-        await super().__aenter__()
 
 
 class FetchOne(_SafeExecutor):
@@ -110,9 +84,6 @@ class FetchOne(_SafeExecutor):
             cursor: aiosqlite.Cursor
             return await cursor.fetchone()
 
-    async def __aenter__(self) -> sqlite3.Row:
-        return await super().__aenter__()
-
 
 class FetchAll(_SafeExecutor):
     def __init__(self, event: str, sql: str, parameters: dict = None, raise_not_found: bool = True,
@@ -124,6 +95,3 @@ class FetchAll(_SafeExecutor):
         async with conn.execute(self._sql, self._parameters) as cursor:
             cursor: aiosqlite.Cursor
             return await cursor.fetchall()
-
-    async def __aenter__(self) -> list[sqlite3.Row]:
-        return await super().__aenter__()
