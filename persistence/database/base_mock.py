@@ -17,25 +17,24 @@ import log
 from . import base
 
 
-class MockDB:
-    async def __aenter__(self) -> aiosqlite.Connection:
-        db = aiosqlite.connect(':memory:')
-        await db.__aenter__()
+async def open():
+    aiosqlite.register_adapter(bool, int)
+    aiosqlite.register_converter("BOOLEAN", lambda v: bool(int(v)))
 
-        global _db
-        _db = db
+    global _db
+    if not _db:
+        _db = await aiosqlite.connect(':memory:')
 
-        aiosqlite.register_adapter(bool, int)
-        aiosqlite.register_converter("BOOLEAN", lambda v: bool(int(v)))
+    return _db
 
-        return _db
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        global _db
-        old_db = _db
-        _db = None
+async def close():
+    global _db
+    old_db = _db
+    _db = None
 
-        await old_db.__aexit__(exc_type, exc_val, exc_tb)
+    if old_db:
+        await old_db.close()
 
 
 _db: aiosqlite.Connection = None

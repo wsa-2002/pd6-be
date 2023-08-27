@@ -8,7 +8,7 @@ from . import base_mock
 
 class TestBase(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        self.db = await base_mock.MockDB().__aenter__()
+        self.db = await base_mock.open()
 
         await self.db.execute('''
 create table account
@@ -26,7 +26,7 @@ create table account
 ''')
 
     async def asyncTearDown(self):
-        await self.db.__aexit__(None, None, None)
+        await base_mock.close()
 
 
 class TestRead(TestBase):
