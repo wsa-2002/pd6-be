@@ -409,3 +409,24 @@ class TestBrowseAllClassUnderCourse(unittest.IsolatedAsyncioTestCase):
 
             with self.assertRaises(exc.NoPermission):
                 await mock.unwrap(course.browse_all_class_under_course)(course_id=self.course_id)
+
+    async def test_not_found_should_return_empty_list(self):
+        with (
+            mock.Controller() as controller,
+            mock.Context() as context,
+        ):
+            context.set_account(self.login_account)
+
+            service_rbac = controller.mock_module('service.rbac')
+            db_class = controller.mock_module('persistence.database.class_')
+
+            service_rbac.async_func('validate_system').call_with(
+                self.login_account.id, enum.RoleType.normal,
+            ).returns(True)
+            db_class.async_func('browse').call_with(
+                course_id=self.course_id,
+            ).returns([])
+
+            result = await mock.unwrap(course.browse_all_class_under_course)(course_id=self.course_id)
+
+        self.assertEqual(result, [])
