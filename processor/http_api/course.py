@@ -145,6 +145,9 @@ async def browse_all_class_under_course(course_id: int) -> Sequence[BrowseAllCla
         raise exc.NoPermission
 
     classes = await db.class_.browse(course_id=course_id)
-    member_counts = await db.class_.get_member_counts([class_.id for class_ in classes]) if classes else []
+    if not classes:
+        return []
+
+    member_counts = await db.class_.get_member_counts([class_.id for class_ in classes])
 
     return [BrowseAllClassUnderCourseOutput(class_, count) for class_, count in zip(classes, member_counts)]
