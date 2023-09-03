@@ -33,7 +33,7 @@ Then
 1. Fill out the environment variables in `.env`.
 2. Check the `filename`s in `logging.yaml`, and replace if you needed.
 3. Check the `propagate`s in `logging.yaml`, and replace with `True` if you want to show that genre of log on your console.
-4. Manually create your log folder (default `/log` under your cloned `PD6-BE` project folder).
+4. Manually create your log folder (default `/log` under your cloned `pd6-be` project folder).
 
 ### 4. Start the server
 
@@ -71,9 +71,16 @@ python run_test.py
 ### Coverage
 
 ```shell
-python -m coverage run -m run_test -v
+coverage run -m run_test -v
 # coverage report
-python -m coverage report
+coverage report
+```
+
+## Linter
+
+```shell
+pip install ruff
+ruff .
 ```
 
 
@@ -110,18 +117,6 @@ Because -- the creator of this project likes BREAD.
 
 If you feel uncomfortable about this, you should go back to the main principles and read [Color of Bikeshed](https://bikeshed.com/).
 
-### Type Checking
-
-Please make sure you use type hints. This is to enhance the readability and safety of our codebase.
-
-You may also use `mypy` to help perform a global type check:
-```shell
-pip install mypy
-mypy .
-```
-
-However, currently there are some non-standard type hint usage, so there are a lot of errors. 🥲
-
 ### IDE (PyCharm) Settings
 
 The recommended (actually *forced*) IDE for this project is PyCharm >= 2021.3.
@@ -152,3 +147,6 @@ scan through the long list by entering the inspection item to the search bar.
 | Type |       Inspection Item        | Severity |
 |:----:| ---------------------------- |:--------:|
 | SQL  | Redundant ordering direction |   Typo   |
+
+Also, you can set `Profile` in (Editor > Inspection) to `Project Default` to ignore some inspections in test files 
+and highlight test files in sidebar.

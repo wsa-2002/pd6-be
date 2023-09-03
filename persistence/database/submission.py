@@ -167,10 +167,10 @@ async def browse(limit: int, offset: int, filters: Sequence[Filter], sorters: Se
 async def read(submission_id: int) -> do.Submission:
     async with FetchOne(
             event='read submission',
-            sql=fr'SELECT account_id, problem_id, language_id, filename,'
-                fr'       content_file_uuid, content_length, submit_time'
-                fr'  FROM submission'
-                fr' WHERE id = %(submission_id)s',
+            sql=r'SELECT account_id, problem_id, language_id, filename,'
+                r'       content_file_uuid, content_length, submit_time'
+                r'  FROM submission'
+                r' WHERE id = %(submission_id)s',
             submission_id=submission_id,
     ) as (account_id, problem_id, language_id, filename, content_file_uuid, content_length, submit_time):
         return do.Submission(id=submission_id, account_id=account_id, problem_id=problem_id, filename=filename,
@@ -181,14 +181,14 @@ async def read(submission_id: int) -> do.Submission:
 async def read_latest_judgment(submission_id: int) -> do.Judgment:
     async with FetchOne(
             event='read submission latest judgment',
-            sql=fr'SELECT judgment.id, judgment.submission_id, judgment.verdict, judgment.total_time,'
-                fr'       judgment.max_memory, judgment.score, judgment.judge_time, judgment.error_message' 
-                fr'  FROM judgment'
-                fr' INNER JOIN submission'
-                fr'         ON submission.id = judgment.submission_id'
-                fr' WHERE submission.id = %(submission_id)s'
-                fr' ORDER BY judgment.id DESC'
-                fr' LIMIT 1',
+            sql=r'SELECT judgment.id, judgment.submission_id, judgment.verdict, judgment.total_time,'
+                r'       judgment.max_memory, judgment.score, judgment.judge_time, judgment.error_message' 
+                r'  FROM judgment'
+                r' INNER JOIN submission'
+                r'         ON submission.id = judgment.submission_id'
+                r' WHERE submission.id = %(submission_id)s'
+                r' ORDER BY judgment.id DESC'
+                r' LIMIT 1',
             submission_id=submission_id,
     ) as (judgment_id, submission_id, verdict, total_time, max_memory, score, judge_time, error_message):
         return do.Judgment(id=judgment_id, submission_id=submission_id, verdict=enum.VerdictType(verdict),
@@ -264,9 +264,9 @@ async def browse_by_problem_selected(problem_id: int, selection_type: enum.TaskS
         join_judgment_sql = ''
     elif selection_type is enum.TaskSelectionType.best:
         order_criteria = 'judgment.score DESC'
-        join_judgment_sql = (fr' INNER JOIN judgment'
-                             fr'         ON judgment.submission_id = submission.id'
-                             fr'        AND judgment.id = submission_last_judgment_id(submission.id)')
+        join_judgment_sql = (r' INNER JOIN judgment'
+                             r'         ON judgment.submission_id = submission.id'
+                             r'        AND judgment.id = submission_last_judgment_id(submission.id)')
     else:
         raise ValueError(f'{selection_type} is not expected')
 

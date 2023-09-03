@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Sequence
 
 from pydantic import BaseModel
@@ -45,8 +46,7 @@ async def add_course(data: AddCourseInput) -> model.AddOutput:
 async def browse_all_course() -> Sequence[do.Course]:
     """
     ### 權限
-    - System manager (hidden)
-    - System normal (not hidden)
+    - System normal
     """
     system_role = await service.rbac.get_system_role(context.account.id)
     if system_role < RoleType.normal:
@@ -61,8 +61,7 @@ async def browse_all_course() -> Sequence[do.Course]:
 async def read_course(course_id: int) -> do.Course:
     """
     ### 權限
-    - System manager (hidden)
-    - System normal (not hidden)
+    - System normal
     """
     system_role = await service.rbac.get_system_role(context.account.id)
     if system_role < RoleType.normal:
@@ -129,15 +128,26 @@ async def add_class_under_course(course_id: int, data: AddClassInput) -> model.A
     return model.AddOutput(id=class_id)
 
 
+@dataclass
+class BrowseAllClassUnderCourseOutput:
+    class_info: do.Class
+    member_count: int
+
+
 @router.get('/course/{course_id}/class', tags=['Class'])
 @enveloped
-async def browse_all_class_under_course(course_id: int) -> Sequence[do.Class]:
+async def browse_all_class_under_course(course_id: int) -> Sequence[BrowseAllClassUnderCourseOutput]:
     """
     ### 權限
-    - Class+ manager (hidden)
-    - System normal (not hidden)
+    - System normal
     """
     if not await service.rbac.validate_system(context.account.id, RoleType.normal):
         raise exc.NoPermission
 
-    return await db.class_.browse(course_id=course_id)
+    classes = await db.class_.browse(course_id=course_id)
+    if not classes:
+        return []
+
+    member_counts = await db.class_.get_member_counts([class_.id for class_ in classes])
+
+    return [BrowseAllClassUnderCourseOutput(class_, count) for class_, count in zip(classes, member_counts)]

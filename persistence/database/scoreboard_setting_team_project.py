@@ -6,14 +6,13 @@ from base import do, enum
 import exceptions as exc
 
 from . import scoreboard
-from .base import SafeConnection, OnlyExecute, FetchOne, ParamDict
+from .base import AutoTxConnection, OnlyExecute, FetchOne, ParamDict
 
 
 async def add_under_scoreboard(challenge_id: int, challenge_label: str, title: str, target_problem_ids: Sequence[int],
                                type_: enum.ScoreboardType, scoring_formula: str, baseline_team_id: Optional[int],
                                rank_by_total_score: bool, team_label_filter: Optional[str]) -> int:
-    async with SafeConnection(event=f'add scoreboard_setting_team_project under scoreboard',
-                              auto_transaction=True) as conn:
+    async with AutoTxConnection(event='add scoreboard_setting_team_project under scoreboard') as conn:
         try:
             (team_project_scoreboard_id,) = await conn.fetchrow(
                 "INSERT INTO scoreboard_setting_team_project"
@@ -39,13 +38,15 @@ async def add_under_scoreboard(challenge_id: int, challenge_label: str, title: s
 async def read(scoreboard_setting_team_project_id: int) -> do.ScoreboardSettingTeamProject:
     async with FetchOne(
             event='read scoreboard_setting_team_project',
-            sql=fr'SELECT id, scoring_formula, baseline_team_id, rank_by_total_score, team_label_filter'
-                fr'  FROM scoreboard_setting_team_project'
-                fr' WHERE id = %(scoreboard_setting_team_project_id)s',
+            sql=r'SELECT id, scoring_formula, baseline_team_id, rank_by_total_score, team_label_filter'
+                r'  FROM scoreboard_setting_team_project'
+                r' WHERE id = %(scoreboard_setting_team_project_id)s',
             scoreboard_setting_team_project_id=scoreboard_setting_team_project_id,
     ) as (id_, scoring_formula, baseline_team_id, rank_by_total_score, team_label_filter):
-        return do.ScoreboardSettingTeamProject(id=id_, scoring_formula=scoring_formula, baseline_team_id=baseline_team_id,
-                                               rank_by_total_score=rank_by_total_score, team_label_filter=team_label_filter)
+        return do.ScoreboardSettingTeamProject(
+            id=id_, scoring_formula=scoring_formula, baseline_team_id=baseline_team_id,
+            rank_by_total_score=rank_by_total_score, team_label_filter=team_label_filter,
+        )
 
 
 async def edit_with_scoreboard(scoreboard_id: int,

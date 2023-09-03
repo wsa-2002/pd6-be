@@ -6,7 +6,7 @@ from base.enum import RoleType
 import exceptions as exc
 
 from . import student_card
-from .base import SafeConnection, FetchOne, OnlyExecute, FetchAll, ParamDict
+from .base import AutoTxConnection, FetchOne, OnlyExecute, FetchAll, ParamDict
 from .util import compile_values
 
 
@@ -93,8 +93,7 @@ async def edit(account_id: int, username: str = None, real_name: str = None, nic
 
 
 async def delete(account_id: int) -> None:
-    async with SafeConnection(event='soft delete account and HARD delete student card',
-                              auto_transaction=True) as conn:
+    async with AutoTxConnection(event='soft delete account and HARD delete student card') as conn:
         await conn.execute(
             r'DELETE FROM student_card'
             r' WHERE account_id = $1',
@@ -112,9 +111,9 @@ async def delete(account_id: int) -> None:
 async def delete_alternative_email_by_id(account_id: int) -> None:
     async with OnlyExecute(
             event='set account delete alternative email',
-            sql=fr'UPDATE account'
-                fr'   SET alternative_email = %(alternative_email)s'
-                fr' WHERE id = %(account_id)s',
+            sql=r'UPDATE account'
+                r'   SET alternative_email = %(alternative_email)s'
+                r' WHERE id = %(account_id)s',
             account_id=account_id,
             alternative_email=None,
     ):
@@ -210,8 +209,7 @@ async def add_email_verification(email: str, account_id: int, institute_id: int 
 
 
 async def verify_email(code: UUID) -> None:
-    async with SafeConnection(event='Verify email',
-                              auto_transaction=True) as conn:
+    async with AutoTxConnection(event='Verify email') as conn:
         try:
             email, account_id, institute_id, student_id = await conn.fetchrow(
                 r'UPDATE email_verification'
@@ -250,9 +248,9 @@ async def verify_email(code: UUID) -> None:
 async def edit_pass_hash(account_id: int, pass_hash: str):
     async with OnlyExecute(
             event='change password hash',
-            sql=fr'UPDATE account'
-                fr'   SET pass_hash = %(pass_hash)s, is_4s_hash = %(is_4s_hash)s'
-                fr' WHERE id = %(account_id)s',
+            sql=r'UPDATE account'
+                r'   SET pass_hash = %(pass_hash)s, is_4s_hash = %(is_4s_hash)s'
+                r' WHERE id = %(account_id)s',
             pass_hash=pass_hash,
             is_4s_hash=False,
             account_id=account_id,
@@ -261,8 +259,7 @@ async def edit_pass_hash(account_id: int, pass_hash: str):
 
 
 async def reset_password(code: str, password_hash: str) -> None:
-    async with SafeConnection(event='reset password',
-                              auto_transaction=True) as conn:
+    async with AutoTxConnection(event='reset password') as conn:
         try:
             email, account_id, institute_id, student_id = await conn.fetchrow(
                 r'UPDATE email_verification'
@@ -298,7 +295,7 @@ async def edit_default_student_card(account_id: int, student_card_id: int) -> No
 async def account_referral_to_id(account_referral: str) -> int:
     async with FetchOne(
             event='account referral to id',
-            sql=f"SELECT account_referral_to_id(%(account_referral)s)",
+            sql="SELECT account_referral_to_id(%(account_referral)s)",
             account_referral=account_referral,
     ) as (account_id,):
         if not account_id:

@@ -185,6 +185,13 @@ class Controller:
         self._patch(module_name, module)
         return module
 
+    def mock_global_class(self, class_name: str, new_class: typing.Type):
+        def _new(*args, **kwargs):
+            _, args = args[0], args[1:]  # first item is the original class itself
+            return new_class(*args, **kwargs)
+
+        self._patch(f'{class_name}.__new__', _new)
+
     def mock_global_func(self, func_name: str) -> MockFunction:
         mocked = self._global_module.func(func_name)
         self._patch(func_name, mocked)

@@ -9,10 +9,10 @@ from .base import FetchOne, FetchAll, OnlyExecute
 async def browse(submission_id: int) -> Sequence[do.Judgment]:
     async with FetchAll(
             event='browse judgments',
-            sql=fr'SELECT id, verdict, total_time, max_memory, score, judge_time, error_message'
-                fr'  FROM judgment'
-                fr' WHERE submission_id = %(submission_id)s'
-                fr' ORDER BY id DESC',
+            sql=r'SELECT id, verdict, total_time, max_memory, score, judge_time, error_message'
+                r'  FROM judgment'
+                r' WHERE submission_id = %(submission_id)s'
+                r' ORDER BY id DESC',
             submission_id=submission_id,
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
@@ -44,9 +44,9 @@ async def browse_latest_with_submission_ids(submission_ids: list[int]) -> Sequen
 async def read(judgment_id: int) -> do.Judgment:
     async with FetchOne(
             event='read judgment',
-            sql=fr'SELECT id, submission_id, verdict, total_time, max_memory, score, judge_time, error_message'
-                fr'  FROM judgment'
-                fr' WHERE id = %(judgment_id)s',
+            sql=r'SELECT id, submission_id, verdict, total_time, max_memory, score, judge_time, error_message'
+                r'  FROM judgment'
+                r' WHERE id = %(judgment_id)s',
             judgment_id=judgment_id,
     ) as (id_, submission_id, verdict, total_time, max_memory, score, judge_time, error_message):
         return do.Judgment(id=id_, submission_id=submission_id, verdict=enum.VerdictType(verdict),
@@ -58,11 +58,11 @@ async def add(submission_id: int, verdict: enum.VerdictType, total_time: int, ma
               score: int, judge_time: datetime, error_message: str = None) -> int:
     async with FetchOne(
             event='add judgment',
-            sql=fr'INSERT INTO judgment (submission_id, verdict, total_time, max_memory, '
-                fr'                      score, judge_time, error_message)'
-                fr'     VALUES (%(submission_id)s, %(verdict)s, %(total_time)s,'
-                fr'             %(max_memory)s, %(score)s, %(judge_time)s, %(error_message)s)'
-                fr'  RETURNING id',
+            sql=r'INSERT INTO judgment (submission_id, verdict, total_time, max_memory, '
+                r'                      score, judge_time, error_message)'
+                r'     VALUES (%(submission_id)s, %(verdict)s, %(total_time)s,'
+                r'             %(max_memory)s, %(score)s, %(judge_time)s, %(error_message)s)'
+                r'  RETURNING id',
             submission_id=submission_id, verdict=verdict, total_time=total_time, max_memory=max_memory,
             score=score, judge_time=judge_time, error_message=error_message,
     ) as (judgment_id,):
@@ -72,13 +72,13 @@ async def add(submission_id: int, verdict: enum.VerdictType, total_time: int, ma
 async def browse_cases(judgment_id: int) -> Sequence[do.JudgeCase]:
     async with FetchAll(
             event='browse judge cases',
-            sql=fr'SELECT judgment_id, testcase_id,'
-                fr'       judge_case.verdict, judge_case.time_lapse, judge_case.peak_memory, judge_case.score'
-                fr'  FROM judge_case'
-                fr'       LEFT JOIN testcase'
-                fr'              ON testcase.id = judge_case.testcase_id'
-                fr' WHERE judgment_id = %(judgment_id)s'
-                fr' ORDER BY testcase.is_sample DESC, testcase_id ASC',
+            sql=r'SELECT judgment_id, testcase_id,'
+                r'       judge_case.verdict, judge_case.time_lapse, judge_case.peak_memory, judge_case.score'
+                r'  FROM judge_case'
+                r'       LEFT JOIN testcase'
+                r'              ON testcase.id = judge_case.testcase_id'
+                r' WHERE judgment_id = %(judgment_id)s'
+                r' ORDER BY testcase.is_sample DESC, testcase_id ASC',
             judgment_id=judgment_id,
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
@@ -90,9 +90,9 @@ async def browse_cases(judgment_id: int) -> Sequence[do.JudgeCase]:
 async def read_case(judgment_id: int, testcase_id: int) -> do.JudgeCase:
     async with FetchOne(
             event='read judge case',
-            sql=fr'SELECT judgment_id, testcase_id, verdict, time_lapse, peak_memory, score'
-                fr'  FROM judge_case'
-                fr' WHERE judgment_id = %(judgment_id)s and testcase_id = %(testcase_id)s',
+            sql=r'SELECT judgment_id, testcase_id, verdict, time_lapse, peak_memory, score'
+                r'  FROM judge_case'
+                r' WHERE judgment_id = %(judgment_id)s and testcase_id = %(testcase_id)s',
             judgment_id=judgment_id,
             testcase_id=testcase_id,
     ) as (judgment_id, testcase_id, verdict, time_lapse, peak_memory, score):
@@ -104,9 +104,9 @@ async def add_case(judgment_id: int, testcase_id: int, verdict: enum.VerdictType
                    time_lapse: int, peak_memory: int, score: int) -> None:
     async with OnlyExecute(
             event='add judge case',
-            sql=fr'INSERT INTO judge_case (judgment_id, testcase_id, verdict, time_lapse, peak_memory, score)'
-                fr'     VALUES (%(judgment_id)s, %(testcase_id)s, %(verdict)s,'
-                fr'             %(time_lapse)s, %(peak_memory)s, %(score)s)',
+            sql=r'INSERT INTO judge_case (judgment_id, testcase_id, verdict, time_lapse, peak_memory, score)'
+                r'     VALUES (%(judgment_id)s, %(testcase_id)s, %(verdict)s,'
+                r'             %(time_lapse)s, %(peak_memory)s, %(score)s)',
             judgment_id=judgment_id, testcase_id=testcase_id, verdict=verdict,
             time_lapse=time_lapse, peak_memory=peak_memory, score=score,
     ):
@@ -141,16 +141,16 @@ async def read_by_challenge_type(problem_id: int, account_id: int,
 async def get_best_submission_judgment_all_time(problem_id: int, account_id: int) -> do.Judgment:
     async with FetchOne(
             event='get best submission judgment by all time',
-            sql=fr'SELECT judgment.id, judgment.submission_id, judgment.verdict, judgment.total_time,'
-                fr'       judgment.max_memory, judgment.score, judgment.judge_time, judgment.error_message'
-                fr'  FROM submission'
-                fr' INNER JOIN judgment'
-                fr'         ON submission.id = judgment.submission_id'
-                fr'        AND submission_last_judgment_id(submission.id) = judgment.id'
-                fr' WHERE submission.account_id = %(account_id)s'
-                fr'   AND submission.problem_id = %(problem_id)s'
-                fr' ORDER BY judgment.score DESC'
-                fr' LIMIT 1',
+            sql=r'SELECT judgment.id, judgment.submission_id, judgment.verdict, judgment.total_time,'
+                r'       judgment.max_memory, judgment.score, judgment.judge_time, judgment.error_message'
+                r'  FROM submission'
+                r' INNER JOIN judgment'
+                r'         ON submission.id = judgment.submission_id'
+                r'        AND submission_last_judgment_id(submission.id) = judgment.id'
+                r' WHERE submission.account_id = %(account_id)s'
+                r'   AND submission.problem_id = %(problem_id)s'
+                r' ORDER BY judgment.score DESC'
+                r' LIMIT 1',
             account_id=account_id, problem_id=problem_id,
     ) as (id_, submission_id, verdict, total_time, max_memory, score, judge_time, error_message):
         return do.Judgment(id=id_, submission_id=submission_id, verdict=verdict, total_time=total_time,
@@ -362,7 +362,7 @@ async def get_class_all_team_submission_verdict_before_freeze(problem_id: int, c
                 fr' INNER JOIN submission'
                 fr'         ON team_member.member_id = submission.account_id'
                 fr'        AND submission.problem_id = %(problem_id)s'
-                fr'     {f"AND submission.submit_time <= %(freeze_time)s" if freeze_time else ""}'
+                fr'     {"AND submission.submit_time <= %(freeze_time)s" if freeze_time else ""}'
                 fr' INNER JOIN problem'
                 fr'         ON problem.id = submission.problem_id'
                 fr'        AND NOT problem.is_deleted'

@@ -6,7 +6,7 @@ from base.popo import Filter, Sorter
 from util.context import context
 
 from . import peer_review, problem
-from .base import SafeConnection, OnlyExecute, FetchOne, FetchAll, ParamDict
+from .base import AutoTxConnection, OnlyExecute, FetchOne, FetchAll, ParamDict
 from .util import execute_count, compile_filters
 
 
@@ -150,9 +150,9 @@ async def edit(challenge_id: int,
 async def delete(challenge_id: int) -> None:
     async with OnlyExecute(
             event='soft delete challenge',
-            sql=fr'UPDATE challenge'
-                fr'   SET is_deleted = %(is_deleted)s'
-                fr' WHERE id = %(challenge_id)s',
+            sql=r'UPDATE challenge'
+                r'   SET is_deleted = %(is_deleted)s'
+                r' WHERE id = %(challenge_id)s',
             challenge_id=challenge_id,
             is_deleted=True,
     ):
@@ -160,14 +160,13 @@ async def delete(challenge_id: int) -> None:
 
 
 async def delete_cascade(challenge_id: int) -> None:
-    async with SafeConnection(event=f'cascade delete from challenge {challenge_id=}',
-                              auto_transaction=True) as conn:
+    async with AutoTxConnection(event=f'cascade delete from challenge {challenge_id=}') as conn:
         await peer_review.delete_cascade_from_challenge(challenge_id=challenge_id, cascading_conn=conn)
         await problem.delete_cascade_from_challenge(challenge_id=challenge_id, cascading_conn=conn)
 
-        await conn.execute(fr'UPDATE challenge'
-                           fr'   SET is_deleted = $1'
-                           fr' WHERE id = $2',
+        await conn.execute(r'UPDATE challenge'
+                           r'   SET is_deleted = $1'
+                           r' WHERE id = $2',
                            True, challenge_id)
 
 
@@ -176,8 +175,7 @@ async def delete_cascade_from_class(class_id: int, cascading_conn=None) -> None:
         await _delete_cascade_from_class(class_id, conn=cascading_conn)
         return
 
-    async with SafeConnection(event=f'cascade delete challenge from class {class_id=}',
-                              auto_transaction=True) as conn:
+    async with AutoTxConnection(event=f'cascade delete challenge from class {class_id=}') as conn:
         await _delete_cascade_from_class(class_id, conn=conn)
 
 

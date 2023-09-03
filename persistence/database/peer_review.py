@@ -2,7 +2,7 @@ from typing import Sequence
 
 from base import do
 
-from .base import SafeConnection, FetchOne, FetchAll, OnlyExecute, ParamDict
+from .base import AutoTxConnection, FetchOne, FetchAll, OnlyExecute, ParamDict
 
 
 async def add(challenge_id: int, challenge_label: str, title: str, target_problem_id: int,
@@ -127,9 +127,9 @@ async def edit(peer_review_id: int, challenge_label: str = None, title: str = No
 async def delete(peer_review_id: int) -> None:
     async with OnlyExecute(
             event='soft delete peer_review',
-            sql=fr'UPDATE peer_review'
-                fr'   SET is_deleted = %(is_deleted)s'
-                fr' WHERE id = %(peer_review_id)s',
+            sql=r'UPDATE peer_review'
+                r'   SET is_deleted = %(is_deleted)s'
+                r' WHERE id = %(peer_review_id)s',
             peer_review_id=peer_review_id,
             is_deleted=True,
     ):
@@ -141,8 +141,7 @@ async def delete_cascade_from_challenge(challenge_id: int, cascading_conn=None) 
         await _delete_cascade_from_challenge(challenge_id, conn=cascading_conn)
         return
 
-    async with SafeConnection(event=f'cascade delete peer_review from challenge {challenge_id=}',
-                              auto_transaction=True) as conn:
+    async with AutoTxConnection(event=f'cascade delete peer_review from challenge {challenge_id=}') as conn:
         await _delete_cascade_from_challenge(challenge_id, conn=conn)
 
 

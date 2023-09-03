@@ -3,7 +3,7 @@ from uuid import UUID
 
 from base import do
 
-from .base import SafeConnection, OnlyExecute, FetchAll, FetchOne, ParamDict
+from .base import AutoTxConnection, OnlyExecute, FetchAll, FetchOne, ParamDict
 
 
 async def add(problem_id: int, is_sample: bool, score: int, label: Optional[str], input_file_uuid: Optional[UUID],
@@ -126,10 +126,10 @@ async def edit(testcase_id: int,
 async def disable_enable_testcase_by_problem(problem_id: int, testcase_disabled: bool, is_sample=False) -> None:
     async with OnlyExecute(
             event='disable or enable testcase by problem',
-            sql=fr'UPDATE testcase'
-                fr'   SET is_disabled = %(is_disabled)s'
-                fr' WHERE problem_id = %(problem_id)s'
-                fr'   AND is_sample = %(is_sample)s',
+            sql=r'UPDATE testcase'
+                r'   SET is_disabled = %(is_disabled)s'
+                r' WHERE problem_id = %(problem_id)s'
+                r'   AND is_sample = %(is_sample)s',
             is_disabled=testcase_disabled,
             problem_id=problem_id, is_sample=is_sample,
     ):
@@ -139,9 +139,9 @@ async def disable_enable_testcase_by_problem(problem_id: int, testcase_disabled:
 async def delete(testcase_id: int) -> None:
     async with OnlyExecute(
             event='soft delete testcase',
-            sql=fr'UPDATE testcase'
-                fr'   SET is_deleted = %(is_deleted)s'
-                fr' WHERE id = %(testcase_id)s',
+            sql=r'UPDATE testcase'
+                r'   SET is_deleted = %(is_deleted)s'
+                r' WHERE id = %(testcase_id)s',
             testcase_id=testcase_id,
             is_deleted=True,
     ):
@@ -151,9 +151,9 @@ async def delete(testcase_id: int) -> None:
 async def delete_input_data(testcase_id: int) -> None:
     async with OnlyExecute(
             event='delete testcase input data',
-            sql=fr'UPDATE testcase'
-                fr'   SET input_file_uuid = NULL'
-                fr' WHERE id = %(testcase_id)s',
+            sql=r'UPDATE testcase'
+                r'   SET input_file_uuid = NULL'
+                r' WHERE id = %(testcase_id)s',
             testcase_id=testcase_id,
     ):
         pass
@@ -162,9 +162,9 @@ async def delete_input_data(testcase_id: int) -> None:
 async def delete_output_data(testcase_id: int) -> None:
     async with OnlyExecute(
             event='delete testcase output data',
-            sql=fr'UPDATE testcase'
-                fr'   SET output_file_uuid = NULL'
-                fr' WHERE id = %(testcase_id)s',
+            sql=r'UPDATE testcase'
+                r'   SET output_file_uuid = NULL'
+                r' WHERE id = %(testcase_id)s',
             testcase_id=testcase_id,
     ):
         pass
@@ -175,8 +175,7 @@ async def delete_cascade_from_problem(problem_id: int, cascading_conn=None) -> N
         await _delete_cascade_from_problem(problem_id, conn=cascading_conn)
         return
 
-    async with SafeConnection(event=f'cascade delete testcase from problem {problem_id=}',
-                              auto_transaction=True) as conn:
+    async with AutoTxConnection(event=f'cascade delete testcase from problem {problem_id=}') as conn:
         await _delete_cascade_from_problem(problem_id, conn=conn)
 
 

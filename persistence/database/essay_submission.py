@@ -64,9 +64,9 @@ async def browse_with_essay_id(essay_id: int, include_deleted=False) \
 async def read(essay_submission_id: int) -> do.EssaySubmission:
     async with FetchOne(
             event='read essay_submission',
-            sql=fr'SELECT id, account_id, essay_id, content_file_uuid, filename, submit_time'
-                fr'  FROM essay_submission'
-                fr' WHERE id = %(essay_submission_id)s',
+            sql=r'SELECT id, account_id, essay_id, content_file_uuid, filename, submit_time'
+                r'  FROM essay_submission'
+                r' WHERE id = %(essay_submission_id)s',
             essay_submission_id=essay_submission_id,
     ) as (id_, account_id, essay_id, content_file_uuid, filename, submit_time):
         return do.EssaySubmission(id=id_, account_id=account_id, essay_id=essay_id,
@@ -76,10 +76,10 @@ async def read(essay_submission_id: int) -> do.EssaySubmission:
 async def add(account_id: int, essay_id: int, content_file_uuid: UUID, filename: str, submit_time: datetime) -> int:
     async with FetchOne(
             event='add essay-submission',
-            sql=fr"INSERT INTO essay_submission"
-                fr"            (account_id, essay_id, content_file_uuid, filename, submit_time)"
-                fr"     VALUES (%(account_id)s, %(essay_id)s, %(content_file_uuid)s, %(filename)s, %(submit_time)s)"
-                fr"  RETURNING id",
+            sql=r"INSERT INTO essay_submission"
+                r"            (account_id, essay_id, content_file_uuid, filename, submit_time)"
+                r"     VALUES (%(account_id)s, %(essay_id)s, %(content_file_uuid)s, %(filename)s, %(submit_time)s)"
+                r"  RETURNING id",
             account_id=account_id, essay_id=essay_id, content_file_uuid=content_file_uuid,
             filename=filename, submit_time=submit_time,
     ) as (essay_submission_id, ):
@@ -89,10 +89,10 @@ async def add(account_id: int, essay_id: int, content_file_uuid: UUID, filename:
 async def edit(essay_submission_id: int, content_file_uuid: UUID, filename: str, submit_time: datetime) -> None:
     async with OnlyExecute(
             event='update essay_submission by id',
-            sql=fr"UPDATE essay_submission"
-                fr"   SET content_file_uuid = %(content_file_uuid)s, filename = %(filename)s,"
+            sql=r"UPDATE essay_submission"
+                r"   SET content_file_uuid = %(content_file_uuid)s, filename = %(filename)s,"
                   "                           submit_time = %(submit_time)s"
-                fr" WHERE id = %(essay_submission_id)s",
+                r" WHERE id = %(essay_submission_id)s",
             content_file_uuid=content_file_uuid, filename=filename, submit_time=submit_time,
             essay_submission_id=essay_submission_id,
     ):
@@ -109,23 +109,23 @@ async def browse_by_essay_class_members(essay_id: int) -> dict[int, do.EssaySubm
 
     async with FetchAll(
             event='browse essay submission by essay class members',
-            sql=fr'SELECT DISTINCT ON (class_member.member_id)'
-                fr'       class_member.member_id,'
-                fr'       essay_submission.id, essay_submission.account_id, essay_submission.essay_id,'
-                fr'       essay_submission.content_file_uuid, essay_submission.filename, essay_submission.submit_time'
-                fr'  FROM class_member'
-                fr' INNER JOIN challenge'
-                fr'         ON challenge.class_id = class_member.class_id'
-                fr'        AND NOT challenge.is_deleted'
-                fr' INNER JOIN essay'
-                fr'         ON essay.challenge_id = challenge.id'
-                fr'        AND NOT essay.is_deleted'
-                fr'        AND essay.id = %(essay_id)s'
-                fr' INNER JOIN essay_submission'
-                fr'         ON essay_submission.essay_id = essay.id'
-                fr'        AND essay_submission.account_id = class_member.member_id'
-                fr'        AND essay_submission.submit_time <= challenge.end_time'
-                fr' ORDER BY class_member.member_id, essay_submission.submit_time DESC, essay_submission.id DESC',
+            sql=r'SELECT DISTINCT ON (class_member.member_id)'
+                r'       class_member.member_id,'
+                r'       essay_submission.id, essay_submission.account_id, essay_submission.essay_id,'
+                r'       essay_submission.content_file_uuid, essay_submission.filename, essay_submission.submit_time'
+                r'  FROM class_member'
+                r' INNER JOIN challenge'
+                r'         ON challenge.class_id = class_member.class_id'
+                r'        AND NOT challenge.is_deleted'
+                r' INNER JOIN essay'
+                r'         ON essay.challenge_id = challenge.id'
+                r'        AND NOT essay.is_deleted'
+                r'        AND essay.id = %(essay_id)s'
+                r' INNER JOIN essay_submission'
+                r'         ON essay_submission.essay_id = essay.id'
+                r'        AND essay_submission.account_id = class_member.member_id'
+                r'        AND essay_submission.submit_time <= challenge.end_time'
+                r' ORDER BY class_member.member_id, essay_submission.submit_time DESC, essay_submission.id DESC',
             essay_id=essay_id,
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:

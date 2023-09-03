@@ -10,7 +10,7 @@ from base import do
 from base.enum import RoleType, FilterOperator
 from base.popo import Filter, Sorter
 
-from .base import SafeConnection, FetchOne, FetchAll, OnlyExecute, ParamDict
+from .base import AutoTxConnection, FetchOne, FetchAll, OnlyExecute, ParamDict
 from .util import execute_count, compile_filters, compile_values
 from .account import account_referral_to_id
 
@@ -75,7 +75,7 @@ async def browse_with_team_label_filter(class_id: int, team_label_filter: str = 
                 fr'  FROM team'
                 fr' INNER JOIN class'
                 fr'         ON class.id = team.class_id'
-                fr'{f"   WHERE team.label ~ %(team_label_filter)s" if team_label_filter else ""}'
+                fr'{"   WHERE team.label ~ %(team_label_filter)s" if team_label_filter else ""}'
                 fr'   AND class.id = %(class_id)s'
                 fr'   AND NOT team.is_deleted',
             team_label_filter=team_label_filter,
@@ -130,9 +130,9 @@ async def edit(team_id: int, name: str = None, class_id: int = None, label: str 
 async def delete(team_id: int) -> None:
     async with OnlyExecute(
             event='soft delete team',
-            sql=fr'UPDATE team'
-                fr'   SET is_deleted = %(is_deleted)s'
-                fr' WHERE id = %(team_id)s',
+            sql=r'UPDATE team'
+                r'   SET is_deleted = %(is_deleted)s'
+                r' WHERE id = %(team_id)s',
             team_id=team_id,
             is_deleted=True,
     ):
@@ -144,8 +144,7 @@ async def delete_cascade_from_class(class_id: int, cascading_conn=None) -> None:
         await _delete_cascade_from_class(class_id, conn=cascading_conn)
         return
 
-    async with SafeConnection(event=f'cascade delete team from class {class_id=}',
-                              auto_transaction=True) as conn:
+    async with AutoTxConnection(event=f'cascade delete team from class {class_id=}') as conn:
         await _delete_cascade_from_class(class_id, conn=conn)
 
 
@@ -162,10 +161,10 @@ async def _delete_cascade_from_class(class_id: int, conn) -> None:
 async def browse_members(team_id: int) -> Sequence[do.TeamMember]:
     async with FetchAll(
             event='get team members id',
-            sql=fr'SELECT member_id, team_id, role'
-                fr'  FROM team_member'
-                fr' WHERE team_id = %(team_id)s'
-                fr' ORDER BY role DESC',
+            sql=r'SELECT member_id, team_id, role'
+                r'  FROM team_member'
+                r' WHERE team_id = %(team_id)s'
+                r' ORDER BY role DESC',
             team_id=team_id,
             raise_not_found=False,  # Issue #134: return [] for browse
     ) as records:
@@ -188,9 +187,9 @@ async def read_member(team_id: int, member_id: int) -> do.TeamMember:
 async def add_member(team_id: int, account_referral: str, role: RoleType):
     async with OnlyExecute(
             event='add team member',
-            sql=fr'INSERT INTO team_member'
-                fr'            (team_id, member_id, role)'
-                fr'     VALUES (%(team_id)s, account_referral_to_id(%(account_referral)s), %(role)s)',
+            sql=r'INSERT INTO team_member'
+                r'            (team_id, member_id, role)'
+                r'     VALUES (%(team_id)s, account_referral_to_id(%(account_referral)s), %(role)s)',
             team_id=team_id, account_referral=account_referral, role=role,
     ):
         pass
@@ -203,8 +202,7 @@ async def add_members(team_id: int, member_roles: Sequence[Tuple[str, RoleType]]
     if not member_roles:
         return []
 
-    async with SafeConnection(event=f'add members to team {team_id=}',
-                              auto_transaction=True) as conn:
+    async with AutoTxConnection(event=f'add members to team {team_id=}') as conn:
         # 1. get the referrals
         value_sql, value_params = compile_values([
             (account_referral,)
@@ -248,28 +246,27 @@ async def add_members(team_id: int, member_roles: Sequence[Tuple[str, RoleType]]
 
 async def add_team_and_add_member(class_id: int, team_label: str,
                                   datas: Sequence[tuple[str, Sequence[tuple[str, RoleType]]]]):
-    async with SafeConnection(event='add member with team name',
-                              auto_transaction=True) as conn:
+    async with AutoTxConnection(event='add member with team name') as conn:
         try:
             for team_name, member_roles in datas:
                 (team_id,) = await conn.fetchrow(
-                    fr'WITH get AS ('
-                    fr'     SELECT id'
-                    fr'       FROM team'
-                    fr'      WHERE team.name = $1'
-                    fr'        AND team.class_id = $2'
-                    fr'        AND team.label = $3'
-                    fr'        AND is_deleted = $4'
-                    fr'), new_team AS ('
-                    fr'     INSERT INTO team'
-                    fr'                 (name, class_id, label)'
-                    fr'          VALUES ($1, $2, $3)'
-                    fr'     ON CONFLICT DO NOTHING'
-                    fr'     RETURNING id'
-                    fr')'
-                    fr'SELECT id FROM get'
-                    fr' UNION ALL'
-                    fr' SELECT id FROM new_team',
+                    r'WITH get AS ('
+                    r'     SELECT id'
+                    r'       FROM team'
+                    r'      WHERE team.name = $1'
+                    r'        AND team.class_id = $2'
+                    r'        AND team.label = $3'
+                    r'        AND is_deleted = $4'
+                    r'), new_team AS ('
+                    r'     INSERT INTO team'
+                    r'                 (name, class_id, label)'
+                    r'          VALUES ($1, $2, $3)'
+                    r'     ON CONFLICT DO NOTHING'
+                    r'     RETURNING id'
+                    r')'
+                    r'SELECT id FROM get'
+                    r' UNION ALL'
+                    r' SELECT id FROM new_team',
                     team_name, class_id, team_label, False,
                 )
 
