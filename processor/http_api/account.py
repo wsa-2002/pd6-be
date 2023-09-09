@@ -323,4 +323,7 @@ async def browse_all_account_pending_email_verification(account_id: int) \
             or context.account.id == account_id):
         raise exc.NoPermission
 
-    return await db.email_verification.browse(account_id=account_id)
+    email_verifications = await db.email_verification.browse(account_id=account_id)
+
+    # issue 353: temp fix
+    return [ev for ev in email_verifications if ev.student_id]
