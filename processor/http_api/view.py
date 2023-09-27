@@ -340,7 +340,7 @@ async def view_browse_class_grade(class_id: int,
         grades, total_count = await db.view.grade(limit=limit, offset=offset, filters=filters, sorters=sorters)
         return ViewGradeOutput(grades, total_count=total_count)
     else:  # Self
-        filters.append(popo.Filter(col_name='account_id',
+        filters.append(popo.Filter(col_name='grade.receiver_id',
                                    op=FilterOperator.eq,
                                    value=context.account.id))
 
