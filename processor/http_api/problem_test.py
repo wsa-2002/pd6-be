@@ -896,10 +896,10 @@ class TestAddAssistingDataUnderProblem(unittest.IsolatedAsyncioTestCase):
             ).returns(True)
 
             s3_assisting_data.async_func('upload').call_with(
-                file=self.assisting_data.file,
+                file=mock.AnyInstanceOf(type(self.assisting_data.file)),
             ).returns(self.s3_file)
             db_s3_file.async_func('add_with_do').call_with(
-                s3_file=self.s3_file,
+                s3_file=mock.AnyInstanceOf(type(self.s3_file)),
             ).returns(self.s3_file.uuid)
 
             db_assisting_data.async_func('add').call_with(
@@ -982,7 +982,7 @@ class TestDownloadAllAssistingData(unittest.IsolatedAsyncioTestCase):
                 todo_async_task = async_task
 
             util_background_task.func('launch').call_with(
-                self.background_tasks, mock.AnyInstanceOf(object),
+                mock.AnyInstanceOf(type(self.background_tasks)), mock.AnyInstanceOf(object),
             ).executes(_set_task)
 
             result = await mock.unwrap(problem.download_all_assisting_data)(problem_id=self.problem_id,
@@ -1082,7 +1082,7 @@ class TestDownloadAllSampleTestcase(unittest.IsolatedAsyncioTestCase):
                 todo_async_task = async_task
 
             util_background_task.func('launch').call_with(
-                self.background_tasks, mock.AnyInstanceOf(object),
+                mock.AnyInstanceOf(type(self.background_tasks)), mock.AnyInstanceOf(object),
             ).executes(_set_task)
 
             result = await mock.unwrap(problem.download_all_sample_testcase)(problem_id=self.problem_id,
@@ -1182,7 +1182,7 @@ class TestDownloadAllNonSampleTestcase(unittest.IsolatedAsyncioTestCase):
                 todo_async_task = async_task
 
             util_background_task.func('launch').call_with(
-                self.background_tasks, mock.AnyInstanceOf(object),
+                mock.AnyInstanceOf(type(self.background_tasks)), mock.AnyInstanceOf(object),
             ).executes(_set_task)
 
             result = await mock.unwrap(problem.download_all_non_sample_testcase)(problem_id=self.problem_id,

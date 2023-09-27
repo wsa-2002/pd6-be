@@ -25,8 +25,8 @@ class TestAddChallengeUnderClass(unittest.IsolatedAsyncioTestCase):
             selection_type=enum.TaskSelectionType.best,
             title="title",
             description="description",
-            start_time=datetime(2023, 7, 29),
-            end_time=datetime(2023, 7, 30),
+            start_time=model.ServerTZDatetime(2023, 7, 29),
+            end_time=model.ServerTZDatetime(2023, 7, 30),
         )
         self.data_end_before_start = copy.deepcopy(self.data)
         self.data_end_before_start.end_time = datetime(2023, 7, 28)
@@ -100,15 +100,15 @@ class TestBrowseChallengeUnderClass(unittest.IsolatedAsyncioTestCase):
         self.class_id = 1
         self.limit = model.Limit(20)
         self.offset = model.Offset(0)
-        self.filter = model.FilterStr
-        self.sort = model.SorterStr
+        self.filter_str = '[["content", "LIKE", "abcd"]]'
+        self.sorter_str = '[]'
 
-        self.filters = [["content", "LIKE", "abcd"]]
-        self.filters_before_append = self.filters
+        self.filters = [popo.Filter(col_name='content', op=enum.FilterOperator.eq, value='abcd')]
+        self.filters_before_append = copy.deepcopy(self.filters)
         self.filters.append(popo.Filter(col_name='class_id',
                                         op=enum.FilterOperator.eq,
                                         value=self.class_id))
-        self.sorters = [['id']]
+        self.sorters = []
 
         self.challenges = [
             do.Challenge(
@@ -159,10 +159,10 @@ class TestBrowseChallengeUnderClass(unittest.IsolatedAsyncioTestCase):
                 self.account.id, class_id=self.class_id,
             ).returns(enum.RoleType.manager)
             controller.mock_global_func('util.model.parse_filter').call_with(
-                self.filter, challenge.BROWSE_CHALLENGE_COLUMNS,
+                self.filter_str, challenge.BROWSE_CHALLENGE_COLUMNS,
             ).returns(self.filters_before_append)
             controller.mock_global_func('util.model.parse_sorter').call_with(
-                self.sort, challenge.BROWSE_CHALLENGE_COLUMNS,
+                self.sorter_str, challenge.BROWSE_CHALLENGE_COLUMNS,
             ).returns(self.sorters)
             db_challenge.async_func('browse').call_with(
                 limit=self.limit, offset=self.offset, filters=self.filters,
@@ -175,7 +175,7 @@ class TestBrowseChallengeUnderClass(unittest.IsolatedAsyncioTestCase):
             )
 
             result = await mock.unwrap(challenge.browse_challenge_under_class)(self.class_id, self.limit, self.offset,
-                                                                               self.filter, self.sort)
+                                                                               self.filter_str, self.sorter_str)
 
         self.assertEqual(result, self.expected_happy_flow_result)
 
@@ -197,10 +197,10 @@ class TestBrowseChallengeUnderClass(unittest.IsolatedAsyncioTestCase):
                 self.account.id, class_id=self.class_id,
             ).returns(enum.RoleType.normal)
             controller.mock_global_func('util.model.parse_filter').call_with(
-                self.filter, challenge.BROWSE_CHALLENGE_COLUMNS,
+                self.filter_str, challenge.BROWSE_CHALLENGE_COLUMNS,
             ).returns(self.filters_before_append)
             controller.mock_global_func('util.model.parse_sorter').call_with(
-                self.sort, challenge.BROWSE_CHALLENGE_COLUMNS,
+                self.sorter_str, challenge.BROWSE_CHALLENGE_COLUMNS,
             ).returns(self.sorters)
             db_challenge.async_func('browse').call_with(
                 limit=self.limit, offset=self.offset, filters=self.filters,
@@ -213,7 +213,7 @@ class TestBrowseChallengeUnderClass(unittest.IsolatedAsyncioTestCase):
             )
 
             result = await mock.unwrap(challenge.browse_challenge_under_class)(self.class_id, self.limit, self.offset,
-                                                                               self.filter, self.sort)
+                                                                               self.filter_str, self.sorter_str)
 
         self.assertEqual(result, self.expected_happy_flow_result)
 
@@ -235,10 +235,10 @@ class TestBrowseChallengeUnderClass(unittest.IsolatedAsyncioTestCase):
                 self.account.id, class_id=self.class_id,
             ).returns(None)
             controller.mock_global_func('util.model.parse_filter').call_with(
-                self.filter, challenge.BROWSE_CHALLENGE_COLUMNS,
+                self.filter_str, challenge.BROWSE_CHALLENGE_COLUMNS,
             ).returns(self.filters_before_append)
             controller.mock_global_func('util.model.parse_sorter').call_with(
-                self.sort, challenge.BROWSE_CHALLENGE_COLUMNS,
+                self.sorter_str, challenge.BROWSE_CHALLENGE_COLUMNS,
             ).returns(self.sorters)
             db_challenge.async_func('browse').call_with(
                 limit=self.limit, offset=self.offset, filters=self.filters,
@@ -251,7 +251,7 @@ class TestBrowseChallengeUnderClass(unittest.IsolatedAsyncioTestCase):
             )
 
             result = await mock.unwrap(challenge.browse_challenge_under_class)(self.class_id, self.limit, self.offset,
-                                                                               self.filter, self.sort)
+                                                                               self.filter_str, self.sorter_str)
 
         self.assertEqual(result, self.expected_happy_flow_result)
 
@@ -274,7 +274,7 @@ class TestBrowseChallengeUnderClass(unittest.IsolatedAsyncioTestCase):
 
             with self.assertRaises(exc.NoPermission):
                 await mock.unwrap(challenge.browse_challenge_under_class)(self.class_id, self.limit, self.offset,
-                                                                          self.filter, self.sort)
+                                                                          self.filter_str, self.sorter_str)
 
 
 class TestReadChallenge(unittest.IsolatedAsyncioTestCase):
@@ -426,8 +426,8 @@ class TestEditChallenge(unittest.IsolatedAsyncioTestCase):
             selection_type=enum.TaskSelectionType.best,
             title="title",
             description="desc",
-            start_time=datetime(2023, 7, 29),
-            end_time=datetime(2023, 7, 30),
+            start_time=model.ServerTZDatetime(2023, 7, 29),
+            end_time=model.ServerTZDatetime(2023, 7, 30),
         )
 
     async def test_happy_flow_challenge_publicized(self):
@@ -1680,7 +1680,7 @@ class TestDownloadAllSubmissions(unittest.IsolatedAsyncioTestCase):
                 todo_async_task = async_task
 
             util_background_task.func('launch').call_with(
-                self.background_tasks, mock.AnyInstanceOf(object),
+                mock.AnyInstanceOf(type(self.background_tasks)), mock.AnyInstanceOf(object),
             ).executes(_set_task)
 
             result = await mock.unwrap(challenge.download_all_submissions)(challenge_id=self.challenge.id,
@@ -1745,7 +1745,7 @@ class TestDownloadAllSubmissions(unittest.IsolatedAsyncioTestCase):
                 todo_async_task = async_task
 
             util_background_task.func('launch').call_with(
-                self.background_tasks, mock.AnyInstanceOf(object),
+                mock.AnyInstanceOf(type(self.background_tasks)), mock.AnyInstanceOf(object),
             ).executes(_set_task)
 
             result = await mock.unwrap(challenge.download_all_submissions)(challenge_id=self.challenge.id,
@@ -1806,7 +1806,7 @@ class TestDownloadAllSubmissions(unittest.IsolatedAsyncioTestCase):
                 todo_async_task = async_task
 
             util_background_task.func('launch').call_with(
-                self.background_tasks, mock.AnyInstanceOf(object),
+                mock.AnyInstanceOf(type(self.background_tasks)), mock.AnyInstanceOf(object),
             ).executes(_set_task)
 
             result = await mock.unwrap(challenge.download_all_submissions)(challenge_id=self.challenge.id,
@@ -1933,7 +1933,7 @@ class TestDownloadAllAssistingData(unittest.IsolatedAsyncioTestCase):
                 todo_async_task = async_task
 
             util_background_task.func('launch').call_with(
-                self.background_tasks, mock.AnyInstanceOf(object),
+                mock.AnyInstanceOf(type(self.background_tasks)), mock.AnyInstanceOf(object),
             ).executes(_set_task)
 
             result = await mock.unwrap(challenge.download_all_submissions)(challenge_id=self.challenge.id,
@@ -1998,7 +1998,7 @@ class TestDownloadAllAssistingData(unittest.IsolatedAsyncioTestCase):
                 todo_async_task = async_task
 
             util_background_task.func('launch').call_with(
-                self.background_tasks, mock.AnyInstanceOf(object),
+                mock.AnyInstanceOf(type(self.background_tasks)), mock.AnyInstanceOf(object),
             ).executes(_set_task)
 
             result = await mock.unwrap(challenge.download_all_submissions)(challenge_id=self.challenge.id,
@@ -2059,7 +2059,7 @@ class TestDownloadAllAssistingData(unittest.IsolatedAsyncioTestCase):
                 todo_async_task = async_task
 
             util_background_task.func('launch').call_with(
-                self.background_tasks, mock.AnyInstanceOf(object),
+                mock.AnyInstanceOf(type(self.background_tasks)), mock.AnyInstanceOf(object),
             ).executes(_set_task)
 
             result = await mock.unwrap(challenge.download_all_submissions)(challenge_id=self.challenge.id,
@@ -2228,7 +2228,7 @@ class TestDownloadAllPlagiarismReports(unittest.IsolatedAsyncioTestCase):
                 todo_async_task = async_task
 
             util_background_task.func('launch').call_with(
-                self.background_tasks, mock.AnyInstanceOf(object),
+                mock.AnyInstanceOf(type(self.background_tasks)), mock.AnyInstanceOf(object),
             ).executes(_set_task)
 
             result = await mock.unwrap(challenge.download_all_plagiarism_reports)(
@@ -2313,7 +2313,7 @@ class TestDownloadAllPlagiarismReports(unittest.IsolatedAsyncioTestCase):
                 todo_async_task = async_task
 
             util_background_task.func('launch').call_with(
-                self.background_tasks, mock.AnyInstanceOf(object),
+                mock.AnyInstanceOf(type(self.background_tasks)), mock.AnyInstanceOf(object),
             ).executes(_set_task)
 
             result = await mock.unwrap(challenge.download_all_plagiarism_reports)(
@@ -2389,7 +2389,7 @@ class TestDownloadAllPlagiarismReports(unittest.IsolatedAsyncioTestCase):
                 todo_async_task = async_task
 
             util_background_task.func('launch').call_with(
-                self.background_tasks, mock.AnyInstanceOf(object),
+                mock.AnyInstanceOf(type(self.background_tasks)), mock.AnyInstanceOf(object),
             ).executes(_set_task)
 
             result = await mock.unwrap(challenge.download_all_plagiarism_reports)(

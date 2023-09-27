@@ -1,4 +1,5 @@
 import contextlib
+from copy import deepcopy
 import typing
 from unittest.mock import patch, Mock, AsyncMock
 
@@ -63,7 +64,9 @@ class MockFunction:
         return f'<{self.__class__.__name__} {self}>'
 
     def call_with(self, *args, **kwargs) -> CallRecorder:
-        return CallRecorder(self._module, CallRecord(self._mock, args, kwargs, None))
+        copy_args = deepcopy(args)
+        copy_kwargs = deepcopy(kwargs)
+        return CallRecorder(self._module, CallRecord(self._mock, copy_args, copy_kwargs, None))
 
     def _prepare_mock_call(self) -> typing.ContextManager:
         @contextlib.contextmanager

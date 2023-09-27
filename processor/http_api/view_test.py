@@ -1,8 +1,10 @@
+from copy import deepcopy
 import unittest
 from datetime import datetime
 
-from base import enum, vo
+from base import enum, vo, popo
 from util import mock, security, model
+from util.model import FilterOperator
 import exceptions as exc
 
 from . import view
@@ -15,10 +17,10 @@ class TestViewBrowseAccountWithDefaultStudentId(unittest.IsolatedAsyncioTestCase
 
         self.limit = model.Limit(10)
         self.offset = model.Offset(0)
-        self.filter_str = model.FilterStr
-        self.sorter_str = model.SorterStr
-        self.filters = [["username", "LIKE", "abcd"]]
-        self.sorters = [['account_id', "DESC"]]
+        self.filter_str = '[["username", "LIKE", "abcd"]]'
+        self.sorter_str = '[["account_id", "DESC"]]'
+        self.filters = [popo.Filter(col_name='username', op=model.FilterOperator.like, value='abcd')]
+        self.sorters = [popo.Sorter(col_name="account_id", order=enum.SortOrder.desc)]
 
         self.expected_output_data = [
             vo.ViewAccount(
@@ -108,10 +110,15 @@ class TestViewBrowseClassMember(unittest.IsolatedAsyncioTestCase):
 
         self.limit = model.Limit(10)
         self.offset = model.Offset(0)
-        self.filter_str = model.FilterStr
-        self.sorter_str = model.SorterStr
-        self.filters = [["username", "LIKE", "abcd"]]
-        self.sorters = [['account_id', "DESC"]]
+        self.filter_str = '[["username", "LIKE", "abcd"]]'
+        self.sorter_str = '[["account_id", "DESC"]]'
+        self.filters = [popo.Filter(col_name='username', op=model.FilterOperator.like, value='abcd')]
+        self.sorters = [popo.Sorter(col_name="account_id", order=enum.SortOrder.desc)]
+
+        self.filters_after_append = deepcopy(self.filters)
+        self.filters_after_append.append(popo.Filter(col_name='class_id',
+                                                     op=FilterOperator.eq,
+                                                     value=self.class_id))
 
         self.expected_output_data = [
             vo.ViewClassMember(
@@ -164,7 +171,7 @@ class TestViewBrowseClassMember(unittest.IsolatedAsyncioTestCase):
             db_view.async_func('class_member').call_with(
                 limit=self.limit,
                 offset=self.offset,
-                filters=self.filters,
+                filters=self.filters_after_append,
                 sorters=self.sorters,
             ).returns((self.expected_output_data, self.expected_output_total_count))
 
@@ -206,7 +213,7 @@ class TestViewBrowseClassMember(unittest.IsolatedAsyncioTestCase):
             db_view.async_func('class_member').call_with(
                 limit=self.limit,
                 offset=self.offset,
-                filters=self.filters,
+                filters=self.filters_after_append,
                 sorters=self.sorters,
             ).returns((self.expected_output_data, self.expected_output_total_count))
 
@@ -255,10 +262,10 @@ class TestViewBrowseSubmissionUnderClass(unittest.IsolatedAsyncioTestCase):
 
         self.limit = model.Limit(10)
         self.offset = model.Offset(0)
-        self.filter_str = model.FilterStr
-        self.sorter_str = model.SorterStr
-        self.filters = [["username", "LIKE", "abcd"]]
-        self.sorters = [['account_id', "DESC"]]
+        self.filter_str = '[["username", "LIKE", "abcd"]]'
+        self.sorter_str = '[["account_id", "DESC"]]'
+        self.filters = [popo.Filter(col_name='username', op=model.FilterOperator.like, value='abcd')]
+        self.sorters = [popo.Sorter(col_name="account_id", order=enum.SortOrder.desc)]
 
         self.expected_output_data = [
             vo.ViewSubmissionUnderClass(
@@ -368,10 +375,15 @@ class TestViewBrowseSubmission(unittest.IsolatedAsyncioTestCase):
 
         self.limit = model.Limit(10)
         self.offset = model.Offset(0)
-        self.filter_str = model.FilterStr
-        self.sorter_str = model.SorterStr
-        self.filters = [["course_name", "LIKE", "abcd"]]
-        self.sorters = [['class_id', "DESC"]]
+        self.filter_str = '[["username", "LIKE", "abcd"]]'
+        self.sorter_str = '[["account_id", "DESC"]]'
+        self.filters = [popo.Filter(col_name='username', op=model.FilterOperator.like, value='abcd')]
+        self.sorters = [popo.Sorter(col_name="account_id", order=enum.SortOrder.desc)]
+
+        self.filters_after_append = deepcopy(self.filters)
+        self.filters_after_append.append(popo.Filter(col_name='account_id',
+                                                     op=FilterOperator.eq,
+                                                     value=self.login_account.id))
 
         self.expected_output_data = [
             vo.ViewMySubmission(
@@ -429,7 +441,7 @@ class TestViewBrowseSubmission(unittest.IsolatedAsyncioTestCase):
             db_view.async_func('my_submission').call_with(
                 limit=self.limit,
                 offset=self.offset,
-                filters=self.filters,
+                filters=self.filters_after_append,
                 sorters=self.sorters,
             ).returns((self.expected_output_data, self.expected_output_total_count))
 
@@ -469,10 +481,18 @@ class TestViewBrowseMySubmissionUnderProblem(unittest.IsolatedAsyncioTestCase):
 
         self.limit = model.Limit(10)
         self.offset = model.Offset(0)
-        self.filter_str = model.FilterStr
-        self.sorter_str = model.SorterStr
-        self.filters = [["score", ">", 80]]
-        self.sorters = [['account_id', "DESC"]]
+        self.filter_str = '[["score", ">", 80]]'
+        self.sorter_str = '[["account_id", "DESC"]]'
+        self.filters = [popo.Filter(col_name='score', op=FilterOperator.eq, value=self.login_account.id)]
+        self.sorters = [popo.Sorter(col_name='account_id', order=enum.SortOrder.desc)]
+
+        self.filters_after_append = deepcopy(self.filters)
+        self.filters_after_append.append(popo.Filter(col_name='account_id',
+                                                     op=FilterOperator.eq,
+                                                     value=self.login_account.id))
+        self.filters_after_append.append(popo.Filter(col_name='problem_id',
+                                                     op=FilterOperator.eq,
+                                                     value=self.problem_id))
 
         self.expected_output_data = [
             vo.ViewMySubmissionUnderProblem(
@@ -524,7 +544,7 @@ class TestViewBrowseMySubmissionUnderProblem(unittest.IsolatedAsyncioTestCase):
             db_view.async_func('my_submission_under_problem').call_with(
                 limit=self.limit,
                 offset=self.offset,
-                filters=self.filters,
+                filters=self.filters_after_append,
                 sorters=self.sorters,
             ).returns((self.expected_output_data, self.expected_output_total_count))
 
@@ -565,10 +585,15 @@ class TestViewBrowseProblemSetUnderClass(unittest.IsolatedAsyncioTestCase):
 
         self.limit = model.Limit(10)
         self.offset = model.Offset(0)
-        self.filter_str = model.FilterStr
-        self.sorter_str = model.SorterStr
-        self.filters = [["challenge_id", "=", 1]]
-        self.sorters = [['challenge_id', "DESC"]]
+        self.filter_str = '[["challenge_id", "=", 1]]'
+        self.sorter_str = '[["challenge_id", "DESC"]]'
+        self.filters = [popo.Filter(col_name='challenge_id', op=FilterOperator.eq, value=1)]
+        self.sorters = [popo.Sorter(col_name='challenge_id', order=enum.SortOrder.desc)]
+
+        self.filters_after_append = deepcopy(self.filters)
+        self.filters_after_append.append(popo.Filter(col_name='class_id',
+                                                     op=FilterOperator.eq,
+                                                     value=self.class_id))
 
         self.expected_output_data = [
             vo.ViewProblemSet(
@@ -620,7 +645,7 @@ class TestViewBrowseProblemSetUnderClass(unittest.IsolatedAsyncioTestCase):
             db_view.async_func('problem_set').call_with(
                 limit=self.limit,
                 offset=self.offset,
-                filters=self.filters,
+                filters=self.filters_after_append,
                 sorters=self.sorters,
                 ref_time=self.request_time,
             ).returns((self.expected_output_data, self.expected_output_total_count))
@@ -667,11 +692,23 @@ class TestViewBrowseClassGrade(unittest.IsolatedAsyncioTestCase):
 
         self.limit = model.Limit(10)
         self.offset = model.Offset(0)
-        self.filter_str = model.FilterStr
-        self.sorter_str = model.SorterStr
-        self.filters = [["username", "LIKE", "abcd"]]
-        self.sorters = [['account_id', "DESC"]]
+        self.filter_str = '[["username", "LIKE", "abcd"]]'
+        self.sorter_str = '[["account_id", "DESC"]]'
+        self.filters = [popo.Filter(col_name='username', op=model.FilterOperator.like, value='abcd')]
+        self.sorters = [popo.Sorter(col_name="account_id", order=enum.SortOrder.desc)]
 
+        self.filters_after_append_manager = deepcopy(self.filters)
+        self.filters_after_append_manager.append(popo.Filter(col_name='class_id',
+                                                             op=FilterOperator.eq,
+                                                             value=self.class_id))
+
+        self.filters_after_append_normal = deepcopy(self.filters)
+        self.filters_after_append_normal.append(popo.Filter(col_name='class_id',
+                                                            op=FilterOperator.eq,
+                                                            value=self.class_id))
+        self.filters_after_append_normal.append(popo.Filter(col_name='grade.receiver_id',
+                                                            op=FilterOperator.eq,
+                                                            value=self.login_account.id))
         self.expected_output_data = [
             vo.ViewGrade(
                 account_id=1,
@@ -727,7 +764,7 @@ class TestViewBrowseClassGrade(unittest.IsolatedAsyncioTestCase):
             db_view.async_func('grade').call_with(
                 limit=self.limit,
                 offset=self.offset,
-                filters=self.filters,
+                filters=self.filters_after_append_manager,
                 sorters=self.sorters,
             ).returns((self.expected_output_data, self.expected_output_total_count))
 
@@ -762,11 +799,10 @@ class TestViewBrowseClassGrade(unittest.IsolatedAsyncioTestCase):
             service_rbac.async_func('validate_class').call_with(
                 self.login_account.id, enum.RoleType.manager, class_id=self.class_id,
             ).returns(False)
-
             db_view.async_func('grade').call_with(
                 limit=self.limit,
                 offset=self.offset,
-                filters=self.filters,
+                filters=self.filters_after_append_normal,
                 sorters=self.sorters,
             ).returns((self.expected_output_data, self.expected_output_total_count))
 
@@ -789,10 +825,10 @@ class TestViewBrowseAccessLog(unittest.IsolatedAsyncioTestCase):
 
         self.limit = model.Limit(10)
         self.offset = model.Offset(0)
-        self.filter_str = model.FilterStr
-        self.sorter_str = model.SorterStr
-        self.filters = [["username", "LIKE", "abcd"]]
-        self.sorters = [['account_id', "DESC"]]
+        self.filter_str = '[["username", "LIKE", "abcd"]]'
+        self.sorter_str = '[["account_id", "DESC"]]'
+        self.filters = [popo.Filter(col_name='username', op=model.FilterOperator.like, value='abcd')]
+        self.sorters = [popo.Sorter(col_name="account_id", order=enum.SortOrder.desc)]
 
         self.expected_output_data = [
             vo.ViewAccessLog(
@@ -892,10 +928,10 @@ class TestViewPeerReviewSummaryReview(unittest.IsolatedAsyncioTestCase):
 
         self.limit = model.Limit(10)
         self.offset = model.Offset(0)
-        self.filter_str = model.FilterStr
-        self.sorter_str = model.SorterStr
-        self.filters = [["username", "LIKE", "abcd"]]
-        self.sorters = [['student_id', "DESC"]]
+        self.filter_str = '[["username", "LIKE", "abcd"]]'
+        self.sorter_str = '[["student_id", "DESC"]]'
+        self.filters = [popo.Filter(col_name='username', op=FilterOperator.like, value='abcd')]
+        self.sorters = [popo.Sorter(col_name='student_id', order=enum.SortOrder.desc)]
 
         self.expected_output_data = [
             vo.ViewPeerReviewRecord(
@@ -997,10 +1033,10 @@ class TestViewPeerReviewSummaryReceive(unittest.IsolatedAsyncioTestCase):
 
         self.limit = model.Limit(10)
         self.offset = model.Offset(0)
-        self.filter_str = model.FilterStr
-        self.sorter_str = model.SorterStr
-        self.filters = [["username", "LIKE", "abcd"]]
-        self.sorters = [['student_id', "DESC"]]
+        self.filter_str = '[["username", "LIKE", "abcd"]]'
+        self.sorter_str = '[["student_id", "DESC"]]'
+        self.filters = [popo.Filter(col_name='username', op=FilterOperator.like, value='abcd')]
+        self.sorters = [popo.Sorter(col_name='student_id', order=enum.SortOrder.desc)]
 
         self.expected_output_data = [
             vo.ViewPeerReviewRecord(

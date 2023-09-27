@@ -32,7 +32,7 @@ class TestImportTeam(unittest.IsolatedAsyncioTestCase):
                 context.account.id, enum.RoleType.manager, class_id=self.class_id,
             ).returns(True)
             service_csv.async_func('import_team').call_with(
-                self.team_file.file, class_id=self.class_id, label=self.label,
+                mock.AnyInstanceOf(type(self.team_file.file)), class_id=self.class_id, label=self.label,
             ).returns(None)
 
             result = await mock.unwrap(team.import_team)(self.class_id, self.label, self.team_file)

@@ -99,13 +99,13 @@ class TestEditAssistingData(unittest.IsolatedAsyncioTestCase):
                 assisting_data_id=self.assisting_data_id,
             ).returns(True)
             util_file.func('replace_cr').call_with(
-                self.assisting_data_file.file,
+                mock.AnyInstanceOf(type(self.assisting_data_file.file))
             ).returns(self.no_cr_file)
             s3_assisting_data.async_func('upload').call_with(
-                self.no_cr_file,
+                mock.AnyInstanceOf(type(self.no_cr_file)),
             ).returns(self.s3_file)
             db_s3_file.async_func('add_with_do').call_with(
-                s3_file=self.s3_file,
+                s3_file=mock.AnyInstanceOf(type(self.s3_file)),
             ).returns(self.s3_file.uuid)
             db_assisting_data.async_func('edit').call_with(
                 assisting_data_id=self.assisting_data_id, s3_file_uuid=self.s3_file.uuid,

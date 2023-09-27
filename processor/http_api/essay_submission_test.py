@@ -63,7 +63,7 @@ class TestUploadEssay(unittest.IsolatedAsyncioTestCase):
                 self.essay.challenge_id, ref_time=context.request_time,
             ).returns(self.challenge)
             service_submission.async_func('submit_essay').call_with(
-                file=self.essay_file.file, filename=self.essay_file.filename,
+                file=mock.AnyInstanceOf(type(self.essay_file.file)), filename=self.essay_file.filename,
                 account_id=context.account.id, essay_id=self.essay_id,
                 submit_time=context.request_time,
             ).returns(self.essay_submission_id)
@@ -160,7 +160,7 @@ class TestBrowseEssaySubmissionByEssayId(unittest.IsolatedAsyncioTestCase):
             context.set_account(self.login_account)
 
             service_rbac = controller.mock_module('service.rbac')
-            model_ = controller.mock_module('processor.http_api.essay_submission.model')
+            model_ = controller.mock_module('util.model')
             db_essay_submission = controller.mock_module('persistence.database.essay_submission')
 
             service_rbac.async_func('get_class_role').call_with(
@@ -343,7 +343,7 @@ class TestReuploadEssay(unittest.IsolatedAsyncioTestCase):
                 challenge_id=self.essay.challenge_id,
             ).returns(self.challenge)
             service_submission.async_func('resubmit_essay').call_with(
-                file=self.essay_file.file, filename=self.essay_file.filename,
+                file=mock.AnyInstanceOf(type(self.essay_file.file)), filename=self.essay_file.filename,
                 essay_submission_id=self.essay_submission_id,
                 submit_time=context.request_time,
             ).returns(None)

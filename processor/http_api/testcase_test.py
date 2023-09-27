@@ -284,8 +284,12 @@ class TestUploadTestcaseInputData(unittest.IsolatedAsyncioTestCase):
             service_rbac.async_func('validate_class').call_with(
                 context.account.id, enum.RoleType.manager, testcase_id=self.testcase_id,
             ).returns(True)
-            util_file.func('replace_cr').call_with(self.input_file.file).returns(self.no_cr_file)
-            s3_testdata.async_func('upload').call_with(self.no_cr_file).returns(self.s3_file)
+            util_file.func('replace_cr').call_with(
+                mock.AnyInstanceOf(type(self.input_file.file)),
+            ).returns(self.no_cr_file)
+            s3_testdata.async_func('upload').call_with(
+                mock.AnyInstanceOf(type(self.no_cr_file)),
+            ).returns(self.s3_file)
             db_s3_file.async_func('add_with_do').call_with(s3_file=self.s3_file).returns(self.file_id)
             db_testcase.async_func('edit').call_with(
                 testcase_id=self.testcase_id, input_file_uuid=self.file_id, input_filename=self.input_file.filename,
@@ -341,8 +345,12 @@ class TestUploadTestcaseOutputData(unittest.IsolatedAsyncioTestCase):
             service_rbac.async_func('validate_class').call_with(
                 context.account.id, enum.RoleType.manager, testcase_id=self.testcase_id,
             ).returns(True)
-            util_file.func('replace_cr').call_with(self.output_file.file).returns(self.no_cr_file)
-            s3_testdata.async_func('upload').call_with(self.no_cr_file).returns(self.s3_file)
+            util_file.func('replace_cr').call_with(
+                mock.AnyInstanceOf(type(self.output_file.file)),
+            ).returns(self.no_cr_file)
+            s3_testdata.async_func('upload').call_with(
+                mock.AnyInstanceOf(type(self.no_cr_file)),
+            ).returns(self.s3_file)
             db_s3_file.async_func('add_with_do').call_with(s3_file=self.s3_file).returns(self.file_id)
             db_testcase.async_func('edit').call_with(
                 testcase_id=self.testcase_id, output_file_uuid=self.file_id, output_filename=self.output_file.filename,

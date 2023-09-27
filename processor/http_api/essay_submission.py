@@ -77,8 +77,8 @@ async def browse_essay_submission_by_essay_id(
     if not (class_role >= RoleType.normal):
         raise exc.NoPermission
 
-    filters = model.parse_filter(filter, BROWSE_ESSAY_SUBMISSION_COLUMNS)
-    sorters = model.parse_sorter(sort, BROWSE_ESSAY_SUBMISSION_COLUMNS)
+    filters = util.model.parse_filter(filter, BROWSE_ESSAY_SUBMISSION_COLUMNS)
+    sorters = util.model.parse_sorter(sort, BROWSE_ESSAY_SUBMISSION_COLUMNS)
 
     filters.append(popo.Filter(col_name='essay_id',
                                op=FilterOperator.eq,

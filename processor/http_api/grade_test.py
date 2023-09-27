@@ -1,3 +1,4 @@
+from copy import deepcopy
 from datetime import datetime
 import unittest
 from uuid import UUID
@@ -36,7 +37,7 @@ class TestImportClassGrade(unittest.IsolatedAsyncioTestCase):
                 class_id=self.class_id,
             ).returns(True)
             service_csv.async_func('import_class_grade').call_with(
-                grade_file=self.grade_file.file, class_id=self.class_id,
+                grade_file=mock.AnyInstanceOf(type(self.grade_file.file)), class_id=self.class_id,
                 title=self.title, update_time=context.request_time,
             ).returns(None)
 
@@ -128,21 +129,21 @@ class TestBrowseClassGrade(unittest.IsolatedAsyncioTestCase):
         self.class_id = 1
         self.limit = model.Limit(20)
         self.offset = model.Offset(0)
-        self.filter = model.FilterStr
-        self.sort = model.SorterStr
+        self.filter_str = '[["content", "LIKE", "abcd"]]'
+        self.sorter_str = '[]'
 
         self.BROWSE_CLASS_GRADE_COLUMNS = grade.BROWSE_CLASS_GRADE_COLUMNS
-        self.filters = [["content", "LIKE", "abcd"]]
-        self.filters_before_append = self.filters
+        self.filters = [popo.Filter(col_name='content', op=enum.FilterOperator.like, value='abcd')]
+        self.filters_before_append = deepcopy(self.filters)
         self.filters.append(popo.Filter(col_name='class_id',
                                         op=enum.FilterOperator.eq,
                                         value=self.class_id))
-        self.filters_manager = self.filters
-        self.filters_normal = self.filters
+        self.filters_manager = deepcopy(self.filters)
+        self.filters_normal = deepcopy(self.filters)
         self.filters_normal.append(popo.Filter(col_name='receiver_id',
                                                op=enum.FilterOperator.eq,
                                                value=self.account.id))
-        self.sorters = [['id']]
+        self.sorters = []
 
         self.grades = [
             do.Grade(
@@ -186,10 +187,10 @@ class TestBrowseClassGrade(unittest.IsolatedAsyncioTestCase):
                 context.account.id, class_id=self.class_id,
             ).returns(enum.RoleType.manager)
             controller.mock_global_func('util.model.parse_filter').call_with(
-                self.filter, grade.BROWSE_CLASS_GRADE_COLUMNS,
+                self.filter_str, grade.BROWSE_CLASS_GRADE_COLUMNS,
             ).returns(self.filters_before_append)
             controller.mock_global_func('util.model.parse_sorter').call_with(
-                self.sort, grade.BROWSE_CLASS_GRADE_COLUMNS,
+                self.sorter_str, grade.BROWSE_CLASS_GRADE_COLUMNS,
             ).returns(self.sorters)
             db_grade.async_func('browse').call_with(
                 limit=self.limit, offset=self.offset,
@@ -199,7 +200,7 @@ class TestBrowseClassGrade(unittest.IsolatedAsyncioTestCase):
             )
 
             result = await mock.unwrap(grade.browse_class_grade)(self.class_id, self.limit, self.offset,
-                                                                 self.filter, self.sort)
+                                                                 self.filter_str, self.sorter_str)
 
         self.assertEqual(result, self.expected_happy_flow_result)
 
@@ -217,10 +218,10 @@ class TestBrowseClassGrade(unittest.IsolatedAsyncioTestCase):
                 context.account.id, class_id=self.class_id,
             ).returns(enum.RoleType.normal)
             controller.mock_global_func('util.model.parse_filter').call_with(
-                self.filter, grade.BROWSE_CLASS_GRADE_COLUMNS,
+                self.filter_str, grade.BROWSE_CLASS_GRADE_COLUMNS,
             ).returns(self.filters_before_append)
             controller.mock_global_func('util.model.parse_sorter').call_with(
-                self.sort, grade.BROWSE_CLASS_GRADE_COLUMNS,
+                self.sorter_str, grade.BROWSE_CLASS_GRADE_COLUMNS,
             ).returns(self.sorters)
             db_grade.async_func('browse').call_with(
                 limit=self.limit, offset=self.offset,
@@ -230,7 +231,7 @@ class TestBrowseClassGrade(unittest.IsolatedAsyncioTestCase):
             )
 
             result = await mock.unwrap(grade.browse_class_grade)(self.class_id, self.limit, self.offset,
-                                                                 self.filter, self.sort)
+                                                                 self.filter_str, self.sorter_str)
 
         self.assertEqual(result, self.expected_happy_flow_result)
 
@@ -249,7 +250,7 @@ class TestBrowseClassGrade(unittest.IsolatedAsyncioTestCase):
 
             with self.assertRaises(exc.NoPermission):
                 await mock.unwrap(grade.browse_class_grade)(self.class_id, self.limit, self.offset,
-                                                            self.filter, self.sort)
+                                                            self.filter_str, self.sorter_str)
 
 
 class TestBrowseAccountGrade(unittest.IsolatedAsyncioTestCase):
@@ -260,16 +261,16 @@ class TestBrowseAccountGrade(unittest.IsolatedAsyncioTestCase):
         self.class_id = 1
         self.limit = model.Limit(20)
         self.offset = model.Offset(0)
-        self.filter = model.FilterStr
-        self.sort = model.SorterStr
+        self.filter = '[["content", "LIKE", "abcd"]]'
+        self.sort = None
 
         self.BROWSE_ACCOUNT_GRADE_COLUMNS = grade.BROWSE_ACCOUNT_GRADE_COLUMNS
-        self.filters = [["content", "LIKE", "abcd"]]
-        self.filters_before_append = self.filters
+        self.filters = [popo.Filter(col_name='content', op=enum.FilterOperator.eq, value='abcd')]
+        self.filters_before_append = deepcopy(self.filters)
         self.filters.append(popo.Filter(col_name='receiver_id',
                                         op=enum.FilterOperator.eq,
                                         value=self.account.id))
-        self.sorters = [['id']]
+        self.sorters = []
 
         self.grades = [
             do.Grade(

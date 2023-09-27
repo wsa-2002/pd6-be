@@ -30,7 +30,7 @@ class TestAddAccount(unittest.IsolatedAsyncioTestCase):
             password='123',
             nickname='nick',
             real_name='real',
-            alternative_email='test@pdogs.com',
+            alternative_email=model.CaseInsensitiveEmailStr('test@pdogs.com'),
             # Student card
             institute_id=1,
             student_id='test',
@@ -436,7 +436,7 @@ class TestAddNormalAccount(unittest.IsolatedAsyncioTestCase):
             username='test',
             password='123',
             nickname='nick',
-            alternative_email='test@email.com',
+            alternative_email=model.CaseInsensitiveEmailStr('test@email.com'),
         )
         self.data_no_alt = secret.AddNormalAccountInput(
             real_name='real',
@@ -450,7 +450,7 @@ class TestAddNormalAccount(unittest.IsolatedAsyncioTestCase):
             username='#totally_legal',
             password='123',
             nickname='nick',
-            alternative_email='test@email.com',
+            alternative_email=model.CaseInsensitiveEmailStr('test@email.com'),
         )
         self.account_id = 1
         self.pass_hash = 'hash'
@@ -579,7 +579,7 @@ class TestAddNormalAccount(unittest.IsolatedAsyncioTestCase):
                 username='',
                 password='123',
                 nickname='nick',
-                alternative_email='test@email.com',
+                alternative_email=model.CaseInsensitiveEmailStr('test@email.com'),
             )
 
     async def test_invalid_password(self):
@@ -589,7 +589,7 @@ class TestAddNormalAccount(unittest.IsolatedAsyncioTestCase):
                 username='test',
                 password='',
                 nickname='nick',
-                alternative_email='test@email.com',
+                alternative_email=model.CaseInsensitiveEmailStr('test@email.com'),
             )
 
 
@@ -611,7 +611,9 @@ class TestImportAccount(unittest.IsolatedAsyncioTestCase):
             service_rbac.async_func('validate_system').call_with(
                 context.account.id, enum.RoleType.manager,
             ).returns(True)
-            service_csv.async_func('import_account').call_with(account_file=self.account_file.file).returns(None)
+            service_csv.async_func('import_account').call_with(
+                account_file=mock.AnyInstanceOf(type(self.account_file.file)),
+            ).returns(None)
 
             result = await mock.unwrap(secret.import_account)(self.account_file)
 

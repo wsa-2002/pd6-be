@@ -76,10 +76,10 @@ class TestImportAccount(unittest.IsolatedAsyncioTestCase):
             util_security = controller.mock_module('util.security')
 
             controller.mock_global_func('codecs.iterdecode').call_with(
-                self.account_file, 'utf_8_sig',
+                mock.AnyInstanceOf(type(self.account_file)), 'utf_8_sig',
             ).returns(self.generator)
             controller.mock_global_func('csv.DictReader').call_with(
-                self.generator,
+                mock.AnyInstanceOf(type(self.generator)),
             ).returns(self.rows)
             util_security.func('hash_password').call_with(
                 'password',
@@ -104,10 +104,10 @@ class TestImportAccount(unittest.IsolatedAsyncioTestCase):
             util_security = controller.mock_module('util.security')
 
             controller.mock_global_func('codecs.iterdecode').call_with(
-                self.account_file, 'utf_8_sig',
+                mock.AnyInstanceOf(type(self.account_file)), 'utf_8_sig',
             ).returns(self.generator)
             controller.mock_global_func('csv.DictReader').call_with(
-                self.generator,
+                mock.AnyInstanceOf(type(self.generator)),
             ).returns(self.rows_loss_alternative_email)
             util_security.func('hash_password').call_with(
                 'password',
@@ -129,10 +129,10 @@ class TestImportAccount(unittest.IsolatedAsyncioTestCase):
             mock.Controller() as controller,
         ):
             controller.mock_global_func('codecs.iterdecode').call_with(
-                self.account_file, 'utf_8_sig',
+                mock.AnyInstanceOf(type(self.account_file)), 'utf_8_sig',
             ).returns(self.generator)
             controller.mock_global_func('csv.DictReader').call_with(
-                self.generator,
+                mock.AnyInstanceOf(type(self.generator)),
             ).returns(self.rows_uncompleted)
 
             with self.assertRaises(exc.IllegalInput):
@@ -143,10 +143,10 @@ class TestImportAccount(unittest.IsolatedAsyncioTestCase):
             mock.Controller() as controller,
         ):
             controller.mock_global_func('codecs.iterdecode').call_with(
-                self.account_file, 'utf_8_sig',
+                mock.AnyInstanceOf(type(self.account_file)), 'utf_8_sig',
             ).returns(self.generator)
             controller.mock_global_func('csv.DictReader').call_with(
-                self.generator,
+                mock.AnyInstanceOf(type(self.generator)),
             ).returns(self.rows_loss_header)
 
             with self.assertRaises(exc.IllegalInput):
@@ -157,7 +157,7 @@ class TestImportAccount(unittest.IsolatedAsyncioTestCase):
             mock.Controller() as controller,
         ):
             controller.mock_global_func('codecs.iterdecode').call_with(
-                self.account_file, 'utf_8_sig',
+                mock.AnyInstanceOf(type(self.account_file)), 'utf_8_sig',
             ).raises(UnicodeDecodeError('unicode', b'\x00\x00', 1, 2, 'Error'))
 
             with self.assertRaises(exc.FileDecodeError):
@@ -229,10 +229,10 @@ class TestImportTeam(unittest.IsolatedAsyncioTestCase):
             db_team = controller.mock_module('persistence.database.team')
 
             controller.mock_global_func('codecs.iterdecode').call_with(
-                self.team_file, 'utf_8_sig',
+                mock.AnyInstanceOf(type(self.team_file)), 'utf_8_sig',
             ).returns(self.generator)
             controller.mock_global_func('csv.DictReader').call_with(
-                self.generator,
+                mock.AnyInstanceOf(type(self.generator)),
             ).returns(self.rows)
 
             db_team.async_func('add_team_and_add_member').call_with(
@@ -248,10 +248,10 @@ class TestImportTeam(unittest.IsolatedAsyncioTestCase):
             mock.Controller() as controller,
         ):
             controller.mock_global_func('codecs.iterdecode').call_with(
-                self.team_file, 'utf_8_sig',
+                mock.AnyInstanceOf(type(self.team_file)), 'utf_8_sig',
             ).returns(self.generator)
             controller.mock_global_func('csv.DictReader').call_with(
-                self.generator,
+                mock.AnyInstanceOf(type(self.generator)),
             ).returns(self.rows_loss_header)
 
             with self.assertRaises(exc.IllegalInput):
@@ -262,7 +262,7 @@ class TestImportTeam(unittest.IsolatedAsyncioTestCase):
             mock.Controller() as controller,
         ):
             controller.mock_global_func('codecs.iterdecode').call_with(
-                self.team_file, 'utf_8_sig',
+                mock.AnyInstanceOf(type(self.team_file)), 'utf_8_sig',
             ).raises(UnicodeDecodeError('unicode', b'\x00\x00', 1, 2, 'Error'))
 
             with self.assertRaises(exc.FileDecodeError):
@@ -294,10 +294,11 @@ class TestImportClassGrade(unittest.IsolatedAsyncioTestCase):
             db_grade = controller.mock_module('persistence.database.grade')
 
             controller.mock_global_func('codecs.iterdecode').call_with(
-                self.grade_file, 'utf_8_sig',
+                mock.AnyInstanceOf(type(self.grade_file)), 'utf_8_sig',
             ).returns(self.generator)
             controller.mock_global_func('csv.DictReader').call_with(
-                self.generator,
+                mock.AnyInstanceOf(type(self.generator)),
+
             ).returns(self.rows)
 
             db_grade.async_func('batch_add').call_with(
@@ -314,7 +315,7 @@ class TestImportClassGrade(unittest.IsolatedAsyncioTestCase):
             mock.Controller() as controller,
         ):
             controller.mock_global_func('codecs.iterdecode').call_with(
-                self.grade_file, 'utf_8_sig',
+                mock.AnyInstanceOf(type(self.grade_file)), 'utf_8_sig',
             ).raises(UnicodeDecodeError('unicode', b'\x00\x00', 1, 2, 'Error'))
 
             with self.assertRaises(exc.FileDecodeError):
