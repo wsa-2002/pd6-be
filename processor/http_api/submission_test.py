@@ -291,7 +291,7 @@ class TestSubmit(unittest.IsolatedAsyncioTestCase):
                 self.language,
             )
             service_submission.async_func('submit').call_with(
-                file=self.content_file.file, filename=self.content_file.filename,
+                file=mock.AnyInstanceOf(type(self.content_file.file)), filename=self.content_file.filename,
                 account_id=self.account.id, problem_id=self.problem.id,
                 file_length=self.file_length, language_id=self.language.id,
                 submit_time=self.request_time,
@@ -304,7 +304,7 @@ class TestSubmit(unittest.IsolatedAsyncioTestCase):
                 todo_async_task = async_task
 
             util_background_task.func('launch').call_with(
-                self.background_tasks, mock.AnyInstanceOf(object),
+                mock.AnyInstanceOf(type(self.background_tasks)), mock.AnyInstanceOf(object),
             ).executes(_set_task)
 
             result = await mock.unwrap(submission.submit)(self.problem.id, self.language.id,
@@ -383,7 +383,7 @@ class TestSubmit(unittest.IsolatedAsyncioTestCase):
                 self.language,
             )
             service_submission.async_func('submit').call_with(
-                file=self.content_file.file, filename=self.content_file.filename,
+                file=mock.AnyInstanceOf(type(self.content_file.file)), filename=self.content_file.filename,
                 account_id=self.account.id, problem_id=self.problem.id,
                 file_length=self.file_length, language_id=self.language.id,
                 submit_time=self.request_time,
@@ -396,7 +396,7 @@ class TestSubmit(unittest.IsolatedAsyncioTestCase):
                 todo_async_task = async_task
 
             util_background_task.func('launch').call_with(
-                self.background_tasks, mock.AnyInstanceOf(object),
+                mock.AnyInstanceOf(type(self.background_tasks)), mock.AnyInstanceOf(object),
             ).executes(_set_task)
 
             result = await mock.unwrap(submission.submit)(self.problem.id, self.language.id,
@@ -442,7 +442,7 @@ class TestSubmit(unittest.IsolatedAsyncioTestCase):
                 self.language,
             )
             service_submission.async_func('submit').call_with(
-                file=self.content_file.file, filename=self.content_file.filename,
+                file=mock.AnyInstanceOf(type(self.content_file.file)), filename=self.content_file.filename,
                 account_id=self.account.id, problem_id=self.problem.id,
                 file_length=self.file_length, language_id=self.language.id,
                 submit_time=self.request_time,
@@ -455,7 +455,7 @@ class TestSubmit(unittest.IsolatedAsyncioTestCase):
                 todo_async_task = async_task
 
             util_background_task.func('launch').call_with(
-                self.background_tasks, mock.AnyInstanceOf(object),
+                mock.AnyInstanceOf(type(self.background_tasks)), mock.AnyInstanceOf(object),
             ).executes(_set_task)
 
             result = await mock.unwrap(submission.submit)(self.problem.id, self.language.id,
@@ -522,16 +522,16 @@ class TestBrowseSubmission(unittest.IsolatedAsyncioTestCase):
 
         self.limit = model.Limit(20)
         self.offset = model.Offset(0)
-        self.filter = model.FilterStr
-        self.sort = model.SorterStr
+        self.filter = '[["content", "LIKE", "abcd"]]'
+        self.sort = None
 
         self.BROWSE_SUBMISSION_COLUMNS = submission.BROWSE_SUBMISSION_COLUMNS
-        self.filters = [["content", "LIKE", "abcd"]]
-        self.filters_before_append = self.filters
+        self.filters = [popo.Filter(col_name='content', op=enum.FilterOperator.like, value='abcd')]
+        self.filters_before_append = copy.deepcopy(self.filters)
         self.filters.append(popo.Filter(col_name='account_id',
                                         op=enum.FilterOperator.eq,
                                         value=self.account.id))
-        self.sorters = [['id']]
+        self.sorters = []
 
         self.submissions = [
             do.Submission(

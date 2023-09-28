@@ -1,8 +1,9 @@
 import unittest
 from datetime import datetime
 
-from base import enum, do
+from base import enum, do, popo
 from util import mock, security, model
+from util.model import FilterOperator
 import exceptions as exc
 
 from . import announcement
@@ -77,10 +78,10 @@ class TestBrowseAnnouncement(unittest.IsolatedAsyncioTestCase):
 
         self.limit = model.Limit(10)
         self.offset = model.Offset(0)
-        self.filter_str = model.FilterStr
-        self.sorter_str = model.SorterStr
-        self.filters = [["content", "LIKE", "abcd"]]
-        self.sorters = [['id', "DESC"]]
+        self.filter_str = '[["content", "LIKE", "abcd"]]'
+        self.sorter_str = '[["id", "DESC"]]'
+        self.filters = [popo.Filter(col_name='content', op=FilterOperator.like, value='abcd')]
+        self.sorters = [popo.Sorter(col_name='id', order=enum.SortOrder.desc)]
 
         self.expected_output_data = [
             do.Announcement(

@@ -42,7 +42,7 @@ class TestSubmit(unittest.IsolatedAsyncioTestCase):
                 self.file_uuid,
             )
             s3_submission.async_func('upload').call_with(
-                self.file, file_uuid=self.file_uuid,
+                mock.AnyInstanceOf(type(self.file)), file_uuid=self.file_uuid,
             ).returns(self.s3_file)
             db_s3_file.async_func('add_with_do').call_with(
                 s3_file=self.s3_file,
@@ -90,7 +90,7 @@ class TestSubmitEssay(unittest.IsolatedAsyncioTestCase):
                 self.file_uuid,
             )
             s3_essay_submission.async_func('upload').call_with(
-                self.file, file_uuid=self.file_uuid,
+                mock.AnyInstanceOf(type(self.file)), file_uuid=self.file_uuid,
             ).returns(self.s3_file)
             db_s3_file.async_func('add_with_do').call_with(
                 s3_file=self.s3_file,
@@ -134,7 +134,7 @@ class TestResubmitEssay(unittest.IsolatedAsyncioTestCase):
                 self.file_uuid,
             )
             s3_essay_submission.async_func('upload').call_with(
-                self.file, file_uuid=self.file_uuid,
+                mock.AnyInstanceOf(type(self.file)), file_uuid=self.file_uuid,
             ).returns(self.s3_file)
             db_s3_file.async_func('add_with_do').call_with(
                 s3_file=self.s3_file,

@@ -295,7 +295,7 @@ class TestDownloadAllEssaySubmission(unittest.IsolatedAsyncioTestCase):
                 todo_async_task = async_task
 
             util_background_task.func('launch').call_with(
-                self.background_tasks, mock.AnyInstanceOf(object),
+                mock.AnyInstanceOf(type(self.background_tasks)), mock.AnyInstanceOf(object),
             ).executes(_set_task)
 
             result = await mock.unwrap(essay.download_all_essay_submission)(essay_id=self.essay.id,

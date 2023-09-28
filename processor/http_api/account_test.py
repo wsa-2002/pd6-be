@@ -26,8 +26,8 @@ class TestBrowseAccountWithDefaultStudentId(unittest.IsolatedAsyncioTestCase):
         )
         self.limit = model.Limit(50)
         self.offset = model.Offset(0)
-        self.filter_str = model.FilterStr
-        self.sorter_str = model.SorterStr
+        self.filter_str = '[]'
+        self.sorter_str = '[]'
         self.filters = []
         self.sorters = []
         self.expected_output_data = [
